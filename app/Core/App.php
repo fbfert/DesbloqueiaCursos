@@ -15,14 +15,14 @@ class App
         self::$instance = $this;
     }
 
-    public function get($path, $handler)
+    public function get($path, $handler, array $middleware = array())
     {
-        $this->router->get($path, $handler);
+        $this->router->get($path, $handler, $middleware);
     }
 
-    public function post($path, $handler)
+    public function post($path, $handler, array $middleware = array())
     {
-        $this->router->post($path, $handler);
+        $this->router->post($path, $handler, $middleware);
     }
 
     public function run()

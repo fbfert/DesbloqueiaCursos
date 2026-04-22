@@ -6,14 +6,14 @@ class Router
 {
     private $routes = array();
 
-    public function get($path, $handler)
+    public function get($path, $handler, array $middleware = array())
     {
-        $this->add('GET', $path, $handler);
+        $this->add('GET', $path, $handler, $middleware);
     }
 
-    public function post($path, $handler)
+    public function post($path, $handler, array $middleware = array())
     {
-        $this->add('POST', $path, $handler);
+        $this->add('POST', $path, $handler, $middleware);
     }
 
     public function dispatch(Request $request)
@@ -26,17 +26,23 @@ class Router
             )), 404);
         }
 
-        $handler = $this->routes[$key];
+        $route = $this->routes[$key];
+        $handler = $route['handler'];
+        $middleware = $this->buildMiddlewareStack(isset($route['middleware']) ? $route['middleware'] : array());
 
-        if (is_array($handler)) {
-            $controller = new $handler[0]();
-            return call_user_func(array($controller, $handler[1]), $request);
-        }
+        $runner = function () use ($handler, $request) {
+            if (is_array($handler)) {
+                $controller = new $handler[0]();
+                return call_user_func(array($controller, $handler[1]), $request);
+            }
 
-        return call_user_func($handler, $request);
+            return call_user_func($handler, $request);
+        };
+
+        return $this->executeMiddlewareStack($middleware, $request, $runner);
     }
 
-    private function add($method, $path, $handler)
+    private function add($method, $path, $handler, array $middleware = array())
     {
         $path = '/' . trim($path, '/');
 
@@ -44,6 +50,70 @@ class Router
             $path = '/';
         }
 
-        $this->routes[$method . ' ' . $path] = $handler;
+        $this->routes[$method . ' ' . $path] = array(
+            'handler' => $handler,
+            'middleware' => $middleware,
+        );
+    }
+
+    private function buildMiddlewareStack(array $middlewareDefinitions)
+    {
+        $stack = array();
+
+        foreach ($middlewareDefinitions as $definition) {
+            $stack[] = $this->resolveMiddleware($definition);
+        }
+
+        return $stack;
+    }
+
+    private function resolveMiddleware($definition)
+    {
+        if (is_object($definition)) {
+            return $definition;
+        }
+
+        $class = null;
+        $arguments = array();
+
+        if (is_string($definition)) {
+            $parts = explode(':', $definition, 2);
+            $alias = $parts[0];
+            $arguments = isset($parts[1]) && $parts[1] !== '' ? explode(',', $parts[1]) : array();
+
+            $map = array(
+                'auth' => '\\App\\Middleware\\AuthenticateMiddleware',
+                'permission' => '\\App\\Middleware\\PermissionMiddleware',
+            );
+
+            $class = isset($map[$alias]) ? $map[$alias] : $alias;
+        } elseif (is_array($definition) && isset($definition[0])) {
+            $class = $definition[0];
+            $arguments = array_slice($definition, 1);
+        }
+
+        if (!$class || !class_exists($class)) {
+            throw new \InvalidArgumentException('Middleware invalido: ' . (is_string($definition) ? $definition : 'objeto'));
+        }
+
+        $reflection = new \ReflectionClass($class);
+        return $reflection->newInstanceArgs($arguments);
+    }
+
+    private function executeMiddlewareStack(array $stack, Request $request, callable $runner)
+    {
+        $dispatcher = function ($index) use (&$dispatcher, $stack, $request, $runner) {
+            if (!isset($stack[$index])) {
+                return call_user_func($runner);
+            }
+
+            $middleware = $stack[$index];
+
+            return $middleware->handle($request, function () use (&$dispatcher, $index) {
+                return $dispatcher($index + 1);
+            });
+        };
+
+        return $dispatcher(0);
     }
 }
