@@ -12,4 +12,11 @@
 Thumbs.db
 *.log
 public_html/.codex/
+.codex/
 conversas.txt
+/storage/logs/*
+/storage/tmp/*
+/storage/cache/*
+/storage/uploads/*
+/storage/private_uploads/*
+!/storage/**/.gitkeep

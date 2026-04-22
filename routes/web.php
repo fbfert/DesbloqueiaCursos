@@ -13,3 +13,7 @@ $app->get('/recuperar-senha', array(AuthController::class, 'showForgotPassword')
 $app->post('/recuperar-senha', array(AuthController::class, 'requestPasswordReset'));
 $app->get('/recuperar-senha/redefinir', array(AuthController::class, 'showResetPassword'));
 $app->post('/recuperar-senha/redefinir', array(AuthController::class, 'resetPassword'));
+$app->get('/esqueci-minha-senha', array(AuthController::class, 'showForgotPassword'));
+$app->post('/esqueci-minha-senha', array(AuthController::class, 'requestPasswordReset'));
+$app->get('/esqueci-minha-senha/redefinir', array(AuthController::class, 'showResetPassword'));
+$app->post('/esqueci-minha-senha/redefinir', array(AuthController::class, 'resetPassword'));
