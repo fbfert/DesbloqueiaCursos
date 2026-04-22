@@ -153,41 +153,41 @@ SELECT p.id, per.id, NOW()
 FROM perfis p
 CROSS JOIN permissoes per
 WHERE p.slug = 'superadmin'
-ON DUPLICATE KEY UPDATE created_at = created_at;
+ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 INSERT INTO perfil_permissoes (perfil_id, permissao_id, created_at)
 SELECT p.id, per.id, NOW()
 FROM perfis p
 INNER JOIN permissoes per ON per.slug IN ('rbac.dashboard.ver', 'usuarios.ver', 'usuarios.gerenciar', 'pedidos.ver')
 WHERE p.slug = 'atendimento'
-ON DUPLICATE KEY UPDATE created_at = created_at;
+ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 INSERT INTO perfil_permissoes (perfil_id, permissao_id, created_at)
 SELECT p.id, per.id, NOW()
 FROM perfis p
 INNER JOIN permissoes per ON per.slug IN ('financeiro.ver', 'financeiro.gerenciar', 'pedidos.ver')
 WHERE p.slug = 'financeiro'
-ON DUPLICATE KEY UPDATE created_at = created_at;
+ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 INSERT INTO perfil_permissoes (perfil_id, permissao_id, created_at)
 SELECT p.id, per.id, NOW()
 FROM perfis p
 INNER JOIN permissoes per ON per.slug IN ('conteudo.ver', 'conteudo.gerenciar')
 WHERE p.slug = 'conteudo'
-ON DUPLICATE KEY UPDATE created_at = created_at;
+ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 INSERT INTO perfil_permissoes (perfil_id, permissao_id, created_at)
 SELECT p.id, per.id, NOW()
 FROM perfis p
 INNER JOIN permissoes per ON per.slug IN ('marketing.ver', 'marketing.gerenciar')
 WHERE p.slug = 'marketing'
-ON DUPLICATE KEY UPDATE created_at = created_at;
+ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 INSERT INTO perfil_permissoes (perfil_id, permissao_id, created_at)
 SELECT p.id, per.id, NOW()
 FROM perfis p
 INNER JOIN permissoes per ON per.slug IN ('professor.ver')
 WHERE p.slug = 'professor'
-ON DUPLICATE KEY UPDATE created_at = created_at;
+ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 SET FOREIGN_KEY_CHECKS = 1;

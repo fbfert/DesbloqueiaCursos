@@ -187,20 +187,20 @@ SELECT p.id, per.id, NOW()
 FROM perfis p
 INNER JOIN permissoes per ON per.slug IN ('catalogo.ver', 'catalogo.gerenciar')
 WHERE p.slug = 'conteudo'
-ON DUPLICATE KEY UPDATE created_at = created_at;
+ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 INSERT INTO perfil_permissoes (perfil_id, permissao_id, created_at)
 SELECT p.id, per.id, NOW()
 FROM perfis p
 INNER JOIN permissoes per ON per.slug = 'catalogo.professor.ver'
 WHERE p.slug = 'professor'
-ON DUPLICATE KEY UPDATE created_at = created_at;
+ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 INSERT INTO perfil_permissoes (perfil_id, permissao_id, created_at)
 SELECT p.id, per.id, NOW()
 FROM perfis p
 CROSS JOIN permissoes per
 WHERE p.slug = 'superadmin'
-ON DUPLICATE KEY UPDATE created_at = created_at;
+ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 SET FOREIGN_KEY_CHECKS = 1;
