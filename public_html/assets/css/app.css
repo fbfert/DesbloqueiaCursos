@@ -1,0 +1,96 @@
+:root {
+    --color-bg: #f7f7fb;
+    --color-panel: #ffffff;
+    --color-text: #1f2933;
+    --color-muted: #5f6b7a;
+    --color-primary: #136f63;
+    --color-accent: #d946ef;
+    --color-border: #d8dee8;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.5;
+}
+
+.site-header,
+.site-main,
+.site-footer {
+    width: min(100%, 1080px);
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.brand {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.hero {
+    display: grid;
+    gap: 20px;
+    padding: 32px 0;
+}
+
+.hero h1 {
+    margin: 0;
+    font-size: 34px;
+    line-height: 1.1;
+}
+
+.hero p {
+    max-width: 720px;
+    margin: 0;
+    color: var(--color-muted);
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.status-card {
+    min-height: 112px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-panel);
+}
+
+.status-card strong {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.site-footer {
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+@media (min-width: 720px) {
+    .hero h1 {
+        font-size: 48px;
+    }
+
+    .status-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

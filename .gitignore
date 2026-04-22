@@ -1,0 +1,13 @@
+.env
+/storage/cache/*
+/storage/logs/*
+/storage/private_uploads/*
+/storage/trash/*
+!/storage/cache/.gitkeep
+!/storage/logs/.gitkeep
+!/storage/private_uploads/.gitkeep
+!/storage/trash/.gitkeep
+
+.DS_Store
+Thumbs.db
+*.log
