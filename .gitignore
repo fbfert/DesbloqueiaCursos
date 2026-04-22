@@ -11,3 +11,5 @@
 .DS_Store
 Thumbs.db
 *.log
+public_html/.codex/
+conversas.txt
