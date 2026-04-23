@@ -13,6 +13,19 @@ Use apenas dados ficticios nesta massa.
 | Professor PJ | Instituto Exemplo Ltda | 55.555.555/0001-55 | contato@institutoexemplo.local |
 | Aluno | Maria Teste | 666.666.666-66 | maria.teste@polorainbow.local |
 
+## Configuracoes
+
+| Item | Valor |
+|---|---|
+| Nome fantasia | Polo Rainbow |
+| Razao social | Polo Rainbow Educacao Ltda |
+| Cidade/UF | Sao Paulo/SP |
+| Prefixo de certificado | PR-2026 |
+| Template visual | padrao |
+| Politica de login | cpf_ou_email |
+| Reset de senha | 60 minutos |
+| Corte financeiro | 20 do mes |
+
 ## Cursos e Turmas
 
 | Tipo | Nome | Status |
@@ -35,6 +48,7 @@ Use apenas dados ficticios nesta massa.
 |---|---|
 | Prefixo | PR-2026 |
 | Template | Modelo Padrao HML |
+| Assinantes | Diretor Academico, Coordenador Pedagogico |
 
 ## Financeiro
 
@@ -43,3 +57,5 @@ Use apenas dados ficticios nesta massa.
 | Competencia de teste | 2026-04 |
 | Rateio maximo | 75% |
 | Base liquida | Pedido com cupom aplicado |
+| Professor PF | Ana Lima |
+| Professor PJ | Instituto Exemplo Ltda |

@@ -8,7 +8,8 @@ Guia objetivo para validar o portal antes de subir para producao.
 - Configurar `.env`
 - Configurar SMTP de homologacao
 - Garantir permissao de escrita em `storage/`
-- Ter um usuario admin com permissao de configuracoes, catalogo, pedidos, certificados e financeiro
+- Ter usuarios de admin, atendimento, financeiro e professor
+- Carregar a massa ficticia de `tests/Fixtures/homologacao.md`
 
 ## 2. Massa minima
 
@@ -29,6 +30,8 @@ Use os dados ficticios em `tests/Fixtures/homologacao.md`.
 - 1 cupom publico
 - 1 cupom privado
 - 1 template de certificado
+- 1 configuracao global institucional
+- 1 configuracao global financeira
 
 ## 3. Sequencia de homologacao
 
@@ -39,6 +42,13 @@ Use os dados ficticios em `tests/Fixtures/homologacao.md`.
 3. Entrar com e-mail.
 4. Forcar erro de senha e validar bloqueio temporario.
 5. Recuperar senha por token.
+
+### Dashboards
+
+1. Entrar no dashboard admin.
+2. Validar cards, filtros e indicadores comerciais/academicos/financeiros.
+3. Entrar no dashboard do professor.
+4. Validar que ve apenas cursos, turmas, repasses e indicadores proprios.
 
 ### Compra
 
@@ -74,6 +84,8 @@ Use os dados ficticios em `tests/Fixtures/homologacao.md`.
 - Pedido com comprovante reenviado deve manter historico.
 - Certificado deve ter validacao publica.
 - Somatorio de rateio nao pode passar de 75%.
+- Professor nao pode acessar dados financeiros globais.
+- Troca de IDs na URL nao pode expor pedido, inscricao, certificado ou area do curso de outro usuario.
 
 ## 5. Evidencias
 

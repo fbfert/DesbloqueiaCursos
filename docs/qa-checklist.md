@@ -1,108 +1,123 @@
 # QA Checklist
 
-Checklist funcional do portal Polo Rainbow para validação antes de produção.
+Checklist funcional do portal Polo Rainbow para validacao antes de producao.
 
-## Ambiente
+## 1. Ambiente
 
 - [ ] `.env` configurado
 - [ ] banco de dados aplicado
-- [ ] storage com permissão de escrita
-- [ ] acesso administrativo validado
-- [ ] dados fictícios de homologação carregados
+- [ ] storage com permissao de escrita
+- [ ] SMTP configurado para homologacao
+- [ ] dados ficticios de homologacao carregados
+- [ ] usuario admin com permissao de dashboard, catalogo, pedidos, certificados e financeiro
 
-## Autenticação
+## 2. Autenticacao
 
 - [ ] cadastro com nome, CPF, e-mail e consentimentos
 - [ ] login por e-mail
 - [ ] login por CPF
-- [ ] bloqueio temporário após tentativas inválidas
-- [ ] recuperação de senha por token
-- [ ] redefinição de senha dentro da validade
-- [ ] logout encerra sessão
+- [ ] bloqueio temporario apos tentativas invalidas
+- [ ] recuperacao de senha por token
+- [ ] redefinicao de senha dentro da validade
+- [ ] logout encerra sessao
+- [ ] logs de falha e tentativa indevida registrados
 
-## Catálogo
+## 3. Dashboards
 
-- [ ] lista pública de cursos e eventos
+- [ ] dashboard admin abre com cards e filtros
+- [ ] dashboard professor abre apenas com escopo proprio
+- [ ] professor nao ve totais globais do sistema
+- [ ] cards de vendas, usuarios, pedidos, inscricoes e certificados carregam
+
+## 4. Catalogo
+
+- [ ] lista publica de cursos e eventos
 - [ ] detalhe do curso/turma
-- [ ] visualização mobile-first
-- [ ] acesso público sem sessão para navegação
+- [ ] visualizacao mobile-first
+- [ ] acesso publico sem sessao para navegacao
+- [ ] professor ve apenas cursos/turmas atribuidos quando entra no painel dele
 
-## Checkout
+## 5. Checkout
 
-- [ ] compra própria
+- [ ] compra propria
 - [ ] compra para terceiros
 - [ ] compra em lote
 - [ ] cupom aplicado com sucesso
-- [ ] cupom rejeitado em curso em promoção
+- [ ] cupom rejeitado em curso em promocao
 - [ ] pedido gerado com status correto
 - [ ] comprovante PIX anexado pelo pagador
-- [ ] um único comprovante atual por pedido
-- [ ] reenvio de comprovante gera nova versão
-- [ ] aprovação administrativa do pedido
+- [ ] um unico comprovante atual por pedido
+- [ ] reenvio de comprovante gera nova versao
+- [ ] aprovacao administrativa do pedido
 
-## Minha Conta / Meus Cursos
+## 6. Minha Conta / Meus Cursos
 
-- [ ] lista de inscrições aprovadas
-- [ ] acesso restrito ao próprio usuário
-- [ ] link para área do curso
+- [ ] lista de inscricoes aprovadas
+- [ ] acesso restrito ao proprio usuario
+- [ ] link para area do curso
+- [ ] professor nao acessa dados de outro usuario
 
-## Área do Curso
+## 7. Area do Curso
 
-- [ ] acesso somente com inscrição aprovada
-- [ ] card de instruções visível
-- [ ] módulos exibidos na ordem
+- [ ] acesso somente com inscricao aprovada
+- [ ] card de instrucoes visivel
+- [ ] modulos exibidos na ordem
 - [ ] aulas exibidas na ordem
 - [ ] materiais para download funcionam
 - [ ] links externos funcionam
 - [ ] progresso inicial registrado
-- [ ] conclusão de aula registrada
-- [ ] conclusão de módulo registrada
+- [ ] conclusao de aula registrada
+- [ ] conclusao de modulo registrada
 
-## Presença e Avaliação
+## 8. Presenca e Avaliacao
 
-- [ ] presença registrada
-- [ ] percentual de presença calculado
-- [ ] avaliação cadastrada
+- [ ] presenca registrada
+- [ ] percentual de presenca calculado
+- [ ] avaliacao cadastrada
 - [ ] resposta do aluno registrada
 - [ ] nota final calculada
-- [ ] aptidão para certificado calculada
+- [ ] aptidao para certificado calculada
 
-## Certificados
+## 9. Certificados
 
 - [ ] certificado emitido manualmente
 - [ ] PDF gerado
-- [ ] validação pública sem login
-- [ ] código alfanumérico exibido
+- [ ] validacao publica sem login
+- [ ] codigo alfanumerico exibido
 - [ ] QR Code presente no PDF
-- [ ] CPF parcial na validação pública
+- [ ] CPF parcial na validacao publica
 - [ ] CPF completo no PDF
-- [ ] reemissão validada
-- [ ] revogação e cancelamento registrados
+- [ ] reemissao validada
+- [ ] revogacao e cancelamento registrados
 
-## Financeiro
+## 10. Financeiro
 
-- [ ] apuração mensal por competência
-- [ ] rateio sobre receita líquida
+- [ ] apuracao mensal por competencia
+- [ ] rateio sobre receita liquida
 - [ ] teto de 75% respeitado
-- [ ] cupom reduz a base líquida
+- [ ] cupom reduz a base liquida
 - [ ] PF gera espelho de RPA
 - [ ] PJ exige nota fiscal
-- [ ] professor vê apenas cursos/turmas atribuídos
+- [ ] professor ve apenas cursos/turmas atribuidos
+- [ ] professor ve apenas seus proprios repasses e indicadores
 
-## Segurança e Auditoria
+## 11. Segurança e Auditoria
 
-- [ ] CSRF em formulários sensíveis
-- [ ] ownership validado em pedido, inscrição e certificado
+- [ ] CSRF em formularios sensiveis
+- [ ] ownership validado em pedido, inscricao, certificado e area do curso
 - [ ] professor sem acesso a comprovantes PIX
+- [ ] acesso por troca de IDs bloqueado
 - [ ] logs de falha e tentativa indevida
-- [ ] auditoria gravada em mudanças relevantes
-- [ ] exclusões indo para lixeira com justificativa
+- [ ] auditoria gravada em mudancas relevantes
+- [ ] exclusoes indo para lixeira com justificativa
 
-## Evidências mínimas
+## 12. Evidencias minimas
 
 - [ ] captura de tela do login
+- [ ] captura de tela do dashboard admin
+- [ ] captura de tela do dashboard professor
 - [ ] captura de tela do checkout
-- [ ] captura de tela da área do curso
+- [ ] captura de tela da area do curso
 - [ ] captura de tela do certificado
 - [ ] captura de tela do financeiro
-- [ ] export dos logs de homologação
+- [ ] export dos logs de homologacao

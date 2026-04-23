@@ -86,6 +86,11 @@ $routes = array(
     '/api/health' => 200,
     '/admin' => 302,
     '/admin/dashboard' => 302,
+    '/admin/configuracoes-globais' => 302,
+    '/admin/financeiro' => 302,
+    '/admin/area-curso' => 302,
+    '/admin/certificados' => 302,
+    '/admin/cupons' => 302,
     '/meus-cursos' => 302,
     '/area-curso' => 302,
     '/admin/pedidos' => 302,
@@ -93,6 +98,8 @@ $routes = array(
     '/admin/comprovantes-pix' => 302,
     '/professor' => 302,
     '/professor/dashboard' => 302,
+    '/professor/financeiro' => 302,
+    '/professor/area-curso' => 302,
     '/certificados/validar' => 200,
 );
 

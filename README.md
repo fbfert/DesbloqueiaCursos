@@ -220,4 +220,4 @@ O pacote de validacao do portal fica em `docs/` e `tests/`.
 php tests/Smoke/smoke.php https://polorainbow.com.br
 ```
 
-O script valida rotas criticas do portal e retorna `0` quando tudo responde como esperado.
+O script valida rotas criticas do portal, incluindo dashboard admin, dashboard professor, areas protegidas, financeiro, configuracoes globais, certificados e validacao publica, e retorna `0` quando tudo responde como esperado.

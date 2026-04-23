@@ -18,6 +18,8 @@ Se nenhum argumento for informado, o script tenta ler `SMOKE_BASE_URL`.
 - recuperacao de senha
 - health check da API
 - redirecionamentos de areas protegidas
+- dashboard admin e professor
+- financeiro, configuracoes globais, certificados, cupons e area do curso
 - validacao publica de certificados
 
 ## Resultado
