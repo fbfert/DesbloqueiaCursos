@@ -485,6 +485,27 @@ class DashboardService
         );
     }
 
+    private function distinctValues($table, $column)
+    {
+        $sql = 'SELECT DISTINCT ' . $column . ' AS value
+                FROM ' . $table . '
+                WHERE deleted_at IS NULL
+                  AND ' . $column . ' IS NOT NULL
+                  AND ' . $column . ' <> ""
+                ORDER BY ' . $column . ' ASC';
+
+        $rows = $this->queryAll($sql);
+        $values = array();
+
+        foreach ($rows as $row) {
+            if (isset($row['value'])) {
+                $values[] = $row['value'];
+            }
+        }
+
+        return $values;
+    }
+
     private function countAvailableCourses()
     {
         return (int) $this->queryValue(
