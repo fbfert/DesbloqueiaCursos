@@ -6,7 +6,9 @@
 2. `PedidoService` permitia anexar participantes fora do fluxo operacional do checkout.
 3. `ComprovantePixService` aceitava upload sem checar o estado operacional do pedido.
 4. `CertificadoService` dependia apenas das rotas para restringir emissoes e alteracoes.
-5. O escopo do professor ja estava separado no dashboard e nas areas internas, mas precisava de validacao final em service para evitar acesso por troca de ids.
+5. O dashboard executivo chamava um helper inexistente (`distinctValues`) e derrubava a pagina quando autenticado.
+6. O log de homologacao mostrou mismatch de deploy para uma versao antiga de controller em um momento anterior; a publicacao foi sincronizada novamente no FTP.
+7. O escopo do professor ja estava separado no dashboard e nas areas internas, mas precisava de validacao final em service para evitar acesso por troca de ids.
 
 ## Correcoes aplicadas
 
@@ -16,7 +18,8 @@
 2. Adicionei validacao de estado em `ComprovantePixService` para permitir upload apenas nos estados operacionais do fluxo.
 3. Endureci `CertificadoService` com checagem direta de permissao para emissao, reemissao, cancelamento e revogacao.
 4. Mantive o CSRF centralizado no roteamento de `POST` e a injecao de token no renderer de views.
-5. Mantive registro de auditoria e log de negacao em middleware e services sensiveis.
+5. Inclui o helper `distinctValues` no `DashboardService` para estabilizar os filtros do dashboard executivo.
+6. Mantive registro de auditoria e log de negacao em middleware e services sensiveis.
 
 ## Pendencias restantes
 
