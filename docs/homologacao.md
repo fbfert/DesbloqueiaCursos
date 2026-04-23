@@ -32,6 +32,9 @@ Use os dados ficticios em `tests/Fixtures/homologacao.md`.
 - 1 template de certificado
 - 1 configuracao global institucional
 - 1 configuracao global financeira
+- 1 apuracao mensal
+- 1 rateio PF
+- 1 rateio PJ
 
 ## 3. Sequencia de homologacao
 
@@ -75,6 +78,13 @@ Use os dados ficticios em `tests/Fixtures/homologacao.md`.
 2. Gerar apuracao.
 3. Gerar repasse.
 4. Validar acesso do professor apenas aos cursos vinculados.
+5. Criar rateio PF.
+6. Criar rateio PJ.
+7. Editar um rateio existente.
+8. Excluir um rateio com justificativa.
+9. Tentar ultrapassar 75% e confirmar bloqueio.
+10. Tentar repetir o mesmo participante no mesmo contexto e confirmar bloqueio.
+11. Validar reflexo do rateio no financeiro.
 
 ## 4. Criticos de aceite
 
@@ -84,6 +94,7 @@ Use os dados ficticios em `tests/Fixtures/homologacao.md`.
 - Pedido com comprovante reenviado deve manter historico.
 - Certificado deve ter validacao publica.
 - Somatorio de rateio nao pode passar de 75%.
+- Rateio nao pode repetir o mesmo participante no mesmo contexto.
 - Professor nao pode acessar dados financeiros globais.
 - Troca de IDs na URL nao pode expor pedido, inscricao, certificado ou area do curso de outro usuario.
 

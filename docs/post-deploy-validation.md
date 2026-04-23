@@ -12,6 +12,7 @@ Checklist curto para confirmar se a publicacao subiu limpa.
 - [ ] `/api/health`
 - [ ] `/admin`
 - [ ] `/admin/dashboard`
+- [ ] `/admin/rateios`
 - [ ] `/professor`
 - [ ] `/professor/dashboard`
 - [ ] `/certificados/validar`
@@ -30,6 +31,7 @@ Checklist curto para confirmar se a publicacao subiu limpa.
 - [ ] progresso sendo exibido
 - [ ] certificado validando por codigo
 - [ ] financeiro do professor abrindo com escopo proprio
+- [ ] rateios abrindo no admin
 
 ## Permissoes
 
@@ -38,6 +40,7 @@ Checklist curto para confirmar se a publicacao subiu limpa.
 - [ ] professor nao ve comprovantes PIX
 - [ ] aluno ve somente os proprios cursos
 - [ ] usuario nao autenticado nao acessa area protegida
+- [ ] rateios respeitam o escopo admin
 
 ## Storage e arquivos privados
 
@@ -48,6 +51,7 @@ Checklist curto para confirmar se a publicacao subiu limpa.
 - [ ] upload real de comprovante funcionando
 - [ ] abertura protegida de comprovante funcionando
 - [ ] abertura protegida de certificado funcionando
+- [ ] acesso ao rateio no admin funcionando
 
 ## SMTP
 
@@ -69,6 +73,7 @@ Considerar publicado com sucesso somente se:
 - certificado estiver validando
 - dashboards estiverem abrindo
 - logs e auditoria estiverem registrando
+- rateios estiverem carregando sem erro e com teto de 75% respeitado
 
 ## Sinais de rollback imediato
 
@@ -84,4 +89,3 @@ Acionar rollback se ocorrer qualquer um dos pontos abaixo:
 - SMTP falhando
 - logs parados
 - migration com erro ou schema desalinhado
-

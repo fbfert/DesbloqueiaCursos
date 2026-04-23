@@ -32,6 +32,35 @@ class CursoRateioParticipante
         return (int) Database::connection()->lastInsertId();
     }
 
+    public function update(array $data, $id)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE cursos_rateio_participantes
+             SET tipo_fiscal = :tipo_fiscal,
+                 percentual = :percentual,
+                 valor_base = :valor_base,
+                 valor_rateado = :valor_rateado,
+                 retencao_percentual = :retencao_percentual,
+                 valor_retenido = :valor_retenido,
+                 valor_liquido = :valor_liquido,
+                 status = :status,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array(
+            'tipo_fiscal' => isset($data['tipo_fiscal']) ? $data['tipo_fiscal'] : 'pf',
+            'percentual' => $data['percentual'],
+            'valor_base' => $data['valor_base'],
+            'valor_rateado' => $data['valor_rateado'],
+            'retencao_percentual' => $data['retencao_percentual'],
+            'valor_retenido' => $data['valor_retenido'],
+            'valor_liquido' => $data['valor_liquido'],
+            'status' => isset($data['status']) ? $data['status'] : 'pendente',
+            'id' => $id,
+        ));
+    }
+
     public function findByRateio($cursoRateioId)
     {
         $stmt = Database::connection()->prepare(
@@ -48,6 +77,51 @@ class CursoRateioParticipante
         $stmt->execute(array('curso_rateio_id' => $cursoRateioId));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findByRateioAndUsuario($cursoRateioId, $usuarioId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM cursos_rateio_participantes
+             WHERE curso_rateio_id = :curso_rateio_id
+               AND usuario_id = :usuario_id
+               AND deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array(
+            'curso_rateio_id' => $cursoRateioId,
+            'usuario_id' => $usuarioId,
+        ));
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function softDelete($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE cursos_rateio_participantes
+             SET deleted_at = NOW(),
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array('id' => $id));
+    }
+
+    public function softDeleteByRateio($cursoRateioId)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE cursos_rateio_participantes
+             SET deleted_at = NOW(),
+                 updated_at = NOW()
+             WHERE curso_rateio_id = :curso_rateio_id
+               AND deleted_at IS NULL'
+        );
+
+        $stmt->execute(array('curso_rateio_id' => $cursoRateioId));
     }
 
     public function allForProfessor($usuarioId)

@@ -59,3 +59,5 @@ Use apenas dados ficticios nesta massa.
 | Base liquida | Pedido com cupom aplicado |
 | Professor PF | Ana Lima |
 | Professor PJ | Instituto Exemplo Ltda |
+| Rateio PF | Curso de Teste Padrao / Turma Presencial 01 |
+| Rateio PJ | Curso de Teste Padrao / Turma Online Ao Vivo 01 |

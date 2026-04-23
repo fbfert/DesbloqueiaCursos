@@ -91,6 +91,7 @@ $routes = array(
     '/admin/area-curso' => 302,
     '/admin/certificados' => 302,
     '/admin/cupons' => 302,
+    '/admin/rateios' => 302,
     '/meus-cursos' => 302,
     '/area-curso' => 302,
     '/admin/pedidos' => 302,

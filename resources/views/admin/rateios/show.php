@@ -13,8 +13,10 @@
         <dt>Desconto cupons</dt><dd>R$ <?php echo number_format((float) $rateio['desconto_cupons'], 2, ',', '.'); ?></dd>
         <dt>Base liquida</dt><dd>R$ <?php echo number_format((float) $rateio['base_liquida'], 2, ',', '.'); ?></dd>
         <dt>Percentual</dt><dd><?php echo number_format((float) $rateio['percentual_total'], 2, ',', '.'); ?>%</dd>
+        <dt>Restante da empresa</dt><dd><?php echo number_format((float) ($rateio['percentual_restante_empresa'] ?? 0), 2, ',', '.'); ?>%</dd>
         <dt>Valor rateado</dt><dd>R$ <?php echo number_format((float) $rateio['valor_rateio_total'], 2, ',', '.'); ?></dd>
         <dt>Status</dt><dd><?php echo Helpers::e($rateio['status']); ?></dd>
+        <dt>Observacoes</dt><dd><?php echo nl2br(Helpers::e($rateio['observacoes'] ?? '')); ?></dd>
     </dl>
 </section>
 
@@ -22,7 +24,20 @@
     <div class="split-actions">
         <a href="/admin/rateios">Voltar</a>
         <a href="/admin/financeiro/repasses?apuracao_id=<?php echo (int) $rateio['apuracao_id']; ?>">Ver repasses</a>
+        <a href="/admin/rateios/editar?rateio_id=<?php echo (int) $rateio['id']; ?>">Editar</a>
     </div>
+</section>
+
+<section class="status-card">
+    <strong>Excluir rateio</strong>
+    <form method="post" action="/admin/rateios/excluir" class="admin-form">
+        <input type="hidden" name="id" value="<?php echo (int) $rateio['id']; ?>">
+        <label class="full">
+            Justificativa
+            <textarea name="justificativa" rows="3" required></textarea>
+        </label>
+        <button type="submit">Enviar para a lixeira</button>
+    </form>
 </section>
 
 <section class="status-card">

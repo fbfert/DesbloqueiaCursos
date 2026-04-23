@@ -100,6 +100,10 @@ Checklist funcional do portal Polo Rainbow para validacao antes de producao.
 - [ ] PJ exige nota fiscal
 - [ ] professor ve apenas cursos/turmas atribuidos
 - [ ] professor ve apenas seus proprios repasses e indicadores
+- [ ] rateio com criacao, edicao, exclusao logica e validacao de duplicidade
+- [ ] rateio PF criado e refletido no financeiro
+- [ ] rateio PJ criado e refletido no financeiro
+- [ ] bloqueio de soma acima de 75% validado no backend
 
 ## 11. Segurança e Auditoria
 

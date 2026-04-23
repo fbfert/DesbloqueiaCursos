@@ -98,7 +98,12 @@ $app->post('/admin/professores-fiscais/editar', array(AdminProfessoresFiscaisCon
 $app->get('/admin/professores-fiscais/show', array(AdminProfessoresFiscaisController::class, 'show'), array('auth', 'permission:financeiro.ver'));
 $app->post('/admin/professores-fiscais/excluir', array(AdminProfessoresFiscaisController::class, 'destroy'), array('auth', 'permission:financeiro.gerenciar'));
 $app->get('/admin/rateios', array(AdminRateiosController::class, 'index'), array('auth', 'permission:financeiro.ver'));
+$app->get('/admin/rateios/criar', array(AdminRateiosController::class, 'create'), array('auth', 'permission:financeiro.gerenciar'));
+$app->post('/admin/rateios/criar', array(AdminRateiosController::class, 'store'), array('auth', 'permission:financeiro.gerenciar'));
+$app->get('/admin/rateios/editar', array(AdminRateiosController::class, 'edit'), array('auth', 'permission:financeiro.gerenciar'));
+$app->post('/admin/rateios/editar', array(AdminRateiosController::class, 'update'), array('auth', 'permission:financeiro.gerenciar'));
 $app->get('/admin/rateios/show', array(AdminRateiosController::class, 'show'), array('auth', 'permission:financeiro.ver'));
+$app->post('/admin/rateios/excluir', array(AdminRateiosController::class, 'destroy'), array('auth', 'permission:financeiro.gerenciar'));
 $app->get('/admin/pedidos', array(PedidosController::class, 'index'), array('auth', 'permission:pedidos.ver'));
 $app->get('/admin/pedidos/show', array(PedidosController::class, 'show'), array('auth', 'permission:pedidos.ver'));
 $app->post('/admin/pedidos/aprovar', array(PedidosController::class, 'aprovar'), array('auth', 'permission:pedidos.ver'));
