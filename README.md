@@ -179,3 +179,22 @@ A base financeira do portal trabalha com apuracao mensal por competencia, rateio
 - exigencia de nota fiscal para PJ
 - espelho de RPA para PF
 - logs, auditoria e rastreio de mudancas relevantes
+
+## QA e Homologacao
+
+O pacote de validacao do portal fica em `docs/` e `tests/`.
+
+### Arquivos principais
+
+- `docs/qa-checklist.md`
+- `docs/homologacao.md`
+- `tests/Smoke/smoke.php`
+- `tests/Fixtures/homologacao.md`
+
+### Smoke test
+
+```bash
+php tests/Smoke/smoke.php https://polorainbow.com.br
+```
+
+O script valida rotas criticas do portal e retorna `0` quando tudo responde como esperado.
