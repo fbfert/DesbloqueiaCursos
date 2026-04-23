@@ -36,11 +36,20 @@ class ComprovantePixService
             return array('ok' => false, 'message' => 'Pedido nao encontrado.');
         }
 
+        if (!$this->pedidoAutorizadoParaUpload($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('comprovante_pix.upload_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para enviar comprovante neste pedido.');
+        }
+
         if (empty($arquivo['tmp_name']) || empty($arquivo['name'])) {
             return array('ok' => false, 'message' => 'Selecione um comprovante valido.');
         }
 
-        $stored = $this->fileStorage->storeUploadedFile($arquivo, 'comprovantes_pix/' . $pedidoId, 'pix');
+        $stored = $this->fileStorage->storeUploadedFile($arquivo, 'comprovantes_pix/' . $pedidoId, 'pix', array(
+            'max_size_bytes' => 10 * 1024 * 1024,
+            'allowed_extensions' => array('pdf', 'jpg', 'jpeg', 'png', 'webp'),
+            'allowed_mime_types' => array('application/pdf', 'image/jpeg', 'image/png', 'image/webp'),
+        ));
 
         $payload = array(
             'pedido_id' => $pedidoId,
@@ -134,6 +143,11 @@ class ComprovantePixService
             return array('ok' => false, 'message' => 'Pedido do comprovante nao encontrado.');
         }
 
+        if (!$this->podeGerirFinanceiro($actorUserId)) {
+            $this->registrarAcessoNegado('comprovante_pix.aprovar_negado', $pedido['id'], $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -210,6 +224,11 @@ class ComprovantePixService
             return array('ok' => false, 'message' => 'Pedido do comprovante nao encontrado.');
         }
 
+        if (!$this->podeGerirFinanceiro($actorUserId)) {
+            $this->registrarAcessoNegado('comprovante_pix.reprovar_negado', $pedido['id'], $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -270,5 +289,42 @@ class ComprovantePixService
 
             throw $exception;
         }
+    }
+
+    private function pedidoAutorizadoParaUpload(array $pedido, $usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        if ($this->podeGerirFinanceiro($usuarioId)) {
+            return true;
+        }
+
+        return ((int) $pedido['comprador_usuario_id'] === (int) $usuarioId)
+            || ((int) $pedido['pagador_usuario_id'] === (int) $usuarioId);
+    }
+
+    private function podeGerirFinanceiro($usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        return $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
+            || $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar')
+            || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver');
+    }
+
+    private function registrarAcessoNegado($evento, $pedidoId, $usuarioId, $ipAddress, $userAgent)
+    {
+        $payload = array(
+            'pedido_id' => $pedidoId,
+            'usuario_id' => $usuarioId,
+            'ip_address' => $ipAddress,
+        );
+
+        $this->auditService->record($evento, 'pedido', $pedidoId, $payload, $usuarioId, $ipAddress, $userAgent);
+        Logger::error($evento, $payload);
     }
 }

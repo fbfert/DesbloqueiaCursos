@@ -12,6 +12,13 @@ class View
             return 'View not found: ' . htmlspecialchars($template, ENT_QUOTES, 'UTF-8');
         }
 
+        if (trim((string) $baseDirectory, '/\\') === 'views') {
+            $data = array_merge($data, array(
+                'csrfToken' => Csrf::token(),
+                'csrfField' => Csrf::field(),
+            ));
+        }
+
         extract($data);
 
         ob_start();
@@ -19,11 +26,11 @@ class View
         $content = ob_get_clean();
 
         if (!$useLayout) {
-            return $content;
+            return Csrf::injectIntoHtml($content);
         }
 
         ob_start();
         require BASE_PATH . '/resources/views/layout.php';
-        return ob_get_clean();
+        return Csrf::injectIntoHtml(ob_get_clean());
     }
 }

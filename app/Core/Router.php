@@ -13,6 +13,9 @@ class Router
 
     public function post($path, $handler, array $middleware = array())
     {
+        if (!in_array('csrf', $middleware, true)) {
+            array_unshift($middleware, 'csrf');
+        }
         $this->add('POST', $path, $handler, $middleware);
     }
 
@@ -83,6 +86,7 @@ class Router
 
             $map = array(
                 'auth' => '\\App\\Middleware\\AuthenticateMiddleware',
+                'csrf' => '\\App\\Middleware\\CsrfMiddleware',
                 'permission' => '\\App\\Middleware\\PermissionMiddleware',
             );
 

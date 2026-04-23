@@ -62,7 +62,30 @@ class MaterialService
             if (!empty($payload['turma_id'])) {
                 $diretorio .= '/turma-' . (int) $payload['turma_id'];
             }
-            $upload = $this->fileStorageService->storeUploadedFile($arquivo, $diretorio, 'material');
+            $upload = $this->fileStorageService->storeUploadedFile($arquivo, $diretorio, 'material', array(
+                'max_size_bytes' => 20 * 1024 * 1024,
+                'allowed_extensions' => array('pdf', 'xls', 'xlsx', 'csv', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'doc', 'docx', 'odt', 'ods', 'odp', 'txt', 'zip'),
+                'allowed_mime_types' => array(
+                    'application/pdf',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'text/csv',
+                    'application/vnd.ms-powerpoint',
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                    'image/jpeg',
+                    'image/png',
+                    'image/gif',
+                    'image/webp',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.oasis.opendocument.text',
+                    'application/vnd.oasis.opendocument.spreadsheet',
+                    'application/vnd.oasis.opendocument.presentation',
+                    'text/plain',
+                    'application/zip',
+                    'application/x-zip-compressed',
+                ),
+            ));
             $payload['arquivo_caminho'] = $upload['relative_path'];
             $payload['arquivo_nome_original'] = $upload['original_name'];
             $payload['arquivo_mime_type'] = $upload['mime_type'];

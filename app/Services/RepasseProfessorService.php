@@ -163,7 +163,18 @@ class RepasseProfessorService
             return array('ok' => false, 'message' => 'Repasse nao encontrado.');
         }
 
-        $stored = $this->fileStorageService->storeUploadedFile($file, 'financeiro/documentos', 'documento');
+        $stored = $this->fileStorageService->storeUploadedFile($file, 'financeiro/documentos', 'documento', array(
+            'max_size_bytes' => 20 * 1024 * 1024,
+            'allowed_extensions' => array('pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx'),
+            'allowed_mime_types' => array(
+                'application/pdf',
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ),
+        ));
 
         $documentoId = $this->documentoModel->create(array(
             'repasse_professor_id' => $repasseId,
@@ -202,7 +213,7 @@ class RepasseProfessorService
         return array('ok' => true, 'documento_id' => $documentoId);
     }
 
-    public function registrarPagamento($repasseId, array $dados, array $arquivo = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function registrarPagamento($repasseId, array $dados, ?array $arquivo = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $repasse = $this->repasseModel->findById($repasseId);
         if (!$repasse) {
@@ -211,7 +222,11 @@ class RepasseProfessorService
 
         $stored = null;
         if (!empty($arquivo) && !empty($arquivo['tmp_name'])) {
-            $stored = $this->fileStorageService->storeUploadedFile($arquivo, 'financeiro/pagamentos', 'comprovante');
+            $stored = $this->fileStorageService->storeUploadedFile($arquivo, 'financeiro/pagamentos', 'comprovante', array(
+                'max_size_bytes' => 20 * 1024 * 1024,
+                'allowed_extensions' => array('pdf', 'jpg', 'jpeg', 'png', 'webp'),
+                'allowed_mime_types' => array('application/pdf', 'image/jpeg', 'image/png', 'image/webp'),
+            ));
         }
 
         $pagamentoId = $this->pagamentoModel->create(array(
@@ -254,7 +269,7 @@ class RepasseProfessorService
         );
     }
 
-    public function gerarEspelhoRpa($repasseId, array $apuracao = null, array $dados = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function gerarEspelhoRpa($repasseId, ?array $apuracao = null, array $dados = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $repasse = $this->repasseModel->findById($repasseId);
         if (!$repasse) {

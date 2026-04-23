@@ -7,6 +7,7 @@ use App\Core\Logger;
 use App\Models\Aula;
 use App\Models\CursoEvento;
 use App\Models\Inscricao;
+use App\Models\Pedido;
 use App\Models\Modulo;
 use App\Models\Turma;
 use App\Models\ProgressoUsuarioAula;
@@ -20,10 +21,12 @@ class ProgressoService
     private $turmaModel;
     private $moduloModel;
     private $aulaModel;
+    private $pedidoModel;
     private $progressoModuloModel;
     private $progressoAulaModel;
     private $aptidaoService;
     private $auditService;
+    private $rbacService;
 
     public function __construct()
     {
@@ -32,10 +35,12 @@ class ProgressoService
         $this->turmaModel = new Turma();
         $this->moduloModel = new Modulo();
         $this->aulaModel = new Aula();
+        $this->pedidoModel = new Pedido();
         $this->progressoModuloModel = new ProgressoUsuarioModulo();
         $this->progressoAulaModel = new ProgressoUsuarioAula();
         $this->aptidaoService = new AptidaoCertificadoService();
         $this->auditService = new AuditService();
+        $this->rbacService = new RbacService();
     }
 
     public function concluirAula($inscricaoId, $aulaId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -45,6 +50,16 @@ class ProgressoService
 
         if (!$inscricao || !$aula) {
             return array('ok' => false, 'message' => 'Inscricao ou aula nao encontrada.');
+        }
+
+        if (!$this->inscricaoPertenceAoUsuario($inscricao, $usuarioId)) {
+            $this->registrarAcessoNegado('area_curso.aula.negado', $inscricaoId, $usuarioId, $aulaId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para concluir esta aula.');
+        }
+
+        if (!$this->aulaPertenceAoContexto($aula, $inscricao)) {
+            $this->registrarAcessoNegado('area_curso.aula.contexto_invalido', $inscricaoId, $usuarioId, $aulaId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Aula nao pertence ao contexto desta inscricao.');
         }
 
         $pdo = Database::connection();
@@ -93,6 +108,16 @@ class ProgressoService
 
         if (!$inscricao || !$modulo) {
             return array('ok' => false, 'message' => 'Inscricao ou modulo nao encontrado.');
+        }
+
+        if (!$this->inscricaoPertenceAoUsuario($inscricao, $usuarioId)) {
+            $this->registrarAcessoNegado('area_curso.modulo.negado', $inscricaoId, $usuarioId, $moduloId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para concluir este modulo.');
+        }
+
+        if (!$this->moduloPertenceAoContexto($modulo, $inscricao)) {
+            $this->registrarAcessoNegado('area_curso.modulo.contexto_invalido', $inscricaoId, $usuarioId, $moduloId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Modulo nao pertence ao contexto desta inscricao.');
         }
 
         $pdo = Database::connection();
@@ -252,5 +277,81 @@ class ProgressoService
         }
 
         return $config;
+    }
+
+    private function inscricaoPertenceAoUsuario(array $inscricao, $usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        if ($this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
+            || $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar')
+            || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver')) {
+            return true;
+        }
+
+        if (!empty($inscricao['usuario_id']) && (int) $inscricao['usuario_id'] === (int) $usuarioId) {
+            return true;
+        }
+
+        $pedido = $this->pedidoModel->findById((int) $inscricao['pedido_id']);
+        if (!$pedido) {
+            return false;
+        }
+
+        return ((int) $pedido['comprador_usuario_id'] === (int) $usuarioId)
+            || ((int) $pedido['pagador_usuario_id'] === (int) $usuarioId);
+    }
+
+    private function registrarAcessoNegado($evento, $inscricaoId, $usuarioId, $recursoId = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $payload = array(
+            'inscricao_id' => $inscricaoId,
+            'usuario_id' => $usuarioId,
+            'recurso_id' => $recursoId,
+        );
+
+        $this->auditService->record($evento, 'inscricao', $inscricaoId, $payload, $actorUserId, $ipAddress, $userAgent);
+        Logger::error($evento, $payload);
+    }
+
+    private function aulaPertenceAoContexto(array $aula, array $inscricao)
+    {
+        if ((int) $aula['curso_evento_id'] !== (int) $inscricao['curso_evento_id']) {
+            return false;
+        }
+
+        if (!empty($aula['turma_id'])) {
+            if (empty($inscricao['turma_id']) || (int) $aula['turma_id'] !== (int) $inscricao['turma_id']) {
+                return false;
+            }
+        }
+
+        if (!empty($aula['modulo_id'])) {
+            $modulo = $this->moduloModel->findById((int) $aula['modulo_id']);
+            if (!$modulo) {
+                return false;
+            }
+
+            return $this->moduloPertenceAoContexto($modulo, $inscricao);
+        }
+
+        return true;
+    }
+
+    private function moduloPertenceAoContexto(array $modulo, array $inscricao)
+    {
+        if ((int) $modulo['curso_evento_id'] !== (int) $inscricao['curso_evento_id']) {
+            return false;
+        }
+
+        if (!empty($modulo['turma_id'])) {
+            if (empty($inscricao['turma_id']) || (int) $modulo['turma_id'] !== (int) $inscricao['turma_id']) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

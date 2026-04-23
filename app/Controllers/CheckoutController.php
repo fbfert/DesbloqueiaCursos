@@ -123,18 +123,16 @@ class CheckoutController extends Controller
             return $this->redirect('/cursos');
         }
 
+        $pedidoAcesso = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
+        if (empty($pedidoAcesso['pedido'])) {
+            Session::flash('errors', array('pedido' => 'Voce nao tem permissao para acessar este pedido.'));
+            return $this->redirect('/cursos');
+        }
+
         if ($request->method() !== 'POST') {
-            $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
-
-            if (empty($pedido['pedido'])) {
-                return new Response(View::render('errors/404', array(
-                    'title' => 'Pedido nao encontrado',
-                )), 404);
-            }
-
             return $this->view('checkout/cupom', array(
                 'title' => 'Aplicar cupom',
-                'pedido' => $pedido['pedido'],
+                'pedido' => $pedidoAcesso['pedido'],
                 'loggedIn' => Session::get('usuario_id') !== null,
                 'usuarioNome' => Session::get('usuario_nome'),
             ));
@@ -277,6 +275,12 @@ class CheckoutController extends Controller
             return $this->redirect('/login');
         }
 
+        $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
+        if (empty($pedido['pedido'])) {
+            Session::flash('errors', array('pedido' => 'Voce nao tem permissao para alterar este pedido.'));
+            return $this->redirect('/cursos');
+        }
+
         $participantes = $request->input('participantes', array());
         if (!is_array($participantes)) {
             $participantes = array();
@@ -317,6 +321,12 @@ class CheckoutController extends Controller
         if (!Session::get('usuario_id')) {
             Session::flash('errors', array('auth' => 'Faça login para enviar o comprovante.'));
             return $this->redirect('/login');
+        }
+
+        $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
+        if (empty($pedido['pedido'])) {
+            Session::flash('errors', array('pedido' => 'Voce nao tem permissao para acessar este pedido.'));
+            return $this->redirect('/cursos');
         }
 
         if (!isset($_FILES['comprovante']) || empty($_FILES['comprovante']['tmp_name'])) {

@@ -7,6 +7,7 @@ use App\Models\ApuracaoMensal;
 use App\Models\ProfessorFiscal;
 use App\Models\Usuario;
 use App\Models\RepasseProfessor;
+use App\Services\RbacService;
 
 class FinanceiroService
 {
@@ -18,6 +19,7 @@ class FinanceiroService
     private $professorFiscalModel;
     private $usuarioModel;
     private $auditService;
+    private $rbacService;
 
     public function __construct()
     {
@@ -29,6 +31,7 @@ class FinanceiroService
         $this->professorFiscalModel = new ProfessorFiscal();
         $this->usuarioModel = new Usuario();
         $this->auditService = new AuditService();
+        $this->rbacService = new RbacService();
     }
 
     public function painelAdmin()
@@ -75,11 +78,21 @@ class FinanceiroService
 
     public function gerarRepasses($apuracaoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        if (!$this->podeGerirFinanceiro($actorUserId)) {
+            $this->registrarAcessoNegado('financeiro.repasses.negado', $apuracaoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         return $this->repasseService->gerarRepassesDaApuracao($apuracaoId, $actorUserId, $ipAddress, $userAgent);
     }
 
     public function salvarProfessorFiscal(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        if (!$this->podeGerirFinanceiro($actorUserId)) {
+            $this->registrarAcessoNegado('financeiro.professor_fiscal.negado', isset($data['usuario_id']) ? $data['usuario_id'] : null, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         if (empty($data['usuario_id']) || (int) $data['usuario_id'] <= 0) {
             return array('ok' => false, 'message' => 'Informe o professor.');
         }
@@ -98,11 +111,21 @@ class FinanceiroService
 
     public function registrarDocumento($repasseId, array $file, $tipoDocumento = 'outro', $numeroDocumento = null, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        if (!$this->podeManipularRepasse($repasseId, $actorUserId)) {
+            $this->registrarAcessoNegado('financeiro.documento.negado', $repasseId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         return $this->repasseService->anexarDocumento($repasseId, $file, $tipoDocumento, $numeroDocumento, $observacao, $actorUserId, $ipAddress, $userAgent);
     }
 
     public function registrarPagamento($repasseId, array $dados, ?array $arquivo = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        if (!$this->podeManipularRepasse($repasseId, $actorUserId)) {
+            $this->registrarAcessoNegado('financeiro.pagamento.negado', $repasseId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         return $this->repasseService->registrarPagamento($repasseId, $dados, $arquivo, $actorUserId, $ipAddress, $userAgent);
     }
 
@@ -113,5 +136,45 @@ class FinanceiroService
         }
 
         return $this->repasseModel->allAdmin();
+    }
+
+    private function podeGerirFinanceiro($usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        return $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver')
+            || $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver');
+    }
+
+    private function podeManipularRepasse($repasseId, $usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        if ($this->podeGerirFinanceiro($usuarioId)) {
+            return true;
+        }
+
+        $repasse = $this->repasseModel->findById($repasseId);
+        if (!$repasse) {
+            return false;
+        }
+
+        return (int) $repasse['usuario_id'] === (int) $usuarioId;
+    }
+
+    private function registrarAcessoNegado($evento, $recursoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $payload = array(
+            'recurso_id' => $recursoId,
+            'usuario_id' => $actorUserId,
+            'ip_address' => $ipAddress,
+        );
+
+        $this->auditService->record($evento, 'financeiro', $recursoId, $payload, $actorUserId, $ipAddress, $userAgent);
+        Logger::error($evento, $payload);
     }
 }

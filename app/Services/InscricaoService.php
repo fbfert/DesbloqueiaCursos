@@ -48,6 +48,11 @@ class InscricaoService
             return array('ok' => false, 'message' => 'Pedido nao encontrado.');
         }
 
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('inscricao.gerar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para gerar inscricoes deste pedido.');
+        }
+
         $itens = $this->pedidoItemModel->forPedido($pedidoId);
         $pdo = Database::connection();
         $pdo->beginTransaction();
@@ -167,6 +172,11 @@ class InscricaoService
             return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
+        if (!$this->inscricaoPodeSerAcessadaPor($inscricao, $actorUserId)) {
+            $this->registrarAcessoNegado('inscricao.status.negado', $inscricaoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para alterar esta inscricao.');
+        }
+
         $statusValidos = array(
             'pendente',
             'com_pendencia',
@@ -245,6 +255,11 @@ class InscricaoService
 
         if (!$inscricao) {
             return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+        }
+
+        if (!$this->inscricaoPodeSerAcessadaPor($inscricao, $actorUserId)) {
+            $this->registrarAcessoNegado('inscricao.excluir_negado', $inscricaoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para excluir esta inscricao.');
         }
 
         $pdo = Database::connection();
@@ -361,5 +376,53 @@ class InscricaoService
             'certificado_pdf_url' => isset($certificado['codigo']) ? Helpers::url('certificados/pdf?codigo=' . urlencode($certificado['codigo'])) : null,
             'certificado_validacao_url' => isset($certificado['codigo']) ? Helpers::url('certificados/validar?codigo=' . urlencode($certificado['codigo'])) : null,
         );
+    }
+
+    private function pedidoPodeSerAcessadoPor(array $pedido, $usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        if ($this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
+            || $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar')
+            || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver')) {
+            return true;
+        }
+
+        return ((int) $pedido['comprador_usuario_id'] === (int) $usuarioId)
+            || ((int) $pedido['pagador_usuario_id'] === (int) $usuarioId);
+    }
+
+    private function inscricaoPodeSerAcessadaPor(array $inscricao, $usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        if ($this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
+            || $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar')
+            || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver')) {
+            return true;
+        }
+
+        $pedido = $this->pedidoModel->findById((int) $inscricao['pedido_id']);
+        if (!$pedido) {
+            return false;
+        }
+
+        return $this->pedidoPodeSerAcessadoPor($pedido, $usuarioId);
+    }
+
+    private function registrarAcessoNegado($evento, $inscricaoId, $usuarioId, $ipAddress = null, $userAgent = null)
+    {
+        $payload = array(
+            'inscricao_id' => $inscricaoId,
+            'usuario_id' => $usuarioId,
+            'ip_address' => $ipAddress,
+        );
+
+        $this->auditService->record($evento, 'inscricao', $inscricaoId, $payload, $usuarioId, $ipAddress, $userAgent);
+        Logger::error($evento, $payload);
     }
 }

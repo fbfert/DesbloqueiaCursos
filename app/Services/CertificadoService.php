@@ -14,6 +14,7 @@ use App\Models\Inscricao;
 use App\Models\Pedido;
 use App\Models\ParticipantePedido;
 use App\Models\Turma;
+use App\Services\RbacService;
 use Exception;
 
 class CertificadoService
@@ -32,6 +33,7 @@ class CertificadoService
     private $inscricaoService;
     private $templateService;
     private $globalConfigService;
+    private $rbacService;
 
     public function __construct()
     {
@@ -49,6 +51,7 @@ class CertificadoService
         $this->inscricaoService = new InscricaoService();
         $this->templateService = new CertificadoTemplateService();
         $this->globalConfigService = new ConfiguracaoGlobalService();
+        $this->rbacService = new RbacService();
     }
 
     public function listarAptos()
@@ -284,6 +287,38 @@ class CertificadoService
         }
 
         return $this->pdfContentForCertificate($certificado);
+    }
+
+    public function usuarioPodeAcessarCertificado(array $certificado, $usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        if ($this->rbacService->userHasPermission($usuarioId, 'certificados.ver')
+            || $this->rbacService->userHasPermission($usuarioId, 'certificados.gerenciar')) {
+            return true;
+        }
+
+        if (!empty($certificado['usuario_id']) && (int) $certificado['usuario_id'] === (int) $usuarioId) {
+            return true;
+        }
+
+        if (!empty($certificado['pedido_id'])) {
+            $pedido = $this->pedidoModel->findById((int) $certificado['pedido_id']);
+            if ($pedido && ((int) $pedido['comprador_usuario_id'] === (int) $usuarioId || (int) $pedido['pagador_usuario_id'] === (int) $usuarioId)) {
+                return true;
+            }
+        }
+
+        if (!empty($certificado['inscricao_id'])) {
+            $inscricao = $this->inscricaoModel->findById((int) $certificado['inscricao_id']);
+            if ($inscricao && !empty($inscricao['usuario_id']) && (int) $inscricao['usuario_id'] === (int) $usuarioId) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function certificadoParaEmail(?array $certificado = null)

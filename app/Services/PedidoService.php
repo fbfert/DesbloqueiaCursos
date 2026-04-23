@@ -122,6 +122,11 @@ class PedidoService
             return array('ok' => false, 'message' => 'Pedido nao encontrado.');
         }
 
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('pedido.participantes.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para alterar este pedido.');
+        }
+
         $itens = $this->pedidoItemModel->forPedido($pedidoId);
         if (empty($itens)) {
             return array('ok' => false, 'message' => 'Pedido sem itens.');
@@ -193,6 +198,11 @@ class PedidoService
             return array('ok' => false, 'message' => 'Pedido nao encontrado.');
         }
 
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('pedido.checkout.finalizar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para finalizar este pedido.');
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -246,15 +256,10 @@ class PedidoService
             return array('pedido' => null);
         }
 
-        $canSeePix = false;
-        if ($usuarioId !== null) {
-            $canSeePix = $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
-                || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver')
-                || (int) $pedido['comprador_usuario_id'] === (int) $usuarioId
-                || (int) $pedido['pagador_usuario_id'] === (int) $usuarioId;
-        }
+        $canSeePix = $this->pedidoPodeSerAcessadoPor($pedido, $usuarioId);
 
-        if ($usuarioId !== null && !$canSeePix && (int) $pedido['comprador_usuario_id'] !== (int) $usuarioId && (int) $pedido['pagador_usuario_id'] !== (int) $usuarioId) {
+        if ($usuarioId !== null && !$canSeePix) {
+            $this->registrarAcessoNegado('pedido.detalhar_negado', $pedidoId, $usuarioId, null, null);
             return array('pedido' => null);
         }
 
@@ -347,6 +352,11 @@ class PedidoService
             return array('ok' => false, 'message' => 'Pedido nao encontrado.');
         }
 
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('pedido.status.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para alterar este pedido.');
+        }
+
         $statusValidos = array(
             'rascunho',
             'pendencia',
@@ -418,15 +428,30 @@ class PedidoService
 
     public function anexarComprovantePix(array $dados, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        if (empty($dados['pedido_id'])) {
+            return array('ok' => false, 'message' => 'Pedido nao informado.');
+        }
+
+        $pedidoId = (int) $dados['pedido_id'];
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('pedido.comprovante.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para anexar comprovante neste pedido.');
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
         try {
-            $existente = $this->comprovanteModel->findByPedido($dados['pedido_id']);
+            $existente = $this->comprovanteModel->findByPedido($pedidoId);
 
             if ($existente) {
                 $dados['motivo_reenvio'] = isset($dados['motivo_reenvio']) ? $dados['motivo_reenvio'] : 'Reenvio do comprovante PIX';
-                $comprovanteId = $this->comprovanteModel->createVersion($dados['pedido_id'], $dados);
+                $comprovanteId = $this->comprovanteModel->createVersion($pedidoId, $dados);
                 $acao = 'comprovante_pix.atualizado';
             } else {
                 $comprovanteId = $this->comprovanteModel->create($dados);
@@ -445,7 +470,7 @@ class PedidoService
 
             Logger::info($acao, array(
                 'comprovante_pix_id' => $comprovanteId,
-                'pedido_id' => $dados['pedido_id'],
+                'pedido_id' => $pedidoId,
             ));
 
             $pdo->commit();
@@ -457,7 +482,7 @@ class PedidoService
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('comprovante_pix.falhou', array(
-                'pedido_id' => isset($dados['pedido_id']) ? $dados['pedido_id'] : null,
+                'pedido_id' => $pedidoId,
                 'message' => $exception->getMessage(),
             ));
 
@@ -471,6 +496,11 @@ class PedidoService
 
         if (!$pedido) {
             return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('pedido.excluir_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para excluir este pedido.');
         }
 
         $pdo = Database::connection();
@@ -515,6 +545,11 @@ class PedidoService
 
         if (!$pedido) {
             return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('pedido.aprovar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para aprovar este pedido.');
         }
 
         $pdo = Database::connection();
@@ -571,11 +606,31 @@ class PedidoService
 
     public function aplicarCupomAoPedido($pedidoId, $cupomCodigo, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('pedido.cupom.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para aplicar cupom neste pedido.');
+        }
+
         return $this->cupomService->aplicarAoPedido($pedidoId, $cupomCodigo, $actorUserId, $ipAddress, $userAgent);
     }
 
     public function revalidarCupomAoFecharPedido($pedidoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('pedido.cupom.revalidar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Voce nao tem permissao para revalidar cupom neste pedido.');
+        }
+
         return $this->cupomService->revalidarNoFechamento($pedidoId, $actorUserId, $ipAddress, $userAgent);
     }
 
@@ -640,5 +695,33 @@ class PedidoService
         unset($pedido);
 
         return array('pedidos' => $pedidos);
+    }
+
+    private function pedidoPodeSerAcessadoPor(array $pedido, $usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        if ($this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
+            || $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar')
+            || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver')) {
+            return true;
+        }
+
+        return ((int) $pedido['comprador_usuario_id'] === (int) $usuarioId)
+            || ((int) $pedido['pagador_usuario_id'] === (int) $usuarioId);
+    }
+
+    private function registrarAcessoNegado($evento, $pedidoId, $usuarioId, $ipAddress = null, $userAgent = null, array $context = array())
+    {
+        $payload = array_merge($context, array(
+            'pedido_id' => $pedidoId,
+            'usuario_id' => $usuarioId,
+            'ip_address' => $ipAddress,
+        ));
+
+        $this->auditService->record($evento, 'pedido', $pedidoId, $payload, $usuarioId, $ipAddress, $userAgent);
+        Logger::error($evento, $payload);
     }
 }

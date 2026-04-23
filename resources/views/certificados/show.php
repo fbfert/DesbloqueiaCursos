@@ -29,7 +29,9 @@
     </div>
 
     <div class="pill-row" style="margin-top:16px;">
-        <a class="pill" href="<?php echo Helpers::e($certificado['pdf_url']); ?>">Abrir PDF</a>
+        <?php if (!empty($canSeePdf)): ?>
+            <a class="pill" href="<?php echo Helpers::e($certificado['pdf_url']); ?>">Abrir PDF</a>
+        <?php endif; ?>
         <a class="pill" href="<?php echo Helpers::e($certificado['validacao_url']); ?>">Validar novamente</a>
     </div>
 </section>

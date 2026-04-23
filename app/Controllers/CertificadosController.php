@@ -55,6 +55,7 @@ class CertificadosController extends Controller
         return $this->view('certificados/show', array(
             'title' => 'Certificado ' . $codigo,
             'certificado' => $resultado['certificado'],
+            'canSeePdf' => $this->certificadoService->usuarioPodeAcessarCertificado($resultado['certificado'], Session::get('usuario_id')),
         ));
     }
 
@@ -65,6 +66,11 @@ class CertificadosController extends Controller
 
         if (empty($resultado['ok'])) {
             return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+        }
+
+        if (!$this->certificadoService->usuarioPodeAcessarCertificado($resultado['certificado'], Session::get('usuario_id'))) {
+            Session::flash('errors', array('certificado' => 'Voce nao tem permissao para abrir este PDF.'));
+            return new Response(View::render('errors/403', array('title' => 'Acesso negado')), 403);
         }
 
         $pdf = $this->certificadoService->pdfBytesByCodigo($codigo);
