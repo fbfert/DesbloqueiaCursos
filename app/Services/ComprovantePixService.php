@@ -14,6 +14,7 @@ class ComprovantePixService
     private $comprovanteModel;
     private $pedidoModel;
     private $fileStorage;
+    private $emailService;
     private $auditService;
     private $rbacService;
 
@@ -22,6 +23,7 @@ class ComprovantePixService
         $this->comprovanteModel = new ComprovantePix();
         $this->pedidoModel = new Pedido();
         $this->fileStorage = new FileStorageService();
+        $this->emailService = new EmailService();
         $this->auditService = new AuditService();
         $this->rbacService = new RbacService();
     }
@@ -91,6 +93,8 @@ class ComprovantePixService
             ));
 
             $pdo->commit();
+
+            $this->emailService->comprovanteEnviado($this->pedidoModel->findById($pedidoId), $actorUserId, $ipAddress, $userAgent);
 
             return array('ok' => true, 'comprovante_pix_id' => $comprovanteId);
         } catch (Exception $exception) {
@@ -178,6 +182,8 @@ class ComprovantePixService
 
             $pdo->commit();
 
+            $this->emailService->pedidoAprovado($this->pedidoModel->findById($pedido['id']), $observacao, $actorUserId, $ipAddress, $userAgent);
+
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
@@ -251,6 +257,8 @@ class ComprovantePixService
             ));
 
             $pdo->commit();
+
+            $this->emailService->pendencia($this->pedidoModel->findById($pedido['id']), $observacao, $actorUserId, $ipAddress, $userAgent);
 
             return array('ok' => true);
         } catch (Exception $exception) {

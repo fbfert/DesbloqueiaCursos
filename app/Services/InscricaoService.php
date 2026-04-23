@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\Helpers;
 use App\Core\Logger;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
@@ -20,6 +21,7 @@ class InscricaoService
     private $participanteModel;
     private $cursoModel;
     private $turmaModel;
+    private $emailService;
     private $auditService;
     private $trashService;
     private $rbacService;
@@ -32,6 +34,7 @@ class InscricaoService
         $this->participanteModel = new ParticipantePedido();
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
+        $this->emailService = new EmailService();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->rbacService = new RbacService();
@@ -93,6 +96,18 @@ class InscricaoService
             ));
 
             $pdo->commit();
+
+            foreach ($criados as $inscricaoId) {
+                $inscricao = $this->inscricaoModel->findById($inscricaoId);
+                if ($inscricao) {
+                    $this->emailService->cursoProximo(
+                        $this->envelopeInscricaoParaEmail($inscricao),
+                        $actorUserId,
+                        $ipAddress,
+                        $userAgent
+                    );
+                }
+            }
 
             return array('ok' => true, 'inscricoes_ids' => $criados);
         } catch (Exception $exception) {
@@ -196,6 +211,17 @@ class InscricaoService
 
             $pdo->commit();
 
+            $inscricaoAtualizada = $this->inscricaoModel->findById($inscricaoId);
+            if ($novoStatus === 'com_pendencia') {
+                $this->emailService->pendencia($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $observacao, $actorUserId, $ipAddress, $userAgent);
+            } elseif ($novoStatus === 'em_andamento') {
+                $this->emailService->cursoProximo($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
+            } elseif ($novoStatus === 'concluida' || $novoStatus === 'concluida_sem_certificado') {
+                $this->emailService->concluido($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
+            } elseif ($novoStatus === 'certificado_emitido') {
+                $this->emailService->certificadoDisponivel($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
+            }
+
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
@@ -273,5 +299,67 @@ class InscricaoService
     public function listarDoUsuario($usuarioId)
     {
         return array('inscricoes' => $this->inscricaoModel->forUsuario($usuarioId));
+    }
+
+    public function listarAprovadasDoUsuario($usuarioId)
+    {
+        return array('inscricoes' => $this->inscricaoModel->forUsuarioAprovadas($usuarioId));
+    }
+
+    private function envelopeInscricaoParaEmail(?array $inscricao = null)
+    {
+        if (!$inscricao) {
+            return array();
+        }
+
+        $pedido = $this->pedidoModel->findById(isset($inscricao['pedido_id']) ? $inscricao['pedido_id'] : 0);
+        $participante = null;
+        if (!empty($inscricao['participante_pedido_id'])) {
+            $stmt = Database::connection()->prepare(
+                'SELECT * FROM participantes_pedido WHERE id = :id AND deleted_at IS NULL LIMIT 1'
+            );
+            $stmt->execute(array('id' => $inscricao['participante_pedido_id']));
+            $participante = $stmt->fetch(\PDO::FETCH_ASSOC);
+        }
+
+        $curso = null;
+        if (!empty($inscricao['curso_evento_id'])) {
+            $curso = $this->cursoModel->findPublicById((int) $inscricao['curso_evento_id']);
+        }
+
+        $turma = null;
+        if (!empty($inscricao['turma_id'])) {
+            $turma = $this->turmaModel->findPublicById((int) $inscricao['turma_id']);
+        }
+
+        $certificado = null;
+        if (!empty($inscricao['id'])) {
+            $stmt = Database::connection()->prepare(
+                'SELECT *
+                 FROM certificados
+                 WHERE inscricao_id = :inscricao_id
+                   AND deleted_at IS NULL
+                   AND status = "emitido"
+                 ORDER BY id DESC
+                 LIMIT 1'
+            );
+            $stmt->execute(array('inscricao_id' => $inscricao['id']));
+            $certificado = $stmt->fetch(\PDO::FETCH_ASSOC);
+        }
+
+        return array(
+            'id' => $inscricao['id'],
+            'status' => $inscricao['status'],
+            'pagador_email' => isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
+            'pagador_nome' => isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
+            'pedido_codigo' => isset($pedido['codigo']) ? $pedido['codigo'] : null,
+            'curso_nome' => isset($curso['nome']) ? $curso['nome'] : null,
+            'turma_nome' => isset($turma['nome']) ? $turma['nome'] : null,
+            'participante_nome' => isset($participante['nome']) ? $participante['nome'] : null,
+            'participante_email' => isset($participante['email']) ? $participante['email'] : null,
+            'certificado_codigo' => isset($certificado['codigo']) ? $certificado['codigo'] : null,
+            'certificado_pdf_url' => isset($certificado['codigo']) ? Helpers::url('certificados/pdf?codigo=' . urlencode($certificado['codigo'])) : null,
+            'certificado_validacao_url' => isset($certificado['codigo']) ? Helpers::url('certificados/validar?codigo=' . urlencode($certificado['codigo'])) : null,
+        );
     }
 }

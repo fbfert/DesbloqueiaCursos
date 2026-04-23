@@ -26,7 +26,7 @@ class MeusCursosController extends Controller
                 'usuarioNome' => Session::get('usuario_nome'),
                 'success' => Session::pullFlash('success'),
             ),
-            $this->inscricaoService->listarDoUsuario($usuarioId)
+            $this->inscricaoService->listarAprovadasDoUsuario($usuarioId)
         ));
     }
 }

@@ -16,12 +16,14 @@ class AuthService
     private $usuarios;
     private $consentimentos;
     private $accessLogs;
+    private $emailService;
 
     public function __construct()
     {
         $this->usuarios = new Usuario();
         $this->consentimentos = new ConsentimentoUsuario();
         $this->accessLogs = new AccessLogService();
+        $this->emailService = new EmailService();
     }
 
     public function userId()
@@ -103,6 +105,16 @@ class AuthService
         }
 
         $this->accessLogs->record($usuarioId, 'register', 'success', $ipAddress, $userAgent);
+        $this->emailService->welcome(
+            array(
+                'id' => $usuarioId,
+                'nome' => $input['nome'],
+                'email' => $email,
+            ),
+            $usuarioId,
+            $ipAddress,
+            $userAgent
+        );
 
         return array('ok' => true, 'usuario_id' => $usuarioId);
     }
@@ -164,6 +176,7 @@ class AuthService
         $token = bin2hex(random_bytes(32));
         $this->usuarios->setRecoveryToken($usuario['id'], $token);
         $this->accessLogs->record($usuario['id'], 'password_reset_request', 'token_generated', $ipAddress, $userAgent);
+        $this->emailService->passwordReset($usuario, $token, $usuario['id'], $ipAddress, $userAgent);
 
         return array('ok' => true, 'token' => $token);
     }

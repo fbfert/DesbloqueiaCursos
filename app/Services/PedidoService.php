@@ -25,6 +25,7 @@ class PedidoService
     private $turmaModel;
     private $pedidoCupomModel;
     private $cupomService;
+    private $emailService;
     private $auditService;
     private $trashService;
     private $rbacService;
@@ -40,6 +41,7 @@ class PedidoService
         $this->turmaModel = new Turma();
         $this->pedidoCupomModel = new PedidoCupom();
         $this->cupomService = new CupomService();
+        $this->emailService = new EmailService();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->rbacService = new RbacService();
@@ -323,6 +325,8 @@ class PedidoService
 
             $pdo->commit();
 
+            $this->emailService->pedidoCriado($this->pedidoModel->findById($pedidoId), $actorUserId, $ipAddress, $userAgent);
+
             return array('ok' => true, 'pedido_id' => $pedidoId);
         } catch (Exception $exception) {
             $pdo->rollBack();
@@ -389,6 +393,17 @@ class PedidoService
 
             $pdo->commit();
 
+            if (in_array($novoStatus, array('pendencia', 'aguardando_reenvio', 'aprovado'), true)) {
+                $pedidoAtualizado = $this->pedidoModel->findById($pedidoId);
+                if ($novoStatus === 'pendencia') {
+                    $this->emailService->pendencia($pedidoAtualizado, $observacao, $actorUserId, $ipAddress, $userAgent);
+                } elseif ($novoStatus === 'aguardando_reenvio') {
+                    $this->emailService->pendencia($pedidoAtualizado, $observacao, $actorUserId, $ipAddress, $userAgent);
+                } elseif ($novoStatus === 'aprovado') {
+                    $this->emailService->pedidoAprovado($pedidoAtualizado, $observacao, $actorUserId, $ipAddress, $userAgent);
+                }
+            }
+
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
@@ -434,6 +449,9 @@ class PedidoService
             ));
 
             $pdo->commit();
+
+            $pedidoAtualizado = $this->pedidoModel->findById($pedidoId);
+            $this->emailService->comprovanteEnviado($pedidoAtualizado, $actorUserId, $ipAddress, $userAgent);
 
             return array('ok' => true, 'comprovante_pix_id' => $comprovanteId);
         } catch (Exception $exception) {
@@ -526,6 +544,8 @@ class PedidoService
             ));
 
             $pdo->commit();
+
+            $this->emailService->pedidoAprovado($this->pedidoModel->findById($pedidoId), $observacao, $actorUserId, $ipAddress, $userAgent);
 
             return array('ok' => true);
         } catch (Exception $exception) {

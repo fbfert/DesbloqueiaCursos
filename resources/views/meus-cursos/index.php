@@ -28,6 +28,9 @@
                     <div class="pill-row">
                         <span class="pill"><?php echo Helpers::e($inscricao['status']); ?></span>
                         <span class="pill"><?php echo Helpers::e($inscricao['pedido_status']); ?></span>
+                        <?php if (isset($inscricao['percentual_progresso'])): ?>
+                            <span class="pill"><?php echo Helpers::e(number_format((float) $inscricao['percentual_progresso'], 2, ',', '.')); ?>%</span>
+                        <?php endif; ?>
                         <?php if (!empty($inscricao['comprovante_status'])): ?>
                             <span class="pill pill--alert"><?php echo Helpers::e($inscricao['comprovante_status']); ?></span>
                         <?php endif; ?>
@@ -37,6 +40,16 @@
                         <span>Pedido <?php echo Helpers::e($inscricao['pedido_codigo']); ?></span>
                         <a href="/cursos/detalhe?curso_id=<?php echo (int) $inscricao['curso_evento_id']; ?>">Abrir curso</a>
                     </div>
+                    <div class="pill-row" style="margin-top:12px;">
+                        <a class="pill" href="/area-curso?inscricao_id=<?php echo (int) $inscricao['id']; ?>">Acessar area interna</a>
+                    </div>
+                    <?php if (!empty($inscricao['certificado_codigo'])): ?>
+                        <div class="pill-row" style="margin-top:12px;">
+                            <a class="pill" href="/certificados/show?codigo=<?php echo urlencode($inscricao['certificado_codigo']); ?>">Certificado online</a>
+                            <a class="pill" href="/certificados/validar?codigo=<?php echo urlencode($inscricao['certificado_codigo']); ?>">Validar</a>
+                            <a class="pill" href="/certificados/pdf?codigo=<?php echo urlencode($inscricao['certificado_codigo']); ?>">PDF</a>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </article>
         <?php endforeach; ?>

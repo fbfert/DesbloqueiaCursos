@@ -1,0 +1,520 @@
+<?php
+
+namespace App\Services;
+
+use App\Core\Helpers;
+use App\Core\Logger;
+use App\Core\View;
+use App\Models\EmailConfiguracao;
+use App\Models\EmailEnvio;
+use Exception;
+
+class EmailService
+{
+    private $configModel;
+    private $emailModel;
+    private $auditService;
+    private $configFallback;
+
+    public function __construct()
+    {
+        $this->configModel = new EmailConfiguracao();
+        $this->emailModel = new EmailEnvio();
+        $this->auditService = new AuditService();
+        $this->configFallback = require BASE_PATH . '/config/mail.php';
+    }
+
+    public function configuration()
+    {
+        $stored = $this->configModel->current();
+
+        if (!$stored) {
+            return $this->configFallback;
+        }
+
+        return array_merge($this->configFallback, array(
+            'enabled' => (bool) $stored['ativo'],
+            'host' => $stored['host'],
+            'port' => (int) $stored['porta'],
+            'username' => $stored['usuario'],
+            'password' => $stored['senha'],
+            'encryption' => $stored['criptografia'],
+            'from_email' => $stored['from_email'],
+            'from_name' => $stored['from_name'],
+            'reply_to' => $stored['reply_to_email'],
+            'queue_processing' => (bool) $stored['fila_ativa'],
+        ));
+    }
+
+    public function saveConfiguration(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $payload = array(
+            'nome' => trim((string) (isset($data['nome']) ? $data['nome'] : 'SMTP principal')),
+            'ativo' => !empty($data['ativo']),
+            'host' => trim((string) (isset($data['host']) ? $data['host'] : '')),
+            'porta' => (int) (isset($data['porta']) ? $data['porta'] : 587),
+            'usuario' => isset($data['usuario']) ? trim((string) $data['usuario']) : null,
+            'senha' => isset($data['senha']) && trim((string) $data['senha']) !== '' ? (string) $data['senha'] : null,
+            'criptografia' => isset($data['criptografia']) ? trim((string) $data['criptografia']) : 'tls',
+            'from_email' => trim((string) (isset($data['from_email']) ? $data['from_email'] : '')),
+            'from_name' => trim((string) (isset($data['from_name']) ? $data['from_name'] : '')),
+            'reply_to_email' => isset($data['reply_to_email']) ? trim((string) $data['reply_to_email']) : null,
+            'fila_ativa' => !empty($data['fila_ativa']),
+        );
+
+        $id = $this->configModel->save($payload);
+
+        $this->auditService->record(
+            'emails.configuracao.atualizada',
+            'emails_configuracao',
+            $id,
+            array(
+                'ativo' => $payload['ativo'],
+                'host' => $payload['host'],
+                'porta' => $payload['porta'],
+                'encryption' => $payload['criptografia'],
+                'from_email' => $payload['from_email'],
+                'from_name' => $payload['from_name'],
+                'fila_ativa' => $payload['fila_ativa'],
+            ),
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::info('emails.configuracao.atualizada', array('id' => $id));
+
+        return array('ok' => true, 'id' => $id);
+    }
+
+    public function listQueue()
+    {
+        return $this->emailModel->listForAdmin();
+    }
+
+    public function welcome(array $usuario, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.welcome',
+            'welcome',
+            isset($usuario['email']) ? $usuario['email'] : null,
+            isset($usuario['nome']) ? $usuario['nome'] : null,
+            'Bem-vindo ao ' . $this->configuration()['from_name'],
+            array('usuario' => $usuario),
+            'usuario',
+            isset($usuario['id']) ? $usuario['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    public function passwordReset(array $usuario, $token, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.password_reset',
+            'password_reset',
+            isset($usuario['email']) ? $usuario['email'] : null,
+            isset($usuario['nome']) ? $usuario['nome'] : null,
+            'Recuperacao de senha',
+            array(
+                'usuario' => $usuario,
+                'token' => $token,
+                'reset_url' => Helpers::url('recuperar-senha/redefinir?token=' . urlencode($token)),
+            ),
+            'usuario',
+            isset($usuario['id']) ? $usuario['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    public function pedidoCriado(array $pedido, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.pedido_criado',
+            'pedido_criado',
+            isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
+            isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
+            'Pedido ' . $pedido['codigo'] . ' criado',
+            array('pedido' => $pedido),
+            'pedido',
+            isset($pedido['id']) ? $pedido['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    public function comprovanteEnviado(array $pedido, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.comprovante_enviado',
+            'comprovante_enviado',
+            isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
+            isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
+            'Comprovante PIX enviado - ' . $pedido['codigo'],
+            array('pedido' => $pedido),
+            'pedido',
+            isset($pedido['id']) ? $pedido['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    public function pendencia(array $pedido, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.pendencia',
+            'pendencia',
+            isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
+            isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
+            'Pedido em pendencia - ' . $pedido['codigo'],
+            array('pedido' => $pedido, 'observacao' => $observacao),
+            'pedido',
+            isset($pedido['id']) ? $pedido['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    public function pedidoAprovado(array $pedido, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.pedido_aprovado',
+            'pedido_aprovado',
+            isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
+            isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
+            'Pedido aprovado - ' . $pedido['codigo'],
+            array('pedido' => $pedido, 'observacao' => $observacao),
+            'pedido',
+            isset($pedido['id']) ? $pedido['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    public function cursoProximo(array $inscricao, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.curso_proximo',
+            'curso_proximo',
+            isset($inscricao['pagador_email']) ? $inscricao['pagador_email'] : null,
+            isset($inscricao['pagador_nome']) ? $inscricao['pagador_nome'] : null,
+            'Seu curso esta proximo',
+            array('inscricao' => $inscricao),
+            'inscricao',
+            isset($inscricao['id']) ? $inscricao['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    public function concluido(array $inscricao, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.concluido',
+            'concluido',
+            isset($inscricao['pagador_email']) ? $inscricao['pagador_email'] : null,
+            isset($inscricao['pagador_nome']) ? $inscricao['pagador_nome'] : null,
+            'Curso concluido',
+            array('inscricao' => $inscricao),
+            'inscricao',
+            isset($inscricao['id']) ? $inscricao['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    public function certificadoDisponivel(array $inscricao, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.certificado_disponivel',
+            'certificado_disponivel',
+            isset($inscricao['pagador_email']) ? $inscricao['pagador_email'] : null,
+            isset($inscricao['pagador_nome']) ? $inscricao['pagador_nome'] : null,
+            'Certificado disponivel',
+            array('inscricao' => $inscricao),
+            'inscricao',
+            isset($inscricao['id']) ? $inscricao['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    public function sendTemplate(
+        $evento,
+        $template,
+        $destinatarioEmail,
+        $destinatarioNome,
+        $assunto,
+        array $data = array(),
+        $entidadeTipo = null,
+        $entidadeId = null,
+        $actorUserId = null,
+        $ipAddress = null,
+        $userAgent = null
+    ) {
+        if (!$destinatarioEmail) {
+            return array('ok' => false, 'message' => 'Destinatario invalido.');
+        }
+
+        $rendered = View::render($template, $data, false, 'emails');
+        $config = $this->configuration();
+
+        $payload = array(
+            'usuario_id' => $actorUserId,
+            'entidade_tipo' => $entidadeTipo,
+            'entidade_id' => $entidadeId,
+            'evento' => $evento,
+            'template' => $template,
+            'destinatario_email' => strtolower(trim((string) $destinatarioEmail)),
+            'destinatario_nome' => $destinatarioNome,
+            'assunto' => $assunto,
+            'contexto_json' => json_encode($data),
+            'status' => 'pendente',
+        );
+
+        $emailId = $this->emailModel->create($payload);
+
+        $this->auditService->record(
+            'emails.fila.criada',
+            'email',
+            $emailId,
+            array(
+                'evento' => $evento,
+                'template' => $template,
+                'destinatario_email' => $payload['destinatario_email'],
+            ),
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::info('emails.fila.criada', array('email_id' => $emailId, 'evento' => $evento));
+
+        if (empty($config['enabled']) || empty($config['host'])) {
+            $erro = 'Configuracao SMTP indisponivel.';
+            $this->emailModel->markFailed($emailId, $erro);
+            $this->auditService->record(
+                'emails.falhou',
+                'email',
+                $emailId,
+                array('erro' => $erro),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::error('emails.falhou', array('email_id' => $emailId, 'erro' => $erro));
+            return array('ok' => false, 'message' => $erro, 'email_id' => $emailId);
+        }
+
+        try {
+            $response = $this->sendSmtpMessage($config, array(
+                'from_email' => $config['from_email'],
+                'from_name' => $config['from_name'],
+                'reply_to' => $config['reply_to'],
+                'to_email' => $payload['destinatario_email'],
+                'to_name' => $payload['destinatario_nome'],
+                'subject' => $assunto,
+                'html' => $rendered,
+            ));
+
+            $this->emailModel->markSent($emailId, $response);
+
+            $this->auditService->record(
+                'emails.enviado',
+                'email',
+                $emailId,
+                array(
+                    'evento' => $evento,
+                    'template' => $template,
+                    'resposta' => $response,
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('emails.enviado', array('email_id' => $emailId, 'evento' => $evento));
+
+            return array('ok' => true, 'email_id' => $emailId, 'response' => $response);
+        } catch (Exception $exception) {
+            $this->emailModel->markFailed($emailId, $exception->getMessage());
+
+            $this->auditService->record(
+                'emails.falhou',
+                'email',
+                $emailId,
+                array('erro' => $exception->getMessage()),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::error('emails.falhou', array(
+                'email_id' => $emailId,
+                'evento' => $evento,
+                'erro' => $exception->getMessage(),
+            ));
+
+            return array('ok' => false, 'message' => $exception->getMessage(), 'email_id' => $emailId);
+        }
+    }
+
+    public function resend($emailId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $email = $this->emailModel->findById($emailId);
+        if (!$email) {
+            return array('ok' => false, 'message' => 'Email nao encontrado.');
+        }
+
+        $contexto = array();
+        if (!empty($email['contexto_json'])) {
+            $contexto = json_decode($email['contexto_json'], true);
+            if (!is_array($contexto)) {
+                $contexto = array();
+            }
+        }
+
+        return $this->sendTemplate(
+            $email['evento'],
+            $email['template'],
+            $email['destinatario_email'],
+            $email['destinatario_nome'],
+            $email['assunto'],
+            $contexto,
+            $email['entidade_tipo'],
+            $email['entidade_id'],
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    private function sendSmtpMessage(array $config, array $email)
+    {
+        $host = trim((string) $config['host']);
+        $port = (int) $config['port'];
+        $encryption = strtolower((string) $config['encryption']);
+        $target = ($encryption === 'ssl' ? 'ssl://' : '') . $host . ':' . $port;
+
+        $socket = @stream_socket_client($target, $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
+        if (!$socket) {
+            throw new Exception('Falha na conexao SMTP: ' . $errstr);
+        }
+
+        $this->smtpRead($socket, array(220));
+        $this->smtpCommand($socket, 'EHLO ' . $this->hostname(), array(250));
+
+        if ($encryption === 'tls') {
+            $this->smtpCommand($socket, 'STARTTLS', array(220));
+            if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                throw new Exception('Nao foi possivel iniciar TLS.');
+            }
+
+            $this->smtpCommand($socket, 'EHLO ' . $this->hostname(), array(250));
+        }
+
+        $username = trim((string) $config['username']);
+        if ($username !== '') {
+            $this->smtpCommand($socket, 'AUTH LOGIN', array(334));
+            $this->smtpCommand($socket, base64_encode($username), array(334));
+            $this->smtpCommand($socket, base64_encode((string) $config['password']), array(235));
+        }
+
+        $from = $this->formatAddress($email['from_email'], $email['from_name']);
+        $to = $this->formatAddress($email['to_email'], $email['to_name']);
+        $subject = $this->encodeHeader($email['subject']);
+
+        $this->smtpCommand($socket, 'MAIL FROM:<' . $email['from_email'] . '>', array(250));
+        $this->smtpCommand($socket, 'RCPT TO:<' . $email['to_email'] . '>', array(250, 251));
+        $this->smtpCommand($socket, 'DATA', array(354));
+
+        $message = array();
+        $message[] = 'From: ' . $from;
+        $message[] = 'To: ' . $to;
+        $message[] = 'Subject: ' . $subject;
+        if (!empty($email['reply_to'])) {
+            $message[] = 'Reply-To: ' . $this->formatAddress($email['reply_to'], null);
+        }
+        $message[] = 'MIME-Version: 1.0';
+        $message[] = 'Content-Type: text/html; charset=UTF-8';
+        $message[] = 'Content-Transfer-Encoding: 8bit';
+        $message[] = '';
+        $message[] = $email['html'];
+
+        fwrite($socket, implode("\r\n", $message) . "\r\n.\r\n");
+        $response = $this->smtpRead($socket, array(250));
+
+        fwrite($socket, "QUIT\r\n");
+        fclose($socket);
+
+        return trim($response);
+    }
+
+    private function smtpCommand($socket, $command, array $expectedCodes)
+    {
+        fwrite($socket, $command . "\r\n");
+        return $this->smtpRead($socket, $expectedCodes);
+    }
+
+    private function smtpRead($socket, array $expectedCodes = array())
+    {
+        $response = '';
+
+        while (($line = fgets($socket, 515)) !== false) {
+            $response .= $line;
+            if (strlen($line) < 4 || $line[3] === ' ') {
+                break;
+            }
+        }
+
+        if ($response === '') {
+            throw new Exception('Resposta vazia do servidor SMTP.');
+        }
+
+        if (!empty($expectedCodes)) {
+            $code = (int) substr($response, 0, 3);
+            if (!in_array($code, $expectedCodes, true)) {
+                throw new Exception('Falha SMTP: ' . trim($response));
+            }
+        }
+
+        return trim($response);
+    }
+
+    private function hostname()
+    {
+        $host = parse_url(Helpers::url('/'), PHP_URL_HOST);
+        return $host ? $host : 'localhost';
+    }
+
+    private function formatAddress($email, $name = null)
+    {
+        $email = trim((string) $email);
+        if ($name === null || trim((string) $name) === '') {
+            return $email;
+        }
+
+        return $this->encodeHeader($name) . ' <' . $email . '>';
+    }
+
+    private function encodeHeader($value)
+    {
+        $value = (string) $value;
+        if ($value === '') {
+            return $value;
+        }
+
+        return '=?UTF-8?B?' . base64_encode($value) . '?=';
+    }
+}

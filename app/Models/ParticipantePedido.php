@@ -7,6 +7,35 @@ use PDO;
 
 class ParticipantePedido
 {
+    public function forCursoTurma($cursoId, $turmaId = null)
+    {
+        $sql = 'SELECT DISTINCT pp.*,
+                       i.id AS inscricao_id,
+                       i.status AS inscricao_status,
+                       ce.nome AS curso_nome,
+                       t.nome AS turma_nome
+                FROM participantes_pedido pp
+                INNER JOIN inscricoes i ON i.participante_pedido_id = pp.id
+                INNER JOIN cursos_eventos ce ON ce.id = i.curso_evento_id
+                LEFT JOIN turmas t ON t.id = i.turma_id
+                WHERE pp.deleted_at IS NULL
+                  AND i.deleted_at IS NULL
+                  AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+                  AND ce.id = :curso_evento_id';
+        $params = array('curso_evento_id' => $cursoId);
+
+        if ($turmaId !== null) {
+            $sql .= ' AND (i.turma_id = :turma_id OR i.turma_id IS NULL)';
+            $params['turma_id'] = $turmaId;
+        }
+
+        $sql .= ' ORDER BY pp.ordem ASC, pp.id ASC';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function forPedidoItem($pedidoItemId)
     {
         $stmt = Database::connection()->prepare(

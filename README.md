@@ -116,3 +116,24 @@ As migrations futuras devem ser SQL simples em `sql/`, sem recursos incompatíve
 3. Catalogo de cursos, eventos e turmas.
 4. Pedidos, cupons e PIX manual.
 5. Certificados, financeiro, logs, auditoria e lixeira.
+
+## Area Academica
+
+A base academica do portal foi preparada para acompanhar a inscricao aprovada do aluno e o escopo do professor.
+
+### Rotas principais
+
+- `GET /area-curso`
+- `GET /area-curso/modulo`
+- `GET /professor/area-curso`
+- `GET /admin/area-curso`
+- `GET /admin/academico`
+- `GET /professor/academico`
+
+### Regras suportadas
+
+- presenca minima por curso ou turma
+- progresso por aulas ou modulos
+- avaliacao com nota minima
+- aptidao para certificado
+- logs, auditoria e lixeira para mudancas relevantes

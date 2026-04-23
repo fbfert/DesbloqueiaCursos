@@ -7,6 +7,22 @@ use PDO;
 
 class Turma
 {
+    public function findById($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM turmas
+             WHERE id = :id
+               AND deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array('id' => $id));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function findPublicById($id)
     {
         $stmt = Database::connection()->prepare(

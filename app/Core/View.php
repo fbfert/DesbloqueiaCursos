@@ -4,9 +4,9 @@ namespace App\Core;
 
 class View
 {
-    public static function render($template, array $data = array())
+    public static function render($template, array $data = array(), $useLayout = true, $baseDirectory = 'views')
     {
-        $viewFile = BASE_PATH . '/resources/views/' . $template . '.php';
+        $viewFile = BASE_PATH . '/resources/' . trim($baseDirectory, '/\\') . '/' . $template . '.php';
 
         if (!is_file($viewFile)) {
             return 'View not found: ' . htmlspecialchars($template, ENT_QUOTES, 'UTF-8');
@@ -17,6 +17,10 @@ class View
         ob_start();
         require $viewFile;
         $content = ob_get_clean();
+
+        if (!$useLayout) {
+            return $content;
+        }
 
         ob_start();
         require BASE_PATH . '/resources/views/layout.php';
