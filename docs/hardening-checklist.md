@@ -2,32 +2,26 @@
 
 ## Problemas encontrados
 
-- Formularios POST sem protecao CSRF centralizada.
-- Middleware de autenticacao e permissao sem log de negacao.
-- Uploads sem validacao de extensao, MIME e tamanho.
-- Checkout aceitava ids de pedido sem reforco suficiente de ownership em pontos de escrita.
-- Progresso da area do curso permitia concluir aula/modulo sem validar posse da inscricao.
-- Upload de comprovante PIX nao validava posse do pedido.
-- PDF de certificado podia ser exposto sem checagem de posse.
+1. `PedidoService` permitia finalizar checkout em qualquer estado do pedido.
+2. `PedidoService` permitia anexar participantes fora do fluxo operacional do checkout.
+3. `ComprovantePixService` aceitava upload sem checar o estado operacional do pedido.
+4. `CertificadoService` dependia apenas das rotas para restringir emissoes e alteracoes.
+5. O escopo do professor ja estava separado no dashboard e nas areas internas, mas precisava de validacao final em service para evitar acesso por troca de ids.
 
 ## Correcoes aplicadas
 
-- Adicionado `CsrfMiddleware` e validacao automatica em todas as rotas `POST`.
-- O renderer de views passou a injetar hidden field CSRF em formularios `POST`.
-- `AuthenticateMiddleware` e `PermissionMiddleware` agora registram log e auditoria de bloqueio.
-- `PedidoService` ganhou checagem de ownership/permissao antes de mutacoes de checkout e backoffice.
-- `ComprovantePixService` passou a validar ownership/permissao antes de aceitar upload e antes de aprovar/reprovar.
-- `InscricaoService` ganhou checagem de ownership/permissao para gerar inscricoes e alterar status.
-- `ProgressoService` passou a validar posse da inscricao antes de marcar aula/modulo concluido.
-- `FileStorageService` agora valida tamanho, extensao e MIME.
-- Material, comprovante PIX e documentos/pagamentos financeiros passaram a usar allowlists de upload.
-- O PDF do certificado passou a respeitar ownership/permissao; a validacao publica continua disponivel.
+1. Adicionei validacao de estado em `PedidoService` para:
+   - bloquear finalizacao em pedidos ja pagos, aprovados, cancelados ou reembolsados;
+   - impedir inclusao de participantes apos o checkout ter sido consolidado.
+2. Adicionei validacao de estado em `ComprovantePixService` para permitir upload apenas nos estados operacionais do fluxo.
+3. Endureci `CertificadoService` com checagem direta de permissao para emissao, reemissao, cancelamento e revogacao.
+4. Mantive o CSRF centralizado no roteamento de `POST` e a injecao de token no renderer de views.
+5. Mantive registro de auditoria e log de negacao em middleware e services sensiveis.
 
 ## Pendencias restantes
 
-- Rate limiting em login e endpoints sensiveis.
-- Cabecalhos HTTP de seguranca mais agressivos.
-- Assinatura de links temporarios para downloads privados.
-- 2FA/MFA para perfis administrativos.
-- Revisao fina do fluxo de distribuicao de PDF de certificado por e-mail.
-- Monitoramento automatizado de tentativas repetidas de abuso e alertas.
+1. Rate limiting por IP/login ainda pode ser reforcado em camada propria.
+2. Headers de seguranca HTTP podem ser ampliados no front controller ou no servidor web.
+3. Downloads privados ainda dependem de controle por rota e service, sem links assinados temporarios.
+4. MFA/2FA para perfis administrativos continua fora do escopo atual.
+5. Monitoramento e alertas de abuso ainda nao estao automatizados.

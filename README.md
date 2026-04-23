@@ -180,6 +180,29 @@ A base financeira do portal trabalha com apuracao mensal por competencia, rateio
 - espelho de RPA para PF
 - logs, auditoria e rastreio de mudancas relevantes
 
+## Dashboard Executivo
+
+O painel principal consolida indicadores comerciais, academicos, operacionais e financeiros.
+
+### Rotas principais
+
+- `GET /admin`
+- `GET /admin/dashboard`
+- `GET /professor`
+- `GET /professor/dashboard`
+
+### Indicadores suportados
+
+- vendas por dia, semana e mes
+- novos usuarios por periodo
+- pedidos pendentes e comprovantes em analise
+- inscricoes ativas e concluidas
+- certificados emitidos
+- cursos/eventos mais vendidos
+- receita por periodo
+- repasses por competencia
+- total a pagar e total pago a professores
+
 ## QA e Homologacao
 
 O pacote de validacao do portal fica em `docs/` e `tests/`.

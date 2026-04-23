@@ -84,12 +84,15 @@ $routes = array(
     '/cadastro' => 200,
     '/recuperar-senha' => 200,
     '/api/health' => 200,
+    '/admin' => 302,
+    '/admin/dashboard' => 302,
     '/meus-cursos' => 302,
     '/area-curso' => 302,
-    '/admin' => 302,
     '/admin/pedidos' => 302,
     '/admin/inscricoes' => 302,
     '/admin/comprovantes-pix' => 302,
+    '/professor' => 302,
+    '/professor/dashboard' => 302,
     '/certificados/validar' => 200,
 );
 

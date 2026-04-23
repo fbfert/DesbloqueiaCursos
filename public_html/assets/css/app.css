@@ -86,6 +86,53 @@ body {
     margin-top: 24px;
 }
 
+.dashboard-kpi__value {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    font-weight: 700;
+}
+
+.dashboard-kpi__sub {
+    margin: 6px 0 0;
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+.dashboard-chart {
+    display: grid;
+    gap: 12px;
+}
+
+.dashboard-chart__row {
+    display: grid;
+    gap: 6px;
+}
+
+.dashboard-chart__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+.dashboard-chart__track {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: #e8eef6;
+    overflow: hidden;
+}
+
+.dashboard-chart__fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--color-primary);
+}
+
 .page-header {
     display: grid;
     gap: 8px;

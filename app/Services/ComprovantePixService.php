@@ -41,6 +41,19 @@ class ComprovantePixService
             return array('ok' => false, 'message' => 'Voce nao tem permissao para enviar comprovante neste pedido.');
         }
 
+        if (!$this->pedidoPodeReceberComprovante($pedido)) {
+            $this->registrarAcessoNegado(
+                'comprovante_pix.upload_estado_invalido',
+                $pedidoId,
+                $actorUserId,
+                $ipAddress,
+                $userAgent,
+                array('status_atual' => $pedido['status'])
+            );
+
+            return array('ok' => false, 'message' => 'Pedido nao aceita comprovante neste status.');
+        }
+
         if (empty($arquivo['tmp_name']) || empty($arquivo['name'])) {
             return array('ok' => false, 'message' => 'Selecione um comprovante valido.');
         }
@@ -314,6 +327,11 @@ class ComprovantePixService
         return $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
             || $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar')
             || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver');
+    }
+
+    private function pedidoPodeReceberComprovante(array $pedido)
+    {
+        return in_array($pedido['status'], array('aguardando_pagamento', 'comprovante_enviado', 'pendencia', 'aguardando_reenvio'), true);
     }
 
     private function registrarAcessoNegado($evento, $pedidoId, $usuarioId, $ipAddress, $userAgent)

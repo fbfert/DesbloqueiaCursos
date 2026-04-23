@@ -86,6 +86,11 @@ class CertificadoService
 
     public function emitir($inscricaoId, array $opcoes = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        if ($actorUserId && !$this->podeGerirCertificados($actorUserId)) {
+            $this->registrarAcessoNegado('certificado.emitir_negado', $inscricaoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
         if (!$inscricao) {
             return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
@@ -211,6 +216,11 @@ class CertificadoService
 
     public function reemitir($certificadoId, $manterCodigo = true, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        if ($actorUserId && !$this->podeGerirCertificados($actorUserId)) {
+            $this->registrarAcessoNegado('certificado.reemitir_negado', $certificadoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         $certificado = $this->certificadoModel->findById($certificadoId);
 
         if (!$certificado) {
@@ -231,6 +241,11 @@ class CertificadoService
 
     public function cancelar($certificadoId, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        if ($actorUserId && !$this->podeGerirCertificados($actorUserId)) {
+            $this->registrarAcessoNegado('certificado.cancelar_negado', $certificadoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         return $this->alterarStatusInterno($certificadoId, 'cancelado', $observacao, $actorUserId, $ipAddress, $userAgent, array(
             'cancelado_por_usuario_id' => $actorUserId,
             'cancelado_em' => date('Y-m-d H:i:s'),
@@ -239,6 +254,11 @@ class CertificadoService
 
     public function revogar($certificadoId, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        if ($actorUserId && !$this->podeGerirCertificados($actorUserId)) {
+            $this->registrarAcessoNegado('certificado.revogar_negado', $certificadoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
         return $this->alterarStatusInterno($certificadoId, 'revogado', $observacao, $actorUserId, $ipAddress, $userAgent, array(
             'revogado_por_usuario_id' => $actorUserId,
             'revogado_em' => date('Y-m-d H:i:s'),
@@ -588,6 +608,28 @@ class CertificadoService
         $pdf .= 'startxref' . "\n" . $xrefPos . "\n%%EOF";
 
         return $pdf;
+    }
+
+    private function podeGerirCertificados($usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        return $this->rbacService->userHasPermission($usuarioId, 'certificados.gerenciar')
+            || $this->rbacService->userHasPermission($usuarioId, 'certificados.ver');
+    }
+
+    private function registrarAcessoNegado($evento, $recursoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $payload = array(
+            'recurso_id' => $recursoId,
+            'usuario_id' => $actorUserId,
+            'ip_address' => $ipAddress,
+        );
+
+        $this->auditService->record($evento, 'certificado', $recursoId, $payload, $actorUserId, $ipAddress, $userAgent);
+        Logger::error($evento, $payload);
     }
 
     private function escapePdfText($text)

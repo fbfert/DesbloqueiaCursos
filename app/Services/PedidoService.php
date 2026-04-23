@@ -127,6 +127,19 @@ class PedidoService
             return array('ok' => false, 'message' => 'Voce nao tem permissao para alterar este pedido.');
         }
 
+        if (!$this->pedidoPodeReceberParticipantes($pedido)) {
+            $this->registrarAcessoNegado(
+                'pedido.participantes.estado_invalido',
+                $pedidoId,
+                $actorUserId,
+                $ipAddress,
+                $userAgent,
+                array('status_atual' => $pedido['status'])
+            );
+
+            return array('ok' => false, 'message' => 'Pedido nao pode receber participantes neste status.');
+        }
+
         $itens = $this->pedidoItemModel->forPedido($pedidoId);
         if (empty($itens)) {
             return array('ok' => false, 'message' => 'Pedido sem itens.');
@@ -201,6 +214,23 @@ class PedidoService
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.checkout.finalizar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
             return array('ok' => false, 'message' => 'Voce nao tem permissao para finalizar este pedido.');
+        }
+
+        if ($pedido['status'] === 'aguardando_pagamento') {
+            return array('ok' => true, 'message' => 'Pedido ja foi finalizado.');
+        }
+
+        if (!$this->pedidoPodeSerFinalizado($pedido)) {
+            $this->registrarAcessoNegado(
+                'pedido.checkout.finalizar_estado_invalido',
+                $pedidoId,
+                $actorUserId,
+                $ipAddress,
+                $userAgent,
+                array('status_atual' => $pedido['status'])
+            );
+
+            return array('ok' => false, 'message' => 'Pedido nao pode ser finalizado neste status.');
         }
 
         $pdo = Database::connection();
@@ -441,6 +471,19 @@ class PedidoService
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.comprovante.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
             return array('ok' => false, 'message' => 'Voce nao tem permissao para anexar comprovante neste pedido.');
+        }
+
+        if (!$this->pedidoPodeReceberComprovante($pedido)) {
+            $this->registrarAcessoNegado(
+                'pedido.comprovante.estado_invalido',
+                $pedidoId,
+                $actorUserId,
+                $ipAddress,
+                $userAgent,
+                array('status_atual' => $pedido['status'])
+            );
+
+            return array('ok' => false, 'message' => 'Pedido nao aceita comprovante neste status.');
         }
 
         $pdo = Database::connection();
@@ -711,6 +754,21 @@ class PedidoService
 
         return ((int) $pedido['comprador_usuario_id'] === (int) $usuarioId)
             || ((int) $pedido['pagador_usuario_id'] === (int) $usuarioId);
+    }
+
+    private function pedidoPodeSerFinalizado(array $pedido)
+    {
+        return in_array($pedido['status'], array('rascunho', 'pendencia', 'aguardando_reenvio', 'aguardando_pagamento'), true);
+    }
+
+    private function pedidoPodeReceberParticipantes(array $pedido)
+    {
+        return in_array($pedido['status'], array('rascunho', 'pendencia', 'aguardando_reenvio'), true);
+    }
+
+    private function pedidoPodeReceberComprovante(array $pedido)
+    {
+        return in_array($pedido['status'], array('aguardando_pagamento', 'comprovante_enviado', 'pendencia', 'aguardando_reenvio'), true);
     }
 
     private function registrarAcessoNegado($evento, $pedidoId, $usuarioId, $ipAddress = null, $userAgent = null, array $context = array())
