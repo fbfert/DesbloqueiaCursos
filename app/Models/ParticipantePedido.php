@@ -7,6 +7,21 @@ use PDO;
 
 class ParticipantePedido
 {
+    public function forPedidoItem($pedidoItemId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM participantes_pedido
+             WHERE pedido_item_id = :pedido_item_id
+               AND deleted_at IS NULL
+             ORDER BY ordem ASC, id ASC'
+        );
+
+        $stmt->execute(array('pedido_item_id' => $pedidoItemId));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function forPedido($pedidoId)
     {
         $stmt = Database::connection()->prepare(

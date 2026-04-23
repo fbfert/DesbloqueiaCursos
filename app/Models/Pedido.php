@@ -7,6 +7,51 @@ use PDO;
 
 class Pedido
 {
+    public function findByCodigo($codigo)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM pedidos
+             WHERE codigo = :codigo
+               AND deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array('codigo' => $codigo));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function forUsuario($usuarioId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT p.*,
+                    COALESCE(pp.total_participantes, 0) AS total_participantes,
+                    COALESCE(pi.total_itens, 0) AS total_itens
+             FROM pedidos p
+             LEFT JOIN (
+                SELECT pedido_id, COUNT(*) AS total_participantes
+                FROM participantes_pedido
+                WHERE deleted_at IS NULL
+                GROUP BY pedido_id
+             ) pp ON pp.pedido_id = p.id
+             LEFT JOIN (
+                SELECT pedido_id, COUNT(*) AS total_itens
+                FROM pedido_itens
+                WHERE deleted_at IS NULL
+                GROUP BY pedido_id
+             ) pi ON pi.pedido_id = p.id
+             WHERE p.deleted_at IS NULL
+               AND (p.comprador_usuario_id = :usuario_id OR p.pagador_usuario_id = :usuario_id)
+             ORDER BY p.id DESC'
+        );
+
+        $stmt->execute(array('usuario_id' => $usuarioId));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function findById($id)
     {
         $stmt = Database::connection()->prepare(
@@ -99,6 +144,25 @@ class Pedido
         ));
     }
 
+    public function updateCupom($pedidoId, $cupomCodigo, $descontoTotal, $total)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE pedidos
+             SET cupom_codigo = :cupom_codigo,
+                 desconto_total = :desconto_total,
+                 total = :total,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array(
+            'cupom_codigo' => $cupomCodigo,
+            'desconto_total' => $descontoTotal,
+            'total' => $total,
+            'id' => $pedidoId,
+        ));
+    }
+
     public function markApproved($pedidoId, $usuarioId)
     {
         $stmt = Database::connection()->prepare(
@@ -121,6 +185,18 @@ class Pedido
         $stmt = Database::connection()->prepare(
             'UPDATE pedidos
              SET deleted_at = NOW(),
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array('id' => $pedidoId));
+    }
+
+    public function markAwaitingPayment($pedidoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE pedidos
+             SET status = "aguardando_pagamento",
                  updated_at = NOW()
              WHERE id = :id'
         );

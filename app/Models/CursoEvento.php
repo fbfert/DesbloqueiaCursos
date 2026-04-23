@@ -7,6 +7,28 @@ use PDO;
 
 class CursoEvento
 {
+    public function allPublic()
+    {
+        $stmt = Database::connection()->query(
+            'SELECT ce.*,
+                    c.nome AS categoria_nome,
+                    COALESCE(t_total.total_turmas, 0) AS total_turmas
+             FROM cursos_eventos ce
+             LEFT JOIN categorias c ON c.id = ce.categoria_id
+             LEFT JOIN (
+                SELECT curso_evento_id, COUNT(*) AS total_turmas
+                FROM turmas
+                WHERE deleted_at IS NULL
+                GROUP BY curso_evento_id
+             ) t_total ON t_total.curso_evento_id = ce.id
+             WHERE ce.deleted_at IS NULL
+               AND ce.status = "ativo"
+             ORDER BY ce.destaque DESC, ce.ordem ASC, ce.nome ASC'
+        );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function allWithCategoryAndCounts()
     {
         $stmt = Database::connection()->query(
@@ -33,6 +55,26 @@ class CursoEvento
         );
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findPublicById($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT ce.*,
+                    c.nome AS categoria_nome,
+                    c.slug AS categoria_slug
+             FROM cursos_eventos ce
+             LEFT JOIN categorias c ON c.id = ce.categoria_id
+             WHERE ce.id = :id
+               AND ce.deleted_at IS NULL
+               AND ce.status = "ativo"
+             LIMIT 1'
+        );
+
+        $stmt->execute(array('id' => $id));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 
     public function findById($id)

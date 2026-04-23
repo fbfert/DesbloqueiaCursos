@@ -4,12 +4,22 @@ namespace App\Services;
 
 use App\Core\Database;
 use App\Core\Logger;
+use App\Models\Pedido;
+use App\Models\PedidoItem;
+use App\Models\ParticipantePedido;
 use App\Models\Inscricao;
+use App\Models\CursoEvento;
+use App\Models\Turma;
 use Exception;
 
 class InscricaoService
 {
     private $inscricaoModel;
+    private $pedidoModel;
+    private $pedidoItemModel;
+    private $participanteModel;
+    private $cursoModel;
+    private $turmaModel;
     private $auditService;
     private $trashService;
     private $rbacService;
@@ -17,9 +27,83 @@ class InscricaoService
     public function __construct()
     {
         $this->inscricaoModel = new Inscricao();
+        $this->pedidoModel = new Pedido();
+        $this->pedidoItemModel = new PedidoItem();
+        $this->participanteModel = new ParticipantePedido();
+        $this->cursoModel = new CursoEvento();
+        $this->turmaModel = new Turma();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->rbacService = new RbacService();
+    }
+
+    public function gerarDoPedido($pedidoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        $itens = $this->pedidoItemModel->forPedido($pedidoId);
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $criados = array();
+
+            foreach ($itens as $item) {
+                $participantes = $this->participanteModel->forPedidoItem($item['id']);
+
+                foreach ($participantes as $participante) {
+                    $existente = $this->inscricaoModel->findByPedidoItemAndParticipante($item['id'], $participante['id']);
+                    if ($existente) {
+                        continue;
+                    }
+
+                    $turmaId = !empty($item['turma_id']) ? (int) $item['turma_id'] : null;
+                    $cursoId = (int) $item['curso_evento_id'];
+
+                    $criados[] = $this->inscricaoModel->create(array(
+                        'pedido_id' => $pedidoId,
+                        'pedido_item_id' => $item['id'],
+                        'participante_pedido_id' => $participante['id'],
+                        'usuario_id' => !empty($participante['usuario_id']) ? $participante['usuario_id'] : null,
+                        'curso_evento_id' => $cursoId,
+                        'turma_id' => $turmaId,
+                        'status' => 'pendente',
+                        'confirmado_em' => null,
+                    ));
+                }
+            }
+
+            $this->auditService->record(
+                'checkout.inscricoes.geradas',
+                'pedido',
+                $pedidoId,
+                array('inscricoes_ids' => $criados),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('checkout.inscricoes.geradas', array(
+                'pedido_id' => $pedidoId,
+                'total' => count($criados),
+            ));
+
+            $pdo->commit();
+
+            return array('ok' => true, 'inscricoes_ids' => $criados);
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('checkout.inscricoes.falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
     }
 
     public function criar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -184,5 +268,10 @@ class InscricaoService
         }
 
         return array('inscricoes' => $this->inscricaoModel->allForBackoffice());
+    }
+
+    public function listarDoUsuario($usuarioId)
+    {
+        return array('inscricoes' => $this->inscricaoModel->forUsuario($usuarioId));
     }
 }

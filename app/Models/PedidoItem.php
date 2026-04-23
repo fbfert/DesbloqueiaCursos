@@ -10,7 +10,8 @@ class PedidoItem
     public function forPedido($pedidoId)
     {
         $stmt = Database::connection()->prepare(
-            'SELECT pi.*, ce.nome AS curso_nome, ce.slug AS curso_slug, t.nome AS turma_nome, t.codigo AS turma_codigo
+            'SELECT pi.*, ce.nome AS curso_nome, ce.slug AS curso_slug, ce.tipo AS curso_tipo, ce.em_promocao AS curso_em_promocao,
+                    t.nome AS turma_nome, t.codigo AS turma_codigo
              FROM pedido_itens pi
              INNER JOIN cursos_eventos ce ON ce.id = pi.curso_evento_id
              LEFT JOIN turmas t ON t.id = pi.turma_id

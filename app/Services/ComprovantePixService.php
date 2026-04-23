@@ -6,12 +6,14 @@ use App\Core\Database;
 use App\Core\Logger;
 use App\Models\ComprovantePix;
 use App\Models\Pedido;
+use App\Services\FileStorageService;
 use Exception;
 
 class ComprovantePixService
 {
     private $comprovanteModel;
     private $pedidoModel;
+    private $fileStorage;
     private $auditService;
     private $rbacService;
 
@@ -19,8 +21,87 @@ class ComprovantePixService
     {
         $this->comprovanteModel = new ComprovantePix();
         $this->pedidoModel = new Pedido();
+        $this->fileStorage = new FileStorageService();
         $this->auditService = new AuditService();
         $this->rbacService = new RbacService();
+    }
+
+    public function enviarUpload($pedidoId, array $arquivo, array $dados = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (empty($arquivo['tmp_name']) || empty($arquivo['name'])) {
+            return array('ok' => false, 'message' => 'Selecione um comprovante valido.');
+        }
+
+        $stored = $this->fileStorage->storeUploadedFile($arquivo, 'comprovantes_pix/' . $pedidoId, 'pix');
+
+        $payload = array(
+            'pedido_id' => $pedidoId,
+            'usuario_id' => $actorUserId,
+            'arquivo_caminho' => $stored['relative_path'],
+            'arquivo_nome_original' => $stored['original_name'],
+            'arquivo_mime_type' => $stored['mime_type'],
+            'arquivo_tamanho_bytes' => $stored['size'],
+            'valor_informado' => isset($dados['valor_informado']) ? $dados['valor_informado'] : null,
+            'enviado_em' => date('Y-m-d H:i:s'),
+            'status' => 'pendente',
+            'analise_observacao' => null,
+            'analisado_por_usuario_id' => null,
+            'analisado_em' => null,
+            'motivo_reenvio' => isset($dados['motivo_reenvio']) ? $dados['motivo_reenvio'] : null,
+        );
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $existente = $this->comprovanteModel->findCurrentByPedido($pedidoId);
+            if ($existente) {
+                $comprovanteId = $this->comprovanteModel->createVersion($pedidoId, $payload);
+            } else {
+                $comprovanteId = $this->comprovanteModel->create($payload);
+            }
+
+            $this->pedidoModel->updateStatus($pedidoId, 'comprovante_enviado');
+            $this->pedidoModel->addStatusHistory($pedidoId, $pedido['status'], 'comprovante_enviado', 'Comprovante PIX enviado', $actorUserId);
+
+            $this->auditService->record(
+                'comprovante_pix.enviado',
+                'comprovante_pix',
+                $comprovanteId,
+                array(
+                    'pedido_id' => $pedidoId,
+                    'arquivo' => $stored,
+                    'motivo_reenvio' => isset($dados['motivo_reenvio']) ? $dados['motivo_reenvio'] : null,
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('comprovante_pix.enviado', array(
+                'comprovante_pix_id' => $comprovanteId,
+                'pedido_id' => $pedidoId,
+                'usuario_id' => $actorUserId,
+            ));
+
+            $pdo->commit();
+
+            return array('ok' => true, 'comprovante_pix_id' => $comprovanteId);
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('comprovante_pix.enviar_falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
     }
 
     public function listarBackoffice($usuarioId)

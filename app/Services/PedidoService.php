@@ -4,11 +4,14 @@ namespace App\Services;
 
 use App\Core\Database;
 use App\Core\Logger;
+use App\Models\CursoEvento;
 use App\Models\ComprovantePix;
 use App\Models\Inscricao;
+use App\Models\PedidoCupom;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
 use App\Models\ParticipantePedido;
+use App\Models\Turma;
 use Exception;
 
 class PedidoService
@@ -18,6 +21,10 @@ class PedidoService
     private $participanteModel;
     private $comprovanteModel;
     private $inscricaoModel;
+    private $cursoModel;
+    private $turmaModel;
+    private $pedidoCupomModel;
+    private $cupomService;
     private $auditService;
     private $trashService;
     private $rbacService;
@@ -29,9 +36,242 @@ class PedidoService
         $this->participanteModel = new ParticipantePedido();
         $this->comprovanteModel = new ComprovantePix();
         $this->inscricaoModel = new Inscricao();
+        $this->cursoModel = new CursoEvento();
+        $this->turmaModel = new Turma();
+        $this->pedidoCupomModel = new PedidoCupom();
+        $this->cupomService = new CupomService();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->rbacService = new RbacService();
+    }
+
+    public function criarCheckoutDraft(array $dados, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $cursoId = isset($dados['curso_evento_id']) ? (int) $dados['curso_evento_id'] : 0;
+        $turmaId = !empty($dados['turma_id']) ? (int) $dados['turma_id'] : null;
+        $quantidade = isset($dados['quantidade']) ? max(1, (int) $dados['quantidade']) : 1;
+
+        $curso = $this->cursoModel->findPublicById($cursoId);
+        if (!$curso) {
+            return array('ok' => false, 'message' => 'Curso nao encontrado.');
+        }
+
+        $turma = null;
+        if ($turmaId) {
+            $turma = $this->turmaModel->findPublicById($turmaId);
+            if (!$turma || (int) $turma['curso_evento_id'] !== $cursoId) {
+                return array('ok' => false, 'message' => 'Turma invalida para o curso selecionado.');
+            }
+        }
+
+        $valorUnitario = isset($dados['valor_unitario']) && $dados['valor_unitario'] !== ''
+            ? (float) $dados['valor_unitario']
+            : (float) ($turma && $turma['valor_override'] !== null && $turma['valor_override'] !== '' ? $turma['valor_override'] : $curso['valor']);
+
+        $subtotal = $valorUnitario * $quantidade;
+        $pedidoData = array(
+            'codigo' => isset($dados['codigo']) && $dados['codigo'] !== '' ? $dados['codigo'] : 'PR-' . date('YmdHis') . '-' . strtoupper(substr(sha1(random_bytes(8)), 0, 6)),
+            'comprador_usuario_id' => isset($dados['comprador_usuario_id']) ? $dados['comprador_usuario_id'] : null,
+            'pagador_usuario_id' => isset($dados['pagador_usuario_id']) ? $dados['pagador_usuario_id'] : null,
+            'pagador_nome' => isset($dados['pagador_nome']) ? $dados['pagador_nome'] : null,
+            'pagador_cpf' => isset($dados['pagador_cpf']) ? $dados['pagador_cpf'] : null,
+            'pagador_email' => isset($dados['pagador_email']) ? $dados['pagador_email'] : null,
+            'pagador_telefone' => isset($dados['pagador_telefone']) ? $dados['pagador_telefone'] : null,
+            'pagador_cidade' => isset($dados['pagador_cidade']) ? $dados['pagador_cidade'] : null,
+            'pagador_estado' => isset($dados['pagador_estado']) ? $dados['pagador_estado'] : null,
+            'pagador_empresa_nome' => isset($dados['pagador_empresa_nome']) ? $dados['pagador_empresa_nome'] : null,
+            'pagador_empresa_documento' => isset($dados['pagador_empresa_documento']) ? $dados['pagador_empresa_documento'] : null,
+            'tipo_pedido' => isset($dados['tipo_pedido']) ? $dados['tipo_pedido'] : 'propria',
+            'status' => 'rascunho',
+            'subtotal' => $subtotal,
+            'desconto_total' => 0,
+            'acrescimo_total' => 0,
+            'total' => $subtotal,
+            'observacoes_internas' => isset($dados['observacoes_internas']) ? $dados['observacoes_internas'] : null,
+            'observacoes_publicas' => isset($dados['observacoes_publicas']) ? $dados['observacoes_publicas'] : null,
+            'canal_origem' => isset($dados['canal_origem']) ? $dados['canal_origem'] : 'web',
+        );
+
+        $itemData = array(
+            'curso_evento_id' => $cursoId,
+            'turma_id' => $turmaId,
+            'quantidade' => $quantidade,
+            'valor_unitario' => $valorUnitario,
+            'valor_total' => $subtotal,
+            'status' => 'ativo',
+        );
+
+        $resultado = $this->createPedido($pedidoData, array($itemData), array(), $actorUserId, $ipAddress, $userAgent);
+
+        return array(
+            'ok' => true,
+            'pedido_id' => $resultado['pedido_id'],
+            'pedido' => $this->pedidoModel->findById($resultado['pedido_id']),
+            'curso' => $curso,
+            'turma' => $turma,
+        );
+    }
+
+    public function adicionarParticipantesAoPedido($pedidoId, array $participantes, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        $itens = $this->pedidoItemModel->forPedido($pedidoId);
+        if (empty($itens)) {
+            return array('ok' => false, 'message' => 'Pedido sem itens.');
+        }
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $created = array();
+            foreach ($participantes as $posicao => $participante) {
+                if (trim((string) (isset($participante['nome']) ? $participante['nome'] : '')) === '') {
+                    continue;
+                }
+
+                $pedidoItemId = isset($participante['pedido_item_id']) && $participante['pedido_item_id']
+                    ? (int) $participante['pedido_item_id']
+                    : (int) $itens[0]['id'];
+
+                $payload = array(
+                    'pedido_id' => $pedidoId,
+                    'pedido_item_id' => $pedidoItemId,
+                    'usuario_id' => isset($participante['usuario_id']) ? $participante['usuario_id'] : null,
+                    'nome' => isset($participante['nome']) ? $participante['nome'] : null,
+                    'cpf' => isset($participante['cpf']) ? $participante['cpf'] : null,
+                    'email' => isset($participante['email']) ? $participante['email'] : null,
+                    'telefone' => isset($participante['telefone']) ? $participante['telefone'] : null,
+                    'ordem' => isset($participante['ordem']) ? (int) $participante['ordem'] : $posicao + 1,
+                    'status' => isset($participante['status']) ? $participante['status'] : 'ativo',
+                );
+
+                $created[] = $this->participanteModel->create($payload);
+            }
+
+            $this->auditService->record(
+                'checkout.participantes.salvos',
+                'pedido',
+                $pedidoId,
+                array('participantes' => $created),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('checkout.participantes.salvos', array(
+                'pedido_id' => $pedidoId,
+                'total' => count($created),
+            ));
+
+            $pdo->commit();
+
+            return array('ok' => true, 'participantes_ids' => $created);
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('checkout.participantes.falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
+    }
+
+    public function finalizarCheckout($pedidoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $revalidacao = $this->revalidarCupomAoFecharPedido($pedidoId, $actorUserId, $ipAddress, $userAgent);
+            if (isset($revalidacao['ok']) && $revalidacao['ok'] === false) {
+                $pdo->rollBack();
+                return array(
+                    'ok' => false,
+                    'message' => isset($revalidacao['message']) ? $revalidacao['message'] : 'Cupom invalido no fechamento do pedido.',
+                );
+            }
+
+            $this->pedidoModel->markAwaitingPayment($pedidoId);
+            $this->pedidoModel->addStatusHistory($pedidoId, $pedido['status'], 'aguardando_pagamento', 'Checkout concluido', $actorUserId);
+
+            $this->auditService->record(
+                'checkout.finalizado',
+                'pedido',
+                $pedidoId,
+                array(
+                    'status_anterior' => $pedido['status'],
+                    'status_novo' => 'aguardando_pagamento',
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('checkout.finalizado', array('pedido_id' => $pedidoId));
+
+            $pdo->commit();
+
+            return array('ok' => true);
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('checkout.finalizar_falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
+    }
+
+    public function detalharCheckout($pedidoId, $usuarioId = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+
+        if (!$pedido) {
+            return array('pedido' => null);
+        }
+
+        $canSeePix = false;
+        if ($usuarioId !== null) {
+            $canSeePix = $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
+                || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver')
+                || (int) $pedido['comprador_usuario_id'] === (int) $usuarioId
+                || (int) $pedido['pagador_usuario_id'] === (int) $usuarioId;
+        }
+
+        if ($usuarioId !== null && !$canSeePix && (int) $pedido['comprador_usuario_id'] !== (int) $usuarioId && (int) $pedido['pagador_usuario_id'] !== (int) $usuarioId) {
+            return array('pedido' => null);
+        }
+
+        $pedido['itens'] = $this->pedidoItemModel->forPedido($pedidoId);
+        $pedido['participantes'] = $this->participanteModel->forPedido($pedidoId);
+        $pedido['inscricoes'] = $this->inscricaoModel->forPedido($pedidoId);
+        $pedido['cupom'] = $this->pedidoCupomModel->findByPedido($pedidoId);
+        $pedido['comprovante_atual'] = $this->comprovanteModel->findByPedido($pedidoId);
+        $pedido['comprovantes'] = $this->comprovanteModel->versionsForPedido($pedidoId);
+
+        if (!$canSeePix) {
+            $pedido['comprovante_atual'] = null;
+            $pedido['comprovantes'] = array();
+        }
+
+        return array(
+            'pedido' => $pedido,
+            'can_see_pix' => $canSeePix,
+        );
     }
 
     public function createPedido(array $pedidoData, array $itens = array(), array $participantes = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -307,6 +547,16 @@ class PedidoService
     public function solicitarReenvioComprovante($pedidoId, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         return $this->registrarStatus($pedidoId, 'aguardando_reenvio', $observacao, $actorUserId, $ipAddress, $userAgent);
+    }
+
+    public function aplicarCupomAoPedido($pedidoId, $cupomCodigo, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->cupomService->aplicarAoPedido($pedidoId, $cupomCodigo, $actorUserId, $ipAddress, $userAgent);
+    }
+
+    public function revalidarCupomAoFecharPedido($pedidoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->cupomService->revalidarNoFechamento($pedidoId, $actorUserId, $ipAddress, $userAgent);
     }
 
     public function detalharBackoffice($pedidoId, $usuarioId)

@@ -7,6 +7,39 @@ use PDO;
 
 class Inscricao
 {
+    public function forUsuario($usuarioId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT i.*,
+                    p.codigo AS pedido_codigo,
+                    p.status AS pedido_status,
+                    p.pagador_nome,
+                    p.pagador_email,
+                    pp.nome AS participante_nome,
+                    pp.cpf AS participante_cpf,
+                    ce.nome AS curso_nome,
+                    ce.slug AS curso_slug,
+                    ce.tipo AS curso_tipo,
+                    t.nome AS turma_nome,
+                    t.codigo AS turma_codigo,
+                    cp.status AS comprovante_status,
+                    cp.versao AS comprovante_versao
+             FROM inscricoes i
+             INNER JOIN pedidos p ON p.id = i.pedido_id
+             INNER JOIN participantes_pedido pp ON pp.id = i.participante_pedido_id
+             INNER JOIN cursos_eventos ce ON ce.id = i.curso_evento_id
+             LEFT JOIN turmas t ON t.id = i.turma_id
+             LEFT JOIN comprovantes_pix cp ON cp.pedido_id = i.pedido_id AND cp.is_atual = 1 AND cp.deleted_at IS NULL
+             WHERE i.deleted_at IS NULL
+               AND (i.usuario_id = :usuario_id OR p.comprador_usuario_id = :usuario_id OR p.pagador_usuario_id = :usuario_id)
+             ORDER BY i.id DESC'
+        );
+
+        $stmt->execute(array('usuario_id' => $usuarioId));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function findById($id)
     {
         $stmt = Database::connection()->prepare(
@@ -36,6 +69,26 @@ class Inscricao
         $stmt->execute(array('pedido_id' => $pedidoId));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findByPedidoItemAndParticipante($pedidoItemId, $participantePedidoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM inscricoes
+             WHERE pedido_item_id = :pedido_item_id
+               AND participante_pedido_id = :participante_pedido_id
+               AND deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array(
+            'pedido_item_id' => $pedidoItemId,
+            'participante_pedido_id' => $participantePedidoId,
+        ));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 
     public function allForBackoffice()
