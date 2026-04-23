@@ -40,7 +40,14 @@ class AreaCursoController extends Controller
             ),
             $this->areaCursoService->carregarAdmin(
                 (int) $request->query('curso_id', 0),
-                (int) $request->query('turma_id', 0)
+                (int) $request->query('turma_id', 0),
+                array(
+                    'instrucao_id' => (int) $request->query('instrucao_id', 0),
+                    'modulo_id' => (int) $request->query('modulo_id', 0),
+                    'aula_id' => (int) $request->query('aula_id', 0),
+                    'material_id' => (int) $request->query('material_id', 0),
+                    'link_id' => (int) $request->query('link_id', 0),
+                )
             )
         ));
     }

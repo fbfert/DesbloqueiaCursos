@@ -500,6 +500,157 @@ body {
     font-size: 14px;
 }
 
+.admin-shell {
+    display: grid;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    padding: 20px;
+    border-right: 1px solid var(--color-border);
+    background: #0f1720;
+    color: #d7e1ea;
+}
+
+.admin-sidebar .brand {
+    color: #ffffff;
+}
+
+.admin-sidebar__brand {
+    margin-bottom: 20px;
+}
+
+.admin-sidebar__brand p {
+    margin: 6px 0 0;
+    color: #9db0c2;
+    font-size: 14px;
+}
+
+.admin-nav-group {
+    margin-bottom: 18px;
+}
+
+.admin-nav-group h2 {
+    margin: 0 0 10px;
+    color: #9db0c2;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.admin-nav {
+    display: grid;
+    gap: 6px;
+}
+
+.admin-nav__link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 42px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #e5edf5;
+    text-decoration: none;
+}
+
+.admin-nav__link.is-active,
+.admin-nav__link:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-nav__icon {
+    width: 20px;
+    text-align: center;
+}
+
+.admin-shell__main {
+    min-width: 0;
+}
+
+.admin-topbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-panel);
+}
+
+.breadcrumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+.admin-topbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.admin-topbar__actions form {
+    margin: 0;
+}
+
+.admin-topbar__actions button {
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--color-primary);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.site-main--admin {
+    width: 100%;
+    max-width: none;
+}
+
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0 8px;
+}
+
+.quick-actions .card-link {
+    min-width: 120px;
+    flex: 1 1 120px;
+}
+
+.muted-row {
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+.split-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.split-actions a,
+.split-actions button {
+    min-height: 38px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-panel);
+    color: var(--color-text);
+    text-decoration: none;
+    font: inherit;
+}
+
 @media (min-width: 720px) {
     .hero h1 {
         font-size: 48px;
@@ -519,5 +670,22 @@ body {
 
     .checkout-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1080px) {
+    .admin-shell {
+        grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    .admin-sidebar {
+        min-height: 100vh;
+        position: sticky;
+        top: 0;
+        overflow-y: auto;
+    }
+
+    .site-main--admin {
+        padding: 20px;
     }
 }

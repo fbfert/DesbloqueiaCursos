@@ -126,7 +126,7 @@ class AreaCursoService
         ));
     }
 
-    public function carregarAdmin($cursoId = null, $turmaId = null)
+    public function carregarAdmin($cursoId = null, $turmaId = null, array $selecionados = array())
     {
         $curso = $cursoId ? $this->cursoModel->findById($cursoId) : null;
         $turma = $turmaId ? $this->turmaModel->findById($turmaId) : null;
@@ -143,6 +143,11 @@ class AreaCursoService
             'curso' => $curso,
             'turma' => $turma,
             'participantes' => $cursoId ? $this->listarParticipantes($cursoId, $turmaId) : array(),
+            'instrucao_selecionada' => !empty($selecionados['instrucao_id']) ? $this->instrucoesModel->findById((int) $selecionados['instrucao_id']) : null,
+            'modulo_selecionado' => !empty($selecionados['modulo_id']) ? $this->moduloModel->findById((int) $selecionados['modulo_id']) : null,
+            'aula_selecionada' => !empty($selecionados['aula_id']) ? $this->aulaModel->findById((int) $selecionados['aula_id']) : null,
+            'material_selecionado' => !empty($selecionados['material_id']) ? $this->materialModel->findById((int) $selecionados['material_id']) : null,
+            'link_selecionado' => !empty($selecionados['link_id']) ? $this->linkModel->findById((int) $selecionados['link_id']) : null,
         ));
     }
 

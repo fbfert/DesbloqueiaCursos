@@ -5,6 +5,17 @@
     <p>Consolidado comercial, academico, operacional e financeiro do portal.</p>
 </section>
 
+<section class="quick-actions">
+    <a class="card-link" href="/admin/cursos">Cursos</a>
+    <a class="card-link" href="/admin/turmas">Turmas</a>
+    <a class="card-link" href="/admin/pedidos">Pedidos</a>
+    <a class="card-link" href="/admin/inscricoes">Inscricoes</a>
+    <a class="card-link" href="/admin/comprovantes-pix">PIX</a>
+    <a class="card-link" href="/admin/financeiro">Financeiro</a>
+    <a class="card-link" href="/admin/configuracoes-globais">Configuracoes</a>
+    <a class="card-link" href="/admin/rbac">RBAC</a>
+</section>
+
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 

@@ -20,6 +20,7 @@ class FinanceiroService
     private $usuarioModel;
     private $auditService;
     private $rbacService;
+    private $trashService;
 
     public function __construct()
     {
@@ -32,6 +33,7 @@ class FinanceiroService
         $this->usuarioModel = new Usuario();
         $this->auditService = new AuditService();
         $this->rbacService = new RbacService();
+        $this->trashService = new TrashService();
     }
 
     public function painelAdmin()
@@ -107,6 +109,41 @@ class FinanceiroService
         }
 
         return $this->repasseService->salvarProfessorFiscal($data, $actorUserId, $ipAddress, $userAgent);
+    }
+
+    public function removerProfessorFiscal($perfilId, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        if (!$this->podeGerirFinanceiro($actorUserId)) {
+            $this->registrarAcessoNegado('financeiro.professor_fiscal.remocao_negada', $perfilId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
+        $perfil = $this->professorFiscalModel->findById($perfilId);
+        if (!$perfil) {
+            return array('ok' => false, 'message' => 'Perfil fiscal nao encontrado.');
+        }
+
+        $justificativa = trim((string) $justificativa);
+        if ($justificativa === '') {
+            return array('ok' => false, 'message' => 'Informe a justificativa para remover o perfil fiscal.');
+        }
+
+        $this->trashService->record('professores_fiscal', $perfilId, $justificativa, $perfil, $actorUserId, $ipAddress, $userAgent);
+        $this->professorFiscalModel->softDelete($perfilId);
+
+        $this->auditService->record(
+            'financeiro.professor_fiscal.removido',
+            'professores_fiscal',
+            $perfilId,
+            array('justificativa' => $justificativa, 'snapshot' => $perfil),
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::info('financeiro.professor_fiscal.removido', array('professor_fiscal_id' => $perfilId));
+
+        return array('ok' => true);
     }
 
     public function registrarDocumento($repasseId, array $file, $tipoDocumento = 'outro', $numeroDocumento = null, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)

@@ -7,6 +7,23 @@ use PDO;
 
 class ProfessorFiscal
 {
+    public function findById($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT pf.*, u.nome AS usuario_nome, u.email AS usuario_email
+             FROM professores_fiscal pf
+             INNER JOIN usuarios u ON u.id = pf.usuario_id
+             WHERE pf.id = :id
+               AND pf.deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array('id' => $id));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function findByUsuarioId($usuarioId)
     {
         $stmt = Database::connection()->prepare(
@@ -87,5 +104,17 @@ class ProfessorFiscal
         $stmt->execute($payload);
 
         return (int) Database::connection()->lastInsertId();
+    }
+
+    public function softDelete($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE professores_fiscal
+             SET deleted_at = NOW(),
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array('id' => $id));
     }
 }

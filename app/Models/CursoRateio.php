@@ -7,6 +7,28 @@ use PDO;
 
 class CursoRateio
 {
+    public function findById($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT cr.*,
+                    ce.nome AS curso_nome,
+                    ce.slug AS curso_slug,
+                    t.nome AS turma_nome,
+                    t.codigo AS turma_codigo
+             FROM cursos_rateio cr
+             INNER JOIN cursos_eventos ce ON ce.id = cr.curso_evento_id
+             LEFT JOIN turmas t ON t.id = cr.turma_id
+             WHERE cr.id = :id
+               AND cr.deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array('id' => $id));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function findByApuracao($apuracaoId)
     {
         $stmt = Database::connection()->prepare(
@@ -52,5 +74,23 @@ class CursoRateio
         ));
 
         return (int) Database::connection()->lastInsertId();
+    }
+
+    public function allAdmin()
+    {
+        $stmt = Database::connection()->query(
+            'SELECT cr.*,
+                    ce.nome AS curso_nome,
+                    ce.slug AS curso_slug,
+                    t.nome AS turma_nome,
+                    t.codigo AS turma_codigo
+             FROM cursos_rateio cr
+             INNER JOIN cursos_eventos ce ON ce.id = cr.curso_evento_id
+             LEFT JOIN turmas t ON t.id = cr.turma_id
+             WHERE cr.deleted_at IS NULL
+             ORDER BY cr.competencia DESC, cr.id DESC'
+        );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

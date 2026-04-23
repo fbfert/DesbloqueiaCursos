@@ -224,6 +224,28 @@ class RateioService
         }
     }
 
+    public function listarRateiosAdmin($apuracaoId = null)
+    {
+        if ($apuracaoId) {
+            return $this->cursoRateioModel->findByApuracao($apuracaoId);
+        }
+
+        return $this->cursoRateioModel->allAdmin();
+    }
+
+    public function showRateioAdmin($rateioId)
+    {
+        $rateio = $this->cursoRateioModel->findById($rateioId);
+        if (!$rateio) {
+            return null;
+        }
+
+        return array(
+            'rateio' => $rateio,
+            'participantes' => $this->cursoRateioParticipanteModel->findByRateio($rateioId),
+        );
+    }
+
     private function carregarPedidosFechados($dataInicio, $dataFim)
     {
         $sql = 'SELECT p.id, p.codigo, p.total, p.subtotal, p.desconto_total, p.aprovado_em,
