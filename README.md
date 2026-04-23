@@ -1,6 +1,6 @@
 # Polo Rainbow
 
-Bootstrap inicial em PHP MVC para evoluir para um portal de cursos e eventos.
+Portal de cursos e eventos em PHP MVC, preparado para Linux/cPanel, MySQL 5.7, checkout, area do curso, certificados, financeiro, dashboard e homologacao.
 
 ## Stack
 
@@ -10,66 +10,15 @@ Bootstrap inicial em PHP MVC para evoluir para um portal de cursos e eventos.
 - Rotas web e base para API
 - Deploy preparado para Linux/cPanel
 - Arquivos privados fora de `public_html`
-- Base para logs, auditoria, lixeira e autenticação futura
+- Logs, auditoria e lixeira com justificativa
 
-## Estrutura
+## Documentacao operacional
 
-```text
-app/
-  Controllers/
-    Api/
-      HealthController.php
-    HomeController.php
-  Core/
-    App.php
-    Autoloader.php
-    Controller.php
-    Database.php
-    Env.php
-    ErrorHandler.php
-    Helpers.php
-    Logger.php
-    Request.php
-    Response.php
-    Router.php
-    Session.php
-    Validator.php
-    View.php
-  Models/
-    .gitkeep
-  Services/
-    AuditService.php
-    AuthService.php
-    FileStorageService.php
-    TrashService.php
-config/
-  app.php
-  database.php
-  storage.php
-public_html/
-  .htaccess
-  index.php
-  assets/
-    css/
-      app.css
-resources/
-  views/
-    errors/
-      404.php
-      500.php
-    home.php
-    layout.php
-routes/
-  api.php
-  web.php
-sql/
-  .gitkeep
-storage/
-  cache/
-  logs/
-  private_uploads/
-  trash/
-```
+- [Deploy](docs/deploy.md)
+- [Go-live checklist](docs/go-live-checklist.md)
+- [Rollback](docs/rollback.md)
+- [QA checklist](docs/qa-checklist.md)
+- [Homologacao](docs/homologacao.md)
 
 ## Execucao Local
 
@@ -100,8 +49,24 @@ Mantenha `storage/` fora da pasta publica. Ele deve ter permissao de escrita par
 
 - `storage/logs`
 - `storage/cache`
+- `storage/tmp`
+- `storage/uploads`
 - `storage/private_uploads`
 - `storage/trash`
+
+## Deploy e Go-live
+
+Antes de liberar em producao:
+
+1. Fazer backup do banco.
+2. Fazer backup dos arquivos.
+3. Aplicar as migrations em ordem numerica.
+4. Subir o codigo para o FTP.
+5. Validar `APP_URL`, banco e SMTP.
+6. Validar as rotas criticas e os fluxos principais.
+7. Confirmar logs e upload privado.
+
+Consulte os roteiros em `docs/deploy.md`, `docs/go-live-checklist.md` e `docs/rollback.md` para a sequencia operacional completa.
 
 ## Banco
 
