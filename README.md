@@ -158,3 +158,24 @@ A camada central de configuracoes governa identidade institucional, certificados
 - politica de login e validade do reset de senha
 - data de corte financeiro e teto de rateio
 - e-mails institucionais para operacao do portal
+
+## Financeiro e Repasses
+
+A base financeira do portal trabalha com apuracao mensal por competencia, rateio sobre receita liquida, repasses por professor e controle fiscal PF/PJ.
+
+### Rotas principais
+
+- `GET /admin/financeiro`
+- `GET /admin/financeiro/repasses`
+- `GET /professor/financeiro`
+
+### Regras suportadas
+
+- rateio sobre a base liquida do pedido
+- desconto de cupom reduz a base de apuracao
+- teto maximo de rateio configuravel, limitado a 75%
+- fechamento mensal por competencia
+- professor PF ou PJ com controle fiscal
+- exigencia de nota fiscal para PJ
+- espelho de RPA para PF
+- logs, auditoria e rastreio de mudancas relevantes

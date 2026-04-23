@@ -240,6 +240,10 @@ body {
     gap: 12px;
 }
 
+.form-grid .full {
+    grid-column: 1 / -1;
+}
+
 .form-grid label {
     display: grid;
     gap: 6px;

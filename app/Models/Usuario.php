@@ -161,4 +161,21 @@ class Usuario
 
         return $nextAttempts;
     }
+
+    public function professores()
+    {
+        $stmt = Database::connection()->query(
+            'SELECT DISTINCT u.id, u.nome, u.email, u.cpf
+             FROM usuarios u
+             INNER JOIN usuario_perfis up ON up.usuario_id = u.id
+             INNER JOIN perfis p ON p.id = up.perfil_id
+             WHERE u.deleted_at IS NULL
+               AND up.deleted_at IS NULL
+               AND p.deleted_at IS NULL
+               AND p.slug = "professor"
+             ORDER BY u.nome ASC'
+        );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

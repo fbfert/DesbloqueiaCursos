@@ -1,0 +1,183 @@
+<section class="hero">
+    <h1>Financeiro</h1>
+    <p>Apuracoes mensais, repasses, perfil fiscal dos professores e parametros do rateio.</p>
+</section>
+
+<?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
+<?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+
+<section class="grid-2">
+    <article class="status-card">
+        <strong>Parametro atual</strong>
+        <p>Rateio maximo: <?php echo number_format((float) $configuracao_financeira['percentual_rateio_maximo'], 2, ',', '.'); ?>%</p>
+        <p>Fechamento por competencia: <?php echo htmlspecialchars((string) $configuracao_financeira['data_corte_financeiro'], ENT_QUOTES, 'UTF-8'); ?></p>
+        <p><?php echo htmlspecialchars((string) $configuracao_financeira['observacao_repasse'], ENT_QUOTES, 'UTF-8'); ?></p>
+    </article>
+
+    <article class="status-card">
+        <strong>Nova apuracao</strong>
+        <form method="post" action="/admin/financeiro/apurar" class="form-grid">
+            <label>
+                Competencia
+                <input type="month" name="competencia" required>
+            </label>
+            <div>
+                <button type="submit">Apurar</button>
+            </div>
+        </form>
+    </article>
+</section>
+
+<section class="status-card">
+    <strong>Apuracoes</strong>
+    <div class="table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Competencia</th>
+                    <th>Base bruta</th>
+                    <th>Liquida</th>
+                    <th>Rateio</th>
+                    <th>Retido</th>
+                    <th>Status</th>
+                    <th>Fechada em</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($apuracoes)): ?>
+                    <tr>
+                        <td colspan="7">Nenhuma apuracao encontrada.</td>
+                    </tr>
+                <?php endif; ?>
+                <?php foreach ($apuracoes as $apuracao): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($apuracao['competencia'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td>R$ <?php echo number_format((float) $apuracao['base_bruta'], 2, ',', '.'); ?></td>
+                        <td>R$ <?php echo number_format((float) $apuracao['base_liquida'], 2, ',', '.'); ?></td>
+                        <td>R$ <?php echo number_format((float) $apuracao['valor_rateio_total'], 2, ',', '.'); ?></td>
+                        <td>R$ <?php echo number_format((float) $apuracao['valor_retenido_total'], 2, ',', '.'); ?></td>
+                        <td><?php echo htmlspecialchars($apuracao['status'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars((string) $apuracao['fechada_em'], ENT_QUOTES, 'UTF-8'); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="status-card">
+    <strong>Perfil fiscal dos professores</strong>
+    <form method="post" action="/admin/financeiro/professor-fiscal" class="form-grid">
+        <label>
+            Professor
+            <select name="usuario_id" required>
+                <option value="">Selecione</option>
+                <?php foreach ($professores as $professor): ?>
+                    <option value="<?php echo (int) $professor['id']; ?>">
+                        <?php echo htmlspecialchars($professor['nome'], ENT_QUOTES, 'UTF-8'); ?> (<?php echo htmlspecialchars($professor['email'], ENT_QUOTES, 'UTF-8'); ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+
+        <label>
+            Tipo fiscal
+            <select name="tipo_pessoa">
+                <option value="pf">PF</option>
+                <option value="pj">PJ</option>
+            </select>
+        </label>
+
+        <label>
+            CPF
+            <input type="text" name="cpf" maxlength="14">
+        </label>
+
+        <label>
+            CNPJ
+            <input type="text" name="cnpj" maxlength="20">
+        </label>
+
+        <label>
+            Razao social
+            <input type="text" name="razao_social" maxlength="191">
+        </label>
+
+        <label>
+            Nome fantasia
+            <input type="text" name="nome_fantasia" maxlength="191">
+        </label>
+
+        <label>
+            Inscricao municipal
+            <input type="text" name="inscricao_municipal" maxlength="100">
+        </label>
+
+        <label>
+            Aliquota de retencao (%)
+            <input type="number" step="0.01" min="0" max="100" name="aliquota_retencao" value="0.00">
+        </label>
+
+        <label>
+            E-mail financeiro
+            <input type="email" name="email_financeiro" maxlength="191">
+        </label>
+
+        <label>
+            Status
+            <select name="status">
+                <option value="ativo">Ativo</option>
+                <option value="inativo">Inativo</option>
+            </select>
+        </label>
+
+        <label class="full">
+            Observacao
+            <textarea name="observacao" rows="3"></textarea>
+        </label>
+
+        <label class="full">
+            <input type="checkbox" name="exige_nota_fiscal" value="1">
+            Exigir nota fiscal
+        </label>
+
+        <div class="full">
+            <button type="submit">Salvar perfil fiscal</button>
+        </div>
+    </form>
+</section>
+
+<section class="status-card">
+    <strong>Perfis cadastrados</strong>
+    <div class="table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Professor</th>
+                    <th>Tipo</th>
+                    <th>Documento</th>
+                    <th>Aliquota</th>
+                    <th>Exige NF</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($professores_fiscal)): ?>
+                    <tr>
+                        <td colspan="6">Nenhum perfil fiscal cadastrado.</td>
+                    </tr>
+                <?php endif; ?>
+                <?php foreach ($professores_fiscal as $perfil): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($perfil['usuario_nome'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars($perfil['tipo_pessoa'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars(!empty($perfil['cpf']) ? $perfil['cpf'] : $perfil['cnpj'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo number_format((float) $perfil['aliquota_retencao'], 2, ',', '.'); ?>%</td>
+                        <td><?php echo !empty($perfil['exige_nota_fiscal']) ? 'Sim' : 'Nao'; ?></td>
+                        <td><?php echo htmlspecialchars($perfil['status'], ENT_QUOTES, 'UTF-8'); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>

@@ -6,6 +6,7 @@ use App\Controllers\Admin\RbacController;
 use App\Controllers\Admin\CatalogoController as AdminCatalogoController;
 use App\Controllers\Admin\CuponsController;
 use App\Controllers\Admin\EmailsController;
+use App\Controllers\Admin\FinanceiroController as AdminFinanceiroController;
 use App\Controllers\Admin\ConfiguracoesGlobaisController;
 use App\Controllers\Admin\CertificadosController as AdminCertificadosController;
 use App\Controllers\Admin\ComprovantesPixController;
@@ -23,6 +24,7 @@ use App\Controllers\CertificadosController;
 use App\Controllers\Admin\AreaCursoController as AdminAreaCursoController;
 use App\Controllers\Professor\AreaCursoController as ProfessorAreaCursoController;
 use App\Controllers\Professor\AcademicoController as ProfessorAcademicoController;
+use App\Controllers\Professor\FinanceiroController as ProfessorFinanceiroController;
 
 $app->get('/', array(HomeController::class, 'index'));
 $app->get('/cursos', array(PublicCursosController::class, 'index'));
@@ -89,6 +91,13 @@ $app->get('/admin/cupons/resumo', array(CuponsController::class, 'show'), array(
 $app->post('/admin/cupons/excluir', array(CuponsController::class, 'destroy'), array('auth', 'permission:cupons.gerenciar'));
 $app->get('/admin/emails', array(EmailsController::class, 'index'), array('auth', 'permission:emails.ver'));
 $app->post('/admin/emails', array(EmailsController::class, 'save'), array('auth', 'permission:emails.gerenciar'));
+$app->get('/admin/financeiro', array(AdminFinanceiroController::class, 'index'), array('auth', 'permission:financeiro.ver'));
+$app->post('/admin/financeiro/apurar', array(AdminFinanceiroController::class, 'apurar'), array('auth', 'permission:financeiro.gerenciar'));
+$app->get('/admin/financeiro/repasses', array(AdminFinanceiroController::class, 'repasses'), array('auth', 'permission:financeiro.ver'));
+$app->post('/admin/financeiro/repasses/gerar', array(AdminFinanceiroController::class, 'gerarRepasses'), array('auth', 'permission:financeiro.gerenciar'));
+$app->post('/admin/financeiro/professor-fiscal', array(AdminFinanceiroController::class, 'salvarProfessorFiscal'), array('auth', 'permission:financeiro.gerenciar'));
+$app->post('/admin/financeiro/documento', array(AdminFinanceiroController::class, 'registrarDocumento'), array('auth', 'permission:financeiro.gerenciar'));
+$app->post('/admin/financeiro/pagamento', array(AdminFinanceiroController::class, 'registrarPagamento'), array('auth', 'permission:financeiro.gerenciar'));
 $app->get('/admin/configuracoes-globais', array(ConfiguracoesGlobaisController::class, 'index'), array('auth', 'permission:configuracoes_globais.ver'));
 $app->post('/admin/configuracoes-globais', array(ConfiguracoesGlobaisController::class, 'salvarInstitucional'), array('auth', 'permission:configuracoes_globais.gerenciar'));
 $app->get('/admin/configuracoes-globais/certificados', array(ConfiguracoesGlobaisController::class, 'certificados'), array('auth', 'permission:configuracoes_globais.ver'));
@@ -137,3 +146,4 @@ $app->post('/professor/academico/avaliacao', array(ProfessorAcademicoController:
 $app->post('/professor/academico/pergunta', array(ProfessorAcademicoController::class, 'salvarPergunta'), array('auth', 'permission:academico.gerenciar'));
 $app->post('/professor/academico/nota', array(ProfessorAcademicoController::class, 'registrarNota'), array('auth', 'permission:academico.gerenciar'));
 $app->post('/professor/academico/recalcular', array(ProfessorAcademicoController::class, 'recalcularAptidao'), array('auth', 'permission:academico.gerenciar'));
+$app->get('/professor/financeiro', array(ProfessorFinanceiroController::class, 'index'), array('auth', 'permission:financeiro.professor.ver'));
