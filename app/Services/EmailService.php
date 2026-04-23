@@ -13,6 +13,7 @@ class EmailService
 {
     private $configModel;
     private $emailModel;
+    private $globalConfigService;
     private $auditService;
     private $configFallback;
 
@@ -20,6 +21,7 @@ class EmailService
     {
         $this->configModel = new EmailConfiguracao();
         $this->emailModel = new EmailEnvio();
+        $this->globalConfigService = new ConfiguracaoGlobalService();
         $this->auditService = new AuditService();
         $this->configFallback = require BASE_PATH . '/config/mail.php';
     }
@@ -29,8 +31,16 @@ class EmailService
         $stored = $this->configModel->current();
 
         if (!$stored) {
-            return $this->configFallback;
+            $globalDefaults = $this->globalConfigService->emailDefaults();
+
+            return array_merge($this->configFallback, array(
+                'from_email' => !empty($globalDefaults['from_email']) ? $globalDefaults['from_email'] : $this->configFallback['from_email'],
+                'from_name' => !empty($globalDefaults['from_name']) ? $globalDefaults['from_name'] : $this->configFallback['from_name'],
+                'reply_to' => !empty($globalDefaults['reply_to']) ? $globalDefaults['reply_to'] : $this->configFallback['reply_to'],
+            ));
         }
+
+        $globalDefaults = $this->globalConfigService->emailDefaults();
 
         return array_merge($this->configFallback, array(
             'enabled' => (bool) $stored['ativo'],
@@ -39,9 +49,9 @@ class EmailService
             'username' => $stored['usuario'],
             'password' => $stored['senha'],
             'encryption' => $stored['criptografia'],
-            'from_email' => $stored['from_email'],
-            'from_name' => $stored['from_name'],
-            'reply_to' => $stored['reply_to_email'],
+            'from_email' => !empty($stored['from_email']) ? $stored['from_email'] : $globalDefaults['from_email'],
+            'from_name' => !empty($stored['from_name']) ? $stored['from_name'] : $globalDefaults['from_name'],
+            'reply_to' => !empty($stored['reply_to_email']) ? $stored['reply_to_email'] : $globalDefaults['reply_to'],
             'queue_processing' => (bool) $stored['fila_ativa'],
         ));
     }

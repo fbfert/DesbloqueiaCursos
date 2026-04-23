@@ -137,3 +137,24 @@ A base academica do portal foi preparada para acompanhar a inscricao aprovada do
 - avaliacao com nota minima
 - aptidao para certificado
 - logs, auditoria e lixeira para mudancas relevantes
+
+## Configuracoes Globais
+
+A camada central de configuracoes governa identidade institucional, certificados, frontend, seguranca e futura operacao financeira.
+
+### Rotas principais
+
+- `GET /admin/configuracoes-globais`
+- `GET /admin/configuracoes-globais/certificados`
+- `GET /admin/configuracoes-globais/financeiro`
+- `GET /admin/configuracoes-globais/frontend`
+- `GET /admin/configuracoes-globais/seguranca`
+
+### Regras suportadas
+
+- nome fantasia, razao social, CNPJ, cidade e UF
+- prefixo do certificado
+- template visual do portal
+- politica de login e validade do reset de senha
+- data de corte financeiro e teto de rateio
+- e-mails institucionais para operacao do portal

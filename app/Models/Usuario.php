@@ -112,12 +112,12 @@ class Usuario
         ));
     }
 
-    public function setRecoveryToken($usuarioId, $token)
+    public function setRecoveryToken($usuarioId, $token, $validadeMinutos = 60)
     {
         $stmt = Database::connection()->prepare(
             'UPDATE usuarios
              SET token_recuperacao = :token,
-                 token_recuperacao_expira_em = DATE_ADD(NOW(), INTERVAL 60 MINUTE),
+                 token_recuperacao_expira_em = DATE_ADD(NOW(), INTERVAL ' . (int) $validadeMinutos . ' MINUTE),
                  updated_at = NOW()
              WHERE id = :id'
         );

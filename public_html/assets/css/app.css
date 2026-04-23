@@ -60,6 +60,25 @@ body {
     color: var(--color-muted);
 }
 
+.grid-2 {
+    display: grid;
+    gap: 12px;
+}
+
+.card-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-panel);
+    color: var(--color-text);
+    text-decoration: none;
+    font-weight: 700;
+}
+
 .status-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -214,6 +233,47 @@ body {
 .status-card strong {
     display: block;
     margin-bottom: 8px;
+}
+
+.form-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.form-grid label {
+    display: grid;
+    gap: 6px;
+    font-weight: 700;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--color-text);
+    font: inherit;
+}
+
+.form-grid textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-grid button {
+    min-height: 44px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--color-primary);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
 }
 
 .status-card form button {
@@ -392,6 +452,10 @@ body {
 @media (min-width: 720px) {
     .hero h1 {
         font-size: 48px;
+    }
+
+    .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .status-grid {

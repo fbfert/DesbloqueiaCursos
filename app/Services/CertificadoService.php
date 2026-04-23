@@ -31,6 +31,7 @@ class CertificadoService
     private $trashService;
     private $inscricaoService;
     private $templateService;
+    private $globalConfigService;
 
     public function __construct()
     {
@@ -47,6 +48,7 @@ class CertificadoService
         $this->trashService = new TrashService();
         $this->inscricaoService = new InscricaoService();
         $this->templateService = new CertificadoTemplateService();
+        $this->globalConfigService = new ConfiguracaoGlobalService();
     }
 
     public function listarAptos()
@@ -398,7 +400,14 @@ class CertificadoService
 
     private function novoCodigo()
     {
-        return 'PRC' . strtoupper(substr(bin2hex(random_bytes(5)), 0, 10));
+        $prefixo = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) $this->globalConfigService->certificatePrefix()));
+        if ($prefixo === '') {
+            $prefixo = 'PRC';
+        }
+
+        $prefixo = substr($prefixo, 0, 7);
+
+        return $prefixo . strtoupper(substr(bin2hex(random_bytes(5)), 0, 10));
     }
 
     private function mascararCpf($cpf)

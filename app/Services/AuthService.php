@@ -17,6 +17,7 @@ class AuthService
     private $consentimentos;
     private $accessLogs;
     private $emailService;
+    private $globalConfigService;
 
     public function __construct()
     {
@@ -24,6 +25,7 @@ class AuthService
         $this->consentimentos = new ConsentimentoUsuario();
         $this->accessLogs = new AccessLogService();
         $this->emailService = new EmailService();
+        $this->globalConfigService = new ConfiguracaoGlobalService();
     }
 
     public function userId()
@@ -121,6 +123,12 @@ class AuthService
 
     public function login($login, $senha, $ipAddress, $userAgent)
     {
+        $security = $this->globalConfigService->seguranca();
+        if (!$this->loginPermittedByPolicy($login, isset($security['politica_login']) ? $security['politica_login'] : 'email_cpf')) {
+            $this->accessLogs->record(null, 'login', 'policy_blocked', $ipAddress, $userAgent, array('login' => $login));
+            return array('ok' => false, 'message' => 'Dados de acesso invalidos.');
+        }
+
         $usuario = $this->usuarios->findByLogin($login);
 
         if (!$usuario) {
@@ -139,8 +147,10 @@ class AuthService
         }
 
         if (!password_verify((string) $senha, $usuario['senha_hash'])) {
-            $attempts = $this->usuarios->incrementLoginAttempts($usuario['id'], $usuario['tentativas_login'], self::LOCK_MINUTES, self::MAX_LOGIN_ATTEMPTS);
-            $result = $attempts >= self::MAX_LOGIN_ATTEMPTS ? 'invalid_password_blocked' : 'invalid_password';
+            $lockMinutes = isset($security['tempo_bloqueio_login_minutos']) ? (int) $security['tempo_bloqueio_login_minutos'] : self::LOCK_MINUTES;
+            $maxAttempts = isset($security['max_tentativas_login']) ? (int) $security['max_tentativas_login'] : self::MAX_LOGIN_ATTEMPTS;
+            $attempts = $this->usuarios->incrementLoginAttempts($usuario['id'], $usuario['tentativas_login'], $lockMinutes, $maxAttempts);
+            $result = $attempts >= $maxAttempts ? 'invalid_password_blocked' : 'invalid_password';
             $this->accessLogs->record($usuario['id'], 'login', $result, $ipAddress, $userAgent);
 
             return array('ok' => false, 'message' => 'Dados de acesso invalidos.');
@@ -166,6 +176,12 @@ class AuthService
 
     public function requestPasswordReset($login, $ipAddress, $userAgent)
     {
+        $security = $this->globalConfigService->seguranca();
+        if (!$this->loginPermittedByPolicy($login, isset($security['politica_login']) ? $security['politica_login'] : 'email_cpf')) {
+            $this->accessLogs->record(null, 'password_reset_request', 'policy_blocked', $ipAddress, $userAgent, array('login' => $login));
+            return array('ok' => true, 'token' => null);
+        }
+
         $usuario = $this->usuarios->findByLogin($login);
 
         if (!$usuario) {
@@ -174,7 +190,8 @@ class AuthService
         }
 
         $token = bin2hex(random_bytes(32));
-        $this->usuarios->setRecoveryToken($usuario['id'], $token);
+        $validade = isset($security['validade_reset_senha_minutos']) ? (int) $security['validade_reset_senha_minutos'] : 60;
+        $this->usuarios->setRecoveryToken($usuario['id'], $token, $validade);
         $this->accessLogs->record($usuario['id'], 'password_reset_request', 'token_generated', $ipAddress, $userAgent);
         $this->emailService->passwordReset($usuario, $token, $usuario['id'], $ipAddress, $userAgent);
 
@@ -251,5 +268,20 @@ class AuthService
         }
 
         return strtotime($usuario['bloqueado_ate']) > time();
+    }
+
+    private function loginPermittedByPolicy($login, $policy)
+    {
+        $login = trim((string) $login);
+
+        if ($policy === 'email') {
+            return Validator::email($login);
+        }
+
+        if ($policy === 'cpf') {
+            return Validator::cpf($login);
+        }
+
+        return Validator::email($login) || Validator::cpf($login);
     }
 }
