@@ -1,5 +1,5 @@
 <section class="hero">
-    <h1>Configuracoes globais</h1>
+    <h1>Configurações globais</h1>
     <p>Regras institucionais, visuais, de seguranca, certificados, e-mail e financeiro.</p>
 </section>
 
@@ -11,7 +11,7 @@
         <a class="card-link" href="/admin/configuracoes-globais/certificados">Certificados</a>
         <a class="card-link" href="/admin/configuracoes-globais/frontend">Frontend</a>
         <a class="card-link" href="/admin/configuracoes-globais/financeiro">Financeiro</a>
-        <a class="card-link" href="/admin/configuracoes-globais/seguranca">Seguranca</a>
+        <a class="card-link" href="/admin/configuracoes-globais/seguranca">Segurança</a>
     </div>
 </section>
 
@@ -65,3 +65,4 @@
         <button type="submit">Salvar institucional</button>
     </form>
 </section>
+

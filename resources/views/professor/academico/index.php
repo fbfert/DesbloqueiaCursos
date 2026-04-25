@@ -46,7 +46,7 @@
 <?php if (!empty($curso)): ?>
     <?php $configContext = !empty($turma) ? $turma : $curso; ?>
     <section class="panel">
-        <div class="panel-header"><div><h2>Configuracao</h2></div></div>
+        <div class="panel-header"><div><h2>Configuração</h2></div></div>
         <form method="post" action="/professor/academico/configuracao" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
@@ -69,7 +69,7 @@
         <div class="panel-header"><div><h2>Participantes</h2></div></div>
         <div class="table-wrapper">
             <table class="table">
-                <thead><tr><th>Nome</th><th>Progresso</th><th>Presenca</th><th>Nota</th><th>Apto</th><th>Acoes</th></tr></thead>
+                <thead><tr><th>Nome</th><th>Progresso</th><th>Presenca</th><th>Nota</th><th>Apto</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($inscricoes as $inscricao): ?>
                         <tr>
@@ -77,7 +77,7 @@
                             <td><?php echo Helpers::e(isset($inscricao['percentual_progresso']) ? $inscricao['percentual_progresso'] . '%' : '-'); ?></td>
                             <td><?php echo Helpers::e(isset($inscricao['presenca_percentual']) ? $inscricao['presenca_percentual'] . '%' : '-'); ?></td>
                             <td><?php echo Helpers::e(isset($inscricao['nota_final']) ? $inscricao['nota_final'] : '-'); ?></td>
-                            <td><?php echo !empty($inscricao['apto_certificado']) ? 'sim' : 'nao'; ?></td>
+                            <td><?php echo !empty($inscricao['apto_certificado']) ? 'sim' : 'não'; ?></td>
                             <td>
                                 <form method="post" action="/professor/academico/recalcular" class="form-grid">
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
@@ -98,7 +98,7 @@
         <form method="post" action="/professor/academico/presenca" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Inscricao
+            <label>Inscrição
                 <select name="inscricao_id">
                     <?php foreach ($inscricoes as $inscricao): ?>
                         <option value="<?php echo (int) $inscricao['id']; ?>"><?php echo Helpers::e($inscricao['participante_nome']); ?></option>
@@ -113,7 +113,7 @@
                     <option value="justificada">Justificada</option>
                 </select>
             </label>
-            <label>Observacao<textarea name="observacao" rows="2"></textarea></label>
+            <label>Observação<textarea name="observacao" rows="2"></textarea></label>
             <button type="submit">Salvar presenca</button>
         </form>
     </section>
@@ -124,7 +124,7 @@
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
             <label>Titulo<input type="text" name="titulo"></label>
-            <label>Descricao<textarea name="descricao" rows="2"></textarea></label>
+            <label>Descrição<textarea name="descricao" rows="2"></textarea></label>
             <label>Percentual minimo<input type="number" step="0.01" name="percentual_minimo" value="0"></label>
             <label>Nota minima<input type="number" step="0.01" name="nota_minima" value="70.00"></label>
             <label>Ordem<input type="number" name="ordem" value="1"></label>
@@ -139,7 +139,7 @@
         <form method="post" action="/professor/academico/nota" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Inscricao
+            <label>Inscrição
                 <select name="inscricao_id">
                     <?php foreach ($inscricoes as $inscricao): ?>
                         <option value="<?php echo (int) $inscricao['id']; ?>"><?php echo Helpers::e($inscricao['participante_nome']); ?></option>
@@ -162,8 +162,9 @@
                     <option value="reprovada">Reprovada</option>
                 </select>
             </label>
-            <label>Observacao<textarea name="observacao" rows="2"></textarea></label>
+            <label>Observação<textarea name="observacao" rows="2"></textarea></label>
             <button type="submit">Salvar nota</button>
         </form>
     </section>
 <?php endif; ?>
+

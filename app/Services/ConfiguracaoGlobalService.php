@@ -4,13 +4,13 @@ namespace App\Services;
 
 use App\Core\Logger;
 use App\Core\Validator;
-use App\Models\ConfiguracaoCertificado;
-use App\Models\ConfiguracaoFinanceira;
-use App\Models\ConfiguracaoFrontend;
-use App\Models\ConfiguracaoGlobal;
-use App\Models\ConfiguracaoSeguranca;
+use App\Models\ConfiguraçãoCertificado;
+use App\Models\ConfiguraçãoFinanceira;
+use App\Models\ConfiguraçãoFrontend;
+use App\Models\ConfiguraçãoGlobal;
+use App\Models\ConfiguraçãoSegurança;
 
-class ConfiguracaoGlobalService
+class ConfiguraçãoGlobalService
 {
     private $globalModel;
     private $certificadoModel;
@@ -21,11 +21,11 @@ class ConfiguracaoGlobalService
 
     public function __construct()
     {
-        $this->globalModel = new ConfiguracaoGlobal();
-        $this->certificadoModel = new ConfiguracaoCertificado();
-        $this->financeiraModel = new ConfiguracaoFinanceira();
-        $this->frontendModel = new ConfiguracaoFrontend();
-        $this->segurancaModel = new ConfiguracaoSeguranca();
+        $this->globalModel = new ConfiguraçãoGlobal();
+        $this->certificadoModel = new ConfiguraçãoCertificado();
+        $this->financeiraModel = new ConfiguraçãoFinanceira();
+        $this->frontendModel = new ConfiguraçãoFrontend();
+        $this->segurancaModel = new ConfiguraçãoSegurança();
         $this->auditService = new AuditService();
     }
 
@@ -212,7 +212,7 @@ class ConfiguracaoGlobalService
         return array('ok' => true, 'id' => $id);
     }
 
-    public function saveSeguranca(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function saveSegurança(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $payload = array(
             'politica_login' => isset($data['politica_login']) ? trim((string) $data['politica_login']) : 'email_cpf',
@@ -221,7 +221,7 @@ class ConfiguracaoGlobalService
             'tempo_bloqueio_login_minutos' => isset($data['tempo_bloqueio_login_minutos']) ? (int) $data['tempo_bloqueio_login_minutos'] : 15,
         );
 
-        $errors = $this->validateSeguranca($payload);
+        $errors = $this->validateSegurança($payload);
         if ($errors) {
             return array('ok' => false, 'errors' => $errors);
         }
@@ -312,7 +312,7 @@ class ConfiguracaoGlobalService
         return $errors;
     }
 
-    private function validateSeguranca(array $payload)
+    private function validateSegurança(array $payload)
     {
         $errors = array();
         $allowed = array('email_cpf', 'email', 'cpf');
@@ -336,3 +336,4 @@ class ConfiguracaoGlobalService
         return $errors;
     }
 }
+

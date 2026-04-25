@@ -53,7 +53,7 @@ class ProfessoresFiscaisController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Nao foi possivel salvar o perfil fiscal.'));
+            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possivel salvar o perfil fiscal.'));
             return $this->redirect('/admin/professores-fiscais/criar');
         }
 
@@ -100,7 +100,7 @@ class ProfessoresFiscaisController extends Controller
 
         if (empty($result['ok'])) {
             $perfilId = (int) $request->input('id', 0);
-            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Nao foi possivel atualizar o perfil fiscal.'));
+            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possivel atualizar o perfil fiscal.'));
             return $this->redirect('/admin/professores-fiscais/editar?perfil_id=' . $perfilId);
         }
 
@@ -160,7 +160,7 @@ class ProfessoresFiscaisController extends Controller
 
         $result = $this->financeiroService->removerProfessorFiscal($perfilId, $justificativa, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel remover o perfil fiscal.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel remover o perfil fiscal.'));
             return $this->redirect('/admin/professores-fiscais/show?perfil_id=' . $perfilId);
         }
 
@@ -168,3 +168,4 @@ class ProfessoresFiscaisController extends Controller
         return $this->redirect('/admin/professores-fiscais');
     }
 }
+

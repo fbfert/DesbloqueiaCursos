@@ -163,7 +163,7 @@ class TurmaService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.turma.falhou', array('message' => $exception->getMessage()));
+            Logger::error('catalogo.turma.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -184,7 +184,7 @@ class TurmaService
         $stmt->execute(array('turma_id' => $id));
         $row = $stmt->fetch();
         if (!empty($row) && (int) $row['total'] > 0) {
-            return array('ok' => false, 'message' => 'Nao e seguro excluir turma com inscricoes vinculadas.');
+            return array('ok' => false, 'message' => 'Não e seguro excluir turma com inscricoes vinculadas.');
         }
 
         $pdo = Database::connection();
@@ -210,7 +210,7 @@ class TurmaService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.turma.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('catalogo.turma.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -266,3 +266,4 @@ class TurmaService
         return null;
     }
 }
+

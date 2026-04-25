@@ -37,11 +37,12 @@ class EmailsController extends Controller
         );
 
         if (!$result['ok']) {
-            Session::flash('errors', array('config' => isset($result['message']) ? $result['message'] : 'Nao foi possivel salvar a configuracao.'));
+            Session::flash('errors', array('config' => isset($result['message']) ? $result['message'] : 'Não foi possivel salvar a configuracao.'));
             return $this->redirect('/admin/emails');
         }
 
-        Session::flash('success', 'Configuracao SMTP atualizada.');
+        Session::flash('success', 'Configuração SMTP atualizada.');
         return $this->redirect('/admin/emails');
     }
 }
+

@@ -69,7 +69,7 @@ class CertificadosController extends Controller
         }
 
         if (!$this->certificadoService->usuarioPodeAcessarCertificado($resultado['certificado'], Session::get('usuario_id'))) {
-            Session::flash('errors', array('certificado' => 'Voce nao tem permissao para abrir este PDF.'));
+            Session::flash('errors', array('certificado' => 'Você nao tem permissao para abrir este PDF.'));
             return new Response(View::render('errors/403', array('title' => 'Acesso negado')), 403);
         }
 
@@ -85,3 +85,4 @@ class CertificadosController extends Controller
         ));
     }
 }
+

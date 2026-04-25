@@ -54,7 +54,7 @@
     <article class="checkout-panel">
         <h2>Turmas abertas</h2>
         <?php if (empty($curso['turmas_abertas'])): ?>
-            <p class="muted">Nao ha turma aberta no momento para inscricao publica.</p>
+            <p class="muted">Não ha turma aberta no momento para inscricao publica.</p>
         <?php else: ?>
             <div class="stack">
                 <?php foreach ($curso['turmas_abertas'] as $turma): ?>
@@ -81,7 +81,7 @@
 
 <?php if (!empty($curso['inscricao_disponivel']) && !empty($curso['turma_selecionada'])): ?>
     <section class="notice notice--success">
-        <strong>Inscricao disponivel</strong>
+        <strong>Inscrição disponivel</strong>
         <p>A turma <?php echo Helpers::e($curso['turma_selecionada']['nome']); ?> esta aberta e pode receber inscricoes agora.</p>
         <div class="cta-group">
             <a class="button-link" href="/inscricao?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo (int) $curso['turma_selecionada']['id']; ?>">Iniciar inscricao</a>
@@ -90,7 +90,7 @@
 <?php else: ?>
     <section class="notice">
         <strong>Sem inscricao aberta</strong>
-        <p>Este curso esta publico, mas ainda nao possui turma aberta para inscricao.</p>
+        <p>Este curso esta publico, mas ainda não possui turma aberta para inscricao.</p>
     </section>
 <?php endif; ?>
 
@@ -104,3 +104,4 @@
         </div>
     </section>
 <?php endif; ?>
+

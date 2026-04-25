@@ -18,6 +18,7 @@ class AuthService
     private $accessLogs;
     private $emailService;
     private $globalConfigService;
+    private $rbacService;
 
     public function __construct()
     {
@@ -25,7 +26,8 @@ class AuthService
         $this->consentimentos = new ConsentimentoUsuario();
         $this->accessLogs = new AccessLogService();
         $this->emailService = new EmailService();
-        $this->globalConfigService = new ConfiguracaoGlobalService();
+        $this->globalConfigService = new ConfiguraçãoGlobalService();
+        $this->rbacService = new RbacService();
     }
 
     public function userId()
@@ -164,7 +166,11 @@ class AuthService
 
         $this->accessLogs->record($usuario['id'], 'login', 'success', $ipAddress, $userAgent);
 
-        return array('ok' => true, 'usuario' => $usuario);
+        return array(
+            'ok' => true,
+            'usuario' => $usuario,
+            'redirect_to' => $this->resolveLoginRedirect((int) $usuario['id']),
+        );
     }
 
     public function logout($ipAddress, $userAgent)
@@ -284,4 +290,55 @@ class AuthService
 
         return Validator::email($login) || Validator::cpf($login);
     }
+
+    private function resolveLoginRedirect($usuarioId)
+    {
+        if ($this->canAccessAdminDashboard($usuarioId)) {
+            return '/admin/dashboard';
+        }
+
+        if ($this->canAccessProfessorDashboard($usuarioId)) {
+            return '/professor/dashboard';
+        }
+
+        return '/meus-cursos';
+    }
+
+    private function canAccessAdminDashboard($usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        return $this->rbacService->userHasAnyPermission($usuarioId, array(
+            'rbac.dashboard.ver',
+            'pedidos.ver',
+            'financeiro.ver',
+            'conteudo.ver',
+            'marketing.ver',
+            'certificados.ver',
+            'configuracoes_globais.ver',
+            'emails.ver',
+            'academico.ver',
+            'area_curso.gerenciar',
+            'cupons.ver',
+        ));
+    }
+
+    private function canAccessProfessorDashboard($usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        return $this->rbacService->userHasAnyPermission($usuarioId, array(
+            'professor.ver',
+            'professor.gerenciar',
+            'catalogo.professor.ver',
+            'area_curso.professor.ver',
+            'financeiro.professor.ver',
+            'academico.ver',
+        ));
+    }
 }
+

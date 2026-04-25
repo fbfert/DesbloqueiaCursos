@@ -47,7 +47,7 @@
 
 <?php if (!empty($curso)): ?>
     <section class="panel">
-        <div class="panel-header"><div><h2>Instrucoes</h2></div></div>
+        <div class="panel-header"><div><h2>Instruções</h2></div></div>
         <form method="post" action="/professor/area-curso/instrucoes" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
@@ -65,7 +65,7 @@
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
             <label>Titulo<input type="text" name="titulo"></label>
-            <label>Descricao<textarea name="descricao" rows="3"></textarea></label>
+            <label>Descrição<textarea name="descricao" rows="3"></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
             <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
             <button type="submit">Salvar modulo</button>
@@ -168,7 +168,7 @@
                 </select>
             </label>
             <label>Titulo<input type="text" name="titulo"></label>
-            <label>Descricao<textarea name="descricao" rows="3"></textarea></label>
+            <label>Descrição<textarea name="descricao" rows="3"></textarea></label>
             <label>Tipo arquivo<input type="text" name="tipo_arquivo" value="outro"></label>
             <label>Arquivo<input type="file" name="arquivo"></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
@@ -273,3 +273,4 @@
         </div>
     </section>
 <?php endif; ?>
+

@@ -1,5 +1,5 @@
 <section class="hero">
-    <h1>Configuracoes de certificados</h1>
+    <h1>Configurações de certificados</h1>
     <p>Prefixo, texto e padroes de validacao publica.</p>
 </section>
 
@@ -23,3 +23,4 @@
         <button type="submit">Salvar certificados</button>
     </form>
 </section>
+

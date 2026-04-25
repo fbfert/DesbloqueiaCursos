@@ -24,25 +24,25 @@
 </section>
 
 <section class="status-card">
-    <strong>Acoes do pedido</strong>
+    <strong>Ações do pedido</strong>
     <div class="grid-forms">
         <form method="post" action="/admin/pedidos/aprovar">
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
-            <label>Observacao</label>
+            <label>Observação</label>
             <textarea name="observacao" rows="3"></textarea>
             <button type="submit">Aprovar pedido</button>
         </form>
 
         <form method="post" action="/admin/pedidos/marcar-pendencia">
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
-            <label>Observacao</label>
+            <label>Observação</label>
             <textarea name="observacao" rows="3"></textarea>
             <button type="submit">Marcar pendencia</button>
         </form>
 
         <form method="post" action="/admin/pedidos/solicitar-reenvio">
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
-            <label>Observacao</label>
+            <label>Observação</label>
             <textarea name="observacao" rows="3"></textarea>
             <button type="submit">Solicitar reenvio PIX</button>
         </form>
@@ -110,7 +110,7 @@
 </section>
 
 <section class="status-card">
-    <strong>Inscricoes vinculadas</strong>
+    <strong>Inscrições vinculadas</strong>
     <div class="table-wrap">
         <table class="admin-table">
             <thead>
@@ -177,7 +177,7 @@
                 <tr>
                     <th>Status anterior</th>
                     <th>Status novo</th>
-                    <th>Observacao</th>
+                    <th>Observação</th>
                     <th>Data</th>
                 </tr>
             </thead>
@@ -194,3 +194,4 @@
         </table>
     </div>
 </section>
+

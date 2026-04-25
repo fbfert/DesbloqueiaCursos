@@ -76,7 +76,7 @@ class ModuloService
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('area_curso.modulo.falhou', array(
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
             throw $exception;
         }
@@ -112,8 +112,9 @@ class ModuloService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.modulo.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.modulo.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
 }
+

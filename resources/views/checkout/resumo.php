@@ -95,7 +95,7 @@
                 <a class="button-link" href="/checkout/comprovante?pedido_id=<?php echo (int) $pedido['id']; ?>">Enviar comprovante</a>
             </div>
         <?php else: ?>
-            <p class="muted">Comprovante ainda nao disponivel para este acesso.</p>
+            <p class="muted">Comprovante ainda não disponivel para este acesso.</p>
         <?php endif; ?>
     </article>
 
@@ -115,3 +115,4 @@
         <?php endif; ?>
     </article>
 </section>
+

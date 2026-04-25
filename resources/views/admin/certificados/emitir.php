@@ -21,10 +21,10 @@
 
 <form method="post" action="/admin/certificados/emitir" class="form-grid">
     <label>
-        Inscricao apta
+        Inscrição apta
         <select name="inscricao_id">
             <?php foreach ($aptos as $apto): ?>
-                <option value="<?php echo (int) $apto['id']; ?>" <?php echo (int) $selectedInscricaoId === (int) $apto['id'] ? 'selected' : ''; ?>>
+                <option value="<?php echo (int) $apto['id']; ?>" <?php echo (int) $selectedInscriçãoId === (int) $apto['id'] ? 'selected' : ''; ?>>
                     <?php echo Helpers::e($apto['curso_nome'] . ' - ' . $apto['participante_nome'] . ' (' . $apto['pedido_codigo'] . ')'); ?>
                 </option>
             <?php endforeach; ?>
@@ -49,3 +49,4 @@
 
     <button type="submit">Emitir</button>
 </form>
+

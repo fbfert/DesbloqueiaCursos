@@ -1,6 +1,48 @@
-<section class="hero">
-    <h1>Financeiro</h1>
-    <p>Apuracoes mensais, repasses, perfil fiscal dos professores e parametros do rateio.</p>
+<?php
+$totalApuracoes = is_array($apuracoes) ? count($apuracoes) : 0;
+$totalPerfisFiscais = is_array($professores_fiscal) ? count($professores_fiscal) : 0;
+$apuracoesAbertas = 0;
+
+foreach ((array) $apuracoes as $apuracaoResumo) {
+    if (isset($apuracaoResumo['status']) && (string) $apuracaoResumo['status'] !== 'fechada') {
+        $apuracoesAbertas++;
+    }
+}
+?>
+
+<section class="hero admin-dashboard-hero">
+    <div class="hero__content">
+        <h1>Financeiro</h1>
+        <p>Apuracoes mensais, repasses, perfil fiscal dos professores e parametros do rateio.</p>
+    </div>
+    <div class="hero__panel admin-dashboard-hero__panel">
+        <strong>Resumo rapido</strong>
+        <div class="admin-dashboard-highlight">
+            <span>Apuracoes registradas</span>
+            <strong><?php echo (int) $totalApuracoes; ?></strong>
+            <small>historico consolidado</small>
+        </div>
+        <div class="admin-dashboard-highlight">
+            <span>Apuracoes em aberto</span>
+            <strong><?php echo (int) $apuracoesAbertas; ?></strong>
+            <small>pendentes de fechamento</small>
+        </div>
+        <div class="admin-dashboard-highlight">
+            <span>Perfis fiscais</span>
+            <strong><?php echo (int) $totalPerfisFiscais; ?></strong>
+            <small>professores cadastrados</small>
+        </div>
+    </div>
+</section>
+
+<section class="status-card">
+    <strong>Atalhos financeiros</strong>
+    <div class="quick-actions quick-actions--dashboard">
+        <a class="card-link admin-shortcut" href="/admin/financeiro/repasses"><span>Repasses</span><small>Geracao e pagamento por competencia</small></a>
+        <a class="card-link admin-shortcut" href="/admin/professores-fiscais"><span>Professores fiscais</span><small>Gestao detalhada de perfis</small></a>
+        <a class="card-link admin-shortcut" href="/admin/rateios"><span>Rateios</span><small>Acompanhamento por curso/turma</small></a>
+        <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -18,7 +60,7 @@
         <strong>Nova apuracao</strong>
         <form method="post" action="/admin/financeiro/apurar" class="form-grid">
             <label>
-                Competencia
+                Competência
                 <input type="month" name="competencia" required>
             </label>
             <div>
@@ -34,7 +76,7 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Competencia</th>
+                    <th>Competência</th>
                     <th>Base bruta</th>
                     <th>Liquida</th>
                     <th>Rateio</th>
@@ -109,12 +151,12 @@
         </label>
 
         <label>
-            Inscricao municipal
+            Inscrição municipal
             <input type="text" name="inscricao_municipal" maxlength="100">
         </label>
 
         <label>
-            Aliquota de retencao (%)
+            Alíquota de retencao (%)
             <input type="number" step="0.01" min="0" max="100" name="aliquota_retencao" value="0.00">
         </label>
 
@@ -132,7 +174,7 @@
         </label>
 
         <label class="full">
-            Observacao
+            Observação
             <textarea name="observacao" rows="3"></textarea>
         </label>
 
@@ -156,7 +198,7 @@
                     <th>Professor</th>
                     <th>Tipo</th>
                     <th>Documento</th>
-                    <th>Aliquota</th>
+                    <th>Alíquota</th>
                     <th>Exige NF</th>
                     <th>Status</th>
                 </tr>
@@ -173,7 +215,7 @@
                         <td><?php echo htmlspecialchars($perfil['tipo_pessoa'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars(!empty($perfil['cpf']) ? $perfil['cpf'] : $perfil['cnpj'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo number_format((float) $perfil['aliquota_retencao'], 2, ',', '.'); ?>%</td>
-                        <td><?php echo !empty($perfil['exige_nota_fiscal']) ? 'Sim' : 'Nao'; ?></td>
+                        <td><?php echo !empty($perfil['exige_nota_fiscal']) ? 'Sim' : 'Não'; ?></td>
                         <td><?php echo htmlspecialchars($perfil['status'], ENT_QUOTES, 'UTF-8'); ?></td>
                     </tr>
                 <?php endforeach; ?>
@@ -181,3 +223,4 @@
         </table>
     </div>
 </section>
+

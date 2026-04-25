@@ -6,7 +6,7 @@ use App\Core\Database;
 use App\Core\Helpers;
 use App\Core\Logger;
 use App\Models\ApuracaoMensal;
-use App\Models\ConfiguracaoGlobal;
+use App\Models\ConfiguraçãoGlobal;
 use App\Models\CursoRateioParticipante;
 use App\Models\PagamentoProfessor;
 use App\Models\ProfessorFiscal;
@@ -42,7 +42,7 @@ class RepasseProfessorService
         $this->rpaModel = new RpaEspelho();
         $this->fileStorageService = new FileStorageService();
         $this->auditService = new AuditService();
-        $this->configuracaoGlobalService = new ConfiguracaoGlobalService();
+        $this->configuracaoGlobalService = new ConfiguraçãoGlobalService();
     }
 
     public function gerarRepassesDaApuracao($apuracaoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -149,7 +149,7 @@ class RepasseProfessorService
             $pdo->rollBack();
             Logger::error('financeiro.repasses.falhou', array(
                 'apuracao_id' => $apuracaoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -348,6 +348,7 @@ class RepasseProfessorService
 
     private function renderRpaEspelho(array $repasse, $nome, $cpf, $competencia)
     {
-        return '<html><body><h1>Espelho de RPA</h1><p>Competencia: ' . htmlspecialchars($competencia, ENT_QUOTES, 'UTF-8') . '</p><p>Professor: ' . htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') . '</p><p>CPF: ' . htmlspecialchars((string) $cpf, ENT_QUOTES, 'UTF-8') . '</p><p>Valor bruto: R$ ' . number_format((float) $repasse['valor_bruto'], 2, ',', '.') . '</p><p>Retencao: R$ ' . number_format((float) $repasse['valor_retenido'], 2, ',', '.') . '</p><p>Liquido: R$ ' . number_format((float) $repasse['valor_liquido'], 2, ',', '.') . '</p></body></html>';
+        return '<html><body><h1>Espelho de RPA</h1><p>Competência: ' . htmlspecialchars($competencia, ENT_QUOTES, 'UTF-8') . '</p><p>Professor: ' . htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') . '</p><p>CPF: ' . htmlspecialchars((string) $cpf, ENT_QUOTES, 'UTF-8') . '</p><p>Valor bruto: R$ ' . number_format((float) $repasse['valor_bruto'], 2, ',', '.') . '</p><p>Retenção: R$ ' . number_format((float) $repasse['valor_retenido'], 2, ',', '.') . '</p><p>Líquido: R$ ' . number_format((float) $repasse['valor_liquido'], 2, ',', '.') . '</p></body></html>';
     }
 }
+

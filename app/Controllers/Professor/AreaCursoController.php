@@ -46,14 +46,14 @@ class AreaCursoController extends Controller
         ));
     }
 
-    public function salvarInstrucao(Request $request)
+    public function salvarInstrução(Request $request)
     {
         if (!$this->registroAutorizado('instrucao', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             Session::flash('errors', array('Contexto nao autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
-        $resultado = $this->areaCursoService->salvarInstrucao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $resultado = $this->areaCursoService->salvarInstrução($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
     }
 
@@ -156,7 +156,7 @@ class AreaCursoController extends Controller
     private function respondForm(array $resultado, $redirectTo)
     {
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Nao foi possivel salvar o registro.'));
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
         } else {
             Session::flash('success', 'Registro salvo com sucesso.');
         }
@@ -186,3 +186,4 @@ class AreaCursoController extends Controller
         return $this->areaCursoService->registroPertenceAoContexto($tipo, $id, $cursoId, $turmaId > 0 ? $turmaId : null);
     }
 }
+

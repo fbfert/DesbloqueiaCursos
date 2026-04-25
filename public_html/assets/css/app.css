@@ -1,11 +1,11 @@
 :root {
-    --color-bg: #f3efe7;
+    --color-bg: #f7f9fa;
     --color-panel: #ffffff;
-    --color-text: #1f2330;
-    --color-muted: #5f6370;
-    --color-primary: #0c5b4f;
-    --color-accent: #f08c52;
-    --color-border: #d9d3c7;
+    --color-text: #1c1d1f;
+    --color-muted: #6a6f73;
+    --color-primary: #5624d0;
+    --color-accent: #a435f0;
+    --color-border: #d1d7dc;
 }
 
 * {
@@ -16,7 +16,7 @@ body {
     margin: 0;
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
     line-height: 1.5;
 }
 
@@ -30,9 +30,7 @@ body {
 
 .site-shell {
     min-height: 100vh;
-    background:
-        radial-gradient(circle at top left, rgba(240, 140, 82, 0.18), transparent 30%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(243, 239, 231, 0.96));
+    background: linear-gradient(180deg, #f7f9fa 0%, #ffffff 40%, #f7f9fa 100%);
 }
 
 .public-header {
@@ -40,8 +38,8 @@ body {
     top: 0;
     z-index: 20;
     backdrop-filter: blur(12px);
-    background: rgba(243, 239, 231, 0.88);
-    border-bottom: 1px solid rgba(12, 91, 79, 0.12);
+    background: #1c1d1f;
+    border-bottom: 1px solid #3e4143;
 }
 
 .site-header {
@@ -54,10 +52,16 @@ body {
 
 .brand {
     font-size: 20px;
-    font-weight: 700;
-    color: var(--color-primary);
+    font-weight: 800;
+    color: var(--color-text);
     text-decoration: none;
     letter-spacing: 0.02em;
+}
+
+.app-public .brand,
+.app-professor .brand,
+.app-aluno .brand {
+    color: #ffffff;
 }
 
 .public-nav,
@@ -74,16 +78,17 @@ body {
     align-items: center;
     min-height: 40px;
     padding: 8px 12px;
-    border-radius: 999px;
-    color: var(--color-text);
+    border-radius: 6px;
+    color: #ffffff;
     text-decoration: none;
     font-size: 14px;
+    font-weight: 600;
 }
 
 .public-nav__link.is-active,
 .public-nav__link:hover {
-    background: rgba(12, 91, 79, 0.1);
-    color: var(--color-primary);
+    background: #2d2f31;
+    color: #ffffff;
 }
 
 .hero {
@@ -108,7 +113,8 @@ body {
     padding: 18px;
     border: 1px solid var(--color-border);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.76);
+    background: var(--color-panel);
+    box-shadow: 0 10px 28px rgba(28, 29, 31, 0.08);
 }
 
 .hero-stat {
@@ -128,8 +134,8 @@ body {
     min-height: 28px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(240, 140, 82, 0.16);
-    color: #7a4318;
+    background: #eceb98;
+    color: #3d3c0a;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -160,11 +166,18 @@ body {
     min-height: 44px;
     padding: 10px 14px;
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: 10px;
     background: var(--color-panel);
     color: var(--color-text);
     text-decoration: none;
     font-weight: 700;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.card-link:hover {
+    border-color: #9194ac;
+    box-shadow: 0 8px 18px rgba(28, 29, 31, 0.08);
+    transform: translateY(-1px);
 }
 
 .status-grid {
@@ -313,17 +326,30 @@ body {
     justify-content: center;
     min-height: 44px;
     padding: 10px 14px;
-    border-radius: 999px;
+    border-radius: 8px;
     background: var(--color-primary);
     color: #fff;
     text-decoration: none;
     font-weight: 700;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.button-link:hover {
+    background: #401b9c;
+    box-shadow: 0 10px 18px rgba(86, 36, 208, 0.24);
+    transform: translateY(-1px);
 }
 
 .button-link--ghost {
-    background: transparent;
+    background: #ffffff;
     border: 1px solid var(--color-border);
     color: var(--color-text);
+    box-shadow: none;
+}
+
+.button-link--ghost:hover {
+    background: #f6f7f9;
+    box-shadow: none;
 }
 
 .checkout-grid {
@@ -375,10 +401,11 @@ body {
 
 .status-card {
     min-height: 112px;
-    padding: 16px;
+    padding: 18px;
     border: 1px solid var(--color-border);
-    border-radius: 18px;
+    border-radius: 14px;
     background: var(--color-panel);
+    box-shadow: 0 6px 18px rgba(28, 29, 31, 0.05);
 }
 
 .status-card--selected {
@@ -413,7 +440,7 @@ body {
     min-height: 44px;
     padding: 10px 12px;
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: 6px;
     background: #fff;
     color: var(--color-text);
     font: inherit;
@@ -459,10 +486,11 @@ body {
 .auth-form {
     display: grid;
     gap: 14px;
-    padding: 18px;
+    padding: 22px;
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: 12px;
     background: var(--color-panel);
+    box-shadow: 0 10px 24px rgba(28, 29, 31, 0.08);
 }
 
 .auth-form label {
@@ -533,7 +561,7 @@ body {
 
 .admin-table {
     width: 100%;
-    min-width: 520px;
+    min-width: 720px;
     border-collapse: collapse;
 }
 
@@ -547,7 +575,9 @@ body {
 
 .admin-table th {
     color: var(--color-muted);
-    font-size: 14px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .admin-form {
@@ -626,14 +656,26 @@ body {
 
 .admin-shell {
     display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
     min-height: 100vh;
+    min-width: 1240px;
+}
+
+.app-admin {
+    min-width: 1240px;
+    overflow-x: auto;
+    background: #f8f9fb;
 }
 
 .admin-sidebar {
-    padding: 20px;
-    border-right: 1px solid var(--color-border);
-    background: #0f1720;
+    padding: 24px;
+    border-right: 1px solid #2b3443;
+    background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
     color: #d7e1ea;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
 }
 
 .admin-sidebar .brand {
@@ -641,7 +683,7 @@ body {
 }
 
 .admin-sidebar__brand {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .admin-sidebar__brand p {
@@ -664,7 +706,7 @@ body {
 
 .admin-nav {
     display: grid;
-    gap: 6px;
+    gap: 8px;
 }
 
 .admin-nav__link {
@@ -673,14 +715,16 @@ body {
     gap: 10px;
     min-height: 42px;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: 10px;
     color: #e5edf5;
     text-decoration: none;
+    border: 1px solid transparent;
 }
 
 .admin-nav__link.is-active,
 .admin-nav__link:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(164, 53, 240, 0.16);
+    border-color: rgba(164, 53, 240, 0.34);
 }
 
 .admin-nav__icon {
@@ -699,8 +743,11 @@ body {
     gap: 16px;
     align-items: center;
     padding: 16px 20px;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid #d1d7dc;
     background: var(--color-panel);
+    position: sticky;
+    top: 0;
+    z-index: 15;
 }
 
 .breadcrumbs {
@@ -738,6 +785,7 @@ body {
 .site-main--admin {
     width: 100%;
     max-width: none;
+    padding: 24px 28px;
 }
 
 .quick-actions {
@@ -750,6 +798,66 @@ body {
 .quick-actions .card-link {
     min-width: 120px;
     flex: 1 1 120px;
+}
+
+.admin-dashboard-hero {
+    gap: 14px;
+}
+
+.admin-dashboard-hero__panel strong {
+    margin-bottom: 2px;
+}
+
+.admin-dashboard-highlight {
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: rgba(12, 91, 79, 0.04);
+}
+
+.admin-dashboard-highlight span {
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.admin-dashboard-highlight strong {
+    margin: 0;
+    color: var(--color-primary);
+    font-size: 20px;
+    line-height: 1.1;
+}
+
+.admin-dashboard-highlight small {
+    color: var(--color-muted);
+    font-size: 12px;
+}
+
+.quick-actions--dashboard {
+    margin-top: 12px;
+}
+
+.quick-actions--dashboard .admin-shortcut {
+    display: grid;
+    justify-content: start;
+    gap: 2px;
+    text-align: left;
+}
+
+.quick-actions--dashboard .admin-shortcut span {
+    font-size: 14px;
+}
+
+.quick-actions--dashboard .admin-shortcut small {
+    color: var(--color-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.quick-actions--dashboard .admin-shortcut--alert {
+    border-color: #e8b48e;
+    background: #fff7f1;
 }
 
 .muted-row {
@@ -802,18 +910,8 @@ body {
 }
 
 @media (min-width: 1080px) {
-    .admin-shell {
-        grid-template-columns: 280px minmax(0, 1fr);
-    }
-
-    .admin-sidebar {
-        min-height: 100vh;
-        position: sticky;
-        top: 0;
-        overflow-y: auto;
-    }
-
-    .site-main--admin {
-        padding: 20px;
+    .admin-dashboard-hero {
+        grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+        align-items: stretch;
     }
 }

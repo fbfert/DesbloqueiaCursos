@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
-use App\Services\InscricaoService;
+use App\Services\InscriçãoService;
 
 class MeusCursosController extends Controller
 {
@@ -13,7 +13,7 @@ class MeusCursosController extends Controller
 
     public function __construct()
     {
-        $this->inscricaoService = new InscricaoService();
+        $this->inscricaoService = new InscriçãoService();
     }
 
     public function index(Request $request)
@@ -30,3 +30,4 @@ class MeusCursosController extends Controller
         ));
     }
 }
+

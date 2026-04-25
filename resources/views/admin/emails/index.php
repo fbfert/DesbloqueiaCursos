@@ -2,7 +2,7 @@
     <div class="panel-header">
         <div>
             <h1>Emails transacionais</h1>
-            <p>Configuracao SMTP basica e historico de envios.</p>
+            <p>Configuração SMTP basica e historico de envios.</p>
         </div>
     </div>
 
@@ -119,3 +119,4 @@
         </table>
     </div>
 </section>
+

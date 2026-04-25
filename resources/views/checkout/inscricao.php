@@ -22,7 +22,7 @@
 <?php if (empty($loggedIn)): ?>
     <section class="notice">
         <strong>Entre para continuar</strong>
-        <p>Voce pode revisar o curso, mas precisa entrar na conta para iniciar a compra.</p>
+        <p>Você pode revisar o curso, mas precisa entrar na conta para iniciar a compra.</p>
         <div class="cta-group">
             <a class="button-link" href="/login">Entrar</a>
             <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>
@@ -98,3 +98,4 @@
         <button type="submit">Avancar para participantes</button>
     </form>
 <?php endif; ?>
+

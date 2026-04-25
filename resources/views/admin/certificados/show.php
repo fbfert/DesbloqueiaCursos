@@ -38,14 +38,14 @@
 
     <div class="pill-row" style="margin-top:16px;">
         <a class="pill" href="/admin/certificados/pdf?codigo=<?php echo urlencode($certificado['codigo']); ?>">Abrir PDF</a>
-        <a class="pill" href="/certificados/validar?codigo=<?php echo urlencode($certificado['codigo']); ?>">Validacao publica</a>
+        <a class="pill" href="/certificados/validar?codigo=<?php echo urlencode($certificado['codigo']); ?>">Validação publica</a>
     </div>
 </section>
 
 <section class="panel">
     <div class="panel-header">
         <div>
-            <h2>Reemissao</h2>
+            <h2>Reemissão</h2>
             <p>Escolha manter o codigo ou gerar um novo.</p>
         </div>
     </div>
@@ -64,13 +64,13 @@
     <div class="panel-header">
         <div>
             <h2>Cancelar ou revogar</h2>
-            <p>Acoes irreversiveis de status.</p>
+            <p>Ações irreversiveis de status.</p>
         </div>
     </div>
     <form method="post" action="/admin/certificados/cancelar" class="form-grid">
         <input type="hidden" name="certificado_id" value="<?php echo (int) $certificado['id']; ?>">
         <label>
-            Observacao
+            Observação
             <input type="text" name="observacao">
         </label>
         <button type="submit">Cancelar</button>
@@ -78,7 +78,7 @@
     <form method="post" action="/admin/certificados/revogar" class="form-grid" style="margin-top:12px;">
         <input type="hidden" name="certificado_id" value="<?php echo (int) $certificado['id']; ?>">
         <label>
-            Observacao
+            Observação
             <input type="text" name="observacao">
         </label>
         <button type="submit">Revogar</button>
@@ -93,7 +93,7 @@
     </div>
     <div class="table-wrapper">
         <table class="table">
-            <thead><tr><th>Status</th><th>Observacao</th><th>Data</th></tr></thead>
+            <thead><tr><th>Status</th><th>Observação</th><th>Data</th></tr></thead>
             <tbody>
                 <?php foreach ($certificado['historico'] as $item): ?>
                     <tr>
@@ -108,7 +108,7 @@
 </section>
 
 <section class="panel">
-    <div class="panel-header"><div><h2>Validacoes</h2></div></div>
+    <div class="panel-header"><div><h2>Validações</h2></div></div>
     <div class="table-wrapper">
         <table class="table">
             <thead><tr><th>Resultado</th><th>CPF</th><th>Data</th></tr></thead>
@@ -124,3 +124,4 @@
         </table>
     </div>
 </section>
+

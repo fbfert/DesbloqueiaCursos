@@ -68,11 +68,11 @@
             <input type="text" name="thumbnail" value="<?php echo Helpers::e($curso['thumbnail'] ?? ''); ?>">
         </label>
         <label class="full">
-            Descricao curta
+            Descrição curta
             <textarea name="descricao_curta" rows="3"><?php echo Helpers::e($curso['descricao_curta'] ?? ''); ?></textarea>
         </label>
         <label class="full">
-            Descricao completa
+            Descrição completa
             <textarea name="descricao_completa" rows="5"><?php echo Helpers::e($curso['descricao_completa'] ?? ''); ?></textarea>
         </label>
         <label>
@@ -108,3 +108,4 @@
         <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
     </form>
 </section>
+

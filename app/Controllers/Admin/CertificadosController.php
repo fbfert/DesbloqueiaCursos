@@ -57,7 +57,7 @@ class CertificadosController extends Controller
                 'title' => 'Emitir certificado',
                 'aptos' => $this->certificadoService->listarAptos(),
                 'templates' => $this->certificadoService->listarTemplates(),
-                'selectedInscricaoId' => $inscricaoId,
+                'selectedInscriçãoId' => $inscricaoId,
                 'errors' => Session::pullFlash('errors', array()),
                 'success' => Session::pullFlash('success'),
             ));
@@ -75,7 +75,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel emitir o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel emitir o certificado.'));
             return $this->redirect('/admin/certificados/emitir?inscricao_id=' . (int) $request->input('inscricao_id', 0));
         }
 
@@ -94,7 +94,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel reemitir o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel reemitir o certificado.'));
             return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $request->input('certificado_id', 0));
         }
 
@@ -113,7 +113,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel cancelar o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel cancelar o certificado.'));
             return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $request->input('certificado_id', 0));
         }
 
@@ -132,7 +132,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel revogar o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel revogar o certificado.'));
             return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $request->input('certificado_id', 0));
         }
 
@@ -155,3 +155,4 @@ class CertificadosController extends Controller
         ));
     }
 }
+

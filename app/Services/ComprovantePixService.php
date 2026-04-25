@@ -38,7 +38,7 @@ class ComprovantePixService
 
         if (!$this->pedidoAutorizadoParaUpload($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('comprovante_pix.upload_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para enviar comprovante neste pedido.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para enviar comprovante neste pedido.');
         }
 
         if (!$this->pedidoPodeReceberComprovante($pedido)) {
@@ -123,7 +123,7 @@ class ComprovantePixService
             $pdo->rollBack();
             Logger::error('comprovante_pix.enviar_falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -216,7 +216,7 @@ class ComprovantePixService
             $pdo->rollBack();
             Logger::error('comprovante_pix.aprovar_falhou', array(
                 'comprovante_pix_id' => $comprovanteId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -297,7 +297,7 @@ class ComprovantePixService
             $pdo->rollBack();
             Logger::error('comprovante_pix.reprovar_falhou', array(
                 'comprovante_pix_id' => $comprovanteId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -346,3 +346,4 @@ class ComprovantePixService
         Logger::error($evento, $payload);
     }
 }
+

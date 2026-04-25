@@ -7,7 +7,7 @@ use App\Core\Logger;
 use App\Models\Avaliacao;
 use App\Models\AvaliacaoPergunta;
 use App\Models\AvaliacaoRespostaUsuario;
-use App\Models\Inscricao;
+use App\Models\Inscrição;
 use App\Models\NotaAvaliacao;
 use Exception;
 
@@ -29,8 +29,8 @@ class AvaliacaoService
         $this->perguntaModel = isset($dependencies['perguntaModel']) ? $dependencies['perguntaModel'] : new AvaliacaoPergunta();
         $this->respostaModel = isset($dependencies['respostaModel']) ? $dependencies['respostaModel'] : new AvaliacaoRespostaUsuario();
         $this->notaModel = isset($dependencies['notaModel']) ? $dependencies['notaModel'] : new NotaAvaliacao();
-        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscricao();
-        $this->aptidaoService = isset($dependencies['aptidaoService']) ? $dependencies['aptidaoService'] : new AptidaoCertificadoService();
+        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscrição();
+        $this->aptidaoService = isset($dependencies['aptidaoService']) ? $dependencies['aptidaoService'] : new AptidãoCertificadoService();
         $this->auditService = isset($dependencies['auditService']) ? $dependencies['auditService'] : new AuditService();
         $this->trashService = isset($dependencies['trashService']) ? $dependencies['trashService'] : new TrashService();
         $this->scopeService = isset($dependencies['scopeService']) ? $dependencies['scopeService'] : new ProfessorAcademicScopeService(array(
@@ -98,7 +98,7 @@ class AvaliacaoService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('academico.avaliacao.falhou', array('message' => $exception->getMessage()));
+            Logger::error('academico.avaliacao.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -163,7 +163,7 @@ class AvaliacaoService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('academico.pergunta.falhou', array('message' => $exception->getMessage()));
+            Logger::error('academico.pergunta.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -178,9 +178,9 @@ class AvaliacaoService
             return $validacaoContexto;
         }
 
-        $validacaoInscricao = $this->scopeService->validarInscricaoNoContexto(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0, $cursoId, $turmaId);
-        if (empty($validacaoInscricao['ok'])) {
-            return $validacaoInscricao;
+        $validacaoInscrição = $this->scopeService->validarInscriçãoNoContexto(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0, $cursoId, $turmaId);
+        if (empty($validacaoInscrição['ok'])) {
+            return $validacaoInscrição;
         }
 
         $validacaoAvaliacao = $this->scopeService->validarAvaliacaoNoContexto(isset($data['avaliacao_id']) ? (int) $data['avaliacao_id'] : 0, $cursoId, $turmaId);
@@ -193,9 +193,9 @@ class AvaliacaoService
             return $validacaoPergunta;
         }
 
-        $validacaoAvaliacaoInscricao = $this->scopeService->validarAvaliacaoInscricaoConsistentes((int) $data['avaliacao_id'], (int) $data['inscricao_id']);
-        if (empty($validacaoAvaliacaoInscricao['ok'])) {
-            return $validacaoAvaliacaoInscricao;
+        $validacaoAvaliacaoInscrição = $this->scopeService->validarAvaliacaoInscriçãoConsistentes((int) $data['avaliacao_id'], (int) $data['inscricao_id']);
+        if (empty($validacaoAvaliacaoInscrição['ok'])) {
+            return $validacaoAvaliacaoInscrição;
         }
 
         $validacaoPerguntaAvaliacao = $this->scopeService->validarPerguntaAvaliacaoConsistentes((int) $data['pergunta_id'], (int) $data['avaliacao_id'], $cursoId, $turmaId);
@@ -205,7 +205,7 @@ class AvaliacaoService
 
         $inscricao = $this->inscricaoModel->findById(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
         }
 
         $payload = array(
@@ -232,7 +232,7 @@ class AvaliacaoService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('academico.resposta.falhou', array('message' => $exception->getMessage()));
+            Logger::error('academico.resposta.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -247,9 +247,9 @@ class AvaliacaoService
             return $validacaoContexto;
         }
 
-        $validacaoInscricao = $this->scopeService->validarInscricaoNoContexto(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0, $cursoId, $turmaId);
-        if (empty($validacaoInscricao['ok'])) {
-            return $validacaoInscricao;
+        $validacaoInscrição = $this->scopeService->validarInscriçãoNoContexto(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0, $cursoId, $turmaId);
+        if (empty($validacaoInscrição['ok'])) {
+            return $validacaoInscrição;
         }
 
         $validacaoAvaliacao = $this->scopeService->validarAvaliacaoNoContexto(isset($data['avaliacao_id']) ? (int) $data['avaliacao_id'] : 0, $cursoId, $turmaId);
@@ -257,14 +257,14 @@ class AvaliacaoService
             return $validacaoAvaliacao;
         }
 
-        $validacaoAvaliacaoInscricao = $this->scopeService->validarAvaliacaoInscricaoConsistentes((int) $data['avaliacao_id'], (int) $data['inscricao_id']);
-        if (empty($validacaoAvaliacaoInscricao['ok'])) {
-            return $validacaoAvaliacaoInscricao;
+        $validacaoAvaliacaoInscrição = $this->scopeService->validarAvaliacaoInscriçãoConsistentes((int) $data['avaliacao_id'], (int) $data['inscricao_id']);
+        if (empty($validacaoAvaliacaoInscrição['ok'])) {
+            return $validacaoAvaliacaoInscrição;
         }
 
         $inscricao = $this->inscricaoModel->findById(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
         }
 
         $payload = array(
@@ -287,13 +287,13 @@ class AvaliacaoService
             $this->auditService->record('academico.nota.registrada', 'nota_avaliacao', $id, $payload, $actorUserId, $ipAddress, $userAgent);
             Logger::info('academico.nota.registrada', array('nota_id' => $id));
 
-            $this->aptidaoService->recalcularInscricao((int) $inscricao['id'], $actorUserId, $ipAddress, $userAgent, $cursoId, $turmaId);
+            $this->aptidaoService->recalcularInscrição((int) $inscricao['id'], $actorUserId, $ipAddress, $userAgent, $cursoId, $turmaId);
             $pdo->commit();
 
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('academico.nota.falhou', array('message' => $exception->getMessage()));
+            Logger::error('academico.nota.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -318,7 +318,7 @@ class AvaliacaoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('academico.avaliacao.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('academico.avaliacao.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -343,8 +343,9 @@ class AvaliacaoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('academico.pergunta.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('academico.pergunta.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
 }
+

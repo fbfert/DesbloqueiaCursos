@@ -32,7 +32,7 @@
                     <th>Inicio</th>
                     <th>Fim</th>
                     <th>Status</th>
-                    <th>Acoes</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -68,3 +68,4 @@
         </table>
     </div>
 </section>
+

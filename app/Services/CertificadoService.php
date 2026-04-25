@@ -10,7 +10,7 @@ use App\Models\Certificado;
 use App\Models\CertificadoAssinante;
 use App\Models\CertificadoTemplate;
 use App\Models\CursoPessoaVinculada;
-use App\Models\Inscricao;
+use App\Models\Inscrição;
 use App\Models\Pedido;
 use App\Models\ParticipantePedido;
 use App\Models\Turma;
@@ -41,16 +41,16 @@ class CertificadoService
         $this->templateModel = new CertificadoTemplate();
         $this->assinanteModel = new CertificadoAssinante();
         $this->cursoPessoaModel = new CursoPessoaVinculada();
-        $this->inscricaoModel = new Inscricao();
+        $this->inscricaoModel = new Inscrição();
         $this->pedidoModel = new Pedido();
         $this->participanteModel = new ParticipantePedido();
         $this->turmaModel = new Turma();
         $this->emailService = new EmailService();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
-        $this->inscricaoService = new InscricaoService();
+        $this->inscricaoService = new InscriçãoService();
         $this->templateService = new CertificadoTemplateService();
-        $this->globalConfigService = new ConfiguracaoGlobalService();
+        $this->globalConfigService = new ConfiguraçãoGlobalService();
         $this->rbacService = new RbacService();
     }
 
@@ -93,7 +93,7 @@ class CertificadoService
 
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
         }
 
         if ((int) $inscricao['apto_certificado'] !== 1 && !in_array($inscricao['status'], array('concluida', 'concluida_sem_certificado', 'certificado_emitido'), true)) {
@@ -101,7 +101,7 @@ class CertificadoService
         }
 
         $template = $this->resolveTemplate(isset($opcoes['template_id']) ? (int) $opcoes['template_id'] : null);
-        $existente = $this->certificadoModel->findByInscricao($inscricaoId);
+        $existente = $this->certificadoModel->findByInscrição($inscricaoId);
         $manterCodigo = !empty($opcoes['manter_codigo']);
 
         $pedido = $this->pedidoModel->findById($inscricao['pedido_id']);
@@ -166,7 +166,7 @@ class CertificadoService
                 }
             }
 
-            $this->certificadoModel->createHistory($certificadoId, $existente ? $existente['status'] : null, 'emitido', 'Emissao manual do certificado', $actorUserId);
+            $this->certificadoModel->createHistory($certificadoId, $existente ? $existente['status'] : null, 'emitido', 'Emissão manual do certificado', $actorUserId);
 
             $this->auditService->record(
                 'certificado.emitido',
@@ -207,7 +207,7 @@ class CertificadoService
             $pdo->rollBack();
             Logger::error('certificado.emitir_falhou', array(
                 'inscricao_id' => $inscricaoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -405,7 +405,7 @@ class CertificadoService
             $pdo->rollBack();
             Logger::error('certificado.status.falhou', array(
                 'certificado_id' => $certificadoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
             throw $exception;
         }
@@ -501,7 +501,7 @@ class CertificadoService
             'Curso: ' . (isset($curso['nome']) ? $curso['nome'] : ''),
             'Turma: ' . (isset($turma['nome']) ? $turma['nome'] : 'N/A'),
             'Pedido: ' . (isset($pedido['codigo']) ? $pedido['codigo'] : ''),
-            'Validacao publica: ' . Helpers::url('certificados/validar?codigo=' . urlencode($certificado['codigo'])),
+            'Validação publica: ' . Helpers::url('certificados/validar?codigo=' . urlencode($certificado['codigo'])),
         );
 
         $assinaturas = array();
@@ -933,3 +933,4 @@ class CertificadoService
         return $certificado;
     }
 }
+

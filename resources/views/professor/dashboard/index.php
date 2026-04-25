@@ -9,14 +9,14 @@
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
 <section class="status-card">
-    <strong>Periodo</strong>
+    <strong>Período</strong>
     <form method="get" action="/professor/dashboard" class="form-grid">
         <label>
-            Periodo
+            Período
             <select name="periodo">
                 <option value="hoje" <?php echo ($filters['periodo'] ?? '') === 'hoje' ? 'selected' : ''; ?>>Hoje</option>
                 <option value="semana" <?php echo ($filters['periodo'] ?? '') === 'semana' ? 'selected' : ''; ?>>Semana</option>
-                <option value="mes" <?php echo ($filters['periodo'] ?? '') === 'mes' ? 'selected' : ''; ?>>Mes</option>
+                <option value="mes" <?php echo ($filters['periodo'] ?? '') === 'mes' ? 'selected' : ''; ?>>Mês</option>
                 <option value="custom" <?php echo ($filters['periodo'] ?? '') === 'custom' ? 'selected' : ''; ?>>Personalizado</option>
             </select>
         </label>
@@ -106,10 +106,10 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Competencia</th>
+                    <th>Competência</th>
                     <th>Bruto</th>
                     <th>Retido</th>
-                    <th>Liquido</th>
+                    <th>Líquido</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -137,10 +137,10 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Competencia</th>
+                    <th>Competência</th>
                     <th>Nome</th>
                     <th>Bruto</th>
-                    <th>Liquido</th>
+                    <th>Líquido</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -161,3 +161,4 @@
         </table>
     </div>
 </section>
+

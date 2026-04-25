@@ -38,7 +38,7 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Competencia</th>
+                    <th>Competência</th>
                     <th>Curso</th>
                     <th>Turma</th>
                     <th>Base liquida</th>
@@ -47,7 +47,7 @@
                     <th>Participantes</th>
                     <th>Valor rateado</th>
                     <th>Status</th>
-                    <th>Acoes</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -75,3 +75,4 @@
         </table>
     </div>
 </section>
+

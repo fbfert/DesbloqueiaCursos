@@ -5,21 +5,21 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
-use App\Services\ConfiguracaoGlobalService;
+use App\Services\ConfiguraçãoGlobalService;
 
-class ConfiguracoesGlobaisController extends Controller
+class ConfiguraçõesGlobaisController extends Controller
 {
     private $service;
 
     public function __construct()
     {
-        $this->service = new ConfiguracaoGlobalService();
+        $this->service = new ConfiguraçãoGlobalService();
     }
 
     public function index(Request $request)
     {
         return $this->view('admin/configuracoes-globais/index', array(
-            'title' => 'Configuracoes globais',
+            'title' => 'Configurações globais',
             'configuracoes' => $this->service->all(),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
@@ -29,7 +29,7 @@ class ConfiguracoesGlobaisController extends Controller
     public function certificados(Request $request)
     {
         return $this->view('admin/configuracoes-globais/certificados', array(
-            'title' => 'Configuracoes de certificados',
+            'title' => 'Configurações de certificados',
             'configuracao' => $this->service->certificados(),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
@@ -39,7 +39,7 @@ class ConfiguracoesGlobaisController extends Controller
     public function financeiro(Request $request)
     {
         return $this->view('admin/configuracoes-globais/financeiro', array(
-            'title' => 'Configuracoes financeiras',
+            'title' => 'Configurações financeiras',
             'configuracao' => $this->service->financeiro(),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
@@ -49,7 +49,7 @@ class ConfiguracoesGlobaisController extends Controller
     public function frontend(Request $request)
     {
         return $this->view('admin/configuracoes-globais/frontend', array(
-            'title' => 'Configuracoes de frontend',
+            'title' => 'Configurações de frontend',
             'configuracao' => $this->service->frontend(),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
@@ -59,7 +59,7 @@ class ConfiguracoesGlobaisController extends Controller
     public function seguranca(Request $request)
     {
         return $this->view('admin/configuracoes-globais/seguranca', array(
-            'title' => 'Configuracoes de seguranca',
+            'title' => 'Configurações de seguranca',
             'configuracao' => $this->service->seguranca(),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
@@ -90,9 +90,9 @@ class ConfiguracoesGlobaisController extends Controller
         return $this->handleSaveResult($result, '/admin/configuracoes-globais/frontend');
     }
 
-    public function salvarSeguranca(Request $request)
+    public function salvarSegurança(Request $request)
     {
-        $result = $this->service->saveSeguranca($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->service->saveSegurança($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         return $this->handleSaveResult($result, '/admin/configuracoes-globais/seguranca');
     }
 
@@ -107,14 +107,15 @@ class ConfiguracoesGlobaisController extends Controller
             } elseif (!empty($result['message'])) {
                 $errors[] = $result['message'];
             } else {
-                $errors[] = 'Nao foi possivel salvar as configuracoes.';
+                $errors[] = 'Não foi possivel salvar as configuracoes.';
             }
 
             Session::flash('errors', $errors);
             return $this->redirect($redirectTo);
         }
 
-        Session::flash('success', 'Configuracoes atualizadas com sucesso.');
+        Session::flash('success', 'Configurações atualizadas com sucesso.');
         return $this->redirect($redirectTo);
     }
 }
+

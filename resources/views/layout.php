@@ -1,17 +1,18 @@
 <?php
 use App\Core\Helpers;
-use App\Services\ConfiguracaoGlobalService;
+use App\Services\ConfiguraçãoGlobalService;
 
 $pageTitle = isset($title) ? $title : 'Polo Rainbow';
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $requestPath = $requestPath ?: '/';
-$globalConfigService = new ConfiguracaoGlobalService();
+$globalConfigService = new ConfiguraçãoGlobalService();
 $institucional = $globalConfigService->institucional();
 $frontend = $globalConfigService->frontend();
 $brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : 'Polo Rainbow';
 $isAdmin = strpos($requestPath, '/admin') === 0;
 $isProfessor = strpos($requestPath, '/professor') === 0;
 $isAluno = in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true);
+$scopeClass = $isAdmin ? 'app-admin' : ($isProfessor ? 'app-professor' : ($isAluno ? 'app-aluno' : 'app-public'));
 $publicMenu = array(
     array('label' => 'Inicio', 'href' => '/', 'active' => $requestPath === '/'),
     array('label' => 'Cursos', 'href' => '/cursos', 'active' => strpos($requestPath, '/cursos') === 0 || $requestPath === '/inscricao'),
@@ -28,7 +29,7 @@ $publicMenu = array(
     <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="/assets/css/app.css">
 </head>
-<body class="theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
+<body class="<?php echo Helpers::e($scopeClass); ?> theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
     <?php if ($isAdmin): ?>
         <?php require BASE_PATH . '/resources/views/admin/_shell.php'; ?>
     <?php else: ?>
@@ -39,9 +40,9 @@ $publicMenu = array(
                         <a class="brand" href="/professor">Painel do professor</a>
                         <nav class="public-nav" aria-label="Menu do professor">
                             <a class="public-nav__link<?php echo $requestPath === '/professor' || $requestPath === '/professor/dashboard' ? ' is-active' : ''; ?>" href="/professor/dashboard">Inicio</a>
-                            <a class="public-nav__link<?php echo strpos($requestPath, '/professor/catalogo') === 0 ? ' is-active' : ''; ?>" href="/professor/catalogo">Catalogo</a>
+                            <a class="public-nav__link<?php echo strpos($requestPath, '/professor/catalogo') === 0 ? ' is-active' : ''; ?>" href="/professor/catalogo">Catálogo</a>
                             <a class="public-nav__link<?php echo strpos($requestPath, '/professor/area-curso') === 0 ? ' is-active' : ''; ?>" href="/professor/area-curso">Area do curso</a>
-                            <a class="public-nav__link<?php echo strpos($requestPath, '/professor/academico') === 0 ? ' is-active' : ''; ?>" href="/professor/academico">Academico</a>
+                            <a class="public-nav__link<?php echo strpos($requestPath, '/professor/academico') === 0 ? ' is-active' : ''; ?>" href="/professor/academico">Acadêmico</a>
                         </nav>
                     </div>
                 </header>
@@ -52,7 +53,7 @@ $publicMenu = array(
                         <nav class="public-nav" aria-label="Menu do aluno">
                             <a class="public-nav__link<?php echo $requestPath === '/meus-cursos' ? ' is-active' : ''; ?>" href="/meus-cursos">Meus cursos</a>
                             <a class="public-nav__link<?php echo strpos($requestPath, '/area-curso') === 0 ? ' is-active' : ''; ?>" href="/area-curso">Conteudo</a>
-                            <a class="public-nav__link" href="/cursos">Catalogo</a>
+                            <a class="public-nav__link" href="/cursos">Catálogo</a>
                         </nav>
                     </div>
                 </header>
@@ -101,3 +102,4 @@ $publicMenu = array(
     <?php endif; ?>
 </body>
 </html>
+

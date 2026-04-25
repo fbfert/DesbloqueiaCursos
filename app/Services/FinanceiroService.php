@@ -24,7 +24,7 @@ class FinanceiroService
 
     public function __construct()
     {
-        $this->configuracaoGlobalService = new ConfiguracaoGlobalService();
+        $this->configuracaoGlobalService = new ConfiguraçãoGlobalService();
         $this->rateioService = new RateioService();
         $this->repasseService = new RepasseProfessorService();
         $this->apuracaoModel = new ApuracaoMensal();
@@ -38,13 +38,50 @@ class FinanceiroService
 
     public function painelAdmin()
     {
-        return array(
-            'configuracao_financeira' => $this->configuracaoGlobalService->financeiro(),
-            'apuracoes' => $this->apuracaoModel->allAdmin(),
-            'repasses' => $this->repasseModel->allAdmin(),
-            'professores_fiscal' => $this->professorFiscalModel->allActive(),
-            'professores' => $this->usuarioModel->professores(),
+        $payload = array(
+            'configuracao_financeira' => array(),
+            'apuracoes' => array(),
+            'repasses' => array(),
+            'professores_fiscal' => array(),
+            'professores' => array(),
         );
+
+        try {
+            $payload['configuracao_financeira'] = $this->configuracaoGlobalService->financeiro();
+        } catch (\Exception $exception) {
+            Logger::error('financeiro.painel.configuracao_falha', array('message' => $exception->getMêssage()));
+            $payload['configuracao_financeira'] = array(
+                'data_corte_financeiro' => null,
+                'percentual_rateio_maximo' => 75.00,
+                'observacao_repasse' => null,
+            );
+        }
+
+        try {
+            $payload['apuracoes'] = $this->apuracaoModel->allAdmin();
+        } catch (\Exception $exception) {
+            Logger::error('financeiro.painel.apuracoes_falha', array('message' => $exception->getMêssage()));
+        }
+
+        try {
+            $payload['repasses'] = $this->repasseModel->allAdmin();
+        } catch (\Exception $exception) {
+            Logger::error('financeiro.painel.repasses_falha', array('message' => $exception->getMêssage()));
+        }
+
+        try {
+            $payload['professores_fiscal'] = $this->professorFiscalModel->allActive();
+        } catch (\Exception $exception) {
+            Logger::error('financeiro.painel.professores_fiscal_falha', array('message' => $exception->getMêssage()));
+        }
+
+        try {
+            $payload['professores'] = $this->usuarioModel->professores();
+        } catch (\Exception $exception) {
+            Logger::error('financeiro.painel.professores_falha', array('message' => $exception->getMêssage()));
+        }
+
+        return $payload;
     }
 
     public function painelProfessor($usuarioId)
@@ -52,9 +89,9 @@ class FinanceiroService
         return $this->repasseService->listarPorProfessor($usuarioId);
     }
 
-    public function apurarCompetencia($competencia, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function apurarCompetência($competencia, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
-        $result = $this->rateioService->apurarCompetencia($competencia, $actorUserId, $ipAddress, $userAgent);
+        $result = $this->rateioService->apurarCompetência($competencia, $actorUserId, $ipAddress, $userAgent);
 
         if (empty($result['ok'])) {
             return $result;
@@ -215,3 +252,4 @@ class FinanceiroService
         Logger::error($evento, $payload);
     }
 }
+

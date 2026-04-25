@@ -6,7 +6,7 @@ use App\Core\Database;
 use App\Core\Logger;
 use App\Models\CursoEvento;
 use App\Models\ComprovantePix;
-use App\Models\Inscricao;
+use App\Models\Inscrição;
 use App\Models\PedidoCupom;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
@@ -36,7 +36,7 @@ class PedidoService
         $this->pedidoItemModel = new PedidoItem();
         $this->participanteModel = new ParticipantePedido();
         $this->comprovanteModel = new ComprovantePix();
-        $this->inscricaoModel = new Inscricao();
+        $this->inscricaoModel = new Inscrição();
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
         $this->pedidoCupomModel = new PedidoCupom();
@@ -124,7 +124,7 @@ class PedidoService
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.participantes.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para alterar este pedido.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para alterar este pedido.');
         }
 
         if (!$this->pedidoPodeReceberParticipantes($pedido)) {
@@ -196,7 +196,7 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('checkout.participantes.falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -213,7 +213,7 @@ class PedidoService
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.checkout.finalizar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para finalizar este pedido.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para finalizar este pedido.');
         }
 
         if ($pedido['status'] === 'aguardando_pagamento') {
@@ -271,7 +271,7 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('checkout.finalizar_falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -366,7 +366,7 @@ class PedidoService
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('pedido.criar_falhou', array(
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
                 'usuario_id' => $actorUserId,
             ));
 
@@ -384,7 +384,7 @@ class PedidoService
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.status.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para alterar este pedido.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para alterar este pedido.');
         }
 
         $statusValidos = array(
@@ -449,7 +449,7 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('pedido.status.falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -470,7 +470,7 @@ class PedidoService
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.comprovante.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para anexar comprovante neste pedido.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para anexar comprovante neste pedido.');
         }
 
         if (!$this->pedidoPodeReceberComprovante($pedido)) {
@@ -526,7 +526,7 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('comprovante_pix.falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -543,7 +543,7 @@ class PedidoService
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.excluir_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para excluir este pedido.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para excluir este pedido.');
         }
 
         $pdo = Database::connection();
@@ -575,7 +575,7 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('pedido.excluir_falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -592,7 +592,7 @@ class PedidoService
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.aprovar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para aprovar este pedido.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para aprovar este pedido.');
         }
 
         $pdo = Database::connection();
@@ -630,7 +630,7 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('pedido.aprovar_falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -656,7 +656,7 @@ class PedidoService
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.cupom.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para aplicar cupom neste pedido.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para aplicar cupom neste pedido.');
         }
 
         return $this->cupomService->aplicarAoPedido($pedidoId, $cupomCodigo, $actorUserId, $ipAddress, $userAgent);
@@ -671,7 +671,7 @@ class PedidoService
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.cupom.revalidar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para revalidar cupom neste pedido.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para revalidar cupom neste pedido.');
         }
 
         return $this->cupomService->revalidarNoFechamento($pedidoId, $actorUserId, $ipAddress, $userAgent);
@@ -783,3 +783,4 @@ class PedidoService
         Logger::error($evento, $payload);
     }
 }
+

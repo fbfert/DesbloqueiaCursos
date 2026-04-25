@@ -1,6 +1,46 @@
-<section class="hero">
-    <h1>RBAC</h1>
-    <p>Perfis, permissoes e controle de acesso.</p>
+<?php
+$totalPerfis = is_array($profiles) ? count($profiles) : 0;
+$totalPermissoes = 0;
+$totalModulos = is_array($permissions) ? count($permissions) : 0;
+
+foreach ((array) $permissions as $grupoPermissoes) {
+    if (is_array($grupoPermissoes)) {
+        $totalPermissoes += count($grupoPermissoes);
+    }
+}
+?>
+
+<section class="hero admin-dashboard-hero">
+    <div class="hero__content">
+        <h1>RBAC</h1>
+        <p>Perfis, permissoes e controle de acesso.</p>
+    </div>
+    <div class="hero__panel admin-dashboard-hero__panel">
+        <strong>Resumo rapido</strong>
+        <div class="admin-dashboard-highlight">
+            <span>Perfis ativos</span>
+            <strong><?php echo (int) $totalPerfis; ?></strong>
+            <small>grupos de acesso cadastrados</small>
+        </div>
+        <div class="admin-dashboard-highlight">
+            <span>Permissões</span>
+            <strong><?php echo (int) $totalPermissoes; ?></strong>
+            <small>regras disponiveis</small>
+        </div>
+        <div class="admin-dashboard-highlight">
+            <span>Modulos</span>
+            <strong><?php echo (int) $totalModulos; ?></strong>
+            <small>agrupamentos de permissao</small>
+        </div>
+    </div>
+</section>
+
+<section class="status-card">
+    <strong>Atalhos de acesso</strong>
+    <div class="quick-actions quick-actions--dashboard">
+        <a class="card-link admin-shortcut" href="/admin/configuracoes-globais/seguranca"><span>Configurações de seguranca</span><small>Politicas gerais de acesso</small></a>
+        <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -15,7 +55,7 @@
                     <th>ID</th>
                     <th>Slug</th>
                     <th>Nome</th>
-                    <th>Permissoes</th>
+                    <th>Permissões</th>
                 </tr>
             </thead>
             <tbody>
@@ -33,7 +73,7 @@
 </section>
 
 <section class="status-card">
-    <strong>Permissoes</strong>
+    <strong>Permissões</strong>
     <?php foreach ($permissions as $module => $items): ?>
         <h2><?php echo htmlspecialchars($module, ENT_QUOTES, 'UTF-8'); ?></h2>
         <div class="table-wrap">
@@ -42,7 +82,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Slug</th>
-                        <th>Acao</th>
+                        <th>Ação</th>
                         <th>Nome</th>
                     </tr>
                 </thead>
@@ -108,3 +148,4 @@
         <button type="submit">Salvar perfis</button>
     </form>
 </section>
+

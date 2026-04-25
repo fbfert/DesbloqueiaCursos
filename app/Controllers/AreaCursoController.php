@@ -81,7 +81,7 @@ class AreaCursoController extends Controller
         );
 
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Nao foi possivel concluir a aula.'));
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel concluir a aula.'));
         } else {
             Session::flash('success', 'Aula marcada como concluida.');
         }
@@ -101,7 +101,7 @@ class AreaCursoController extends Controller
         );
 
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Nao foi possivel concluir o modulo.'));
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel concluir o modulo.'));
         } else {
             Session::flash('success', 'Modulo marcado como concluido.');
         }
@@ -130,3 +130,4 @@ class AreaCursoController extends Controller
         ));
     }
 }
+

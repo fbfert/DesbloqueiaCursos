@@ -72,8 +72,8 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Acao</th>
-                    <th>Observacao</th>
+                    <th>Ação</th>
+                    <th>Observação</th>
                     <th>Data</th>
                 </tr>
             </thead>
@@ -94,3 +94,4 @@
         </table>
     </div>
 </section>
+

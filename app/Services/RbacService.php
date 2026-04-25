@@ -4,15 +4,15 @@ namespace App\Services;
 
 use App\Core\Database;
 use App\Models\Perfil;
-use App\Models\Permissao;
-use App\Models\PerfilPermissao;
+use App\Models\Permissão;
+use App\Models\PerfilPermissão;
 use App\Models\UsuarioPerfil;
 
 class RbacService
 {
     private $perfilModel;
     private $permissaoModel;
-    private $perfilPermissaoModel;
+    private $perfilPermissãoModel;
     private $usuarioPerfilModel;
     private $auditService;
     private $trashService;
@@ -20,8 +20,8 @@ class RbacService
     public function __construct()
     {
         $this->perfilModel = new Perfil();
-        $this->permissaoModel = new Permissao();
-        $this->perfilPermissaoModel = new PerfilPermissao();
+        $this->permissaoModel = new Permissão();
+        $this->perfilPermissãoModel = new PerfilPermissão();
         $this->usuarioPerfilModel = new UsuarioPerfil();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
@@ -44,7 +44,7 @@ class RbacService
             return array('ok' => false, 'errors' => array('perfil_id' => 'Perfil nao encontrado.'));
         }
 
-        $current = $this->perfilPermissaoModel->forPerfil($perfilId);
+        $current = $this->perfilPermissãoModel->forPerfil($perfilId);
         $currentIds = array_map(function ($row) {
             return (int) $row['id'];
         }, $current);
@@ -69,7 +69,7 @@ class RbacService
             );
         }
 
-        $this->perfilPermissaoModel->sync($perfilId, $newIds);
+        $this->perfilPermissãoModel->sync($perfilId, $newIds);
 
         $this->auditService->record(
             'rbac.perfil_permissoes.atualizadas',
@@ -199,3 +199,4 @@ class RbacService
         return !empty($row) && (int) $row['total'] > 0;
     }
 }
+

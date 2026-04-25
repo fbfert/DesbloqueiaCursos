@@ -5,22 +5,22 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
-use App\Services\InscricaoService;
+use App\Services\InscriçãoService;
 
-class InscricoesController extends Controller
+class InscriçõesController extends Controller
 {
     private $inscricaoService;
 
     public function __construct()
     {
-        $this->inscricaoService = new InscricaoService();
+        $this->inscricaoService = new InscriçãoService();
     }
 
     public function index(Request $request)
     {
         return $this->view('admin/inscricoes/index', array_merge(
             array(
-                'title' => 'Inscricoes',
+                'title' => 'Inscrições',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
             ),
@@ -52,3 +52,4 @@ class InscricoesController extends Controller
         return $this->redirect('/admin/inscricoes');
     }
 }
+

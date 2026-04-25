@@ -11,8 +11,8 @@
         <dt>Documento</dt><dd><?php echo Helpers::e(!empty($perfil['cpf']) ? $perfil['cpf'] : $perfil['cnpj']); ?></dd>
         <dt>Razao social</dt><dd><?php echo Helpers::e($perfil['razao_social'] ?? ''); ?></dd>
         <dt>Nome fantasia</dt><dd><?php echo Helpers::e($perfil['nome_fantasia'] ?? ''); ?></dd>
-        <dt>Aliquota</dt><dd><?php echo number_format((float) $perfil['aliquota_retencao'], 2, ',', '.'); ?>%</dd>
-        <dt>Exige NF</dt><dd><?php echo !empty($perfil['exige_nota_fiscal']) ? 'Sim' : 'Nao'; ?></dd>
+        <dt>Alíquota</dt><dd><?php echo number_format((float) $perfil['aliquota_retencao'], 2, ',', '.'); ?>%</dd>
+        <dt>Exige NF</dt><dd><?php echo !empty($perfil['exige_nota_fiscal']) ? 'Sim' : 'Não'; ?></dd>
         <dt>Status</dt><dd><?php echo Helpers::e($perfil['status']); ?></dd>
     </dl>
 </section>
@@ -31,3 +31,4 @@
         <button type="submit">Remover perfil fiscal</button>
     </form>
 </section>
+

@@ -23,7 +23,7 @@
                     <th>Ordem</th>
                     <th>Status</th>
                     <th>Total</th>
-                    <th>Acoes</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -49,3 +49,4 @@
         </table>
     </div>
 </section>
+

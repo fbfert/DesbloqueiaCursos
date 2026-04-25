@@ -45,7 +45,7 @@ class CategoriasController extends Controller
         $result = $this->categoriaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Nao foi possivel salvar a categoria.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar a categoria.'));
             return $this->redirect('/admin/categorias/criar');
         }
 
@@ -73,7 +73,7 @@ class CategoriasController extends Controller
         $categoriaId = (int) $request->input('id', 0);
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Nao foi possivel atualizar a categoria.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar a categoria.'));
             return $this->redirect('/admin/categorias/editar?categoria_id=' . $categoriaId);
         }
 
@@ -109,7 +109,7 @@ class CategoriasController extends Controller
         $result = $this->categoriaService->excluir($categoriaId, $justificativa, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel excluir a categoria.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel excluir a categoria.'));
             return $this->redirect('/admin/categorias/editar?categoria_id=' . $categoriaId);
         }
 
@@ -117,3 +117,4 @@ class CategoriasController extends Controller
         return $this->redirect('/admin/categorias');
     }
 }
+

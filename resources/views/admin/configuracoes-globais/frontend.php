@@ -1,5 +1,5 @@
 <section class="hero">
-    <h1>Configuracoes de frontend</h1>
+    <h1>Configurações de frontend</h1>
     <p>Template visual e identidade da interface.</p>
 </section>
 
@@ -29,9 +29,10 @@
             <input type="text" name="banner_caminho" value="<?php echo htmlspecialchars((string) (isset($configuracao['banner_caminho']) ? $configuracao['banner_caminho'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
-            Descricao da home
+            Descrição da home
             <textarea name="descricao_home" rows="5"><?php echo htmlspecialchars((string) (isset($configuracao['descricao_home']) ? $configuracao['descricao_home'] : ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
         </label>
         <button type="submit">Salvar frontend</button>
     </form>
 </section>
+

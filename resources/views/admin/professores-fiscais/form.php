@@ -49,11 +49,11 @@
             <input type="text" name="nome_fantasia" value="<?php echo Helpers::e($perfil['nome_fantasia'] ?? ''); ?>">
         </label>
         <label>
-            Inscricao municipal
+            Inscrição municipal
             <input type="text" name="inscricao_municipal" value="<?php echo Helpers::e($perfil['inscricao_municipal'] ?? ''); ?>">
         </label>
         <label>
-            Aliquota de retencao (%)
+            Alíquota de retencao (%)
             <input type="number" step="0.01" min="0" max="100" name="aliquota_retencao" value="<?php echo Helpers::e((string) ($perfil['aliquota_retencao'] ?? '0.00')); ?>">
         </label>
         <label>
@@ -68,7 +68,7 @@
             </select>
         </label>
         <label class="full">
-            Observacao
+            Observação
             <textarea name="observacao" rows="4"><?php echo Helpers::e($perfil['observacao'] ?? ''); ?></textarea>
         </label>
         <label class="checkbox">
@@ -78,3 +78,4 @@
         <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
     </form>
 </section>
+

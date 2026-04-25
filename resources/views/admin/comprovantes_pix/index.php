@@ -19,7 +19,7 @@
                     <th>Enviado em</th>
                     <th>Pedido</th>
                     <th>Motivo reenvio</th>
-                    <th>Acoes</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -47,7 +47,7 @@
                         <td>
                             <form method="post" action="/admin/comprovantes-pix/aprovar">
                                 <input type="hidden" name="comprovante_id" value="<?php echo (int) $comprovante['id']; ?>">
-                                <input type="text" name="observacao" placeholder="Observacao">
+                                <input type="text" name="observacao" placeholder="Observação">
                                 <button type="submit">Aprovar</button>
                             </form>
                             <form method="post" action="/admin/comprovantes-pix/reprovar">
@@ -62,3 +62,4 @@
         </table>
     </div>
 </section>
+

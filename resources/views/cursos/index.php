@@ -2,14 +2,14 @@
 
 <section class="page-header">
     <h1>Cursos e eventos</h1>
-    <p>Confira apenas cursos ativos do portal. O frontend nao publica itens inativos nem dados operacionais do backoffice.</p>
+    <p>Confira apenas cursos ativos do portal. O frontend não publica itens inativos nem dados operacionais do backoffice.</p>
 </section>
 
 <section class="card-grid">
     <?php if (empty($cursos)): ?>
         <article class="status-card">
             <strong>Nenhum curso ativo</strong>
-            <span>O catalogo ainda nao possui itens publicos disponiveis.</span>
+            <span>O catalogo ainda não possui itens publicos disponiveis.</span>
         </article>
     <?php else: ?>
         <?php foreach ($cursos as $curso): ?>
@@ -34,7 +34,7 @@
                             <span class="pill pill--alert">Promocao</span>
                         <?php endif; ?>
                     </div>
-                    <p><?php echo Helpers::e($curso['descricao_curta'] ?: 'Descricao resumida em breve.'); ?></p>
+                    <p><?php echo Helpers::e($curso['descricao_curta'] ?: 'Descrição resumida em breve.'); ?></p>
                     <div class="course-card__meta">
                         <span><?php echo (int) $curso['total_turmas_abertas']; ?> turma(s) aberta(s)</span>
                         <strong>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></strong>
@@ -47,3 +47,4 @@
         <?php endforeach; ?>
     <?php endif; ?>
 </section>
+

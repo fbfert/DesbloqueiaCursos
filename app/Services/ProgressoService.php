@@ -6,7 +6,7 @@ use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Aula;
 use App\Models\CursoEvento;
-use App\Models\Inscricao;
+use App\Models\Inscrição;
 use App\Models\Pedido;
 use App\Models\Modulo;
 use App\Models\Turma;
@@ -30,7 +30,7 @@ class ProgressoService
 
     public function __construct()
     {
-        $this->inscricaoModel = new Inscricao();
+        $this->inscricaoModel = new Inscrição();
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
         $this->moduloModel = new Modulo();
@@ -38,7 +38,7 @@ class ProgressoService
         $this->pedidoModel = new Pedido();
         $this->progressoModuloModel = new ProgressoUsuarioModulo();
         $this->progressoAulaModel = new ProgressoUsuarioAula();
-        $this->aptidaoService = new AptidaoCertificadoService();
+        $this->aptidaoService = new AptidãoCertificadoService();
         $this->auditService = new AuditService();
         $this->rbacService = new RbacService();
     }
@@ -49,12 +49,12 @@ class ProgressoService
         $aula = $this->aulaModel->findById($aulaId);
 
         if (!$inscricao || !$aula) {
-            return array('ok' => false, 'message' => 'Inscricao ou aula nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição ou aula nao encontrada.');
         }
 
         if (!$this->inscricaoPertenceAoUsuario($inscricao, $usuarioId)) {
             $this->registrarAcessoNegado('area_curso.aula.negado', $inscricaoId, $usuarioId, $aulaId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para concluir esta aula.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para concluir esta aula.');
         }
 
         if (!$this->aulaPertenceAoContexto($aula, $inscricao)) {
@@ -78,7 +78,7 @@ class ProgressoService
                 'concluido_em' => date('Y-m-d H:i:s'),
             ));
 
-            $this->recalcularInscricaoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
+            $this->recalcularInscriçãoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
 
             $this->auditService->record(
                 'area_curso.aula.concluida',
@@ -96,7 +96,7 @@ class ProgressoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.aula.concluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.aula.concluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -107,12 +107,12 @@ class ProgressoService
         $modulo = $this->moduloModel->findById($moduloId);
 
         if (!$inscricao || !$modulo) {
-            return array('ok' => false, 'message' => 'Inscricao ou modulo nao encontrado.');
+            return array('ok' => false, 'message' => 'Inscrição ou modulo nao encontrado.');
         }
 
         if (!$this->inscricaoPertenceAoUsuario($inscricao, $usuarioId)) {
             $this->registrarAcessoNegado('area_curso.modulo.negado', $inscricaoId, $usuarioId, $moduloId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Voce nao tem permissao para concluir este modulo.');
+            return array('ok' => false, 'message' => 'Você nao tem permissao para concluir este modulo.');
         }
 
         if (!$this->moduloPertenceAoContexto($modulo, $inscricao)) {
@@ -135,7 +135,7 @@ class ProgressoService
                 'concluido_em' => date('Y-m-d H:i:s'),
             ));
 
-            $this->recalcularInscricaoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
+            $this->recalcularInscriçãoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
 
             $this->auditService->record(
                 'area_curso.modulo.concluido',
@@ -153,26 +153,26 @@ class ProgressoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.modulo.concluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.modulo.concluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
 
-    public function recalcularInscricao($inscricaoId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function recalcularInscrição($inscricaoId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
-        return $this->recalcularInscricaoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
+        return $this->recalcularInscriçãoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
     }
 
-    private function recalcularInscricaoInterno($inscricaoId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    private function recalcularInscriçãoInterno($inscricaoId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
         }
 
         $curso = $this->cursoModel->findById($inscricao['curso_evento_id']);
         $turma = !empty($inscricao['turma_id']) ? $this->turmaModel->findById($inscricao['turma_id']) : null;
-        $config = $this->resolverConfiguracao($curso, $turma);
+        $config = $this->resolverConfiguração($curso, $turma);
         $modulos = $this->moduloModel->listForContext($inscricao['curso_evento_id'], !empty($inscricao['turma_id']) ? $inscricao['turma_id'] : null);
         $totalAulas = 0;
         $aulasConcluidas = 0;
@@ -221,12 +221,12 @@ class ProgressoService
         $percentualMinimo = isset($config['percentual_minimo_conclusao']) ? (float) $config['percentual_minimo_conclusao'] : 75.00;
         $concluidaEm = $percentual >= $percentualMinimo ? date('Y-m-d H:i:s') : null;
 
-        $this->inscricaoModel->updateAcademico($inscricaoId, array(
+        $this->inscricaoModel->updateAcadêmico($inscricaoId, array(
             'percentual_progresso' => $percentual,
             'concluida_em' => $concluidaEm,
         ));
 
-        $this->aptidaoService->recalcularInscricao($inscricaoId, $actorUserId, $ipAddress, $userAgent);
+        $this->aptidaoService->recalcularInscrição($inscricaoId, $actorUserId, $ipAddress, $userAgent);
 
         $this->auditService->record(
             'area_curso.progresso.recalculado',
@@ -249,7 +249,7 @@ class ProgressoService
         return array('ok' => true, 'percentual' => $percentual);
     }
 
-    private function resolverConfiguracao(?array $curso = null, ?array $turma = null)
+    private function resolverConfiguração(?array $curso = null, ?array $turma = null)
     {
         $config = array(
             'exige_presenca' => 0,
@@ -355,3 +355,4 @@ class ProgressoService
         return true;
     }
 }
+

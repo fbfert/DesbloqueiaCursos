@@ -6,7 +6,7 @@
 
 <section class="hero">
     <h1>Cursos e eventos</h1>
-    <p>Operacao administrativa do catalogo principal.</p>
+    <p>Operação administrativa do catalogo principal.</p>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -31,7 +31,7 @@
                     <th>Modalidade</th>
                     <th>Valor</th>
                     <th>Status</th>
-                    <th>Acoes</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,3 +66,4 @@
         </table>
     </div>
 </section>
+

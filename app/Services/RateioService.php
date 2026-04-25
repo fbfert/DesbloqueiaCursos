@@ -35,7 +35,7 @@ class RateioService
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
         $this->professorFiscalModel = new ProfessorFiscal();
-        $this->configuracaoGlobalService = new ConfiguracaoGlobalService();
+        $this->configuracaoGlobalService = new ConfiguraçãoGlobalService();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
     }
@@ -89,13 +89,13 @@ class RateioService
         );
     }
 
-    public function apurarCompetencia($competencia, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function apurarCompetência($competencia, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         if (!preg_match('/^[0-9]{4}-[0-9]{2}$/', (string) $competencia)) {
-            return array('ok' => false, 'message' => 'Competencia invalida.');
+            return array('ok' => false, 'message' => 'Competência invalida.');
         }
 
-        if ($this->apuracaoModel->findByCompetencia($competencia)) {
+        if ($this->apuracaoModel->findByCompetência($competencia)) {
             return array('ok' => false, 'message' => 'Ja existe apuracao para esta competencia.');
         }
 
@@ -216,7 +216,7 @@ class RateioService
                     $valorBase = round($grupo['base_liquida'] * ($percentual / 100), 2);
                     $valorBruto = $valorBase;
                     $valorRetido = round($valorBase * ($retencao / 100), 2);
-                    $valorLiquido = round($valorBruto - $valorRetido, 2);
+                    $valorLíquido = round($valorBruto - $valorRetido, 2);
                     $status = $tipoFiscal === 'pj' ? 'aguardando_documento' : 'pendente';
 
                     $this->cursoRateioParticipanteModel->create(array(
@@ -228,7 +228,7 @@ class RateioService
                         'valor_rateado' => $valorBruto,
                         'retencao_percentual' => $retencao,
                         'valor_retenido' => $valorRetido,
-                        'valor_liquido' => $valorLiquido,
+                        'valor_liquido' => $valorLíquido,
                         'status' => $status,
                     ));
 
@@ -274,7 +274,7 @@ class RateioService
             $pdo->rollBack();
             Logger::error('financeiro.apuracao.falhou', array(
                 'competencia' => $competencia,
-                'message' => $exception->getMessage(),
+                'message' => $exception->getMêssage(),
             ));
 
             throw $exception;
@@ -456,7 +456,7 @@ class RateioService
                 $valorBase = round($baseLiquida * ($participante['percentual'] / 100), 2);
                 $valorRateado = $valorBase;
                 $valorRetido = round($valorBase * ($participante['retencao_percentual'] / 100), 2);
-                $valorLiquido = round($valorRateado - $valorRetido, 2);
+                $valorLíquido = round($valorRateado - $valorRetido, 2);
                 $statusParticipante = $participante['tipo_fiscal'] === 'pj' ? 'aguardando_documento' : 'pendente';
 
                 if (isset($participantesExistentesMap[$participante['usuario_id']])) {
@@ -468,7 +468,7 @@ class RateioService
                         'valor_rateado' => $valorRateado,
                         'retencao_percentual' => $participante['retencao_percentual'],
                         'valor_retenido' => $valorRetido,
-                        'valor_liquido' => $valorLiquido,
+                        'valor_liquido' => $valorLíquido,
                         'status' => $statusParticipante,
                     ), $existente['id']);
                 } else {
@@ -481,7 +481,7 @@ class RateioService
                         'valor_rateado' => $valorRateado,
                         'retencao_percentual' => $participante['retencao_percentual'],
                         'valor_retenido' => $valorRetido,
-                        'valor_liquido' => $valorLiquido,
+                        'valor_liquido' => $valorLíquido,
                         'status' => $statusParticipante,
                     ));
                 }
@@ -528,7 +528,7 @@ class RateioService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('financeiro.rateio.falhou', array('message' => $exception->getMessage()));
+            Logger::error('financeiro.rateio.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -584,7 +584,7 @@ class RateioService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('financeiro.rateio.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('financeiro.rateio.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -727,3 +727,4 @@ class RateioService
         return $percentuais;
     }
 }
+

@@ -45,7 +45,7 @@ class TurmasController extends Controller
         $result = $this->turmaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Nao foi possivel salvar a turma.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar a turma.'));
             return $this->redirect('/admin/turmas/criar');
         }
 
@@ -73,7 +73,7 @@ class TurmasController extends Controller
         $turmaId = (int) $request->input('id', 0);
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Nao foi possivel atualizar a turma.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar a turma.'));
             return $this->redirect('/admin/turmas/editar?turma_id=' . $turmaId);
         }
 
@@ -109,7 +109,7 @@ class TurmasController extends Controller
         $result = $this->turmaService->excluir($turmaId, $justificativa, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Nao foi possivel excluir a turma.');
+            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Não foi possivel excluir a turma.');
             return $this->redirect('/admin/turmas/editar?turma_id=' . $turmaId);
         }
 
@@ -125,7 +125,7 @@ class TurmasController extends Controller
         $result = $this->turmaService->atualizarStatus($turmaId, $status, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Nao foi possivel atualizar o status da turma.');
+            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Não foi possivel atualizar o status da turma.');
             return $this->redirect('/admin/turmas/show?turma_id=' . $turmaId);
         }
 
@@ -133,3 +133,4 @@ class TurmasController extends Controller
         return $this->redirect('/admin/turmas/show?turma_id=' . $turmaId);
     }
 }
+

@@ -2,7 +2,7 @@
 
 <section class="hero">
     <h1>Professores fiscais</h1>
-    <p>Operacao fiscal dos professores e retencoes.</p>
+    <p>Operação fiscal dos professores e retencoes.</p>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -21,10 +21,10 @@
                     <th>Professor</th>
                     <th>Tipo</th>
                     <th>Documento</th>
-                    <th>Aliquota</th>
+                    <th>Alíquota</th>
                     <th>Exige NF</th>
                     <th>Status</th>
-                    <th>Acoes</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,7 +37,7 @@
                         <td><?php echo Helpers::e($perfil['tipo_pessoa']); ?></td>
                         <td><?php echo Helpers::e(!empty($perfil['cpf']) ? $perfil['cpf'] : $perfil['cnpj']); ?></td>
                         <td><?php echo number_format((float) $perfil['aliquota_retencao'], 2, ',', '.'); ?>%</td>
-                        <td><?php echo !empty($perfil['exige_nota_fiscal']) ? 'Sim' : 'Nao'; ?></td>
+                        <td><?php echo !empty($perfil['exige_nota_fiscal']) ? 'Sim' : 'Não'; ?></td>
                         <td><?php echo Helpers::e($perfil['status']); ?></td>
                         <td>
                             <div class="split-actions">
@@ -51,3 +51,4 @@
         </table>
     </div>
 </section>
+

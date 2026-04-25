@@ -43,7 +43,7 @@
 <section class="panel">
     <div class="panel-header">
         <div>
-            <h2>Instrucoes</h2>
+            <h2>Instruções</h2>
             <p>Orientacoes publicas da turma ou do curso.</p>
         </div>
     </div>
@@ -116,3 +116,4 @@
         </table>
     </div>
 </section>
+

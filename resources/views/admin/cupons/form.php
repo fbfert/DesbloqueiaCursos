@@ -36,7 +36,7 @@ $relationText = function ($tipo) use ($relationValues) {
         <label>Nome</label>
         <input type="text" name="nome" value="<?php echo htmlspecialchars((string) ($cupom['nome'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
 
-        <label>Descricao</label>
+        <label>Descrição</label>
         <textarea name="descricao" rows="3"><?php echo htmlspecialchars((string) ($cupom['descricao'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
 
         <label>Tipo</label>
@@ -121,3 +121,4 @@ $relationText = function ($tipo) use ($relationValues) {
         </form>
     </section>
 <?php endif; ?>
+

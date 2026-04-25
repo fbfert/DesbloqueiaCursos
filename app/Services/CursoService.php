@@ -200,7 +200,7 @@ class CursoService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.curso.falhou', array('message' => $exception->getMessage()));
+            Logger::error('catalogo.curso.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -213,7 +213,7 @@ class CursoService
         }
 
         if (!empty($this->turmaModel->forCourse($id))) {
-            return array('ok' => false, 'message' => 'Nao e seguro excluir curso/evento com turmas vinculadas.');
+            return array('ok' => false, 'message' => 'Não e seguro excluir curso/evento com turmas vinculadas.');
         }
 
         $pdo = Database::connection();
@@ -239,7 +239,7 @@ class CursoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.curso.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('catalogo.curso.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -291,7 +291,7 @@ class CursoService
         return array('curso' => $curso);
     }
 
-    public function validarTurmaPublicaParaInscricao($cursoId, $turmaId = null)
+    public function validarTurmaPublicaParaInscrição($cursoId, $turmaId = null)
     {
         $curso = $this->cursoModel->findPublicById($cursoId);
         if (!$curso) {
@@ -378,3 +378,4 @@ class CursoService
         return null;
     }
 }
+

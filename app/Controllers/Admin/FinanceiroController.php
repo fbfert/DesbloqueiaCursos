@@ -49,7 +49,7 @@ class FinanceiroController extends Controller
     public function apurar(Request $request)
     {
         $competencia = trim((string) $request->input('competencia', ''));
-        $result = $this->financeiroService->apurarCompetencia(
+        $result = $this->financeiroService->apurarCompetência(
             $competencia,
             Session::get('usuario_id'),
             $request->ip(),
@@ -57,7 +57,7 @@ class FinanceiroController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel apurar a competencia.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel apurar a competencia.'));
             return $this->redirect('/admin/financeiro');
         }
 
@@ -76,7 +76,7 @@ class FinanceiroController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel gerar os repasses.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel gerar os repasses.'));
             return $this->redirect('/admin/financeiro/repasses?apuracao_id=' . $apuracaoId);
         }
 
@@ -94,7 +94,7 @@ class FinanceiroController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel salvar o perfil fiscal.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel salvar o perfil fiscal.'));
             return $this->redirect('/admin/financeiro');
         }
 
@@ -119,7 +119,7 @@ class FinanceiroController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel registrar o documento.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel registrar o documento.'));
         } else {
             Session::flash('success', 'Documento registrado com sucesso.');
         }
@@ -142,7 +142,7 @@ class FinanceiroController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel registrar o pagamento.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel registrar o pagamento.'));
         } else {
             Session::flash('success', 'Pagamento registrado com sucesso.');
         }
@@ -150,3 +150,4 @@ class FinanceiroController extends Controller
         return $this->redirect('/admin/financeiro/repasses');
     }
 }
+

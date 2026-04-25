@@ -10,10 +10,11 @@
     </article>
     <article class="checkout-panel">
         <h2>Acesso</h2>
-        <p>Se voce ja tem cadastro, entre na sua conta para acompanhar pedidos, inscricoes e area do aluno.</p>
+        <p>Se você ja tem cadastro, entre na sua conta para acompanhar pedidos, inscricoes e area do aluno.</p>
         <div class="cta-group">
             <a class="button-link" href="/login">Entrar</a>
             <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>
         </div>
     </article>
 </section>
+

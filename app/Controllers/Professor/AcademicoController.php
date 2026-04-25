@@ -8,12 +8,12 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Services\AreaCursoService;
-use App\Services\AptidaoCertificadoService;
+use App\Services\AptidãoCertificadoService;
 use App\Services\AvaliacaoService;
 use App\Services\ProfessorAcademicScopeService;
 use App\Services\PresencaService;
 
-class AcademicoController extends Controller
+class AcadêmicoController extends Controller
 {
     private $areaCursoService;
     private $aptidaoService;
@@ -24,7 +24,7 @@ class AcademicoController extends Controller
     public function __construct()
     {
         $this->areaCursoService = new AreaCursoService();
-        $this->aptidaoService = new AptidaoCertificadoService();
+        $this->aptidaoService = new AptidãoCertificadoService();
         $this->presencaService = new PresencaService();
         $this->avaliacaoService = new AvaliacaoService();
         $this->scopeService = new ProfessorAcademicScopeService();
@@ -55,13 +55,13 @@ class AcademicoController extends Controller
         ));
     }
 
-    public function salvarConfiguracao(Request $request)
+    public function salvarConfiguração(Request $request)
     {
         if (!$this->contextoAutorizado((int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             return $this->forbidden();
         }
 
-        $resultado = $this->aptidaoService->salvarConfiguracao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $resultado = $this->aptidaoService->salvarConfiguração($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
     }
 
@@ -117,13 +117,13 @@ class AcademicoController extends Controller
         return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
     }
 
-    public function recalcularAptidao(Request $request)
+    public function recalcularAptidão(Request $request)
     {
         if (!$this->inscricaoAutorizada((int) $request->input('inscricao_id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             return $this->forbidden();
         }
 
-        $resultado = $this->aptidaoService->recalcularInscricao(
+        $resultado = $this->aptidaoService->recalcularInscrição(
             (int) $request->input('inscricao_id', 0),
             Session::get('usuario_id'),
             $request->ip(),
@@ -137,7 +137,7 @@ class AcademicoController extends Controller
     private function respondForm(array $resultado, $redirectTo)
     {
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Nao foi possivel salvar o registro.'));
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
         } else {
             Session::flash('success', 'Registro salvo com sucesso.');
         }
@@ -166,12 +166,12 @@ class AcademicoController extends Controller
             return false;
         }
 
-        $validacao = $this->scopeService->validarInscricaoNoContexto($inscricaoId, $cursoId, $turmaId > 0 ? $turmaId : null);
+        $validacao = $this->scopeService->validarInscriçãoNoContexto($inscricaoId, $cursoId, $turmaId > 0 ? $turmaId : null);
         if (!empty($validacao['ok'])) {
             return true;
         }
 
-        return isset($validacao['message']) && $validacao['message'] === 'Inscricao nao encontrada.';
+        return isset($validacao['message']) && $validacao['message'] === 'Inscrição nao encontrada.';
     }
 
     private function avaliacaoAutorizada($avaliacaoId, $cursoId, $turmaId)
@@ -225,3 +225,4 @@ class AcademicoController extends Controller
         return new Response(View::render('errors/403', array('title' => 'Acesso negado')), 403);
     }
 }
+

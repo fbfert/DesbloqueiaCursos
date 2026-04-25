@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Core\Helpers;
 use App\Core\Logger;
 use App\Core\View;
-use App\Models\EmailConfiguracao;
+use App\Models\EmailConfiguração;
 use App\Models\EmailEnvio;
 use Exception;
 
@@ -19,9 +19,9 @@ class EmailService
 
     public function __construct()
     {
-        $this->configModel = new EmailConfiguracao();
+        $this->configModel = new EmailConfiguração();
         $this->emailModel = new EmailEnvio();
-        $this->globalConfigService = new ConfiguracaoGlobalService();
+        $this->globalConfigService = new ConfiguraçãoGlobalService();
         $this->auditService = new AuditService();
         $this->configFallback = require BASE_PATH . '/config/mail.php';
     }
@@ -311,7 +311,7 @@ class EmailService
         Logger::info('emails.fila.criada', array('email_id' => $emailId, 'evento' => $evento));
 
         if (empty($config['enabled']) || empty($config['host'])) {
-            $erro = 'Configuracao SMTP indisponivel.';
+            $erro = 'Configuração SMTP indisponivel.';
             $this->emailModel->markFailed($emailId, $erro);
             $this->auditService->record(
                 'emails.falhou',
@@ -328,7 +328,7 @@ class EmailService
         }
 
         try {
-            $response = $this->sendSmtpMessage($config, array(
+            $response = $this->sendSmtpMêssage($config, array(
                 'from_email' => $config['from_email'],
                 'from_name' => $config['from_name'],
                 'reply_to' => $config['reply_to'],
@@ -358,13 +358,13 @@ class EmailService
 
             return array('ok' => true, 'email_id' => $emailId, 'response' => $response);
         } catch (Exception $exception) {
-            $this->emailModel->markFailed($emailId, $exception->getMessage());
+            $this->emailModel->markFailed($emailId, $exception->getMêssage());
 
             $this->auditService->record(
                 'emails.falhou',
                 'email',
                 $emailId,
-                array('erro' => $exception->getMessage()),
+                array('erro' => $exception->getMêssage()),
                 $actorUserId,
                 $ipAddress,
                 $userAgent
@@ -373,10 +373,10 @@ class EmailService
             Logger::error('emails.falhou', array(
                 'email_id' => $emailId,
                 'evento' => $evento,
-                'erro' => $exception->getMessage(),
+                'erro' => $exception->getMêssage(),
             ));
 
-            return array('ok' => false, 'message' => $exception->getMessage(), 'email_id' => $emailId);
+            return array('ok' => false, 'message' => $exception->getMêssage(), 'email_id' => $emailId);
         }
     }
 
@@ -410,7 +410,7 @@ class EmailService
         );
     }
 
-    private function sendSmtpMessage(array $config, array $email)
+    private function sendSmtpMêssage(array $config, array $email)
     {
         $host = trim((string) $config['host']);
         $port = (int) $config['port'];
@@ -428,7 +428,7 @@ class EmailService
         if ($encryption === 'tls') {
             $this->smtpCommand($socket, 'STARTTLS', array(220));
             if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
-                throw new Exception('Nao foi possivel iniciar TLS.');
+                throw new Exception('Não foi possivel iniciar TLS.');
             }
 
             $this->smtpCommand($socket, 'EHLO ' . $this->hostname(), array(250));
@@ -528,3 +528,4 @@ class EmailService
         return '=?UTF-8?B?' . base64_encode($value) . '?=';
     }
 }
+

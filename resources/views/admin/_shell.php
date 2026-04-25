@@ -11,7 +11,7 @@ $rbacService = new RbacService();
 $menu = array(
     array('group' => 'Painel', 'items' => array(
         array('label' => 'Dashboard', 'href' => '/admin/dashboard', 'icon' => '◼'),
-        array('label' => 'Catalogo', 'href' => '/admin/catalogo', 'icon' => '▣', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Catálogo', 'href' => '/admin/catalogo', 'icon' => '▣', 'permissions_any' => array('conteudo.ver')),
     )),
     array('group' => 'Conteudo', 'items' => array(
         array('label' => 'Categorias', 'href' => '/admin/categorias', 'icon' => '◦', 'permissions_any' => array('conteudo.ver')),
@@ -19,15 +19,15 @@ $menu = array(
         array('label' => 'Turmas', 'href' => '/admin/turmas', 'icon' => '◨', 'permissions_any' => array('conteudo.ver')),
         array('label' => 'Area do curso', 'href' => '/admin/area-curso', 'icon' => '▤', 'permissions_any' => array('area_curso.gerenciar')),
     )),
-    array('group' => 'Operacao', 'items' => array(
+    array('group' => 'Operação', 'items' => array(
         array('label' => 'Pedidos', 'href' => '/admin/pedidos', 'icon' => '⟡', 'permissions_any' => array('pedidos.ver')),
-        array('label' => 'Inscricoes', 'href' => '/admin/inscricoes', 'icon' => '⟢', 'permissions_any' => array('pedidos.ver')),
+        array('label' => 'Inscrições', 'href' => '/admin/inscricoes', 'icon' => '⟢', 'permissions_any' => array('pedidos.ver')),
         array('label' => 'Comprovantes PIX', 'href' => '/admin/comprovantes-pix', 'icon' => '◉', 'permissions_any' => array('pedidos.ver')),
         array('label' => 'Cupons', 'href' => '/admin/cupons', 'icon' => '⌘', 'permissions_any' => array('cupons.ver')),
         array('label' => 'Certificados', 'href' => '/admin/certificados', 'icon' => '⬚', 'permissions_any' => array('certificados.ver')),
     )),
-    array('group' => 'Academico', 'items' => array(
-        array('label' => 'Academico', 'href' => '/admin/academico', 'icon' => '✦', 'permissions_any' => array('academico.ver')),
+    array('group' => 'Acadêmico', 'items' => array(
+        array('label' => 'Acadêmico', 'href' => '/admin/academico', 'icon' => '✦', 'permissions_any' => array('academico.ver')),
     )),
     array('group' => 'Financeiro', 'items' => array(
         array('label' => 'Financeiro', 'href' => '/admin/financeiro', 'icon' => '₪', 'permissions_any' => array('financeiro.ver')),
@@ -35,7 +35,7 @@ $menu = array(
         array('label' => 'Professores fiscais', 'href' => '/admin/professores-fiscais', 'icon' => '⧉', 'permissions_any' => array('financeiro.ver')),
         array('label' => 'Rateios', 'href' => '/admin/rateios', 'icon' => '≋', 'permissions_any' => array('financeiro.ver')),
     )),
-    array('group' => 'Configuracoes', 'items' => array(
+    array('group' => 'Configurações', 'items' => array(
         array('label' => 'Globais', 'href' => '/admin/configuracoes-globais', 'icon' => '⚙', 'permissions_any' => array('configuracoes_globais.ver')),
         array('label' => 'E-mails', 'href' => '/admin/emails', 'icon' => '✉', 'permissions_any' => array('emails.ver')),
         array('label' => 'RBAC', 'href' => '/admin/rbac', 'icon' => '☰', 'permissions_any' => array('rbac.dashboard.ver')),
@@ -121,3 +121,4 @@ if (!empty($title)) {
         </main>
     </div>
 </div>
+

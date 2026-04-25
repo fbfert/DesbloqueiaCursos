@@ -1,5 +1,5 @@
 <section class="hero">
-    <h1>Configuracoes de seguranca</h1>
+    <h1>Configurações de seguranca</h1>
     <p>Politica de login e reset de senha.</p>
 </section>
 
@@ -33,3 +33,4 @@
         <button type="submit">Salvar seguranca</button>
     </form>
 </section>
+

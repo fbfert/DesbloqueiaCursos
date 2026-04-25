@@ -55,7 +55,7 @@ class FileStorageService
 
         if (!is_dir($absoluteDirectory)) {
             if (!@mkdir($absoluteDirectory, 0775, true) && !is_dir($absoluteDirectory)) {
-                throw new \RuntimeException('Nao foi possivel criar o diretorio de upload.');
+                throw new \RuntimeException('Não foi possivel criar o diretorio de upload.');
             }
         }
 
@@ -68,7 +68,7 @@ class FileStorageService
         $absolutePath = $this->privatePath($relativePath);
 
         if (!move_uploaded_file($file['tmp_name'], $absolutePath)) {
-            throw new \RuntimeException('Nao foi possivel salvar o arquivo enviado.');
+            throw new \RuntimeException('Não foi possivel salvar o arquivo enviado.');
         }
 
         return array(
@@ -100,3 +100,4 @@ class FileStorageService
         return $fallback;
     }
 }
+

@@ -7,8 +7,8 @@ use App\Core\Helpers;
 use App\Core\Logger;
 use App\Models\Aula;
 use App\Models\CursoEvento;
-use App\Models\InstrucoesCurso;
-use App\Models\Inscricao;
+use App\Models\InstruçõesCurso;
+use App\Models\Inscrição;
 use App\Models\LinkExterno;
 use App\Models\Material;
 use App\Models\Modulo;
@@ -37,10 +37,10 @@ class AreaCursoService
 
     public function __construct()
     {
-        $this->inscricaoModel = new Inscricao();
+        $this->inscricaoModel = new Inscrição();
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
-        $this->instrucoesModel = new InstrucoesCurso();
+        $this->instrucoesModel = new InstruçõesCurso();
         $this->moduloModel = new Modulo();
         $this->aulaModel = new Aula();
         $this->materialModel = new Material();
@@ -58,7 +58,7 @@ class AreaCursoService
     public function carregarAluno($usuarioId, $inscricaoId = null, $moduloId = null, $aulaId = null)
     {
         $inscricoes = $this->inscricaoModel->forUsuarioAprovadas($usuarioId);
-        $inscricao = $this->selecionarInscricao($inscricoes, $inscricaoId);
+        $inscricao = $this->selecionarInscrição($inscricoes, $inscricaoId);
 
         if (!$inscricao) {
             return array(
@@ -151,7 +151,7 @@ class AreaCursoService
         ));
     }
 
-    public function salvarInstrucao(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function salvarInstrução(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $id = isset($data['id']) ? (int) $data['id'] : 0;
         $payload = array(
@@ -168,7 +168,7 @@ class AreaCursoService
         }
 
         if ($id > 0 && !$this->instrucoesModel->findById($id)) {
-            return array('ok' => false, 'message' => 'Instrucao nao encontrada.');
+            return array('ok' => false, 'message' => 'Instrução nao encontrada.');
         }
 
         $pdo = Database::connection();
@@ -191,7 +191,7 @@ class AreaCursoService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.instrucao.falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.instrucao.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -244,7 +244,7 @@ class AreaCursoService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.link.falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.link.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -308,7 +308,7 @@ class AreaCursoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -451,7 +451,7 @@ class AreaCursoService
         return $contexto;
     }
 
-    private function selecionarInscricao(array $inscricoes, $inscricaoId = null)
+    private function selecionarInscrição(array $inscricoes, $inscricaoId = null)
     {
         if (empty($inscricoes)) {
             return null;
@@ -584,3 +584,4 @@ class AreaCursoService
         }
     }
 }
+

@@ -51,7 +51,7 @@
                     <th>Percentual</th>
                     <th>Base</th>
                     <th>Valor rateado</th>
-                    <th>Liquido</th>
+                    <th>Líquido</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -74,3 +74,4 @@
         </table>
     </div>
 </section>
+

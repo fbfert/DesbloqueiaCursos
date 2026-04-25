@@ -52,13 +52,13 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Competencia</th>
+                    <th>Competência</th>
                     <th>Professor</th>
                     <th>Tipo</th>
                     <th>Base liquida</th>
                     <th>Bruto</th>
                     <th>Retido</th>
-                    <th>Liquido</th>
+                    <th>Líquido</th>
                     <th>Status</th>
                     <th>Documento</th>
                 </tr>
@@ -83,7 +83,7 @@
                             <?php if (!empty($repasse['documento_obrigatorio'])): ?>
                                 Obrigatorio
                             <?php else: ?>
-                                Nao obrigatorio
+                                Não obrigatorio
                             <?php endif; ?>
                             <br>
                             <small><?php echo htmlspecialchars((string) $repasse['documento_validado_em'], ENT_QUOTES, 'UTF-8'); ?></small>
@@ -112,7 +112,7 @@
                                         <input type="file" name="arquivo" required>
                                     </label>
                                     <label class="full">
-                                        Observacao
+                                        Observação
                                         <textarea name="observacao" rows="2"></textarea>
                                     </label>
                                     <div class="full">
@@ -161,3 +161,4 @@
         </table>
     </div>
 </section>
+

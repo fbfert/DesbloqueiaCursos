@@ -1,6 +1,52 @@
-<section class="hero">
-    <h1>Pedidos</h1>
-    <p>Listagem administrativa de pedidos, participantes e comprovantes PIX.</p>
+<?php
+$totalPedidos = is_array($pedidos) ? count($pedidos) : 0;
+$pendentes = 0;
+$comPix = 0;
+
+foreach ((array) $pedidos as $pedidoResumo) {
+    $status = isset($pedidoResumo['status']) ? (string) $pedidoResumo['status'] : '';
+    if (in_array($status, array('aguardando_pagamento', 'comprovante_enviado', 'em_analise', 'pendencia', 'aguardando_reenvio'), true)) {
+        $pendentes++;
+    }
+
+    if (!empty($pedidoResumo['comprovante_pix'])) {
+        $comPix++;
+    }
+}
+?>
+
+<section class="hero admin-dashboard-hero">
+    <div class="hero__content">
+        <h1>Pedidos</h1>
+        <p>Listagem administrativa de pedidos, participantes e comprovantes PIX.</p>
+    </div>
+    <div class="hero__panel admin-dashboard-hero__panel">
+        <strong>Resumo rapido</strong>
+        <div class="admin-dashboard-highlight">
+            <span>Pedidos listados</span>
+            <strong><?php echo (int) $totalPedidos; ?></strong>
+            <small>na tela atual</small>
+        </div>
+        <div class="admin-dashboard-highlight">
+            <span>Pedidos pendentes</span>
+            <strong><?php echo (int) $pendentes; ?></strong>
+            <small>com necessidade de acao</small>
+        </div>
+        <div class="admin-dashboard-highlight">
+            <span>Com comprovante PIX</span>
+            <strong><?php echo (int) $comPix; ?></strong>
+            <small>com arquivo enviado</small>
+        </div>
+    </div>
+</section>
+
+<section class="status-card">
+    <strong>Atalhos de operacao</strong>
+    <div class="quick-actions quick-actions--dashboard">
+        <a class="card-link admin-shortcut" href="/admin/comprovantes-pix"><span>Comprovantes PIX</span><small>Fila de analise e aprovacao</small></a>
+        <a class="card-link admin-shortcut" href="/admin/inscricoes"><span>Inscrições</span><small>Acompanhar status de alunos</small></a>
+        <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -19,7 +65,7 @@
                     <th>Status</th>
                     <th>Comprovante</th>
                     <th>Data</th>
-                    <th>Acoes</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -58,3 +104,4 @@
         </table>
     </div>
 </section>
+

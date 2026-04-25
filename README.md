@@ -19,6 +19,7 @@ Portal de cursos e eventos em PHP MVC, preparado para Linux/cPanel, MySQL 5.7, c
 - [Rollback](docs/rollback.md)
 - [QA checklist](docs/qa-checklist.md)
 - [Homologacao](docs/homologacao.md)
+- [Padrao editorial PT-BR](docs/padrao-editorial-ptbr.md)
 
 ## Execucao Local
 

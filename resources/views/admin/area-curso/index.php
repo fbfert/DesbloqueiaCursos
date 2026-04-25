@@ -46,7 +46,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
 
 <?php if (!empty($curso)): ?>
     <section class="status-card">
-        <strong>Instrucoes</strong>
+        <strong>Instruções</strong>
         <form method="post" action="/admin/area-curso/instrucoes" class="form-grid">
             <input type="hidden" name="id" value="<?php echo !empty($instrucaoEditar['id']) ? (int) $instrucaoEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
@@ -66,7 +66,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
             <label>Titulo<input type="text" name="titulo" value="<?php echo Helpers::e($moduloEditar['titulo'] ?? ''); ?>"></label>
-            <label>Descricao<textarea name="descricao" rows="3"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea></label>
+            <label>Descrição<textarea name="descricao" rows="3"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($moduloEditar['ordem'] ?? 1)); ?>" min="1"></label>
             <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($moduloEditar) ? (!empty($moduloEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visivel</label>
             <button type="submit"><?php echo !empty($moduloEditar) ? 'Atualizar modulo' : 'Salvar modulo'; ?></button>
@@ -74,7 +74,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
 
         <div class="table-wrap" style="margin-top:12px;">
             <table class="admin-table">
-                <thead><tr><th>Titulo</th><th>Ordem</th><th>Status</th><th>Acoes</th></tr></thead>
+                <thead><tr><th>Titulo</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($modulos as $modulo): ?>
                         <tr>
@@ -129,7 +129,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
 
         <div class="table-wrap" style="margin-top:12px;">
             <table class="admin-table">
-                <thead><tr><th>Titulo</th><th>Tipo</th><th>Ordem</th><th>Acoes</th></tr></thead>
+                <thead><tr><th>Titulo</th><th>Tipo</th><th>Ordem</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($modulos as $modulo): ?>
                         <?php foreach ($modulo['aulas'] as $aula): ?>
@@ -187,7 +187,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                 </select>
             </label>
             <label>Titulo<input type="text" name="titulo" value="<?php echo Helpers::e($materialEditar['titulo'] ?? ''); ?>"></label>
-            <label>Descricao<textarea name="descricao" rows="3"><?php echo Helpers::e($materialEditar['descricao'] ?? ''); ?></textarea></label>
+            <label>Descrição<textarea name="descricao" rows="3"><?php echo Helpers::e($materialEditar['descricao'] ?? ''); ?></textarea></label>
             <label>Tipo arquivo<input type="text" name="tipo_arquivo" value="<?php echo Helpers::e($materialEditar['tipo_arquivo'] ?? 'outro'); ?>"></label>
             <label>Arquivo<input type="file" name="arquivo"></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($materialEditar['ordem'] ?? 1)); ?>" min="1"></label>
@@ -197,7 +197,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
 
         <div class="table-wrap" style="margin-top:12px;">
             <table class="admin-table">
-                <thead><tr><th>Titulo</th><th>Tipo</th><th>Acesso</th><th>Acoes</th></tr></thead>
+                <thead><tr><th>Titulo</th><th>Tipo</th><th>Acesso</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($materiais as $material): ?>
                         <tr>
@@ -262,7 +262,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
 
         <div class="table-wrap" style="margin-top:12px;">
             <table class="admin-table">
-                <thead><tr><th>Titulo</th><th>Tipo</th><th>URL</th><th>Acoes</th></tr></thead>
+                <thead><tr><th>Titulo</th><th>Tipo</th><th>URL</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($links as $link): ?>
                         <tr>
@@ -307,3 +307,4 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         </div>
     </section>
 <?php endif; ?>
+

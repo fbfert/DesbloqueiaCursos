@@ -1,5 +1,5 @@
 <section class="hero">
-    <h1>Inscricoes</h1>
+    <h1>Inscrições</h1>
     <p>Listagem administrativa de inscricoes e controle de progresso.</p>
 </section>
 
@@ -7,7 +7,7 @@
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
 <section class="status-card">
-    <strong>Inscricoes</strong>
+    <strong>Inscrições</strong>
     <div class="table-wrap">
         <table class="admin-table">
             <thead>
@@ -20,7 +20,7 @@
                     <th>Status</th>
                     <th>Pedido</th>
                     <th>Data</th>
-                    <th>Acoes</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -59,7 +59,7 @@
                                     <option value="concluida_sem_certificado" <?php echo $inscricao['status'] === 'concluida_sem_certificado' ? 'selected' : ''; ?>>concluida_sem_certificado</option>
                                     <option value="certificado_emitido" <?php echo $inscricao['status'] === 'certificado_emitido' ? 'selected' : ''; ?>>certificado_emitido</option>
                                 </select>
-                                <input type="text" name="observacao" placeholder="Observacao">
+                                <input type="text" name="observacao" placeholder="Observação">
                                 <button type="submit">Salvar</button>
                             </form>
                         </td>
@@ -69,3 +69,4 @@
         </table>
     </div>
 </section>
+

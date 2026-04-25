@@ -11,11 +11,11 @@
     <?php if (!empty($fiscal)): ?>
         <p>Tipo: <?php echo htmlspecialchars($fiscal['tipo_pessoa'], ENT_QUOTES, 'UTF-8'); ?></p>
         <p>Documento: <?php echo htmlspecialchars(!empty($fiscal['cpf']) ? $fiscal['cpf'] : $fiscal['cnpj'], ENT_QUOTES, 'UTF-8'); ?></p>
-        <p>Aliquota: <?php echo number_format((float) $fiscal['aliquota_retencao'], 2, ',', '.'); ?>%</p>
+        <p>Alíquota: <?php echo number_format((float) $fiscal['aliquota_retencao'], 2, ',', '.'); ?>%</p>
         <p>Status: <?php echo htmlspecialchars($fiscal['status'], ENT_QUOTES, 'UTF-8'); ?></p>
         <p>E-mail financeiro: <?php echo htmlspecialchars((string) $fiscal['email_financeiro'], ENT_QUOTES, 'UTF-8'); ?></p>
     <?php else: ?>
-        <p>Perfil fiscal ainda nao cadastrado.</p>
+        <p>Perfil fiscal ainda não cadastrado.</p>
     <?php endif; ?>
 </section>
 
@@ -25,11 +25,11 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Competencia</th>
+                    <th>Competência</th>
                     <th>Base liquida</th>
                     <th>Bruto</th>
                     <th>Retido</th>
-                    <th>Liquido</th>
+                    <th>Líquido</th>
                     <th>Status</th>
                     <th>Apuracao</th>
                 </tr>
@@ -62,12 +62,12 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Competencia</th>
+                    <th>Competência</th>
                     <th>Nome</th>
                     <th>CPF</th>
                     <th>Bruto</th>
                     <th>Retido</th>
-                    <th>Liquido</th>
+                    <th>Líquido</th>
                     <th>Arquivo</th>
                     <th>Status</th>
                 </tr>
@@ -94,3 +94,4 @@
         </table>
     </div>
 </section>
+

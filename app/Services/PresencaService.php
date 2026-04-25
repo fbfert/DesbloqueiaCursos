@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Aula;
-use App\Models\Inscricao;
+use App\Models\Inscrição;
 use App\Models\Presenca;
 use Exception;
 
@@ -22,9 +22,9 @@ class PresencaService
     public function __construct(array $dependencies = array())
     {
         $this->presencaModel = isset($dependencies['presencaModel']) ? $dependencies['presencaModel'] : new Presenca();
-        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscricao();
+        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscrição();
         $this->aulaModel = isset($dependencies['aulaModel']) ? $dependencies['aulaModel'] : new Aula();
-        $this->aptidaoService = isset($dependencies['aptidaoService']) ? $dependencies['aptidaoService'] : new AptidaoCertificadoService();
+        $this->aptidaoService = isset($dependencies['aptidaoService']) ? $dependencies['aptidaoService'] : new AptidãoCertificadoService();
         $this->auditService = isset($dependencies['auditService']) ? $dependencies['auditService'] : new AuditService();
         $this->trashService = isset($dependencies['trashService']) ? $dependencies['trashService'] : new TrashService();
         $this->scopeService = isset($dependencies['scopeService']) ? $dependencies['scopeService'] : new ProfessorAcademicScopeService(array(
@@ -38,9 +38,9 @@ class PresencaService
         return array('presencas' => $this->presencaModel->listForContext($cursoId, $turmaId));
     }
 
-    public function listarPorInscricao($inscricaoId)
+    public function listarPorInscrição($inscricaoId)
     {
-        return array('presencas' => $this->presencaModel->listForInscricao($inscricaoId));
+        return array('presencas' => $this->presencaModel->listForInscrição($inscricaoId));
     }
 
     public function registrar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -53,9 +53,9 @@ class PresencaService
             return $validacaoContexto;
         }
 
-        $validacaoInscricao = $this->scopeService->validarInscricaoNoContexto(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0, $cursoId, $turmaId);
-        if (empty($validacaoInscricao['ok'])) {
-            return $validacaoInscricao;
+        $validacaoInscrição = $this->scopeService->validarInscriçãoNoContexto(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0, $cursoId, $turmaId);
+        if (empty($validacaoInscrição['ok'])) {
+            return $validacaoInscrição;
         }
 
         if (!empty($data['aula_id'])) {
@@ -64,15 +64,15 @@ class PresencaService
                 return $validacaoAula;
             }
 
-            $validacaoAulaInscricao = $this->scopeService->validarAulaInscricaoConsistentes((int) $data['aula_id'], (int) $data['inscricao_id']);
-            if (empty($validacaoAulaInscricao['ok'])) {
-                return $validacaoAulaInscricao;
+            $validacaoAulaInscrição = $this->scopeService->validarAulaInscriçãoConsistentes((int) $data['aula_id'], (int) $data['inscricao_id']);
+            if (empty($validacaoAulaInscrição['ok'])) {
+                return $validacaoAulaInscrição;
             }
         }
 
         $inscricao = $this->inscricaoModel->findById(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
         }
 
         $payload = array(
@@ -106,13 +106,13 @@ class PresencaService
             );
             Logger::info('academico.presenca.registrada', array('presenca_id' => $id));
 
-            $this->aptidaoService->recalcularInscricao((int) $inscricao['id'], $actorUserId, $ipAddress, $userAgent, $cursoId, $turmaId);
+            $this->aptidaoService->recalcularInscrição((int) $inscricao['id'], $actorUserId, $ipAddress, $userAgent, $cursoId, $turmaId);
             $pdo->commit();
 
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('academico.presenca.falhou', array('message' => $exception->getMessage()));
+            Logger::error('academico.presenca.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -137,8 +137,9 @@ class PresencaService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('academico.presenca.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('academico.presenca.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
 }
+

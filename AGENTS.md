@@ -37,6 +37,11 @@ Portal de cursos e eventos Polo Rainbow.
 - Validar inputs no backend
 - Preparar tudo para deploy em Linux/cPanel
 
+## Regra editorial obrigatória
+- Todos os textos exibidos ao usuário devem usar português brasileiro com acentuação correta.
+- Não publicar telas, mensagens de erro/sucesso, rótulos, botões, títulos ou descrições sem acentuação.
+- Essa regra vale para frontend público, área do aluno, área do professor e backoffice/admin.
+
 ## Ordem de construção
 1. Estrutura base do projeto
 2. Banco de dados inicial

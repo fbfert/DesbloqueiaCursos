@@ -41,7 +41,7 @@
 
 <section class="status-grid" aria-label="Status da estrutura">
     <article class="status-card">
-        <strong>Catalogo publico</strong>
+        <strong>Catálogo publico</strong>
         <span>Lista apenas cursos ativos e publicaveis, sem depender de permissao administrativa.</span>
     </article>
     <article class="status-card">
@@ -49,7 +49,7 @@
         <span>O detalhe do curso exibe somente professor responsavel e turmas abertas para inscricao.</span>
     </article>
     <article class="status-card">
-        <strong>Inscricao inicial</strong>
+        <strong>Inscrição inicial</strong>
         <span>O frontend encaminha a inscricao apenas para turma aberta e vinculada ao curso correto.</span>
     </article>
 </section>
@@ -92,3 +92,4 @@
         <?php endforeach; ?>
     <?php endif; ?>
 </section>
+

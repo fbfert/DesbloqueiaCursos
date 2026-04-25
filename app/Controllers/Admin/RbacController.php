@@ -47,7 +47,7 @@ class RbacController extends Controller
             return $this->redirect('/admin/rbac');
         }
 
-        Session::flash('success', 'Permissoes do perfil atualizadas.');
+        Session::flash('success', 'Permissões do perfil atualizadas.');
         return $this->redirect('/admin/rbac');
     }
 
@@ -75,3 +75,4 @@ class RbacController extends Controller
         return $this->redirect('/admin/rbac');
     }
 }
+

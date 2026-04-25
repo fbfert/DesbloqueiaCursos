@@ -28,7 +28,7 @@ if (empty($participantes)) {
 
 <section class="status-card">
     <strong>Regra operacional</strong>
-    <p>O percentual total dos participantes nao pode ultrapassar <?php echo number_format($percentualMaximo, 2, ',', '.'); ?>% da base liquida.</p>
+    <p>O percentual total dos participantes não pode ultrapassar <?php echo number_format($percentualMaximo, 2, ',', '.'); ?>% da base liquida.</p>
 </section>
 
 <section class="status-card">
@@ -106,7 +106,7 @@ if (empty($participantes)) {
                         <th>Professor</th>
                         <th>Tipo fiscal</th>
                         <th>Percentual</th>
-                        <th>Retencao (%)</th>
+                        <th>Retenção (%)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -143,3 +143,4 @@ if (empty($participantes)) {
         <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
     </form>
 </section>
+

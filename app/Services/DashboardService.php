@@ -9,7 +9,7 @@ use App\Models\Categoria;
 use App\Models\Certificado;
 use App\Models\ComprovantePix;
 use App\Models\CursoEvento;
-use App\Models\Inscricao;
+use App\Models\Inscrição;
 use App\Models\Pedido;
 use App\Models\RepasseProfessor;
 use App\Models\RpaEspelho;
@@ -37,7 +37,7 @@ class DashboardService
         $this->rbacService = new RbacService();
         $this->auditService = new AuditService();
         $this->pedidoModel = new Pedido();
-        $this->inscricaoModel = new Inscricao();
+        $this->inscricaoModel = new Inscrição();
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
         $this->categoriaModel = new Categoria();
@@ -71,7 +71,7 @@ class DashboardService
             'cards' => $this->buildAdminCards($range),
             'top_courses' => $this->listTopCourses($range),
             'revenue_by_period' => $this->listRevenueByPeriod($range),
-            'repasses_by_competencia' => $this->listRepassesByCompetencia($range),
+            'repasses_by_competencia' => $this->listRepassesByCompetência($range),
             'options' => $options,
         );
     }
@@ -89,7 +89,7 @@ class DashboardService
         }
 
         $range = $this->normalizeRange($filters);
-        $catalogo = new CatalogoService();
+        $catalogo = new CatálogoService();
         $catalogoData = $catalogo->professorOverview($usuarioId);
         $repasses = $this->filterProfessorRepassesByRange($this->repasseModel->forProfessor($usuarioId), $range);
         $espelhos = $this->filterProfessorEspelhosByRange($this->rpaModel->forProfessor($usuarioId), $range);
@@ -168,12 +168,12 @@ class DashboardService
                 'subvalue' => 'pix atual',
             ),
             array(
-                'label' => 'Inscricoes ativas',
+                'label' => 'Inscrições ativas',
                 'value' => $this->countEnrollments(array('ativa', 'em_andamento')),
                 'subvalue' => 'matriculas',
             ),
             array(
-                'label' => 'Inscricoes concluidas',
+                'label' => 'Inscrições concluidas',
                 'value' => $this->countEnrollments(array('concluida', 'concluida_sem_certificado', 'certificado_emitido')),
                 'subvalue' => 'matriculas',
             ),
@@ -285,7 +285,7 @@ class DashboardService
         return $this->withBars($rows, 'receita');
     }
 
-    private function listRepassesByCompetencia(array $range)
+    private function listRepassesByCompetência(array $range)
     {
         $sql = 'SELECT ap.competencia,
                        COUNT(*) AS total_repasses,
@@ -748,12 +748,12 @@ class DashboardService
 
     private function filterProfessorRepassesByRange(array $repasses, array $range)
     {
-        $inicioCompetencia = substr($range['inicio_sql'], 0, 7);
-        $fimCompetencia = substr($range['fim_sql'], 0, 7);
+        $inicioCompetência = substr($range['inicio_sql'], 0, 7);
+        $fimCompetência = substr($range['fim_sql'], 0, 7);
 
         $filtered = array();
         foreach ($repasses as $repasse) {
-            if ($repasse['competencia'] >= $inicioCompetencia && $repasse['competencia'] <= $fimCompetencia) {
+            if ($repasse['competencia'] >= $inicioCompetência && $repasse['competencia'] <= $fimCompetência) {
                 $filtered[] = $repasse;
             }
         }
@@ -763,12 +763,12 @@ class DashboardService
 
     private function filterProfessorEspelhosByRange(array $espelhos, array $range)
     {
-        $inicioCompetencia = substr($range['inicio_sql'], 0, 7);
-        $fimCompetencia = substr($range['fim_sql'], 0, 7);
+        $inicioCompetência = substr($range['inicio_sql'], 0, 7);
+        $fimCompetência = substr($range['fim_sql'], 0, 7);
 
         $filtered = array();
         foreach ($espelhos as $espelho) {
-            if ($espelho['competencia'] >= $inicioCompetencia && $espelho['competencia'] <= $fimCompetencia) {
+            if ($espelho['competencia'] >= $inicioCompetência && $espelho['competencia'] <= $fimCompetência) {
                 $filtered[] = $espelho;
             }
         }
@@ -865,3 +865,4 @@ class DashboardService
         Logger::error($evento, $payload);
     }
 }
+

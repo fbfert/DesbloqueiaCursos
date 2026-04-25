@@ -139,7 +139,7 @@ class MaterialService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.material.falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.material.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -163,7 +163,7 @@ class MaterialService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.material.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.material.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -211,3 +211,4 @@ class MaterialService
         return array('ok' => true);
     }
 }
+

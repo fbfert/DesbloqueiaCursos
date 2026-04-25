@@ -50,7 +50,7 @@ class CuponsController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Nao foi possivel salvar o cupom.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o cupom.'));
             return $this->redirect('/admin/cupons/criar');
         }
 
@@ -83,7 +83,7 @@ class CuponsController extends Controller
 
         if (empty($result['ok'])) {
             $cupomId = (int) $request->input('id', 0);
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Nao foi possivel atualizar o cupom.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar o cupom.'));
             return $this->redirect('/admin/cupons/editar?cupom_id=' . $cupomId);
         }
 
@@ -125,7 +125,7 @@ class CuponsController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Nao foi possivel excluir o cupom.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel excluir o cupom.'));
             return $this->redirect('/admin/cupons/editar?cupom_id=' . $cupomId);
         }
 
@@ -133,3 +133,4 @@ class CuponsController extends Controller
         return $this->redirect('/admin/cupons');
     }
 }
+

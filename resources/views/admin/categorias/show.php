@@ -11,7 +11,7 @@
         <dt>Slug</dt><dd><?php echo Helpers::e($categoria['slug']); ?></dd>
         <dt>Status</dt><dd><?php echo Helpers::e($categoria['status']); ?></dd>
         <dt>Ordem</dt><dd><?php echo (int) $categoria['ordem']; ?></dd>
-        <dt>Descricao</dt><dd><?php echo Helpers::e($categoria['descricao'] ?? ''); ?></dd>
+        <dt>Descrição</dt><dd><?php echo Helpers::e($categoria['descricao'] ?? ''); ?></dd>
     </dl>
 </section>
 
@@ -29,3 +29,4 @@
         <button type="submit">Excluir categoria</button>
     </form>
 </section>
+

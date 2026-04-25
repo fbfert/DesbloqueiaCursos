@@ -1,5 +1,5 @@
 <section class="hero">
-    <h1>Catalogo</h1>
+    <h1>Catálogo</h1>
     <p>Base de cursos, eventos, turmas, destaques e vinculos.</p>
 </section>
 
@@ -16,7 +16,7 @@
                     <th>Nome</th>
                     <th>Slug</th>
                     <th>Ordem</th>
-                    <th>Catalogo</th>
+                    <th>Catálogo</th>
                 </tr>
             </thead>
             <tbody>
@@ -133,3 +133,4 @@
         </table>
     </div>
 </section>
+

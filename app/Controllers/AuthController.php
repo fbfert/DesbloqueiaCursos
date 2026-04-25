@@ -33,7 +33,7 @@ class AuthController extends Controller
             return $this->redirect('/cadastro');
         }
 
-        Session::flash('success', 'Cadastro realizado com sucesso. Voce ja pode acessar sua conta.');
+        Session::flash('success', 'Cadastro realizado com sucesso. Você ja pode acessar sua conta.');
         return $this->redirect('/login');
     }
 
@@ -60,14 +60,14 @@ class AuthController extends Controller
         }
 
         Session::flash('success', 'Login realizado com sucesso.');
-        return $this->redirect('/');
+        return $this->redirect(isset($result['redirect_to']) ? $result['redirect_to'] : '/meus-cursos');
     }
 
     public function logout(Request $request)
     {
         $this->authService->logout($request->ip(), $request->userAgent());
         Session::start();
-        Session::flash('success', 'Voce saiu da sessao.');
+        Session::flash('success', 'Você saiu da sessao.');
 
         return $this->redirect('/login');
     }
@@ -141,3 +141,4 @@ class AuthController extends Controller
         ));
     }
 }
+

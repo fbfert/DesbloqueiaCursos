@@ -2,7 +2,7 @@
 
 <section class="page-header">
     <h1>Certificados</h1>
-    <p>Emissao manual, reemissao e validacao publica.</p>
+    <p>Emissão manual, reemissao e validacao publica.</p>
 </section>
 
 <?php if (!empty($success)): ?>
@@ -43,8 +43,8 @@
                     <th>Participante</th>
                     <th>Curso</th>
                     <th>Status</th>
-                    <th>Emissao</th>
-                    <th>Acoes</th>
+                    <th>Emissão</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -62,3 +62,4 @@
         </table>
     </div>
 </section>
+

@@ -85,7 +85,7 @@ class AulaService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.aula.falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.aula.falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
@@ -109,8 +109,9 @@ class AulaService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.aula.excluir_falhou', array('message' => $exception->getMessage()));
+            Logger::error('area_curso.aula.excluir_falhou', array('message' => $exception->getMêssage()));
             throw $exception;
         }
     }
 }
+
