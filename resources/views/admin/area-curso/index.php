@@ -75,7 +75,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <button type="submit"><?php echo !empty($moduloEditar) ? 'Atualizar módulo' : 'Salvar módulo'; ?></button>
         </form>
 
-        <div class="table-wrap" style="margin-top:12px;">
+        <div class="table-wrap admin-mt-12">
             <table class="admin-table">
                 <thead><tr><th>Título</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead>
                 <tbody>
@@ -88,7 +88,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                                 <div class="split-actions">
                                     <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>&modulo_id=<?php echo (int) $modulo['id']; ?>">Editar</a>
                                 </div>
-                                <form method="post" action="/admin/area-curso/excluir" class="form-grid" style="margin-top:8px;">
+                                <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-mt-8">
                                     <input type="hidden" name="tipo" value="modulo">
                                     <input type="hidden" name="id" value="<?php echo (int) $modulo['id']; ?>">
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
@@ -130,7 +130,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <button type="submit"><?php echo !empty($aulaEditar) ? 'Atualizar aula' : 'Salvar aula'; ?></button>
         </form>
 
-        <div class="table-wrap" style="margin-top:12px;">
+        <div class="table-wrap admin-mt-12">
             <table class="admin-table">
                 <thead><tr><th>Título</th><th>Tipo</th><th>Ordem</th><th>Ações</th></tr></thead>
                 <tbody>
@@ -144,7 +144,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                                     <div class="split-actions">
                                         <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>&aula_id=<?php echo (int) $aula['id']; ?>">Editar</a>
                                     </div>
-                                    <form method="post" action="/admin/area-curso/excluir" class="form-grid" style="margin-top:8px;">
+                                    <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-mt-8">
                                         <input type="hidden" name="tipo" value="aula">
                                         <input type="hidden" name="id" value="<?php echo (int) $aula['id']; ?>">
                                         <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
@@ -198,7 +198,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <button type="submit"><?php echo !empty($materialEditar) ? 'Atualizar material' : 'Salvar material'; ?></button>
         </form>
 
-        <div class="table-wrap" style="margin-top:12px;">
+        <div class="table-wrap admin-mt-12">
             <table class="admin-table">
                 <thead><tr><th>Título</th><th>Tipo</th><th>Acesso</th><th>Ações</th></tr></thead>
                 <tbody>
@@ -211,7 +211,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                                 <div class="split-actions">
                                     <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>&material_id=<?php echo (int) $material['id']; ?>">Editar</a>
                                 </div>
-                                <form method="post" action="/admin/area-curso/excluir" class="form-grid" style="margin-top:8px;">
+                                <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-mt-8">
                                     <input type="hidden" name="tipo" value="material">
                                     <input type="hidden" name="id" value="<?php echo (int) $material['id']; ?>">
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
@@ -263,7 +263,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <button type="submit"><?php echo !empty($linkEditar) ? 'Atualizar link' : 'Salvar link'; ?></button>
         </form>
 
-        <div class="table-wrap" style="margin-top:12px;">
+        <div class="table-wrap admin-mt-12">
             <table class="admin-table">
                 <thead><tr><th>Título</th><th>Tipo</th><th>URL</th><th>Ações</th></tr></thead>
                 <tbody>
@@ -276,7 +276,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                                 <div class="split-actions">
                                     <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>&link_id=<?php echo (int) $link['id']; ?>">Editar</a>
                                 </div>
-                                <form method="post" action="/admin/area-curso/excluir" class="form-grid" style="margin-top:8px;">
+                                <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-mt-8">
                                     <input type="hidden" name="tipo" value="link">
                                     <input type="hidden" name="id" value="<?php echo (int) $link['id']; ?>">
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">

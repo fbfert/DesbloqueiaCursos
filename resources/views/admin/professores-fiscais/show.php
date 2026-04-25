@@ -26,7 +26,7 @@
         <a href="/admin/professores-fiscais/editar?perfil_id=<?php echo (int) $perfil['id']; ?>">Editar</a>
         <a href="/admin/professores-fiscais">Voltar</a>
     </div>
-    <form method="post" action="/admin/professores-fiscais/excluir" class="admin-form" style="margin-top: 16px;">
+    <form method="post" action="/admin/professores-fiscais/excluir" class="admin-form admin-mt-16">
         <input type="hidden" name="id" value="<?php echo (int) $perfil['id']; ?>">
         <label>
             Justificativa para lixeira

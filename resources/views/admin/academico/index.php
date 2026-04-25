@@ -72,7 +72,7 @@
         <div class="panel-header"><div><h2>Participantes</h2></div></div>
         <div class="table-wrapper">
             <table class="table">
-                <thead><tr><th>Nome</th><th>Progresso</th><th>Presenca</th><th>Nota</th><th>Apto</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Nome</th><th>Progresso</th><th>Presença</th><th>Nota</th><th>Apto</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($inscricoes as $inscricao): ?>
                         <tr>
@@ -136,7 +136,7 @@
             <button type="submit">Salvar avaliação</button>
         </form>
 
-        <div class="table-wrapper" style="margin-top:12px;">
+        <div class="table-wrapper admin-mt-12">
             <table class="table">
                 <thead><tr><th>Título</th><th>Obrigatória</th><th>Perguntas</th></tr></thead>
                 <tbody>

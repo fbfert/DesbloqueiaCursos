@@ -404,6 +404,18 @@
     gap: 12px;
 }
 
+.app-admin .admin-mt-8 {
+    margin-top: 8px;
+}
+
+.app-admin .admin-mt-12 {
+    margin-top: 12px;
+}
+
+.app-admin .admin-mt-16 {
+    margin-top: 16px;
+}
+
 .app-admin .split-actions form {
     margin: 0;
 }

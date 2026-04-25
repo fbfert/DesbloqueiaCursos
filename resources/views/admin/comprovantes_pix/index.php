@@ -48,12 +48,12 @@
                         <td><?php echo htmlspecialchars((string) $comprovante['pedido_status'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars((string) $comprovante['motivo_reenvio'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
-                            <form method="post" action="/admin/comprovantes-pix/aprovar">
+                            <form method="post" action="/admin/comprovantes-pix/aprovar" class="admin-form">
                                 <input type="hidden" name="comprovante_id" value="<?php echo (int) $comprovante['id']; ?>">
                                 <input type="text" name="observacao" placeholder="Observação">
                                 <button type="submit">Aprovar</button>
                             </form>
-                            <form method="post" action="/admin/comprovantes-pix/reprovar">
+                            <form method="post" action="/admin/comprovantes-pix/reprovar" class="admin-form">
                                 <input type="hidden" name="comprovante_id" value="<?php echo (int) $comprovante['id']; ?>">
                                 <input type="text" name="observacao" placeholder="Motivo">
                                 <button type="submit">Reprovar</button>

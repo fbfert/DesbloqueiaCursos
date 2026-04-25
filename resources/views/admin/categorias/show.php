@@ -24,7 +24,7 @@
         <a href="/admin/categorias/editar?categoria_id=<?php echo (int) $categoria['id']; ?>">Editar</a>
         <a href="/admin/categorias">Voltar</a>
     </div>
-    <form method="post" action="/admin/categorias/excluir" class="admin-form" style="margin-top: 16px;">
+    <form method="post" action="/admin/categorias/excluir" class="admin-form admin-mt-16">
         <input type="hidden" name="id" value="<?php echo (int) $categoria['id']; ?>">
         <label>
             Justificativa para lixeira

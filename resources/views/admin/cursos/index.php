@@ -56,7 +56,7 @@
                                 <a href="/admin/cursos/show?curso_id=<?php echo (int) $curso['id']; ?>">Ver</a>
                                 <?php if ($canManage): ?>
                                     <a href="/admin/cursos/editar?curso_id=<?php echo (int) $curso['id']; ?>">Editar</a>
-                                    <form method="post" action="/admin/cursos/status">
+                                    <form method="post" action="/admin/cursos/status" class="admin-form">
                                         <input type="hidden" name="id" value="<?php echo (int) $curso['id']; ?>">
                                         <input type="hidden" name="status" value="<?php echo $curso['status'] === 'ativo' ? 'inativo' : 'ativo'; ?>">
                                         <button type="submit"><?php echo $curso['status'] === 'ativo' ? 'Inativar' : 'Ativar'; ?></button>

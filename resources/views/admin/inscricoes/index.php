@@ -49,7 +49,7 @@
                         <td><?php echo htmlspecialchars((string) $inscricao['pedido_status'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars((string) $inscricao['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
-                            <form method="post" action="/admin/inscricoes/status">
+                            <form method="post" action="/admin/inscricoes/status" class="admin-form">
                                 <input type="hidden" name="inscricao_id" value="<?php echo (int) $inscricao['id']; ?>">
                                 <select name="status">
                                     <option value="pendente" <?php echo $inscricao['status'] === 'pendente' ? 'selected' : ''; ?>>pendente</option>

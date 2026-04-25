@@ -39,7 +39,7 @@
         <div><dt>Turma</dt><dd><?php echo Helpers::e(isset($certificado['turma_nome']) ? $certificado['turma_nome'] : 'N/A'); ?></dd></div>
     </dl>
 
-    <div class="pill-row" style="margin-top:16px;">
+    <div class="pill-row admin-mt-16">
         <a class="pill" href="/admin/certificados/pdf?codigo=<?php echo urlencode($certificado['codigo']); ?>">Abrir PDF</a>
         <a class="pill" href="/certificados/validar?codigo=<?php echo urlencode($certificado['codigo']); ?>">Validação pública</a>
     </div>
@@ -78,7 +78,7 @@
         </label>
         <button type="submit">Cancelar</button>
     </form>
-    <form method="post" action="/admin/certificados/revogar" class="form-grid" style="margin-top:12px;">
+    <form method="post" action="/admin/certificados/revogar" class="form-grid admin-mt-12">
         <input type="hidden" name="certificado_id" value="<?php echo (int) $certificado['id']; ?>">
         <label>
             Observação

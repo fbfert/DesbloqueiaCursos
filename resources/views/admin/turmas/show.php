@@ -34,7 +34,7 @@
         <?php endif; ?>
         <a href="/admin/turmas">Voltar</a>
         <?php if ($canManage): ?>
-            <form method="post" action="/admin/turmas/status">
+            <form method="post" action="/admin/turmas/status" class="admin-form">
                 <input type="hidden" name="id" value="<?php echo (int) $turma['id']; ?>">
                 <input type="hidden" name="status" value="<?php echo $turma['status'] === 'aberta' ? 'encerrada' : 'aberta'; ?>">
                 <button type="submit"><?php echo $turma['status'] === 'aberta' ? 'Encerrar' : 'Abrir'; ?></button>
@@ -42,7 +42,7 @@
         <?php endif; ?>
     </div>
     <?php if ($canManage): ?>
-        <form method="post" action="/admin/turmas/excluir" class="admin-form" style="margin-top: 16px;">
+        <form method="post" action="/admin/turmas/excluir" class="admin-form admin-mt-16">
             <input type="hidden" name="id" value="<?php echo (int) $turma['id']; ?>">
             <label>
                 Justificativa para lixeira

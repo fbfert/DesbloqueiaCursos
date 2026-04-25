@@ -34,7 +34,7 @@
         <?php endif; ?>
         <a href="/admin/cursos">Voltar</a>
         <?php if ($canManage): ?>
-            <form method="post" action="/admin/cursos/status">
+            <form method="post" action="/admin/cursos/status" class="admin-form">
                 <input type="hidden" name="id" value="<?php echo (int) $curso['id']; ?>">
                 <input type="hidden" name="status" value="<?php echo $curso['status'] === 'ativo' ? 'inativo' : 'ativo'; ?>">
                 <button type="submit"><?php echo $curso['status'] === 'ativo' ? 'Inativar' : 'Ativar'; ?></button>
@@ -42,7 +42,7 @@
         <?php endif; ?>
     </div>
     <?php if ($canManage): ?>
-        <form method="post" action="/admin/cursos/excluir" class="admin-form" style="margin-top: 16px;">
+        <form method="post" action="/admin/cursos/excluir" class="admin-form admin-mt-16">
             <input type="hidden" name="id" value="<?php echo (int) $curso['id']; ?>">
             <label>
                 Justificativa para lixeira

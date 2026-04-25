@@ -58,7 +58,7 @@
                                 <a href="/admin/turmas/show?turma_id=<?php echo (int) $turma['id']; ?>">Ver</a>
                                 <?php if ($canManage): ?>
                                     <a href="/admin/turmas/editar?turma_id=<?php echo (int) $turma['id']; ?>">Editar</a>
-                                    <form method="post" action="/admin/turmas/status">
+                                    <form method="post" action="/admin/turmas/status" class="admin-form">
                                         <input type="hidden" name="id" value="<?php echo (int) $turma['id']; ?>">
                                         <input type="hidden" name="status" value="<?php echo $turma['status'] === 'aberta' ? 'encerrada' : 'aberta'; ?>">
                                         <button type="submit"><?php echo $turma['status'] === 'aberta' ? 'Encerrar' : 'Abrir'; ?></button>
