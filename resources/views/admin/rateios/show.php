@@ -1,8 +1,11 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="hero">
-    <h1>Rateio <?php echo Helpers::e($rateio['competencia']); ?></h1>
-    <p>Detalhamento da apuracao e dos participantes vinculados.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Rateio <?php echo Helpers::e($rateio['competencia']); ?></h1>
+        <p class="admin-page__subtitle">Detalhamento da apuração e dos participantes vinculados.</p>
+    </div>
 </section>
 
 <section class="status-card">
@@ -11,14 +14,15 @@
         <dt>Turma</dt><dd><?php echo Helpers::e($rateio['turma_nome'] ?? ''); ?></dd>
         <dt>Base bruta</dt><dd>R$ <?php echo number_format((float) $rateio['base_bruta'], 2, ',', '.'); ?></dd>
         <dt>Desconto cupons</dt><dd>R$ <?php echo number_format((float) $rateio['desconto_cupons'], 2, ',', '.'); ?></dd>
-        <dt>Base liquida</dt><dd>R$ <?php echo number_format((float) $rateio['base_liquida'], 2, ',', '.'); ?></dd>
+        <dt>Base líquida</dt><dd>R$ <?php echo number_format((float) $rateio['base_liquida'], 2, ',', '.'); ?></dd>
         <dt>Percentual</dt><dd><?php echo number_format((float) $rateio['percentual_total'], 2, ',', '.'); ?>%</dd>
         <dt>Restante da empresa</dt><dd><?php echo number_format((float) ($rateio['percentual_restante_empresa'] ?? 0), 2, ',', '.'); ?>%</dd>
         <dt>Valor rateado</dt><dd>R$ <?php echo number_format((float) $rateio['valor_rateio_total'], 2, ',', '.'); ?></dd>
         <dt>Status</dt><dd><?php echo Helpers::e($rateio['status']); ?></dd>
-        <dt>Observacoes</dt><dd><?php echo nl2br(Helpers::e($rateio['observacoes'] ?? '')); ?></dd>
+        <dt>Observações</dt><dd><?php echo nl2br(Helpers::e($rateio['observacoes'] ?? '')); ?></dd>
     </dl>
 </section>
+</div>
 
 <section class="status-card">
     <div class="split-actions">

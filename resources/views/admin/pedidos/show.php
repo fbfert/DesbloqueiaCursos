@@ -1,6 +1,9 @@
-<section class="hero">
-    <h1>Pedido #<?php echo (int) $pedido['id']; ?></h1>
-    <p><?php echo htmlspecialchars($pedido['codigo'], ENT_QUOTES, 'UTF-8'); ?> | <?php echo htmlspecialchars($pedido['status'], ENT_QUOTES, 'UTF-8'); ?></p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Pedido #<?php echo (int) $pedido['id']; ?></h1>
+        <p class="admin-page__subtitle"><?php echo htmlspecialchars($pedido['codigo'], ENT_QUOTES, 'UTF-8'); ?> | <?php echo htmlspecialchars($pedido['status'], ENT_QUOTES, 'UTF-8'); ?></p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -26,21 +29,21 @@
 <section class="status-card">
     <strong>Ações do pedido</strong>
     <div class="grid-forms">
-        <form method="post" action="/admin/pedidos/aprovar">
+        <form method="post" action="/admin/pedidos/aprovar" class="admin-form">
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
             <label>Observação</label>
             <textarea name="observacao" rows="3"></textarea>
             <button type="submit">Aprovar pedido</button>
         </form>
 
-        <form method="post" action="/admin/pedidos/marcar-pendencia">
+        <form method="post" action="/admin/pedidos/marcar-pendencia" class="admin-form">
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
             <label>Observação</label>
             <textarea name="observacao" rows="3"></textarea>
-            <button type="submit">Marcar pendencia</button>
+            <button type="submit">Marcar pendência</button>
         </form>
 
-        <form method="post" action="/admin/pedidos/solicitar-reenvio">
+        <form method="post" action="/admin/pedidos/solicitar-reenvio" class="admin-form">
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
             <label>Observação</label>
             <textarea name="observacao" rows="3"></textarea>
@@ -58,7 +61,7 @@
                     <th>Curso</th>
                     <th>Turma</th>
                     <th>Quantidade</th>
-                    <th>Valor unitario</th>
+                    <th>Valor unitário</th>
                     <th>Valor total</th>
                 </tr>
             </thead>
@@ -146,10 +149,10 @@
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th>Versao</th>
+                    <th>Versão</th>
                         <th>Status</th>
                         <th>Enviado em</th>
-                        <th>Motivo reenvio</th>
+                    <th>Motivo do reenvio</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -170,7 +173,7 @@
 </section>
 
 <section class="status-card">
-    <strong>Historico do pedido</strong>
+    <strong>Histórico do pedido</strong>
     <div class="table-wrap">
         <table class="admin-table">
             <thead>
@@ -194,4 +197,5 @@
         </table>
     </div>
 </section>
+</div>
 

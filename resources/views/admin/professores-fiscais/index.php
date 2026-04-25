@@ -1,16 +1,18 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="hero">
-    <h1>Professores fiscais</h1>
-    <p>Operação fiscal dos professores e retencoes.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Professores fiscais</h1>
+        <p class="admin-page__subtitle">Operação fiscal dos professores e retenções.</p>
+    </div>
+    <div class="admin-page__actions">
+        <a class="button-link" href="/admin/professores-fiscais/criar">Novo perfil fiscal</a>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
-
-<section class="quick-actions">
-    <a class="card-link" href="/admin/professores-fiscais/criar">Novo perfil fiscal</a>
-</section>
 
 <section class="status-card">
     <strong>Perfis fiscais</strong>
@@ -51,4 +53,5 @@
         </table>
     </div>
 </section>
+</div>
 

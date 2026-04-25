@@ -1,16 +1,18 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="hero">
-    <h1>Categorias</h1>
-    <p>Organizacao administrativa da arvore de conteudo do portal.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Categorias</h1>
+        <p class="admin-page__subtitle">Organização administrativa da árvore de conteúdo do portal.</p>
+    </div>
+    <div class="admin-page__actions">
+        <a class="button-link" href="/admin/categorias/criar">Nova categoria</a>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
-
-<section class="quick-actions">
-    <a class="card-link" href="/admin/categorias/criar">Nova categoria</a>
-</section>
 
 <section class="status-card">
     <strong>Lista de categorias</strong>
@@ -49,4 +51,5 @@
         </table>
     </div>
 </section>
+</div>
 

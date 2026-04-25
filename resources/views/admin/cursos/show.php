@@ -4,9 +4,12 @@
 
 <?php $canManage = (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar'); ?>
 
-<section class="hero">
-    <h1><?php echo Helpers::e($curso['nome']); ?></h1>
-    <p>Detalhe administrativo do curso ou evento.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title"><?php echo Helpers::e($curso['nome']); ?></h1>
+        <p class="admin-page__subtitle">Detalhe administrativo do curso ou evento.</p>
+    </div>
 </section>
 
 <section class="status-card">
@@ -15,13 +18,14 @@
         <dt>Categoria</dt><dd><?php echo Helpers::e($curso['categoria_nome'] ?? ''); ?></dd>
         <dt>Tipo</dt><dd><?php echo Helpers::e($curso['tipo']); ?></dd>
         <dt>Modalidade</dt><dd><?php echo Helpers::e($curso['modalidade']); ?></dd>
-        <dt>Professor responsavel</dt><dd><?php echo Helpers::e($professor_responsavel['nome'] ?? '-'); ?></dd>
+        <dt>Professor responsável</dt><dd><?php echo Helpers::e($professor_responsavel['nome'] ?? '-'); ?></dd>
         <dt>Valor</dt><dd>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></dd>
         <dt>Status</dt><dd><?php echo Helpers::e($curso['status']); ?></dd>
         <dt>Turmas</dt><dd><?php echo (int) $curso['total_turmas']; ?></dd>
         <dt>Pessoas vinculadas</dt><dd><?php echo (int) $curso['total_pessoas_vinculadas']; ?></dd>
     </dl>
 </section>
+</div>
 
 <section class="status-card">
     <div class="split-actions">

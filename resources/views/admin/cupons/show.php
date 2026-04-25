@@ -1,6 +1,9 @@
-<section class="hero">
-    <h1><?php echo htmlspecialchars((string) $cupom['nome'], ENT_QUOTES, 'UTF-8'); ?></h1>
-    <p><?php echo htmlspecialchars((string) $cupom['codigo'], ENT_QUOTES, 'UTF-8'); ?> | <?php echo htmlspecialchars((string) $cupom['status'], ENT_QUOTES, 'UTF-8'); ?></p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title"><?php echo htmlspecialchars((string) $cupom['nome'], ENT_QUOTES, 'UTF-8'); ?></h1>
+        <p class="admin-page__subtitle"><?php echo htmlspecialchars((string) $cupom['codigo'], ENT_QUOTES, 'UTF-8'); ?> | <?php echo htmlspecialchars((string) $cupom['status'], ENT_QUOTES, 'UTF-8'); ?></p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -21,13 +24,13 @@
 </section>
 
 <section class="status-card">
-    <strong>Restricoes</strong>
+    <strong>Restrições</strong>
     <ul>
         <?php foreach ($relacoes as $relacao): ?>
             <li><?php echo htmlspecialchars($relacao['tipo_relacao'] . ': ' . $relacao['valor_relacao'], ENT_QUOTES, 'UTF-8'); ?></li>
         <?php endforeach; ?>
         <?php if (empty($relacoes)): ?>
-            <li>Nenhuma restricao cadastrada.</li>
+            <li>Nenhuma restrição cadastrada.</li>
         <?php endif; ?>
     </ul>
 </section>
@@ -67,7 +70,7 @@
 </section>
 
 <section class="status-card">
-    <strong>Historico</strong>
+    <strong>Histórico</strong>
     <div class="table-wrap">
         <table class="admin-table">
             <thead>
@@ -87,11 +90,12 @@
                 <?php endforeach; ?>
                 <?php if (empty($historico)): ?>
                     <tr>
-                        <td colspan="3">Sem historico.</td>
+                        <td colspan="3">Sem histórico.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
 </section>
+</div>
 

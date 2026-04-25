@@ -398,6 +398,12 @@
     align-items: center;
 }
 
+.app-admin .grid-forms {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
 .app-admin .split-actions form {
     margin: 0;
 }
@@ -433,6 +439,10 @@
 }
 
 .app-admin .table-wrap {
+    overflow-x: auto;
+}
+
+.app-admin .rateio-participants {
     overflow-x: auto;
 }
 
@@ -571,6 +581,61 @@
     font-size: 15px;
 }
 
+.app-admin .detail-list {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+}
+
+.app-admin .detail-list div {
+    padding: 8px 10px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .detail-list dt {
+    font-size: 12px;
+    color: var(--admin-muted);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .detail-list dd {
+    margin: 4px 0 0;
+    font-weight: 600;
+}
+
+.app-admin .alert {
+    padding: 10px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.app-admin .alert-success {
+    border-color: #9adbb0;
+    background: #effbf2;
+}
+
+.app-admin .alert-danger {
+    border-color: #e39a9a;
+    background: #fff0f0;
+}
+
+.app-admin .badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--admin-border);
+    font-size: 12px;
+    font-weight: 700;
+}
+
 @media (max-width: 1600px) {
     .app-admin .quick-actions--dashboard {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -647,11 +712,16 @@
     .app-admin .status-grid,
     .app-admin .admin-kpi-grid,
     .app-admin .grid-2,
+    .app-admin .grid-forms,
     .app-admin .quick-actions--dashboard,
     .app-admin .permission-grid,
     .app-admin .form-grid,
     .app-admin .admin-form-grid,
     .app-admin .admin-filters__row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .detail-list {
         grid-template-columns: minmax(0, 1fr);
     }
 }

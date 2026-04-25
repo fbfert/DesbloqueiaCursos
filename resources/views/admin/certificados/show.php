@@ -1,8 +1,11 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="page-header">
-    <h1>Certificado <?php echo Helpers::e($certificado['codigo']); ?></h1>
-    <p><?php echo Helpers::e($certificado['participante_nome']); ?></p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Certificado <?php echo Helpers::e($certificado['codigo']); ?></h1>
+        <p class="admin-page__subtitle"><?php echo Helpers::e($certificado['participante_nome']); ?></p>
+    </div>
 </section>
 
 <?php if (!empty($success)): ?>
@@ -23,12 +26,12 @@
     <div class="panel-header">
         <div>
             <h2>Dados</h2>
-            <p>PDF, validacao publica e historico.</p>
+            <p>PDF, validação pública e histórico.</p>
         </div>
     </div>
 
     <dl class="detail-list">
-        <div><dt>Codigo</dt><dd><?php echo Helpers::e($certificado['codigo']); ?></dd></div>
+        <div><dt>Código</dt><dd><?php echo Helpers::e($certificado['codigo']); ?></dd></div>
         <div><dt>Status</dt><dd><?php echo Helpers::e($certificado['status']); ?></dd></div>
         <div><dt>Participante</dt><dd><?php echo Helpers::e($certificado['participante_nome']); ?></dd></div>
         <div><dt>CPF</dt><dd><?php echo Helpers::e($certificado['cpf_participante']); ?></dd></div>
@@ -38,7 +41,7 @@
 
     <div class="pill-row" style="margin-top:16px;">
         <a class="pill" href="/admin/certificados/pdf?codigo=<?php echo urlencode($certificado['codigo']); ?>">Abrir PDF</a>
-        <a class="pill" href="/certificados/validar?codigo=<?php echo urlencode($certificado['codigo']); ?>">Validação publica</a>
+        <a class="pill" href="/certificados/validar?codigo=<?php echo urlencode($certificado['codigo']); ?>">Validação pública</a>
     </div>
 </section>
 
@@ -46,7 +49,7 @@
     <div class="panel-header">
         <div>
             <h2>Reemissão</h2>
-            <p>Escolha manter o codigo ou gerar um novo.</p>
+            <p>Escolha manter o código ou gerar um novo.</p>
         </div>
     </div>
 
@@ -54,7 +57,7 @@
         <input type="hidden" name="certificado_id" value="<?php echo (int) $certificado['id']; ?>">
         <label class="checkbox">
             <input type="checkbox" name="manter_codigo" value="1" checked>
-            Manter codigo atual
+            Manter código atual
         </label>
         <button type="submit">Reemitir</button>
     </form>
@@ -64,7 +67,7 @@
     <div class="panel-header">
         <div>
             <h2>Cancelar ou revogar</h2>
-            <p>Ações irreversiveis de status.</p>
+            <p>Ações irreversíveis de status.</p>
         </div>
     </div>
     <form method="post" action="/admin/certificados/cancelar" class="form-grid">
@@ -88,7 +91,7 @@
 <section class="panel">
     <div class="panel-header">
         <div>
-            <h2>Historico</h2>
+            <h2>Histórico</h2>
         </div>
     </div>
     <div class="table-wrapper">
@@ -106,6 +109,7 @@
         </table>
     </div>
 </section>
+</div>
 
 <section class="panel">
     <div class="panel-header"><div><h2>Validações</h2></div></div>

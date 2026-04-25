@@ -5,9 +5,12 @@
 <?php $professores = isset($form_data['professores']) ? $form_data['professores'] : array(); ?>
 <?php $professorResponsavel = isset($form_data['professor_responsavel']) ? $form_data['professor_responsavel'] : null; ?>
 
-<section class="hero">
-    <h1><?php echo Helpers::e($title); ?></h1>
-    <p>Cadastro e manutencao de cursos e eventos.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title"><?php echo Helpers::e($title); ?></h1>
+        <p class="admin-page__subtitle">Cadastro e manutenção de cursos e eventos.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -36,7 +39,7 @@
             </select>
         </label>
         <label>
-            Professor responsavel
+            Professor responsável
             <select name="professor_responsavel_usuario_id">
                 <option value="">Sem professor definido</option>
                 <?php foreach ($professores as $professor): ?>
@@ -76,7 +79,7 @@
             <textarea name="descricao_completa" rows="5"><?php echo Helpers::e($curso['descricao_completa'] ?? ''); ?></textarea>
         </label>
         <label>
-            Carga horaria
+            Carga horária
             <input type="number" name="carga_horaria" min="0" value="<?php echo Helpers::e((string) ($curso['carga_horaria'] ?? '')); ?>">
         </label>
         <label>
@@ -99,7 +102,7 @@
         </label>
         <label class="checkbox">
             <input type="checkbox" name="em_promocao" value="1" <?php echo !empty($curso['em_promocao']) ? 'checked' : ''; ?>>
-            Em promocao
+            Em promoção
         </label>
         <label class="checkbox">
             <input type="checkbox" name="destaque" value="1" <?php echo !empty($curso['destaque']) ? 'checked' : ''; ?>>
@@ -108,4 +111,5 @@
         <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
     </form>
 </section>
+</div>
 

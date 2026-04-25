@@ -4,24 +4,28 @@
 
 <?php $canManage = (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar'); ?>
 
-<section class="hero">
-    <h1><?php echo Helpers::e($turma['nome']); ?></h1>
-    <p>Detalhe administrativo da turma.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title"><?php echo Helpers::e($turma['nome']); ?></h1>
+        <p class="admin-page__subtitle">Detalhe administrativo da turma.</p>
+    </div>
 </section>
 
 <section class="status-card">
     <dl class="summary-list">
-        <dt>Codigo</dt><dd><?php echo Helpers::e($turma['codigo']); ?></dd>
+        <dt>Código</dt><dd><?php echo Helpers::e($turma['codigo']); ?></dd>
         <dt>Curso</dt><dd><?php echo Helpers::e($turma['curso_nome']); ?></dd>
-        <dt>Professor responsavel</dt><dd><?php echo Helpers::e($turma['professor_responsavel_nome'] ?? '-'); ?></dd>
+        <dt>Professor responsável</dt><dd><?php echo Helpers::e($turma['professor_responsavel_nome'] ?? '-'); ?></dd>
         <dt>Categoria</dt><dd><?php echo Helpers::e($turma['categoria_nome'] ?? ''); ?></dd>
         <dt>Modalidade</dt><dd><?php echo Helpers::e($turma['curso_modalidade']); ?></dd>
-        <dt>Data inicio</dt><dd><?php echo Helpers::e((string) $turma['data_inicio']); ?></dd>
-        <dt>Data fim</dt><dd><?php echo Helpers::e((string) $turma['data_fim']); ?></dd>
+        <dt>Data de início</dt><dd><?php echo Helpers::e((string) $turma['data_inicio']); ?></dd>
+        <dt>Data de fim</dt><dd><?php echo Helpers::e((string) $turma['data_fim']); ?></dd>
         <dt>Vagas</dt><dd><?php echo (int) $turma['vagas']; ?></dd>
         <dt>Status</dt><dd><?php echo Helpers::e($turma['status']); ?></dd>
     </dl>
 </section>
+</div>
 
 <section class="status-card">
     <div class="split-actions">

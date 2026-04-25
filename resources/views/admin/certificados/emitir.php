@@ -1,8 +1,11 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="page-header">
-    <h1>Emitir certificado</h1>
-    <p>Selecione uma inscricao apta.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Emitir certificado</h1>
+        <p class="admin-page__subtitle">Selecione uma inscrição apta.</p>
+    </div>
 </section>
 
 <?php if (!empty($success)): ?>
@@ -36,7 +39,7 @@
         <select name="template_id">
             <?php foreach ($templates as $template): ?>
                 <option value="<?php echo (int) $template['id']; ?>" <?php echo !empty($template['padrao']) ? 'selected' : ''; ?>>
-                    <?php echo Helpers::e($template['nome']); ?><?php echo !empty($template['padrao']) ? ' - padrao' : ''; ?>
+                    <?php echo Helpers::e($template['nome']); ?><?php echo !empty($template['padrao']) ? ' - padrão' : ''; ?>
                 </option>
             <?php endforeach; ?>
         </select>
@@ -44,9 +47,10 @@
 
     <label class="checkbox">
         <input type="checkbox" name="manter_codigo" value="1" checked>
-        Manter codigo em reemissao
+        Manter código em reemissão
     </label>
 
     <button type="submit">Emitir</button>
 </form>
+</div>
 

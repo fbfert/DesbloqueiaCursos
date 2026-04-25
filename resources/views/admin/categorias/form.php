@@ -3,9 +3,12 @@
 <?php $categoria = isset($form_data['categoria']) ? $form_data['categoria'] : null; ?>
 <?php $categorias = isset($form_data['categorias']) ? $form_data['categorias'] : array(); ?>
 
-<section class="hero">
-    <h1><?php echo Helpers::e($title); ?></h1>
-    <p>Cadastro e manutencao de categorias.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title"><?php echo Helpers::e($title); ?></h1>
+        <p class="admin-page__subtitle">Cadastro e manutenção de categorias.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -52,4 +55,5 @@
         <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
     </form>
 </section>
+</div>
 

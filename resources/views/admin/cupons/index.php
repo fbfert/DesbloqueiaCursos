@@ -1,14 +1,16 @@
-<section class="hero">
-    <h1>Cupons</h1>
-    <p>Gestao administrativa de cupons, regras e usos.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Cupons</h1>
+        <p class="admin-page__subtitle">Gestão administrativa de cupons, regras e usos.</p>
+    </div>
+    <div class="admin-page__actions">
+        <a class="button-link" href="/admin/cupons/criar">Novo cupom</a>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
-
-<section class="status-card">
-    <a href="/admin/cupons/criar">Novo cupom</a>
-</section>
 
 <section class="status-card">
     <strong>Cupons</strong>
@@ -16,7 +18,7 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Codigo</th>
+                    <th>Código</th>
                     <th>Nome</th>
                     <th>Tipo</th>
                     <th>Desconto</th>
@@ -55,4 +57,5 @@
         </table>
     </div>
 </section>
+</div>
 

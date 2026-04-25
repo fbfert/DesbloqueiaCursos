@@ -3,9 +3,12 @@
 <?php $perfil = isset($form_data['perfil']) ? $form_data['perfil'] : null; ?>
 <?php $professores = isset($form_data['professores']) ? $form_data['professores'] : array(); ?>
 
-<section class="hero">
-    <h1><?php echo Helpers::e($title); ?></h1>
-    <p>Cadastro e manutencao do perfil fiscal dos professores.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title"><?php echo Helpers::e($title); ?></h1>
+        <p class="admin-page__subtitle">Cadastro e manutenção do perfil fiscal dos professores.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -41,7 +44,7 @@
             <input type="text" name="cnpj" value="<?php echo Helpers::e($perfil['cnpj'] ?? ''); ?>">
         </label>
         <label>
-            Razao social
+            Razão social
             <input type="text" name="razao_social" value="<?php echo Helpers::e($perfil['razao_social'] ?? ''); ?>">
         </label>
         <label>
@@ -53,7 +56,7 @@
             <input type="text" name="inscricao_municipal" value="<?php echo Helpers::e($perfil['inscricao_municipal'] ?? ''); ?>">
         </label>
         <label>
-            Alíquota de retencao (%)
+            Alíquota de retenção (%)
             <input type="number" step="0.01" min="0" max="100" name="aliquota_retencao" value="<?php echo Helpers::e((string) ($perfil['aliquota_retencao'] ?? '0.00')); ?>">
         </label>
         <label>
@@ -78,4 +81,5 @@
         <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
     </form>
 </section>
+</div>
 

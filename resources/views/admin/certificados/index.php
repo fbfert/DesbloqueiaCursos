@@ -1,8 +1,11 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="page-header">
-    <h1>Certificados</h1>
-    <p>Emissão manual, reemissao e validacao publica.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Certificados</h1>
+        <p class="admin-page__subtitle">Emissão manual, reemissão e validação pública.</p>
+    </div>
 </section>
 
 <?php if (!empty($success)): ?>
@@ -21,8 +24,8 @@
 
 <section class="card-grid">
     <article class="status-card">
-        <strong>Aptos para emissao</strong>
-        <span><?php echo count($aptos); ?> inscricoes aptas</span>
+        <strong>Aptos para emissão</strong>
+        <span><?php echo count($aptos); ?> inscrições aptas</span>
         <a href="/admin/certificados/emitir">Emitir agora</a>
     </article>
 </section>
@@ -39,7 +42,7 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Codigo</th>
+                    <th>Código</th>
                     <th>Participante</th>
                     <th>Curso</th>
                     <th>Status</th>
@@ -62,4 +65,5 @@
         </table>
     </div>
 </section>
+</div>
 

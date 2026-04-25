@@ -1,8 +1,9 @@
+<div class="admin-page">
 <section class="panel">
     <div class="panel-header">
         <div>
-            <h1>Emails transacionais</h1>
-            <p>Configuração SMTP basica e historico de envios.</p>
+            <h1>E-mails transacionais</h1>
+            <p>Configuração SMTP básica e histórico de envios.</p>
         </div>
     </div>
 
@@ -35,7 +36,7 @@
         </label>
 
         <label>
-            Usuario SMTP
+            Usuário SMTP
             <input type="text" name="usuario" value="<?php echo htmlspecialchars((string) (isset($configuracao['username']) ? $configuracao['username'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
 
@@ -80,15 +81,15 @@
             Processar fila
         </label>
 
-        <button type="submit">Salvar configuracao</button>
+        <button type="submit">Salvar configuração</button>
     </form>
 </section>
 
 <section class="panel">
     <div class="panel-header">
         <div>
-            <h2>Fila e historico</h2>
-            <p>Ultimos envios registrados.</p>
+            <h2>Fila e histórico</h2>
+            <p>Últimos envios registrados.</p>
         </div>
     </div>
 
@@ -97,7 +98,7 @@
             <thead>
                 <tr>
                     <th>Evento</th>
-                    <th>Destinatario</th>
+                    <th>Destinatário</th>
                     <th>Assunto</th>
                     <th>Status</th>
                     <th>Tentativas</th>
@@ -119,4 +120,5 @@
         </table>
     </div>
 </section>
+</div>
 

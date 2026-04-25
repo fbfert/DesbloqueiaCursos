@@ -1,8 +1,11 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="hero">
-    <h1><?php echo Helpers::e($categoria['nome']); ?></h1>
-    <p>Detalhes da categoria e acoes administrativas.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title"><?php echo Helpers::e($categoria['nome']); ?></h1>
+        <p class="admin-page__subtitle">Detalhes da categoria e ações administrativas.</p>
+    </div>
 </section>
 
 <section class="status-card">
@@ -14,6 +17,7 @@
         <dt>Descrição</dt><dd><?php echo Helpers::e($categoria['descricao'] ?? ''); ?></dd>
     </dl>
 </section>
+</div>
 
 <section class="status-card">
     <div class="split-actions">

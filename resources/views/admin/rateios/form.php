@@ -18,9 +18,12 @@ if (empty($participantes)) {
 }
 ?>
 
-<section class="hero">
-    <h1><?php echo Helpers::e($title); ?></h1>
-    <p>Cadastro e manutencao de rateios do portal.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title"><?php echo Helpers::e($title); ?></h1>
+        <p class="admin-page__subtitle">Cadastro e manutenção de rateios do portal.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -28,14 +31,14 @@ if (empty($participantes)) {
 
 <section class="status-card">
     <strong>Regra operacional</strong>
-    <p>O percentual total dos participantes não pode ultrapassar <?php echo number_format($percentualMaximo, 2, ',', '.'); ?>% da base liquida.</p>
+    <p>O percentual total dos participantes não pode ultrapassar <?php echo number_format($percentualMaximo, 2, ',', '.'); ?>% da base líquida.</p>
 </section>
 
 <section class="status-card">
     <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form">
         <input type="hidden" name="id" value="<?php echo !empty($rateio['id']) ? (int) $rateio['id'] : 0; ?>">
         <label>
-            Apuracao
+            Apuração
             <select name="apuracao_id" required>
                 <option value="">Selecione</option>
                 <?php foreach ($apuracoes as $apuracao): ?>
@@ -76,7 +79,7 @@ if (empty($participantes)) {
             <input type="number" step="0.01" min="0" name="desconto_cupons" value="<?php echo Helpers::e((string) ($rateio['desconto_cupons'] ?? '0.00')); ?>">
         </label>
         <label>
-            Base liquida
+            Base líquida
             <input type="number" step="0.01" min="0" name="base_liquida" value="<?php echo Helpers::e((string) ($rateio['base_liquida'] ?? '0.00')); ?>">
         </label>
         <label>
@@ -90,7 +93,7 @@ if (empty($participantes)) {
             </select>
         </label>
         <label class="full">
-            Observacoes
+            Observações
             <textarea name="observacoes" rows="4"><?php echo Helpers::e($rateio['observacoes'] ?? ''); ?></textarea>
         </label>
 
@@ -143,4 +146,5 @@ if (empty($participantes)) {
         <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
     </form>
 </section>
+</div>
 

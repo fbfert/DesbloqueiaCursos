@@ -1,6 +1,9 @@
-<section class="hero">
-    <h1>Configurações financeiras</h1>
-    <p>Corte financeiro e teto de rateio.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Configurações financeiras</h1>
+        <p class="admin-page__subtitle">Corte financeiro e teto de rateio.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -13,7 +16,7 @@
             <input type="date" name="data_corte_financeiro" value="<?php echo htmlspecialchars((string) (isset($configuracao['data_corte_financeiro']) ? $configuracao['data_corte_financeiro'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
-            Percentual maximo de rateio
+            Percentual máximo de rateio
             <input type="number" step="0.01" min="0" max="75" name="percentual_rateio_maximo" value="<?php echo htmlspecialchars(number_format((float) (isset($configuracao['percentual_rateio_maximo']) ? $configuracao['percentual_rateio_maximo'] : 75), 2, '.', ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
@@ -23,4 +26,5 @@
         <button type="submit">Salvar financeiro</button>
     </form>
 </section>
+</div>
 

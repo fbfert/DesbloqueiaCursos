@@ -1,6 +1,9 @@
-<section class="hero">
-    <h1>Configurações de frontend</h1>
-    <p>Template visual e identidade da interface.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Configurações de frontend</h1>
+        <p class="admin-page__subtitle">Template visual e identidade da interface.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -13,11 +16,11 @@
             <input type="text" name="template_visual_portal" value="<?php echo htmlspecialchars((string) (isset($configuracao['template_visual_portal']) ? $configuracao['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
-            Cor primaria
+            Cor primária
             <input type="text" name="cor_primaria" value="<?php echo htmlspecialchars((string) (isset($configuracao['cor_primaria']) ? $configuracao['cor_primaria'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
-            Cor secundaria
+            Cor secundária
             <input type="text" name="cor_secundaria" value="<?php echo htmlspecialchars((string) (isset($configuracao['cor_secundaria']) ? $configuracao['cor_secundaria'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
@@ -35,4 +38,5 @@
         <button type="submit">Salvar frontend</button>
     </form>
 </section>
+</div>
 
