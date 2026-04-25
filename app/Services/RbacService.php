@@ -156,6 +156,34 @@ class RbacService
         return !empty($row) && (int) $row['total'] > 0;
     }
 
+    public function userHasAnyPermission($usuarioId, array $permissionSlugs)
+    {
+        if ($this->isSuperAdmin($usuarioId)) {
+            return true;
+        }
+
+        $permissionSlugs = array_values(array_filter(array_unique(array_map('strval', $permissionSlugs))));
+        if (empty($permissionSlugs)) {
+            return false;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($permissionSlugs), '?'));
+        $params = array_merge(array((int) $usuarioId), $permissionSlugs);
+
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS total
+             FROM usuario_perfis up
+             INNER JOIN perfil_permissoes pp ON pp.perfil_id = up.perfil_id
+             INNER JOIN permissoes per ON per.id = pp.permissao_id
+             WHERE up.usuario_id = ?
+               AND per.slug IN (' . $placeholders . ')'
+        );
+        $stmt->execute($params);
+
+        $row = $stmt->fetch();
+        return !empty($row) && (int) $row['total'] > 0;
+    }
+
     public function isSuperAdmin($usuarioId)
     {
         $stmt = Database::connection()->prepare(

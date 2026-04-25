@@ -25,18 +25,25 @@ class AptidaoCertificadoService
     private $avaliacaoModel;
     private $notaModel;
     private $auditService;
+    private $scopeService;
 
-    public function __construct()
+    public function __construct(array $dependencies = array())
     {
-        $this->inscricaoModel = new Inscricao();
-        $this->cursoModel = new CursoEvento();
-        $this->turmaModel = new Turma();
-        $this->moduloModel = new Modulo();
-        $this->progressoModuloModel = new ProgressoUsuarioModulo();
-        $this->presencaModel = new Presenca();
-        $this->avaliacaoModel = new Avaliacao();
-        $this->notaModel = new NotaAvaliacao();
-        $this->auditService = new AuditService();
+        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscricao();
+        $this->cursoModel = isset($dependencies['cursoModel']) ? $dependencies['cursoModel'] : new CursoEvento();
+        $this->turmaModel = isset($dependencies['turmaModel']) ? $dependencies['turmaModel'] : new Turma();
+        $this->moduloModel = isset($dependencies['moduloModel']) ? $dependencies['moduloModel'] : new Modulo();
+        $this->progressoModuloModel = isset($dependencies['progressoModuloModel']) ? $dependencies['progressoModuloModel'] : new ProgressoUsuarioModulo();
+        $this->presencaModel = isset($dependencies['presencaModel']) ? $dependencies['presencaModel'] : new Presenca();
+        $this->avaliacaoModel = isset($dependencies['avaliacaoModel']) ? $dependencies['avaliacaoModel'] : new Avaliacao();
+        $this->notaModel = isset($dependencies['notaModel']) ? $dependencies['notaModel'] : new NotaAvaliacao();
+        $this->auditService = isset($dependencies['auditService']) ? $dependencies['auditService'] : new AuditService();
+        $this->scopeService = isset($dependencies['scopeService']) ? $dependencies['scopeService'] : new ProfessorAcademicScopeService(array(
+            'cursoModel' => $this->cursoModel,
+            'turmaModel' => $this->turmaModel,
+            'inscricaoModel' => $this->inscricaoModel,
+            'avaliacaoModel' => $this->avaliacaoModel,
+        ));
     }
 
     public function contexto($cursoId, $turmaId = null)
@@ -57,6 +64,11 @@ class AptidaoCertificadoService
 
         if ($cursoId <= 0) {
             return array('ok' => false, 'message' => 'Curso invalido.');
+        }
+
+        $validacaoContexto = $this->scopeService->validarContexto($cursoId, $turmaId);
+        if (empty($validacaoContexto['ok'])) {
+            return $validacaoContexto;
         }
 
         $payload = array(
@@ -129,8 +141,20 @@ class AptidaoCertificadoService
         }
     }
 
-    public function recalcularInscricao($inscricaoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function recalcularInscricao($inscricaoId, $actorUserId = null, $ipAddress = null, $userAgent = null, $cursoId = null, $turmaId = null)
     {
+        if ($cursoId !== null && $cursoId !== '') {
+            $validacaoContexto = $this->scopeService->validarContexto($cursoId, $turmaId);
+            if (empty($validacaoContexto['ok'])) {
+                return $validacaoContexto;
+            }
+
+            $validacaoInscricao = $this->scopeService->validarInscricaoNoContexto($inscricaoId, $cursoId, $turmaId);
+            if (empty($validacaoInscricao['ok'])) {
+                return $validacaoInscricao;
+            }
+        }
+
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
 
         if (!$inscricao) {

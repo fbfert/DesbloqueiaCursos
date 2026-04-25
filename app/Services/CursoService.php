@@ -8,6 +8,8 @@ use App\Models\Categoria;
 use App\Models\CursoEvento;
 use App\Models\CursoPessoaVinculada;
 use App\Models\Turma;
+use App\Models\Usuario;
+use App\Models\UsuarioCurso;
 use Exception;
 
 class CursoService
@@ -16,6 +18,8 @@ class CursoService
     private $cursoModel;
     private $turmaModel;
     private $cursoPessoaModel;
+    private $usuarioModel;
+    private $usuarioCursoModel;
     private $auditService;
     private $trashService;
 
@@ -32,6 +36,8 @@ class CursoService
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
         $this->cursoPessoaModel = new CursoPessoaVinculada();
+        $this->usuarioModel = new Usuario();
+        $this->usuarioCursoModel = new UsuarioCurso();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
     }
@@ -48,6 +54,7 @@ class CursoService
 
         foreach ($cursos as &$curso) {
             $curso['pessoas_vinculadas'] = $this->cursoPessoaModel->forCourse($curso['id']);
+            $curso['professor_responsavel'] = $this->cursoPessoaModel->findProfessorResponsavel($curso['id']);
         }
         unset($curso);
 
@@ -67,12 +74,15 @@ class CursoService
     public function formData($cursoId = null)
     {
         $curso = $cursoId ? $this->cursoModel->findAdminById($cursoId) : null;
+        $professorResponsavel = $cursoId ? $this->cursoPessoaModel->findProfessorResponsavel($cursoId) : null;
 
         return array(
             'curso' => $curso,
             'categorias' => $this->categoriaModel->allForSelect(),
             'turmas' => $cursoId ? $this->turmaModel->forCourse($cursoId) : array(),
             'pessoas_vinculadas' => $cursoId ? $this->cursoPessoaModel->forCourse($cursoId) : array(),
+            'professores' => $this->usuarioModel->professores(),
+            'professor_responsavel' => $professorResponsavel,
             'modalidades' => $this->modalidades,
         );
     }
@@ -92,6 +102,9 @@ class CursoService
         $valor = isset($data['valor']) && $data['valor'] !== '' ? (float) $data['valor'] : 0;
         $ordem = isset($data['ordem']) ? (int) $data['ordem'] : 0;
         $status = isset($data['status']) && in_array($data['status'], array('rascunho', 'ativo', 'inativo', 'arquivado'), true) ? $data['status'] : 'rascunho';
+        $professorResponsavelUsuarioId = isset($data['professor_responsavel_usuario_id']) && $data['professor_responsavel_usuario_id'] !== ''
+            ? (int) $data['professor_responsavel_usuario_id']
+            : null;
 
         $errors = array();
         if ($nome === '') {
@@ -103,10 +116,25 @@ class CursoService
         if ($valor < 0) {
             $errors[] = 'Valor invalido.';
         }
+        if ($categoriaId !== null && !$this->categoriaModel->findById($categoriaId)) {
+            $errors[] = 'Categoria nao encontrada.';
+        }
+
+        $professorResponsavel = null;
+        if ($professorResponsavelUsuarioId !== null) {
+            $professorResponsavel = $this->validarProfessorResponsavel($professorResponsavelUsuarioId);
+            if (!$professorResponsavel) {
+                $errors[] = 'Professor responsavel nao encontrado.';
+            }
+        }
 
         $existente = $this->cursoModel->findBySlug($slug);
         if ($existente && (int) $existente['id'] !== $id) {
             $errors[] = 'Ja existe um curso/evento com este slug.';
+        }
+
+        if ($id > 0 && !$this->cursoModel->findById($id)) {
+            $errors[] = 'Curso/evento nao encontrado.';
         }
 
         if ($errors) {
@@ -144,6 +172,18 @@ class CursoService
                 $acao = 'catalogo.curso.criado';
             }
 
+            $this->cursoPessoaModel->syncProfessorResponsavel(
+                $id,
+                $professorResponsavel ? (int) $professorResponsavel['id'] : null,
+                $professorResponsavel ? $professorResponsavel['nome'] : '',
+                'ativo'
+            );
+            $this->usuarioCursoModel->syncProfessorForCourse(
+                $id,
+                $professorResponsavel ? (int) $professorResponsavel['id'] : null,
+                'ativo'
+            );
+
             $this->auditService->record(
                 $acao,
                 'curso_evento',
@@ -170,6 +210,10 @@ class CursoService
         $curso = $this->cursoModel->findById($id);
         if (!$curso) {
             return array('ok' => false, 'message' => 'Curso/evento nao encontrado.');
+        }
+
+        if (!empty($this->turmaModel->forCourse($id))) {
+            return array('ok' => false, 'message' => 'Nao e seguro excluir curso/evento com turmas vinculadas.');
         }
 
         $pdo = Database::connection();
@@ -257,5 +301,46 @@ class CursoService
         $value = trim($value, '-');
 
         return $value;
+    }
+
+    public function atualizarStatus($id, $status, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $curso = $this->cursoModel->findById($id);
+        if (!$curso) {
+            return array('ok' => false, 'message' => 'Curso/evento nao encontrado.');
+        }
+
+        if (!in_array($status, array('ativo', 'inativo'), true)) {
+            return array('ok' => false, 'message' => 'Status invalido para o curso/evento.');
+        }
+
+        $payload = $curso;
+        $payload['status'] = $status;
+        $this->cursoModel->update($payload, $id);
+
+        $this->auditService->record(
+            'catalogo.curso.status_atualizado',
+            'curso_evento',
+            $id,
+            array('status_anterior' => $curso['status'], 'status_novo' => $status),
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::info('catalogo.curso.status_atualizado', array('curso_evento_id' => $id, 'status' => $status));
+
+        return array('ok' => true);
+    }
+
+    private function validarProfessorResponsavel($usuarioId)
+    {
+        foreach ($this->usuarioModel->professores() as $professor) {
+            if ((int) $professor['id'] === (int) $usuarioId) {
+                return $professor;
+            }
+        }
+
+        return null;
     }
 }

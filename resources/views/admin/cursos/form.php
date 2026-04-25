@@ -2,6 +2,8 @@
 
 <?php $curso = isset($form_data['curso']) ? $form_data['curso'] : null; ?>
 <?php $categorias = isset($form_data['categorias']) ? $form_data['categorias'] : array(); ?>
+<?php $professores = isset($form_data['professores']) ? $form_data['professores'] : array(); ?>
+<?php $professorResponsavel = isset($form_data['professor_responsavel']) ? $form_data['professor_responsavel'] : null; ?>
 
 <section class="hero">
     <h1><?php echo Helpers::e($title); ?></h1>
@@ -29,6 +31,17 @@
                 <?php foreach ($categorias as $categoria): ?>
                     <option value="<?php echo (int) $categoria['id']; ?>" <?php echo !empty($curso['categoria_id']) && (int) $curso['categoria_id'] === (int) $categoria['id'] ? 'selected' : ''; ?>>
                         <?php echo Helpers::e($categoria['nome']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>
+            Professor responsavel
+            <select name="professor_responsavel_usuario_id">
+                <option value="">Sem professor definido</option>
+                <?php foreach ($professores as $professor): ?>
+                    <option value="<?php echo (int) $professor['id']; ?>" <?php echo !empty($professorResponsavel['usuario_id']) && (int) $professorResponsavel['usuario_id'] === (int) $professor['id'] ? 'selected' : ''; ?>>
+                        <?php echo Helpers::e($professor['nome']); ?>
                     </option>
                 <?php endforeach; ?>
             </select>

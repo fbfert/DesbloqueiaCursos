@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Core\Database;
 use App\Core\Logger;
+use App\Models\Aula;
 use App\Models\Inscricao;
 use App\Models\Presenca;
 use Exception;
@@ -12,17 +13,24 @@ class PresencaService
 {
     private $presencaModel;
     private $inscricaoModel;
+    private $aulaModel;
     private $aptidaoService;
     private $auditService;
     private $trashService;
+    private $scopeService;
 
-    public function __construct()
+    public function __construct(array $dependencies = array())
     {
-        $this->presencaModel = new Presenca();
-        $this->inscricaoModel = new Inscricao();
-        $this->aptidaoService = new AptidaoCertificadoService();
-        $this->auditService = new AuditService();
-        $this->trashService = new TrashService();
+        $this->presencaModel = isset($dependencies['presencaModel']) ? $dependencies['presencaModel'] : new Presenca();
+        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscricao();
+        $this->aulaModel = isset($dependencies['aulaModel']) ? $dependencies['aulaModel'] : new Aula();
+        $this->aptidaoService = isset($dependencies['aptidaoService']) ? $dependencies['aptidaoService'] : new AptidaoCertificadoService();
+        $this->auditService = isset($dependencies['auditService']) ? $dependencies['auditService'] : new AuditService();
+        $this->trashService = isset($dependencies['trashService']) ? $dependencies['trashService'] : new TrashService();
+        $this->scopeService = isset($dependencies['scopeService']) ? $dependencies['scopeService'] : new ProfessorAcademicScopeService(array(
+            'inscricaoModel' => $this->inscricaoModel,
+            'aulaModel' => $this->aulaModel,
+        ));
     }
 
     public function listarContexto($cursoId, $turmaId = null)
@@ -37,6 +45,31 @@ class PresencaService
 
     public function registrar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        $cursoId = isset($data['curso_evento_id']) ? (int) $data['curso_evento_id'] : 0;
+        $turmaId = !empty($data['turma_id']) ? (int) $data['turma_id'] : null;
+
+        $validacaoContexto = $this->scopeService->validarContexto($cursoId, $turmaId);
+        if (empty($validacaoContexto['ok'])) {
+            return $validacaoContexto;
+        }
+
+        $validacaoInscricao = $this->scopeService->validarInscricaoNoContexto(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0, $cursoId, $turmaId);
+        if (empty($validacaoInscricao['ok'])) {
+            return $validacaoInscricao;
+        }
+
+        if (!empty($data['aula_id'])) {
+            $validacaoAula = $this->scopeService->validarAulaNoContexto((int) $data['aula_id'], $cursoId, $turmaId);
+            if (empty($validacaoAula['ok'])) {
+                return $validacaoAula;
+            }
+
+            $validacaoAulaInscricao = $this->scopeService->validarAulaInscricaoConsistentes((int) $data['aula_id'], (int) $data['inscricao_id']);
+            if (empty($validacaoAulaInscricao['ok'])) {
+                return $validacaoAulaInscricao;
+            }
+        }
+
         $inscricao = $this->inscricaoModel->findById(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0);
         if (!$inscricao) {
             return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
@@ -73,7 +106,7 @@ class PresencaService
             );
             Logger::info('academico.presenca.registrada', array('presenca_id' => $id));
 
-            $this->aptidaoService->recalcularInscricao((int) $inscricao['id'], $actorUserId, $ipAddress, $userAgent);
+            $this->aptidaoService->recalcularInscricao((int) $inscricao['id'], $actorUserId, $ipAddress, $userAgent, $cursoId, $turmaId);
             $pdo->commit();
 
             return array('ok' => true, 'id' => $id);

@@ -1,43 +1,62 @@
 <?php
 use App\Core\Helpers;
 use App\Core\Session;
+use App\Services\RbacService;
 
 $adminPath = parse_url($_SERVER['REQUEST_URI'] ?? '/admin', PHP_URL_PATH);
 $adminPath = $adminPath ?: '/admin';
 $userName = Session::get('usuario_nome', 'Usuario');
+$usuarioId = Session::get('usuario_id');
+$rbacService = new RbacService();
 $menu = array(
     array('group' => 'Painel', 'items' => array(
         array('label' => 'Dashboard', 'href' => '/admin/dashboard', 'icon' => '◼'),
-        array('label' => 'Catalogo', 'href' => '/admin/catalogo', 'icon' => '▣'),
+        array('label' => 'Catalogo', 'href' => '/admin/catalogo', 'icon' => '▣', 'permissions_any' => array('conteudo.ver')),
     )),
     array('group' => 'Conteudo', 'items' => array(
-        array('label' => 'Categorias', 'href' => '/admin/categorias', 'icon' => '◦'),
-        array('label' => 'Cursos', 'href' => '/admin/cursos', 'icon' => '◧'),
-        array('label' => 'Turmas', 'href' => '/admin/turmas', 'icon' => '◨'),
-        array('label' => 'Area do curso', 'href' => '/admin/area-curso', 'icon' => '▤'),
+        array('label' => 'Categorias', 'href' => '/admin/categorias', 'icon' => '◦', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Cursos', 'href' => '/admin/cursos', 'icon' => '◧', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Turmas', 'href' => '/admin/turmas', 'icon' => '◨', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Area do curso', 'href' => '/admin/area-curso', 'icon' => '▤', 'permissions_any' => array('area_curso.gerenciar')),
     )),
     array('group' => 'Operacao', 'items' => array(
-        array('label' => 'Pedidos', 'href' => '/admin/pedidos', 'icon' => '⟡'),
-        array('label' => 'Inscricoes', 'href' => '/admin/inscricoes', 'icon' => '⟢'),
-        array('label' => 'Comprovantes PIX', 'href' => '/admin/comprovantes-pix', 'icon' => '◉'),
-        array('label' => 'Cupons', 'href' => '/admin/cupons', 'icon' => '⌘'),
-        array('label' => 'Certificados', 'href' => '/admin/certificados', 'icon' => '⬚'),
+        array('label' => 'Pedidos', 'href' => '/admin/pedidos', 'icon' => '⟡', 'permissions_any' => array('pedidos.ver')),
+        array('label' => 'Inscricoes', 'href' => '/admin/inscricoes', 'icon' => '⟢', 'permissions_any' => array('pedidos.ver')),
+        array('label' => 'Comprovantes PIX', 'href' => '/admin/comprovantes-pix', 'icon' => '◉', 'permissions_any' => array('pedidos.ver')),
+        array('label' => 'Cupons', 'href' => '/admin/cupons', 'icon' => '⌘', 'permissions_any' => array('cupons.ver')),
+        array('label' => 'Certificados', 'href' => '/admin/certificados', 'icon' => '⬚', 'permissions_any' => array('certificados.ver')),
     )),
     array('group' => 'Academico', 'items' => array(
-        array('label' => 'Acadêmico', 'href' => '/admin/academico', 'icon' => '✦'),
+        array('label' => 'Academico', 'href' => '/admin/academico', 'icon' => '✦', 'permissions_any' => array('academico.ver')),
     )),
     array('group' => 'Financeiro', 'items' => array(
-        array('label' => 'Financeiro', 'href' => '/admin/financeiro', 'icon' => '₪'),
-        array('label' => 'Repasses', 'href' => '/admin/financeiro/repasses', 'icon' => '↻'),
-        array('label' => 'Professores fiscais', 'href' => '/admin/professores-fiscais', 'icon' => '⧉'),
-        array('label' => 'Rateios', 'href' => '/admin/rateios', 'icon' => '≋'),
+        array('label' => 'Financeiro', 'href' => '/admin/financeiro', 'icon' => '₪', 'permissions_any' => array('financeiro.ver')),
+        array('label' => 'Repasses', 'href' => '/admin/financeiro/repasses', 'icon' => '↻', 'permissions_any' => array('financeiro.ver')),
+        array('label' => 'Professores fiscais', 'href' => '/admin/professores-fiscais', 'icon' => '⧉', 'permissions_any' => array('financeiro.ver')),
+        array('label' => 'Rateios', 'href' => '/admin/rateios', 'icon' => '≋', 'permissions_any' => array('financeiro.ver')),
     )),
     array('group' => 'Configuracoes', 'items' => array(
-        array('label' => 'Globais', 'href' => '/admin/configuracoes-globais', 'icon' => '⚙'),
-        array('label' => 'E-mails', 'href' => '/admin/emails', 'icon' => '✉'),
-        array('label' => 'RBAC', 'href' => '/admin/rbac', 'icon' => '☰'),
+        array('label' => 'Globais', 'href' => '/admin/configuracoes-globais', 'icon' => '⚙', 'permissions_any' => array('configuracoes_globais.ver')),
+        array('label' => 'E-mails', 'href' => '/admin/emails', 'icon' => '✉', 'permissions_any' => array('emails.ver')),
+        array('label' => 'RBAC', 'href' => '/admin/rbac', 'icon' => '☰', 'permissions_any' => array('rbac.dashboard.ver')),
     )),
 );
+
+$menu = array_values(array_filter(array_map(function ($group) use ($rbacService, $usuarioId) {
+    $group['items'] = array_values(array_filter($group['items'], function ($item) use ($rbacService, $usuarioId) {
+        if (empty($item['permissions_any'])) {
+            return true;
+        }
+
+        if (!$usuarioId) {
+            return false;
+        }
+
+        return $rbacService->userHasAnyPermission($usuarioId, $item['permissions_any']);
+    }));
+
+    return empty($group['items']) ? null : $group;
+}, $menu)));
 
 $breadcrumbs = array(
     array('label' => 'Admin', 'href' => '/admin'),

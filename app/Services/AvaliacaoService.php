@@ -21,17 +21,23 @@ class AvaliacaoService
     private $aptidaoService;
     private $auditService;
     private $trashService;
+    private $scopeService;
 
-    public function __construct()
+    public function __construct(array $dependencies = array())
     {
-        $this->avaliacaoModel = new Avaliacao();
-        $this->perguntaModel = new AvaliacaoPergunta();
-        $this->respostaModel = new AvaliacaoRespostaUsuario();
-        $this->notaModel = new NotaAvaliacao();
-        $this->inscricaoModel = new Inscricao();
-        $this->aptidaoService = new AptidaoCertificadoService();
-        $this->auditService = new AuditService();
-        $this->trashService = new TrashService();
+        $this->avaliacaoModel = isset($dependencies['avaliacaoModel']) ? $dependencies['avaliacaoModel'] : new Avaliacao();
+        $this->perguntaModel = isset($dependencies['perguntaModel']) ? $dependencies['perguntaModel'] : new AvaliacaoPergunta();
+        $this->respostaModel = isset($dependencies['respostaModel']) ? $dependencies['respostaModel'] : new AvaliacaoRespostaUsuario();
+        $this->notaModel = isset($dependencies['notaModel']) ? $dependencies['notaModel'] : new NotaAvaliacao();
+        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscricao();
+        $this->aptidaoService = isset($dependencies['aptidaoService']) ? $dependencies['aptidaoService'] : new AptidaoCertificadoService();
+        $this->auditService = isset($dependencies['auditService']) ? $dependencies['auditService'] : new AuditService();
+        $this->trashService = isset($dependencies['trashService']) ? $dependencies['trashService'] : new TrashService();
+        $this->scopeService = isset($dependencies['scopeService']) ? $dependencies['scopeService'] : new ProfessorAcademicScopeService(array(
+            'inscricaoModel' => $this->inscricaoModel,
+            'avaliacaoModel' => $this->avaliacaoModel,
+            'perguntaModel' => $this->perguntaModel,
+        ));
     }
 
     public function listarContexto($cursoId, $turmaId = null)
@@ -60,6 +66,18 @@ class AvaliacaoService
             'nota_minima' => isset($data['nota_minima']) ? (float) $data['nota_minima'] : null,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         );
+
+        $validacaoContexto = $this->scopeService->validarContexto($payload['curso_evento_id'], $payload['turma_id']);
+        if (empty($validacaoContexto['ok'])) {
+            return $validacaoContexto;
+        }
+
+        if ($id > 0) {
+            $validacaoAvaliacao = $this->scopeService->validarAvaliacaoNoContexto($id, $payload['curso_evento_id'], $payload['turma_id']);
+            if (empty($validacaoAvaliacao['ok'])) {
+                return $validacaoAvaliacao;
+            }
+        }
 
         $pdo = Database::connection();
         $pdo->beginTransaction();
@@ -97,6 +115,35 @@ class AvaliacaoService
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         );
 
+        $cursoId = isset($data['curso_evento_id']) ? (int) $data['curso_evento_id'] : null;
+        $turmaId = !empty($data['turma_id']) ? (int) $data['turma_id'] : null;
+
+        if ($cursoId !== null) {
+            $validacaoContexto = $this->scopeService->validarContexto($cursoId, $turmaId);
+            if (empty($validacaoContexto['ok'])) {
+                return $validacaoContexto;
+            }
+
+            $validacaoAvaliacao = $this->scopeService->validarAvaliacaoNoContexto($payload['avaliacao_id'], $cursoId, $turmaId);
+            if (empty($validacaoAvaliacao['ok'])) {
+                return $validacaoAvaliacao;
+            }
+
+            if ($id > 0) {
+                $validacaoPergunta = $this->scopeService->validarPerguntaNoContexto($id, $cursoId, $turmaId);
+                if (empty($validacaoPergunta['ok'])) {
+                    return $validacaoPergunta;
+                }
+            }
+        } elseif ($id > 0 && !$this->perguntaModel->findById($id)) {
+            return array('ok' => false, 'message' => 'Pergunta nao encontrada.');
+        }
+
+        $validacaoConsistencia = $this->scopeService->validarPerguntaAvaliacaoConsistentes($id, $payload['avaliacao_id'], $cursoId, $turmaId);
+        if ($id > 0 && empty($validacaoConsistencia['ok'])) {
+            return $validacaoConsistencia;
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -123,6 +170,39 @@ class AvaliacaoService
 
     public function registrarResposta(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        $cursoId = isset($data['curso_evento_id']) ? (int) $data['curso_evento_id'] : 0;
+        $turmaId = !empty($data['turma_id']) ? (int) $data['turma_id'] : null;
+
+        $validacaoContexto = $this->scopeService->validarContexto($cursoId, $turmaId);
+        if (empty($validacaoContexto['ok'])) {
+            return $validacaoContexto;
+        }
+
+        $validacaoInscricao = $this->scopeService->validarInscricaoNoContexto(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0, $cursoId, $turmaId);
+        if (empty($validacaoInscricao['ok'])) {
+            return $validacaoInscricao;
+        }
+
+        $validacaoAvaliacao = $this->scopeService->validarAvaliacaoNoContexto(isset($data['avaliacao_id']) ? (int) $data['avaliacao_id'] : 0, $cursoId, $turmaId);
+        if (empty($validacaoAvaliacao['ok'])) {
+            return $validacaoAvaliacao;
+        }
+
+        $validacaoPergunta = $this->scopeService->validarPerguntaNoContexto(isset($data['pergunta_id']) ? (int) $data['pergunta_id'] : 0, $cursoId, $turmaId);
+        if (empty($validacaoPergunta['ok'])) {
+            return $validacaoPergunta;
+        }
+
+        $validacaoAvaliacaoInscricao = $this->scopeService->validarAvaliacaoInscricaoConsistentes((int) $data['avaliacao_id'], (int) $data['inscricao_id']);
+        if (empty($validacaoAvaliacaoInscricao['ok'])) {
+            return $validacaoAvaliacaoInscricao;
+        }
+
+        $validacaoPerguntaAvaliacao = $this->scopeService->validarPerguntaAvaliacaoConsistentes((int) $data['pergunta_id'], (int) $data['avaliacao_id'], $cursoId, $turmaId);
+        if (empty($validacaoPerguntaAvaliacao['ok'])) {
+            return $validacaoPerguntaAvaliacao;
+        }
+
         $inscricao = $this->inscricaoModel->findById(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0);
         if (!$inscricao) {
             return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
@@ -159,6 +239,29 @@ class AvaliacaoService
 
     public function registrarNota(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        $cursoId = isset($data['curso_evento_id']) ? (int) $data['curso_evento_id'] : 0;
+        $turmaId = !empty($data['turma_id']) ? (int) $data['turma_id'] : null;
+
+        $validacaoContexto = $this->scopeService->validarContexto($cursoId, $turmaId);
+        if (empty($validacaoContexto['ok'])) {
+            return $validacaoContexto;
+        }
+
+        $validacaoInscricao = $this->scopeService->validarInscricaoNoContexto(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0, $cursoId, $turmaId);
+        if (empty($validacaoInscricao['ok'])) {
+            return $validacaoInscricao;
+        }
+
+        $validacaoAvaliacao = $this->scopeService->validarAvaliacaoNoContexto(isset($data['avaliacao_id']) ? (int) $data['avaliacao_id'] : 0, $cursoId, $turmaId);
+        if (empty($validacaoAvaliacao['ok'])) {
+            return $validacaoAvaliacao;
+        }
+
+        $validacaoAvaliacaoInscricao = $this->scopeService->validarAvaliacaoInscricaoConsistentes((int) $data['avaliacao_id'], (int) $data['inscricao_id']);
+        if (empty($validacaoAvaliacaoInscricao['ok'])) {
+            return $validacaoAvaliacaoInscricao;
+        }
+
         $inscricao = $this->inscricaoModel->findById(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0);
         if (!$inscricao) {
             return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
@@ -184,7 +287,7 @@ class AvaliacaoService
             $this->auditService->record('academico.nota.registrada', 'nota_avaliacao', $id, $payload, $actorUserId, $ipAddress, $userAgent);
             Logger::info('academico.nota.registrada', array('nota_id' => $id));
 
-            $this->aptidaoService->recalcularInscricao((int) $inscricao['id'], $actorUserId, $ipAddress, $userAgent);
+            $this->aptidaoService->recalcularInscricao((int) $inscricao['id'], $actorUserId, $ipAddress, $userAgent, $cursoId, $turmaId);
             $pdo->commit();
 
             return array('ok' => true, 'id' => $id);

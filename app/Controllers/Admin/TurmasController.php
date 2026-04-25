@@ -116,4 +116,20 @@ class TurmasController extends Controller
         Session::flash('success', 'Turma excluida e enviada para a lixeira.');
         return $this->redirect('/admin/turmas');
     }
+
+    public function updateStatus(Request $request)
+    {
+        $turmaId = (int) $request->input('id', 0);
+        $status = trim((string) $request->input('status', ''));
+
+        $result = $this->turmaService->atualizarStatus($turmaId, $status, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Nao foi possivel atualizar o status da turma.');
+            return $this->redirect('/admin/turmas/show?turma_id=' . $turmaId);
+        }
+
+        Session::flash('success', 'Status da turma atualizado com sucesso.');
+        return $this->redirect('/admin/turmas/show?turma_id=' . $turmaId);
+    }
 }

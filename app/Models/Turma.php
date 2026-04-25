@@ -32,10 +32,13 @@ class Turma
                     ce.tipo AS curso_tipo,
                     ce.modalidade AS curso_modalidade,
                     ce.valor AS curso_valor,
-                    c.nome AS categoria_nome
+                    c.nome AS categoria_nome,
+                    u.nome AS professor_responsavel_nome
              FROM turmas t
              INNER JOIN cursos_eventos ce ON ce.id = t.curso_evento_id
              LEFT JOIN categorias c ON c.id = ce.categoria_id
+             LEFT JOIN usuario_turmas ut ON ut.turma_id = t.id AND ut.tipo_vinculo = "professor" AND ut.deleted_at IS NULL
+             LEFT JOIN usuarios u ON u.id = ut.usuario_id AND u.deleted_at IS NULL
              WHERE t.id = :id
                AND t.deleted_at IS NULL
              LIMIT 1'
@@ -97,10 +100,13 @@ class Turma
                     ce.nome AS curso_nome,
                     ce.tipo AS curso_tipo,
                     ce.modalidade AS curso_modalidade,
-                    c.nome AS categoria_nome
+                    c.nome AS categoria_nome,
+                    u.nome AS professor_responsavel_nome
              FROM turmas t
              INNER JOIN cursos_eventos ce ON ce.id = t.curso_evento_id
              LEFT JOIN categorias c ON c.id = ce.categoria_id
+             LEFT JOIN usuario_turmas ut ON ut.turma_id = t.id AND ut.tipo_vinculo = "professor" AND ut.deleted_at IS NULL
+             LEFT JOIN usuarios u ON u.id = ut.usuario_id AND u.deleted_at IS NULL
              WHERE t.deleted_at IS NULL
                AND ce.deleted_at IS NULL
              ORDER BY t.data_inicio IS NULL, t.data_inicio ASC, t.nome ASC'

@@ -1,4 +1,8 @@
 <?php use App\Core\Helpers; ?>
+<?php use App\Core\Session; ?>
+<?php use App\Services\RbacService; ?>
+
+<?php $canManage = (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar'); ?>
 
 <section class="hero">
     <h1><?php echo Helpers::e($turma['nome']); ?></h1>
@@ -9,6 +13,7 @@
     <dl class="summary-list">
         <dt>Codigo</dt><dd><?php echo Helpers::e($turma['codigo']); ?></dd>
         <dt>Curso</dt><dd><?php echo Helpers::e($turma['curso_nome']); ?></dd>
+        <dt>Professor responsavel</dt><dd><?php echo Helpers::e($turma['professor_responsavel_nome'] ?? '-'); ?></dd>
         <dt>Categoria</dt><dd><?php echo Helpers::e($turma['categoria_nome'] ?? ''); ?></dd>
         <dt>Modalidade</dt><dd><?php echo Helpers::e($turma['curso_modalidade']); ?></dd>
         <dt>Data inicio</dt><dd><?php echo Helpers::e((string) $turma['data_inicio']); ?></dd>
@@ -20,15 +25,26 @@
 
 <section class="status-card">
     <div class="split-actions">
-        <a href="/admin/turmas/editar?turma_id=<?php echo (int) $turma['id']; ?>">Editar</a>
+        <?php if ($canManage): ?>
+            <a href="/admin/turmas/editar?turma_id=<?php echo (int) $turma['id']; ?>">Editar</a>
+        <?php endif; ?>
         <a href="/admin/turmas">Voltar</a>
+        <?php if ($canManage): ?>
+            <form method="post" action="/admin/turmas/status">
+                <input type="hidden" name="id" value="<?php echo (int) $turma['id']; ?>">
+                <input type="hidden" name="status" value="<?php echo $turma['status'] === 'aberta' ? 'encerrada' : 'aberta'; ?>">
+                <button type="submit"><?php echo $turma['status'] === 'aberta' ? 'Encerrar' : 'Abrir'; ?></button>
+            </form>
+        <?php endif; ?>
     </div>
-    <form method="post" action="/admin/turmas/excluir" class="admin-form" style="margin-top: 16px;">
-        <input type="hidden" name="id" value="<?php echo (int) $turma['id']; ?>">
-        <label>
-            Justificativa para lixeira
-            <input type="text" name="justificativa" required>
-        </label>
-        <button type="submit">Excluir turma</button>
-    </form>
+    <?php if ($canManage): ?>
+        <form method="post" action="/admin/turmas/excluir" class="admin-form" style="margin-top: 16px;">
+            <input type="hidden" name="id" value="<?php echo (int) $turma['id']; ?>">
+            <label>
+                Justificativa para lixeira
+                <input type="text" name="justificativa" required>
+            </label>
+            <button type="submit">Excluir turma</button>
+        </form>
+    <?php endif; ?>
 </section>

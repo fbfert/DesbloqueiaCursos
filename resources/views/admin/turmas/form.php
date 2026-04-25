@@ -2,6 +2,8 @@
 
 <?php $turma = isset($form_data['turma']) ? $form_data['turma'] : null; ?>
 <?php $cursos = isset($form_data['cursos']) ? $form_data['cursos'] : array(); ?>
+<?php $professores = isset($form_data['professores']) ? $form_data['professores'] : array(); ?>
+<?php $professorResponsavel = isset($form_data['professor_responsavel']) ? $form_data['professor_responsavel'] : null; ?>
 
 <section class="hero">
     <h1><?php echo Helpers::e($title); ?></h1>
@@ -21,6 +23,17 @@
                 <?php foreach ($cursos as $curso): ?>
                     <option value="<?php echo (int) $curso['id']; ?>" <?php echo !empty($turma['curso_evento_id']) && (int) $turma['curso_evento_id'] === (int) $curso['id'] ? 'selected' : ''; ?>>
                         <?php echo Helpers::e($curso['nome']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>
+            Professor responsavel
+            <select name="professor_responsavel_usuario_id">
+                <option value="">Sem professor definido</option>
+                <?php foreach ($professores as $professor): ?>
+                    <option value="<?php echo (int) $professor['id']; ?>" <?php echo !empty($professorResponsavel['usuario_id']) && (int) $professorResponsavel['usuario_id'] === (int) $professor['id'] ? 'selected' : ''; ?>>
+                        <?php echo Helpers::e($professor['nome']); ?>
                     </option>
                 <?php endforeach; ?>
             </select>

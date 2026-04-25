@@ -83,6 +83,7 @@ $app->get('/admin/cursos/editar', array(AdminCursosController::class, 'edit'), a
 $app->post('/admin/cursos/editar', array(AdminCursosController::class, 'update'), array('auth', 'permission:conteudo.gerenciar'));
 $app->get('/admin/cursos/show', array(AdminCursosController::class, 'show'), array('auth', 'permission:conteudo.ver'));
 $app->post('/admin/cursos/excluir', array(AdminCursosController::class, 'destroy'), array('auth', 'permission:conteudo.gerenciar'));
+$app->post('/admin/cursos/status', array(AdminCursosController::class, 'updateStatus'), array('auth', 'permission:conteudo.gerenciar'));
 $app->get('/admin/turmas', array(TurmasController::class, 'index'), array('auth', 'permission:conteudo.ver'));
 $app->get('/admin/turmas/criar', array(TurmasController::class, 'create'), array('auth', 'permission:conteudo.gerenciar'));
 $app->post('/admin/turmas/criar', array(TurmasController::class, 'store'), array('auth', 'permission:conteudo.gerenciar'));
@@ -90,6 +91,7 @@ $app->get('/admin/turmas/editar', array(TurmasController::class, 'edit'), array(
 $app->post('/admin/turmas/editar', array(TurmasController::class, 'update'), array('auth', 'permission:conteudo.gerenciar'));
 $app->get('/admin/turmas/show', array(TurmasController::class, 'show'), array('auth', 'permission:conteudo.ver'));
 $app->post('/admin/turmas/excluir', array(TurmasController::class, 'destroy'), array('auth', 'permission:conteudo.gerenciar'));
+$app->post('/admin/turmas/status', array(TurmasController::class, 'updateStatus'), array('auth', 'permission:conteudo.gerenciar'));
 $app->get('/admin/professores-fiscais', array(AdminProfessoresFiscaisController::class, 'index'), array('auth', 'permission:financeiro.ver'));
 $app->get('/admin/professores-fiscais/criar', array(AdminProfessoresFiscaisController::class, 'create'), array('auth', 'permission:financeiro.gerenciar'));
 $app->post('/admin/professores-fiscais/criar', array(AdminProfessoresFiscaisController::class, 'store'), array('auth', 'permission:financeiro.gerenciar'));

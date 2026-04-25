@@ -5,12 +5,16 @@ namespace App\Services;
 use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Turma;
+use App\Models\Usuario;
+use App\Models\UsuarioTurma;
 use Exception;
 
 class TurmaService
 {
     private $turmaModel;
     private $cursoModel;
+    private $usuarioModel;
+    private $usuarioTurmaModel;
     private $auditService;
     private $trashService;
 
@@ -18,6 +22,8 @@ class TurmaService
     {
         $this->turmaModel = new Turma();
         $this->cursoModel = new \App\Models\CursoEvento();
+        $this->usuarioModel = new Usuario();
+        $this->usuarioTurmaModel = new UsuarioTurma();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
     }
@@ -42,6 +48,8 @@ class TurmaService
         return array(
             'turma' => $turmaId ? $this->turmaModel->findAdminById($turmaId) : null,
             'cursos' => $this->cursoModel->allForSelect(),
+            'professores' => $this->usuarioModel->professores(),
+            'professor_responsavel' => $turmaId ? $this->usuarioTurmaModel->findProfessorForTurma($turmaId) : null,
         );
     }
 
@@ -56,6 +64,9 @@ class TurmaService
         $dataFim = isset($data['data_fim']) ? trim((string) $data['data_fim']) : null;
         $vagas = isset($data['vagas']) && $data['vagas'] !== '' ? (int) $data['vagas'] : null;
         $status = isset($data['status']) && in_array($data['status'], array('planejada', 'aberta', 'encerrada', 'cancelada'), true) ? $data['status'] : 'planejada';
+        $professorResponsavelUsuarioId = isset($data['professor_responsavel_usuario_id']) && $data['professor_responsavel_usuario_id'] !== ''
+            ? (int) $data['professor_responsavel_usuario_id']
+            : null;
 
         $errors = array();
         if ($cursoId <= 0) {
@@ -70,10 +81,21 @@ class TurmaService
         if ($codigo === '') {
             $errors[] = 'Codigo da turma e obrigatorio.';
         }
+        if ($dataInicio !== null && $dataInicio !== '' && $dataFim !== null && $dataFim !== '' && $dataFim < $dataInicio) {
+            $errors[] = 'Data fim nao pode ser menor que a data inicio.';
+        }
 
         $curso = $this->cursoModel->findById($cursoId);
         if (!$curso) {
             $errors[] = 'Curso/evento nao encontrado.';
+        }
+
+        $professorResponsavel = null;
+        if ($professorResponsavelUsuarioId !== null) {
+            $professorResponsavel = $this->validarProfessorResponsavel($professorResponsavelUsuarioId);
+            if (!$professorResponsavel) {
+                $errors[] = 'Professor responsavel nao encontrado.';
+            }
         }
 
         $existenteSlug = $this->turmaModel->findBySlug($slug);
@@ -84,6 +106,10 @@ class TurmaService
         $existenteCodigo = $this->turmaModel->findByCodigo($codigo);
         if ($existenteCodigo && (int) $existenteCodigo['id'] !== $id) {
             $errors[] = 'Ja existe uma turma com este codigo.';
+        }
+
+        if ($id > 0 && !$this->turmaModel->findById($id)) {
+            $errors[] = 'Turma nao encontrada.';
         }
 
         if ($errors) {
@@ -115,6 +141,12 @@ class TurmaService
                 $acao = 'catalogo.turma.criada';
             }
 
+            $this->usuarioTurmaModel->syncProfessorForTurma(
+                $id,
+                $professorResponsavel ? (int) $professorResponsavel['id'] : null,
+                'ativo'
+            );
+
             $this->auditService->record(
                 $acao,
                 'turma',
@@ -141,6 +173,18 @@ class TurmaService
         $turma = $this->turmaModel->findById($id);
         if (!$turma) {
             return array('ok' => false, 'message' => 'Turma nao encontrada.');
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS total
+             FROM inscricoes
+             WHERE turma_id = :turma_id
+               AND deleted_at IS NULL'
+        );
+        $stmt->execute(array('turma_id' => $id));
+        $row = $stmt->fetch();
+        if (!empty($row) && (int) $row['total'] > 0) {
+            return array('ok' => false, 'message' => 'Nao e seguro excluir turma com inscricoes vinculadas.');
         }
 
         $pdo = Database::connection();
@@ -179,5 +223,46 @@ class TurmaService
         $value = trim($value, '-');
 
         return $value;
+    }
+
+    public function atualizarStatus($id, $status, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $turma = $this->turmaModel->findById($id);
+        if (!$turma) {
+            return array('ok' => false, 'message' => 'Turma nao encontrada.');
+        }
+
+        if (!in_array($status, array('planejada', 'aberta', 'encerrada', 'cancelada'), true)) {
+            return array('ok' => false, 'message' => 'Status invalido para a turma.');
+        }
+
+        $payload = $turma;
+        $payload['status'] = $status;
+        $this->turmaModel->update($payload, $id);
+
+        $this->auditService->record(
+            'catalogo.turma.status_atualizado',
+            'turma',
+            $id,
+            array('status_anterior' => $turma['status'], 'status_novo' => $status),
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::info('catalogo.turma.status_atualizado', array('turma_id' => $id, 'status' => $status));
+
+        return array('ok' => true);
+    }
+
+    private function validarProfessorResponsavel($usuarioId)
+    {
+        foreach ($this->usuarioModel->professores() as $professor) {
+            if ((int) $professor['id'] === (int) $usuarioId) {
+                return $professor;
+            }
+        }
+
+        return null;
     }
 }

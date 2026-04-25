@@ -116,4 +116,20 @@ class CursosController extends Controller
         Session::flash('success', 'Curso/evento excluido e enviado para a lixeira.');
         return $this->redirect('/admin/cursos');
     }
+
+    public function updateStatus(Request $request)
+    {
+        $cursoId = (int) $request->input('id', 0);
+        $status = trim((string) $request->input('status', ''));
+
+        $result = $this->cursoService->atualizarStatus($cursoId, $status, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Nao foi possivel atualizar o status do curso/evento.');
+            return $this->redirect('/admin/cursos/show?curso_id=' . $cursoId);
+        }
+
+        Session::flash('success', 'Status do curso/evento atualizado com sucesso.');
+        return $this->redirect('/admin/cursos/show?curso_id=' . $cursoId);
+    }
 }
