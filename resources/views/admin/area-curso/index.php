@@ -76,7 +76,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         </form>
 
         <div class="table-wrap admin-mt-12">
-            <table class="admin-table">
+            <table class="admin-table admin-table--area-modulos">
                 <thead><tr><th>Título</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($modulos as $modulo): ?>
@@ -131,7 +131,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         </form>
 
         <div class="table-wrap admin-mt-12">
-            <table class="admin-table">
+            <table class="admin-table admin-table--area-aulas">
                 <thead><tr><th>Título</th><th>Tipo</th><th>Ordem</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($modulos as $modulo): ?>
@@ -199,7 +199,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         </form>
 
         <div class="table-wrap admin-mt-12">
-            <table class="admin-table">
+            <table class="admin-table admin-table--area-materiais">
                 <thead><tr><th>Título</th><th>Tipo</th><th>Acesso</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($materiais as $material): ?>
@@ -264,7 +264,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         </form>
 
         <div class="table-wrap admin-mt-12">
-            <table class="admin-table">
+            <table class="admin-table admin-table--area-links">
                 <thead><tr><th>Título</th><th>Tipo</th><th>URL</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($links as $link): ?>
@@ -295,7 +295,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
     <section class="status-card">
         <strong>Participantes</strong>
         <div class="table-wrap">
-            <table class="admin-table">
+            <table class="admin-table admin-table--area-participantes">
                 <thead><tr><th>Nome</th><th>CPF</th><th>Status</th></tr></thead>
                 <tbody>
                     <?php foreach ($participantes as $participante): ?>

@@ -15,7 +15,7 @@
 <section class="status-card">
     <strong>Cupons</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--cupons-lista">
             <thead>
                 <tr>
                     <th>Código</th>

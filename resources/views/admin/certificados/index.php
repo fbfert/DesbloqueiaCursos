@@ -34,12 +34,12 @@
     <div class="panel-header">
         <div>
             <h2>Certificados emitidos</h2>
-            <p>Ultimos registros do portal.</p>
+            <p>Últimos registros do portal.</p>
         </div>
     </div>
 
     <div class="table-wrapper">
-        <table class="table">
+        <table class="table table--certificados-lista">
             <thead>
                 <tr>
                     <th>Código</th>

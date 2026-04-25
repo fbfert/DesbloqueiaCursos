@@ -95,7 +95,7 @@
         </div>
     </div>
     <div class="table-wrapper">
-        <table class="table">
+        <table class="table table--certificados-historico">
             <thead><tr><th>Status</th><th>Observação</th><th>Data</th></tr></thead>
             <tbody>
                 <?php foreach ($certificado['historico'] as $item): ?>
@@ -108,13 +108,10 @@
             </tbody>
         </table>
     </div>
-</section>
-</div>
-
 <section class="panel">
     <div class="panel-header"><div><h2>Validações</h2></div></div>
     <div class="table-wrapper">
-        <table class="table">
+        <table class="table table--certificados-validacoes">
             <thead><tr><th>Resultado</th><th>CPF</th><th>Data</th></tr></thead>
             <tbody>
                 <?php foreach ($certificado['validacoes'] as $item): ?>
@@ -128,4 +125,5 @@
         </table>
     </div>
 </section>
+</div>
 

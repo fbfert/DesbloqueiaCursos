@@ -38,7 +38,7 @@
 <section class="status-card">
     <strong>Usos recentes</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--cupons-usos">
             <thead>
                 <tr>
                     <th>Pedido</th>
@@ -72,7 +72,7 @@
 <section class="status-card">
     <strong>Histórico</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--cupons-historico">
             <thead>
                 <tr>
                     <th>Ação</th>

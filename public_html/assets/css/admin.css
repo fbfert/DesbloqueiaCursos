@@ -611,6 +611,69 @@
     min-width: 220px;
 }
 
+.app-admin .admin-table--cupons-lista th:nth-child(1),
+.app-admin .admin-table--cupons-lista td:nth-child(1) {
+    min-width: 140px;
+}
+
+.app-admin .admin-table--cupons-lista th:nth-child(2),
+.app-admin .admin-table--cupons-lista td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--cupons-lista th:nth-child(8),
+.app-admin .admin-table--cupons-lista td:nth-child(8) {
+    min-width: 140px;
+}
+
+.app-admin .admin-table--cupons-usos th:nth-child(2),
+.app-admin .admin-table--cupons-usos td:nth-child(2) {
+    min-width: 240px;
+}
+
+.app-admin .admin-table--cupons-historico th:nth-child(2),
+.app-admin .admin-table--cupons-historico td:nth-child(2) {
+    min-width: 260px;
+}
+
+.app-admin .table--certificados-lista th:nth-child(2),
+.app-admin .table--certificados-lista td:nth-child(2),
+.app-admin .table--certificados-lista th:nth-child(3),
+.app-admin .table--certificados-lista td:nth-child(3) {
+    min-width: 220px;
+}
+
+.app-admin .table--certificados-historico th:nth-child(2),
+.app-admin .table--certificados-historico td:nth-child(2) {
+    min-width: 260px;
+}
+
+.app-admin .table--certificados-validacoes th:nth-child(2),
+.app-admin .table--certificados-validacoes td:nth-child(2) {
+    min-width: 160px;
+}
+
+.app-admin .admin-table--area-modulos th:nth-child(1),
+.app-admin .admin-table--area-modulos td:nth-child(1),
+.app-admin .admin-table--area-aulas th:nth-child(1),
+.app-admin .admin-table--area-aulas td:nth-child(1),
+.app-admin .admin-table--area-materiais th:nth-child(1),
+.app-admin .admin-table--area-materiais td:nth-child(1),
+.app-admin .admin-table--area-links th:nth-child(1),
+.app-admin .admin-table--area-links td:nth-child(1) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--area-links th:nth-child(3),
+.app-admin .admin-table--area-links td:nth-child(3) {
+    min-width: 280px;
+}
+
+.app-admin .admin-table--area-participantes th:nth-child(1),
+.app-admin .admin-table--area-participantes td:nth-child(1) {
+    min-width: 220px;
+}
+
 .app-admin .hero {
     padding: 0;
     gap: 14px;
