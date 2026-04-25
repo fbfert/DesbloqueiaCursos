@@ -106,7 +106,7 @@ class AreaCursoService
         $curso = $cursoId ? $this->cursoModel->findById($cursoId) : null;
         $turma = $turmaId ? $this->turmaModel->findById($turmaId) : null;
 
-        if ($cursoId && !$this->professorPodeAcessarContexto($usuarioId, $cursoId, $turmaId)) {
+        if ($cursoId && !$this->contextoProfessorAutorizado($usuarioId, $cursoId, $turmaId)) {
             return array('curso' => null, 'turma' => null, 'cursos' => $cursos, 'turmas' => $turmas);
         }
 
@@ -163,6 +163,14 @@ class AreaCursoService
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         );
 
+        if ($payload['curso_evento_id'] <= 0) {
+            return array('ok' => false, 'message' => 'Curso invalido para a instrucao.');
+        }
+
+        if ($id > 0 && !$this->instrucoesModel->findById($id)) {
+            return array('ok' => false, 'message' => 'Instrucao nao encontrada.');
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -202,6 +210,19 @@ class AreaCursoService
             'visivel' => !empty($data['visivel']) ? 1 : 0,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         );
+
+        if ($payload['curso_evento_id'] <= 0) {
+            return array('ok' => false, 'message' => 'Curso invalido para o link.');
+        }
+
+        if ($id > 0 && !$this->linkModel->findById($id)) {
+            return array('ok' => false, 'message' => 'Link nao encontrado.');
+        }
+
+        $validacaoContexto = $this->validarRelacionamentosConteudo($payload);
+        if (empty($validacaoContexto['ok'])) {
+            return $validacaoContexto;
+        }
 
         $pdo = Database::connection();
         $pdo->beginTransaction();
@@ -335,6 +356,28 @@ class AreaCursoService
         }
 
         return $material;
+    }
+
+    public function contextoProfessorAutorizado($usuarioId, $cursoId, $turmaId = null)
+    {
+        return $this->professorPodeAcessarContexto($usuarioId, $cursoId, $turmaId);
+    }
+
+    public function registroPertenceAoContexto($tipo, $id, $cursoId, $turmaId = null)
+    {
+        $registro = $this->buscarRegistroPorTipo($tipo, $id);
+        if (!$registro) {
+            return false;
+        }
+
+        if ((int) $registro['curso_evento_id'] !== (int) $cursoId) {
+            return false;
+        }
+
+        $turmaRegistro = !empty($registro['turma_id']) ? (int) $registro['turma_id'] : null;
+        $turmaContexto = !empty($turmaId) ? (int) $turmaId : null;
+
+        return $turmaRegistro === $turmaContexto;
     }
 
     private function carregarContexto($cursoId, $turmaId = null)
@@ -478,5 +521,66 @@ class AreaCursoService
         }
 
         return false;
+    }
+
+    private function validarRelacionamentosConteudo(array $payload)
+    {
+        $turmaId = !empty($payload['turma_id']) ? (int) $payload['turma_id'] : null;
+
+        if (!empty($payload['modulo_id'])) {
+            $modulo = $this->moduloModel->findById((int) $payload['modulo_id']);
+            if (!$modulo) {
+                return array('ok' => false, 'message' => 'Modulo nao encontrado para o link.');
+            }
+
+            if ((int) $modulo['curso_evento_id'] !== (int) $payload['curso_evento_id']) {
+                return array('ok' => false, 'message' => 'Modulo informado nao pertence ao curso selecionado.');
+            }
+
+            $turmaModulo = !empty($modulo['turma_id']) ? (int) $modulo['turma_id'] : null;
+            if ($turmaModulo !== $turmaId) {
+                return array('ok' => false, 'message' => 'Modulo informado nao pertence a turma selecionada.');
+            }
+        }
+
+        if (!empty($payload['aula_id'])) {
+            $aula = $this->aulaModel->findById((int) $payload['aula_id']);
+            if (!$aula) {
+                return array('ok' => false, 'message' => 'Aula nao encontrada para o link.');
+            }
+
+            if ((int) $aula['curso_evento_id'] !== (int) $payload['curso_evento_id']) {
+                return array('ok' => false, 'message' => 'Aula informada nao pertence ao curso selecionado.');
+            }
+
+            $turmaAula = !empty($aula['turma_id']) ? (int) $aula['turma_id'] : null;
+            if ($turmaAula !== $turmaId) {
+                return array('ok' => false, 'message' => 'Aula informada nao pertence a turma selecionada.');
+            }
+
+            if (!empty($payload['modulo_id']) && (int) $aula['modulo_id'] !== (int) $payload['modulo_id']) {
+                return array('ok' => false, 'message' => 'A aula informada nao pertence ao modulo selecionado.');
+            }
+        }
+
+        return array('ok' => true);
+    }
+
+    private function buscarRegistroPorTipo($tipo, $id)
+    {
+        switch ($tipo) {
+            case 'instrucao':
+                return $this->instrucoesModel->findById($id);
+            case 'modulo':
+                return $this->moduloModel->findById($id);
+            case 'aula':
+                return $this->aulaModel->findById($id);
+            case 'material':
+                return $this->materialModel->findById($id);
+            case 'link':
+                return $this->linkModel->findById($id);
+            default:
+                return null;
+        }
     }
 }

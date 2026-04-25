@@ -4,12 +4,16 @@ namespace App\Services;
 
 use App\Core\Database;
 use App\Core\Logger;
+use App\Models\Aula;
 use App\Models\Material;
+use App\Models\Modulo;
 use Exception;
 
 class MaterialService
 {
     private $materialModel;
+    private $moduloModel;
+    private $aulaModel;
     private $fileStorageService;
     private $auditService;
     private $trashService;
@@ -17,6 +21,8 @@ class MaterialService
     public function __construct()
     {
         $this->materialModel = new Material();
+        $this->moduloModel = new Modulo();
+        $this->aulaModel = new Aula();
         $this->fileStorageService = new FileStorageService();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
@@ -57,6 +63,19 @@ class MaterialService
         );
 
         $materialExistente = $id > 0 ? $this->materialModel->findById($id) : null;
+        if ($id > 0 && !$materialExistente) {
+            return array('ok' => false, 'message' => 'Material nao encontrado.');
+        }
+
+        if ($payload['curso_evento_id'] <= 0) {
+            return array('ok' => false, 'message' => 'Curso invalido para o material.');
+        }
+
+        $validacaoContexto = $this->validarRelacionamentos($payload);
+        if (empty($validacaoContexto['ok'])) {
+            return $validacaoContexto;
+        }
+
         if ($arquivo && !empty($arquivo['tmp_name'])) {
             $diretorio = 'area-curso/curso-' . (int) $payload['curso_evento_id'];
             if (!empty($payload['turma_id'])) {
@@ -147,5 +166,48 @@ class MaterialService
             Logger::error('area_curso.material.excluir_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
+    }
+
+    private function validarRelacionamentos(array $payload)
+    {
+        $turmaId = !empty($payload['turma_id']) ? (int) $payload['turma_id'] : null;
+
+        if (!empty($payload['modulo_id'])) {
+            $modulo = $this->moduloModel->findById((int) $payload['modulo_id']);
+            if (!$modulo) {
+                return array('ok' => false, 'message' => 'Modulo nao encontrado para o material.');
+            }
+
+            if ((int) $modulo['curso_evento_id'] !== (int) $payload['curso_evento_id']) {
+                return array('ok' => false, 'message' => 'Modulo informado nao pertence ao curso selecionado.');
+            }
+
+            $turmaModulo = !empty($modulo['turma_id']) ? (int) $modulo['turma_id'] : null;
+            if ($turmaModulo !== $turmaId) {
+                return array('ok' => false, 'message' => 'Modulo informado nao pertence a turma selecionada.');
+            }
+        }
+
+        if (!empty($payload['aula_id'])) {
+            $aula = $this->aulaModel->findById((int) $payload['aula_id']);
+            if (!$aula) {
+                return array('ok' => false, 'message' => 'Aula nao encontrada para o material.');
+            }
+
+            if ((int) $aula['curso_evento_id'] !== (int) $payload['curso_evento_id']) {
+                return array('ok' => false, 'message' => 'Aula informada nao pertence ao curso selecionado.');
+            }
+
+            $turmaAula = !empty($aula['turma_id']) ? (int) $aula['turma_id'] : null;
+            if ($turmaAula !== $turmaId) {
+                return array('ok' => false, 'message' => 'Aula informada nao pertence a turma selecionada.');
+            }
+
+            if (!empty($payload['modulo_id']) && (int) $aula['modulo_id'] !== (int) $payload['modulo_id']) {
+                return array('ok' => false, 'message' => 'A aula informada nao pertence ao modulo selecionado.');
+            }
+        }
+
+        return array('ok' => true);
     }
 }

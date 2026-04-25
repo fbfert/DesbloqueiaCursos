@@ -48,7 +48,7 @@ class AreaCursoController extends Controller
 
     public function salvarInstrucao(Request $request)
     {
-        if (!$this->contextoAutorizado((int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
+        if (!$this->registroAutorizado('instrucao', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             Session::flash('errors', array('Contexto nao autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
@@ -59,7 +59,7 @@ class AreaCursoController extends Controller
 
     public function salvarModulo(Request $request)
     {
-        if (!$this->contextoAutorizado((int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
+        if (!$this->registroAutorizado('modulo', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             Session::flash('errors', array('Contexto nao autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
@@ -70,7 +70,7 @@ class AreaCursoController extends Controller
 
     public function salvarAula(Request $request)
     {
-        if (!$this->contextoAutorizado((int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
+        if (!$this->registroAutorizado('aula', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             Session::flash('errors', array('Contexto nao autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
@@ -81,7 +81,7 @@ class AreaCursoController extends Controller
 
     public function salvarMaterial(Request $request)
     {
-        if (!$this->contextoAutorizado((int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
+        if (!$this->registroAutorizado('material', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             Session::flash('errors', array('Contexto nao autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
@@ -92,7 +92,7 @@ class AreaCursoController extends Controller
 
     public function salvarLink(Request $request)
     {
-        if (!$this->contextoAutorizado((int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
+        if (!$this->registroAutorizado('link', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             Session::flash('errors', array('Contexto nao autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
@@ -103,7 +103,7 @@ class AreaCursoController extends Controller
 
     public function excluir(Request $request)
     {
-        if (!$this->contextoAutorizado((int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
+        if (!$this->registroAutorizado((string) $request->input('tipo', ''), (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             Session::flash('errors', array('Contexto nao autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
@@ -122,6 +122,10 @@ class AreaCursoController extends Controller
 
     public function participantes(Request $request)
     {
+        if (!$this->contextoAutorizado((int) $request->query('curso_id', 0), (int) $request->query('turma_id', 0))) {
+            return $this->json(array('ok' => false, 'message' => 'Contexto nao autorizado para este professor.'), 403);
+        }
+
         return $this->json(array(
             'ok' => true,
             'participantes' => $this->areaCursoService->listarParticipantes((int) $request->query('curso_id', 0), (int) $request->query('turma_id', 0)),
@@ -166,7 +170,19 @@ class AreaCursoController extends Controller
             return false;
         }
 
-        $dados = $this->areaCursoService->carregarProfessor(Session::get('usuario_id'), $cursoId, $turmaId > 0 ? $turmaId : null);
-        return !empty($dados['curso']);
+        return $this->areaCursoService->contextoProfessorAutorizado(Session::get('usuario_id'), $cursoId, $turmaId > 0 ? $turmaId : null);
+    }
+
+    private function registroAutorizado($tipo, $id, $cursoId, $turmaId)
+    {
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            return false;
+        }
+
+        if ($id <= 0) {
+            return true;
+        }
+
+        return $this->areaCursoService->registroPertenceAoContexto($tipo, $id, $cursoId, $turmaId > 0 ? $turmaId : null);
     }
 }

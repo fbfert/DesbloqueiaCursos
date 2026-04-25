@@ -37,6 +37,14 @@ class ModuloService
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         );
 
+        if ($payload['curso_evento_id'] <= 0) {
+            return array('ok' => false, 'message' => 'Curso invalido para o modulo.');
+        }
+
+        if ($id > 0 && !$this->moduloModel->findById($id)) {
+            return array('ok' => false, 'message' => 'Modulo nao encontrado.');
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
