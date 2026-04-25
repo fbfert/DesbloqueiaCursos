@@ -1,8 +1,11 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="hero">
-    <h1>Rateios</h1>
-    <p>Visao consolidada dos rateios por curso e turma.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Rateios</h1>
+        <p class="admin-page__subtitle">Visão consolidada dos rateios por curso e turma.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -15,10 +18,10 @@
 </section>
 
 <section class="status-card">
-    <strong>Selecionar apuracao</strong>
+    <strong>Selecionar apuração</strong>
     <form method="get" action="/admin/rateios" class="form-grid">
         <label>
-            Apuracao
+            Apuração
             <select name="apuracao_id">
                 <option value="0">Todas</option>
                 <?php foreach ($apuracoes as $apuracao): ?>
@@ -41,7 +44,7 @@
                     <th>Competência</th>
                     <th>Curso</th>
                     <th>Turma</th>
-                    <th>Base liquida</th>
+                    <th>Base líquida</th>
                     <th>Percentual</th>
                     <th>Restante empresa</th>
                     <th>Participantes</th>
@@ -75,4 +78,5 @@
         </table>
     </div>
 </section>
+</div>
 

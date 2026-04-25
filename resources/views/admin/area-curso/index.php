@@ -8,10 +8,13 @@ $materialEditar = isset($material_selecionado) ? $material_selecionado : null;
 $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
 ?>
 
-<section class="hero">
-    <h1>Area interna do curso</h1>
-    <p>Administracao de instrucoes, modulos, aulas, materiais, links e participantes.</p>
-</section>
+<div class="admin-page">
+    <section class="admin-page__header">
+        <div>
+            <h1 class="admin-page__title">Área interna do curso</h1>
+            <p class="admin-page__subtitle">Administração de instruções, módulos, aulas, materiais, links e participantes.</p>
+        </div>
+    </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
@@ -51,11 +54,11 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <input type="hidden" name="id" value="<?php echo !empty($instrucaoEditar['id']) ? (int) $instrucaoEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Titulo<input type="text" name="titulo" value="<?php echo Helpers::e($instrucaoEditar['titulo'] ?? ''); ?>"></label>
-            <label>Conteudo<textarea name="conteudo" rows="4"><?php echo Helpers::e($instrucaoEditar['conteudo'] ?? ''); ?></textarea></label>
+            <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($instrucaoEditar['titulo'] ?? ''); ?>"></label>
+            <label>Conteúdo<textarea name="conteudo" rows="4"><?php echo Helpers::e($instrucaoEditar['conteudo'] ?? ''); ?></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($instrucaoEditar['ordem'] ?? 1)); ?>" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($instrucaoEditar) ? (!empty($instrucaoEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visivel</label>
-            <button type="submit"><?php echo !empty($instrucaoEditar) ? 'Atualizar instrucao' : 'Salvar instrucao'; ?></button>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($instrucaoEditar) ? (!empty($instrucaoEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visível</label>
+            <button type="submit"><?php echo !empty($instrucaoEditar) ? 'Atualizar instrução' : 'Salvar instrução'; ?></button>
         </form>
     </section>
 
@@ -65,22 +68,22 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <input type="hidden" name="id" value="<?php echo !empty($moduloEditar['id']) ? (int) $moduloEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Titulo<input type="text" name="titulo" value="<?php echo Helpers::e($moduloEditar['titulo'] ?? ''); ?>"></label>
+            <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($moduloEditar['titulo'] ?? ''); ?>"></label>
             <label>Descrição<textarea name="descricao" rows="3"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($moduloEditar['ordem'] ?? 1)); ?>" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($moduloEditar) ? (!empty($moduloEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visivel</label>
-            <button type="submit"><?php echo !empty($moduloEditar) ? 'Atualizar modulo' : 'Salvar modulo'; ?></button>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($moduloEditar) ? (!empty($moduloEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visível</label>
+            <button type="submit"><?php echo !empty($moduloEditar) ? 'Atualizar módulo' : 'Salvar módulo'; ?></button>
         </form>
 
         <div class="table-wrap" style="margin-top:12px;">
             <table class="admin-table">
-                <thead><tr><th>Titulo</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Título</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($modulos as $modulo): ?>
                         <tr>
                             <td><?php echo Helpers::e($modulo['titulo']); ?></td>
                             <td><?php echo (int) $modulo['ordem']; ?></td>
-                            <td><?php echo !empty($modulo['visivel']) ? 'visivel' : 'oculto'; ?></td>
+                            <td><?php echo !empty($modulo['visivel']) ? 'visível' : 'oculto'; ?></td>
                             <td>
                                 <div class="split-actions">
                                     <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>&modulo_id=<?php echo (int) $modulo['id']; ?>">Editar</a>
@@ -107,7 +110,7 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <input type="hidden" name="id" value="<?php echo !empty($aulaEditar['id']) ? (int) $aulaEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Modulo
+            <label>Módulo
                 <select name="modulo_id">
                     <?php foreach ($modulos as $modulo): ?>
                         <option value="<?php echo (int) $modulo['id']; ?>" <?php echo !empty($aulaEditar) && (int) ($aulaEditar['modulo_id'] ?? 0) === (int) $modulo['id'] ? 'selected' : ''; ?>>
@@ -116,20 +119,20 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label>Titulo<input type="text" name="titulo" value="<?php echo Helpers::e($aulaEditar['titulo'] ?? ''); ?>"></label>
-            <label>Conteudo<textarea name="conteudo" rows="3"><?php echo Helpers::e($aulaEditar['conteudo'] ?? ''); ?></textarea></label>
+            <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($aulaEditar['titulo'] ?? ''); ?>"></label>
+            <label>Conteúdo<textarea name="conteudo" rows="3"><?php echo Helpers::e($aulaEditar['conteudo'] ?? ''); ?></textarea></label>
             <label>Tipo<input type="text" name="tipo" value="<?php echo Helpers::e($aulaEditar['tipo'] ?? 'texto'); ?>"></label>
-            <label>URL video<input type="text" name="url_video" value="<?php echo Helpers::e($aulaEditar['url_video'] ?? ''); ?>"></label>
-            <label>Duracao minutos<input type="number" name="duracao_minutos" value="<?php echo Helpers::e((string) ($aulaEditar['duracao_minutos'] ?? '')); ?>"></label>
+            <label>URL vídeo<input type="text" name="url_video" value="<?php echo Helpers::e($aulaEditar['url_video'] ?? ''); ?>"></label>
+            <label>Duração (minutos)<input type="number" name="duracao_minutos" value="<?php echo Helpers::e((string) ($aulaEditar['duracao_minutos'] ?? '')); ?>"></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($aulaEditar['ordem'] ?? 1)); ?>" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($aulaEditar) ? (!empty($aulaEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visivel</label>
-            <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1" <?php echo !empty($aulaEditar) && !empty($aulaEditar['obrigatoria']) ? 'checked' : ''; ?>> Obrigatoria</label>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($aulaEditar) ? (!empty($aulaEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visível</label>
+            <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1" <?php echo !empty($aulaEditar) && !empty($aulaEditar['obrigatoria']) ? 'checked' : ''; ?>> Obrigatória</label>
             <button type="submit"><?php echo !empty($aulaEditar) ? 'Atualizar aula' : 'Salvar aula'; ?></button>
         </form>
 
         <div class="table-wrap" style="margin-top:12px;">
             <table class="admin-table">
-                <thead><tr><th>Titulo</th><th>Tipo</th><th>Ordem</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Título</th><th>Tipo</th><th>Ordem</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($modulos as $modulo): ?>
                         <?php foreach ($modulo['aulas'] as $aula): ?>
@@ -164,9 +167,9 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <input type="hidden" name="id" value="<?php echo !empty($materialEditar['id']) ? (int) $materialEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Modulo
+            <label>Módulo
                 <select name="modulo_id">
-                    <option value="">Sem modulo</option>
+                    <option value="">Sem módulo</option>
                     <?php foreach ($modulos as $modulo): ?>
                         <option value="<?php echo (int) $modulo['id']; ?>" <?php echo !empty($materialEditar) && (int) ($materialEditar['modulo_id'] ?? 0) === (int) $modulo['id'] ? 'selected' : ''; ?>>
                             <?php echo Helpers::e($modulo['titulo']); ?>
@@ -186,18 +189,18 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label>Titulo<input type="text" name="titulo" value="<?php echo Helpers::e($materialEditar['titulo'] ?? ''); ?>"></label>
+            <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($materialEditar['titulo'] ?? ''); ?>"></label>
             <label>Descrição<textarea name="descricao" rows="3"><?php echo Helpers::e($materialEditar['descricao'] ?? ''); ?></textarea></label>
-            <label>Tipo arquivo<input type="text" name="tipo_arquivo" value="<?php echo Helpers::e($materialEditar['tipo_arquivo'] ?? 'outro'); ?>"></label>
+            <label>Tipo de arquivo<input type="text" name="tipo_arquivo" value="<?php echo Helpers::e($materialEditar['tipo_arquivo'] ?? 'outro'); ?>"></label>
             <label>Arquivo<input type="file" name="arquivo"></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($materialEditar['ordem'] ?? 1)); ?>" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($materialEditar) ? (!empty($materialEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visivel</label>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($materialEditar) ? (!empty($materialEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visível</label>
             <button type="submit"><?php echo !empty($materialEditar) ? 'Atualizar material' : 'Salvar material'; ?></button>
         </form>
 
         <div class="table-wrap" style="margin-top:12px;">
             <table class="admin-table">
-                <thead><tr><th>Titulo</th><th>Tipo</th><th>Acesso</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Título</th><th>Tipo</th><th>Acesso</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($materiais as $material): ?>
                         <tr>
@@ -230,9 +233,9 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
             <input type="hidden" name="id" value="<?php echo !empty($linkEditar['id']) ? (int) $linkEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Modulo
+            <label>Módulo
                 <select name="modulo_id">
-                    <option value="">Sem modulo</option>
+                    <option value="">Sem módulo</option>
                     <?php foreach ($modulos as $modulo): ?>
                         <option value="<?php echo (int) $modulo['id']; ?>" <?php echo !empty($linkEditar) && (int) ($linkEditar['modulo_id'] ?? 0) === (int) $modulo['id'] ? 'selected' : ''; ?>>
                             <?php echo Helpers::e($modulo['titulo']); ?>
@@ -252,17 +255,17 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label>Titulo<input type="text" name="titulo" value="<?php echo Helpers::e($linkEditar['titulo'] ?? ''); ?>"></label>
+            <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($linkEditar['titulo'] ?? ''); ?>"></label>
             <label>URL<input type="text" name="url" value="<?php echo Helpers::e($linkEditar['url'] ?? ''); ?>"></label>
-            <label>Tipo link<input type="text" name="tipo_link" value="<?php echo Helpers::e($linkEditar['tipo_link'] ?? 'generico'); ?>"></label>
+            <label>Tipo de link<input type="text" name="tipo_link" value="<?php echo Helpers::e($linkEditar['tipo_link'] ?? 'generico'); ?>"></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($linkEditar['ordem'] ?? 1)); ?>" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($linkEditar) ? (!empty($linkEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visivel</label>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($linkEditar) ? (!empty($linkEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visível</label>
             <button type="submit"><?php echo !empty($linkEditar) ? 'Atualizar link' : 'Salvar link'; ?></button>
         </form>
 
         <div class="table-wrap" style="margin-top:12px;">
             <table class="admin-table">
-                <thead><tr><th>Titulo</th><th>Tipo</th><th>URL</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Título</th><th>Tipo</th><th>URL</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($links as $link): ?>
                         <tr>
@@ -307,4 +310,5 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         </div>
     </section>
 <?php endif; ?>
+</div>
 

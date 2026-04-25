@@ -1,6 +1,9 @@
-<section class="hero">
-    <h1>Configurações globais</h1>
-    <p>Regras institucionais, visuais, de seguranca, certificados, e-mail e financeiro.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Configurações globais</h1>
+        <p class="admin-page__subtitle">Regras institucionais, visuais, de segurança, certificados, e-mail e financeiro.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -23,7 +26,7 @@
             <input type="text" name="nome_fantasia" value="<?php echo htmlspecialchars((string) (isset($configuracoes['institucional']['nome_fantasia']) ? $configuracoes['institucional']['nome_fantasia'] : 'Polo Rainbow'), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
-            Razao social
+            Razão social
             <input type="text" name="razao_social" value="<?php echo htmlspecialchars((string) (isset($configuracoes['institucional']['razao_social']) ? $configuracoes['institucional']['razao_social'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
@@ -65,4 +68,5 @@
         <button type="submit">Salvar institucional</button>
     </form>
 </section>
+</div>
 

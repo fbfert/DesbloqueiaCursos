@@ -1,16 +1,19 @@
-<section class="hero">
-    <h1>Repasses</h1>
-    <p>Fechamento, documentos e pagamentos vinculados as apuracoes.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Repasses</h1>
+        <p class="admin-page__subtitle">Fechamento, documentos e pagamentos vinculados às apurações.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
 <section class="status-card">
-    <strong>Filtrar apuracao</strong>
+    <strong>Filtrar apuração</strong>
     <form method="get" action="/admin/financeiro/repasses" class="form-grid">
         <label>
-            Apuracao
+            Apuração
             <select name="apuracao_id">
                 <option value="0">Todas</option>
                 <?php foreach ($apuracoes as $apuracao): ?>
@@ -30,7 +33,7 @@
     <strong>Gerar repasses</strong>
     <form method="post" action="/admin/financeiro/repasses/gerar" class="form-grid">
         <label>
-            Apuracao
+            Apuração
             <select name="apuracao_id" required>
                 <option value="">Selecione</option>
                 <?php foreach ($apuracoes as $apuracao): ?>
@@ -55,7 +58,7 @@
                     <th>Competência</th>
                     <th>Professor</th>
                     <th>Tipo</th>
-                    <th>Base liquida</th>
+                    <th>Base líquida</th>
                     <th>Bruto</th>
                     <th>Retido</th>
                     <th>Líquido</th>
@@ -81,9 +84,9 @@
                         <td><?php echo htmlspecialchars($repasse['status'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
                             <?php if (!empty($repasse['documento_obrigatorio'])): ?>
-                                Obrigatorio
+                                Obrigatório
                             <?php else: ?>
-                                Não obrigatorio
+                                Não obrigatório
                             <?php endif; ?>
                             <br>
                             <small><?php echo htmlspecialchars((string) $repasse['documento_validado_em'], ENT_QUOTES, 'UTF-8'); ?></small>
@@ -132,17 +135,17 @@
                                         <input type="number" step="0.01" min="0" name="valor" value="<?php echo number_format((float) $repasse['valor_liquido'], 2, '.', ''); ?>">
                                     </label>
                                     <label>
-                                        Metodo
+                                        Método
                                         <select name="metodo">
                                             <option value="pix">PIX</option>
                                             <option value="ted">TED</option>
-                                            <option value="transferencia">Transferencia</option>
+                                            <option value="transferencia">Transferência</option>
                                             <option value="boleto">Boleto</option>
                                             <option value="outro">Outro</option>
                                         </select>
                                     </label>
                                     <label>
-                                        Referencia
+                                        Referência
                                         <input type="text" name="referencia_bancaria" maxlength="120">
                                     </label>
                                     <label>
@@ -161,4 +164,5 @@
         </table>
     </div>
 </section>
+</div>
 

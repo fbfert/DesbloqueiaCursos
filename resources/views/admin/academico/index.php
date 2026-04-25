@@ -1,8 +1,11 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="page-header">
-    <h1>Area academica</h1>
-    <p>Presenca, avaliacao, progresso e aptidao para certificado.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Área acadêmica</h1>
+        <p class="admin-page__subtitle">Presença, avaliação, progresso e aptidão para certificado.</p>
+    </div>
 </section>
 
 <?php if (!empty($success)): ?>
@@ -50,18 +53,18 @@
         <form method="post" action="/admin/academico/configuracao" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label class="checkbox"><input type="checkbox" name="exige_presenca" value="1" <?php echo !empty($configContext['exige_presenca']) ? 'checked' : ''; ?>> Exigir presenca</label>
-            <label>Min. presenca<input type="number" step="0.01" name="percentual_minimo_presenca" value="<?php echo Helpers::e(isset($configContext['percentual_minimo_presenca']) ? $configContext['percentual_minimo_presenca'] : '75.00'); ?>"></label>
-            <label>Min. conclusao<input type="number" step="0.01" name="percentual_minimo_conclusao" value="<?php echo Helpers::e(isset($configContext['percentual_minimo_conclusao']) ? $configContext['percentual_minimo_conclusao'] : '75.00'); ?>"></label>
-            <label class="checkbox"><input type="checkbox" name="exige_avaliacao" value="1" <?php echo !empty($configContext['exige_avaliacao']) ? 'checked' : ''; ?>> Exigir avaliacao</label>
-            <label>Nota minima<input type="number" step="0.01" name="nota_minima" value="<?php echo Helpers::e(isset($configContext['nota_minima']) ? $configContext['nota_minima'] : '70.00'); ?>"></label>
+            <label class="checkbox"><input type="checkbox" name="exige_presenca" value="1" <?php echo !empty($configContext['exige_presenca']) ? 'checked' : ''; ?>> Exigir presença</label>
+            <label>Mín. presença<input type="number" step="0.01" name="percentual_minimo_presenca" value="<?php echo Helpers::e(isset($configContext['percentual_minimo_presenca']) ? $configContext['percentual_minimo_presenca'] : '75.00'); ?>"></label>
+            <label>Mín. conclusão<input type="number" step="0.01" name="percentual_minimo_conclusao" value="<?php echo Helpers::e(isset($configContext['percentual_minimo_conclusao']) ? $configContext['percentual_minimo_conclusao'] : '75.00'); ?>"></label>
+            <label class="checkbox"><input type="checkbox" name="exige_avaliacao" value="1" <?php echo !empty($configContext['exige_avaliacao']) ? 'checked' : ''; ?>> Exigir avaliação</label>
+            <label>Nota mínima<input type="number" step="0.01" name="nota_minima" value="<?php echo Helpers::e(isset($configContext['nota_minima']) ? $configContext['nota_minima'] : '70.00'); ?>"></label>
             <label>Base do progresso
                 <select name="progresso_base">
                     <option value="aulas" <?php echo empty($configContext['progresso_base']) || $configContext['progresso_base'] === 'aulas' ? 'selected' : ''; ?>>Aulas</option>
-                    <option value="modulos" <?php echo !empty($configContext['progresso_base']) && $configContext['progresso_base'] === 'modulos' ? 'selected' : ''; ?>>Modulos</option>
+                    <option value="modulos" <?php echo !empty($configContext['progresso_base']) && $configContext['progresso_base'] === 'modulos' ? 'selected' : ''; ?>>Módulos</option>
                 </select>
             </label>
-            <button type="submit">Salvar configuracao</button>
+            <button type="submit">Salvar configuração</button>
         </form>
     </section>
 
@@ -94,7 +97,7 @@
     </section>
 
     <section class="panel">
-        <div class="panel-header"><div><h2>Presencas</h2></div></div>
+        <div class="panel-header"><div><h2>Presenças</h2></div></div>
         <form method="post" action="/admin/academico/presenca" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
@@ -114,28 +117,28 @@
                 </select>
             </label>
             <label>Observação<textarea name="observacao" rows="2"></textarea></label>
-            <button type="submit">Salvar presenca</button>
+            <button type="submit">Salvar presença</button>
         </form>
     </section>
 
     <section class="panel">
-        <div class="panel-header"><div><h2>Avaliacoes</h2></div></div>
+        <div class="panel-header"><div><h2>Avaliações</h2></div></div>
         <form method="post" action="/admin/academico/avaliacao" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Titulo<input type="text" name="titulo"></label>
+            <label>Título<input type="text" name="titulo"></label>
             <label>Descrição<textarea name="descricao" rows="2"></textarea></label>
-            <label>Percentual minimo<input type="number" step="0.01" name="percentual_minimo" value="0"></label>
-            <label>Nota minima<input type="number" step="0.01" name="nota_minima" value="70.00"></label>
+            <label>Percentual mínimo<input type="number" step="0.01" name="percentual_minimo" value="0"></label>
+            <label>Nota mínima<input type="number" step="0.01" name="nota_minima" value="70.00"></label>
             <label>Ordem<input type="number" name="ordem" value="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
-            <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1"> Obrigatoria</label>
-            <button type="submit">Salvar avaliacao</button>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visível</label>
+            <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1"> Obrigatória</label>
+            <button type="submit">Salvar avaliação</button>
         </form>
 
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">
-                <thead><tr><th>Titulo</th><th>Obrigatoria</th><th>Perguntas</th></tr></thead>
+                <thead><tr><th>Título</th><th>Obrigatória</th><th>Perguntas</th></tr></thead>
                 <tbody>
                     <?php foreach ($avaliacoes as $avaliacao): ?>
                         <tr>
@@ -161,7 +164,7 @@
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label>Avaliacao
+            <label>Avaliação
                 <select name="avaliacao_id">
                     <?php foreach ($avaliacoes as $avaliacao): ?>
                         <option value="<?php echo (int) $avaliacao['id']; ?>"><?php echo Helpers::e($avaliacao['titulo']); ?></option>
@@ -182,4 +185,5 @@
         </form>
     </section>
 <?php endif; ?>
+</div>
 

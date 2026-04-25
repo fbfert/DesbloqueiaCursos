@@ -1,6 +1,9 @@
-<section class="hero">
-    <h1>Catálogo</h1>
-    <p>Base de cursos, eventos, turmas, destaques e vinculos.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Catálogo</h1>
+        <p class="admin-page__subtitle">Base de cursos, eventos, turmas, destaques e vínculos.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -80,9 +83,9 @@
                 <tr>
                     <th>ID</th>
                     <th>Nome</th>
-                    <th>Codigo</th>
+                    <th>Código</th>
                     <th>Curso</th>
-                    <th>Inicio</th>
+                    <th>Início</th>
                     <th>Fim</th>
                     <th>Vagas</th>
                     <th>Status</th>
@@ -105,6 +108,7 @@
         </table>
     </div>
 </section>
+</div>
 
 <section class="status-card">
     <strong>Destaques</strong>

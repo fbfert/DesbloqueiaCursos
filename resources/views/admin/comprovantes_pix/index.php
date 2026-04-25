@@ -1,6 +1,9 @@
-<section class="hero">
-    <h1>Comprovantes PIX</h1>
-    <p>Analise administrativa dos comprovantes versionados.</p>
+<div class="admin-page">
+<section class="admin-page__header">
+    <div>
+        <h1 class="admin-page__title">Comprovantes PIX</h1>
+        <p class="admin-page__subtitle">Análise administrativa dos comprovantes versionados.</p>
+    </div>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -14,11 +17,11 @@
                 <tr>
                     <th>Pedido</th>
                     <th>Pagador</th>
-                    <th>Versao</th>
+                    <th>Versão</th>
                     <th>Status</th>
                     <th>Enviado em</th>
                     <th>Pedido</th>
-                    <th>Motivo reenvio</th>
+                    <th>Motivo do reenvio</th>
                     <th>Ações</th>
                 </tr>
             </thead>
@@ -62,4 +65,5 @@
         </table>
     </div>
 </section>
+</div>
 

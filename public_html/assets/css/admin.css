@@ -247,6 +247,42 @@
     margin-bottom: 6px;
 }
 
+.app-admin .panel,
+.app-admin .admin-section {
+    padding: 16px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: var(--admin-panel);
+}
+
+.app-admin .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.app-admin .panel-header h2 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.app-admin .page-header {
+    margin: 0;
+}
+
+.app-admin .page-header h1 {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1.15;
+}
+
+.app-admin .page-header p {
+    margin: 6px 0 0;
+    color: var(--admin-muted);
+}
+
 .app-admin .admin-kpi-value,
 .app-admin .dashboard-kpi__value {
     margin: 0;
@@ -321,6 +357,34 @@
     resize: vertical;
 }
 
+.app-admin .form-grid > button,
+.app-admin .admin-form > button {
+    min-height: 40px;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--admin-primary);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.app-admin .form-grid .checkbox,
+.app-admin .admin-form .checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.app-admin .form-grid .checkbox input,
+.app-admin .admin-form .checkbox input {
+    width: auto;
+    min-height: auto;
+    margin: 0;
+}
+
 .app-admin .full {
     grid-column: 1 / -1;
 }
@@ -372,6 +436,10 @@
     overflow-x: auto;
 }
 
+.app-admin .table-wrapper {
+    overflow-x: auto;
+}
+
 .app-admin .admin-table {
     width: 100%;
     min-width: 920px;
@@ -387,6 +455,31 @@
 }
 
 .app-admin .admin-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--admin-panel-muted);
+    color: var(--admin-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .table {
+    width: 100%;
+    min-width: 920px;
+    border-collapse: collapse;
+}
+
+.app-admin .table th,
+.app-admin .table td {
+    padding: 10px 11px;
+    border-bottom: 1px solid var(--admin-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.app-admin .table th {
     position: sticky;
     top: 0;
     z-index: 1;
