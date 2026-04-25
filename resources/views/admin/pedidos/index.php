@@ -15,47 +15,52 @@ foreach ((array) $pedidos as $pedidoResumo) {
 }
 ?>
 
-<section class="hero admin-dashboard-hero">
-    <div class="hero__content">
-        <h1>Pedidos</h1>
-        <p>Listagem administrativa de pedidos, participantes e comprovantes PIX.</p>
-    </div>
-    <div class="hero__panel admin-dashboard-hero__panel">
-        <strong>Resumo rapido</strong>
-        <div class="admin-dashboard-highlight">
-            <span>Pedidos listados</span>
-            <strong><?php echo (int) $totalPedidos; ?></strong>
-            <small>na tela atual</small>
+<div class="admin-page">
+    <section class="hero admin-dashboard-hero">
+        <div class="hero__content">
+            <h1>Pedidos</h1>
+            <p>Listagem administrativa de pedidos, participantes e comprovantes PIX.</p>
         </div>
-        <div class="admin-dashboard-highlight">
-            <span>Pedidos pendentes</span>
-            <strong><?php echo (int) $pendentes; ?></strong>
-            <small>com necessidade de acao</small>
+        <div class="hero__panel admin-dashboard-hero__panel">
+            <strong>Resumo rápido</strong>
+            <div class="admin-dashboard-highlight">
+                <span>Pedidos listados</span>
+                <strong><?php echo (int) $totalPedidos; ?></strong>
+                <small>na tela atual</small>
+            </div>
+            <div class="admin-dashboard-highlight">
+                <span>Pedidos pendentes</span>
+                <strong><?php echo (int) $pendentes; ?></strong>
+                <small>com necessidade de ação</small>
+            </div>
+            <div class="admin-dashboard-highlight">
+                <span>Com comprovante PIX</span>
+                <strong><?php echo (int) $comPix; ?></strong>
+                <small>com arquivo enviado</small>
+            </div>
         </div>
-        <div class="admin-dashboard-highlight">
-            <span>Com comprovante PIX</span>
-            <strong><?php echo (int) $comPix; ?></strong>
-            <small>com arquivo enviado</small>
+    </section>
+
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Atalhos de operação</h2>
         </div>
-    </div>
-</section>
+        <div class="quick-actions quick-actions--dashboard">
+            <a class="card-link admin-shortcut" href="/admin/comprovantes-pix"><span>Comprovantes PIX</span><small>Fila de análise e aprovação</small></a>
+            <a class="card-link admin-shortcut" href="/admin/inscricoes"><span>Inscrições</span><small>Acompanhar status de alunos</small></a>
+            <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
+        </div>
+    </section>
 
-<section class="status-card">
-    <strong>Atalhos de operacao</strong>
-    <div class="quick-actions quick-actions--dashboard">
-        <a class="card-link admin-shortcut" href="/admin/comprovantes-pix"><span>Comprovantes PIX</span><small>Fila de analise e aprovacao</small></a>
-        <a class="card-link admin-shortcut" href="/admin/inscricoes"><span>Inscrições</span><small>Acompanhar status de alunos</small></a>
-        <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
-    </div>
-</section>
+    <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
+    <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
-<?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
-<?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
-
-<section class="status-card">
-    <strong>Pedidos</strong>
-    <div class="table-wrap">
-        <table class="admin-table">
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Pedidos</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="admin-table">
             <thead>
                 <tr>
                     <th>Código</th>
@@ -101,7 +106,8 @@ foreach ((array) $pedidos as $pedidoResumo) {
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-        </table>
-    </div>
-</section>
+            </table>
+        </div>
+    </section>
+</div>
 

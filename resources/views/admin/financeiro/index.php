@@ -10,75 +10,80 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
 }
 ?>
 
-<section class="hero admin-dashboard-hero">
-    <div class="hero__content">
-        <h1>Financeiro</h1>
-        <p>Apuracoes mensais, repasses, perfil fiscal dos professores e parametros do rateio.</p>
-    </div>
-    <div class="hero__panel admin-dashboard-hero__panel">
-        <strong>Resumo rapido</strong>
-        <div class="admin-dashboard-highlight">
-            <span>Apuracoes registradas</span>
-            <strong><?php echo (int) $totalApuracoes; ?></strong>
-            <small>historico consolidado</small>
+<div class="admin-page">
+    <section class="hero admin-dashboard-hero">
+        <div class="hero__content">
+            <h1>Financeiro</h1>
+            <p>Apurações mensais, repasses, perfil fiscal dos professores e parâmetros do rateio.</p>
         </div>
-        <div class="admin-dashboard-highlight">
-            <span>Apuracoes em aberto</span>
-            <strong><?php echo (int) $apuracoesAbertas; ?></strong>
-            <small>pendentes de fechamento</small>
-        </div>
-        <div class="admin-dashboard-highlight">
-            <span>Perfis fiscais</span>
-            <strong><?php echo (int) $totalPerfisFiscais; ?></strong>
-            <small>professores cadastrados</small>
-        </div>
-    </div>
-</section>
-
-<section class="status-card">
-    <strong>Atalhos financeiros</strong>
-    <div class="quick-actions quick-actions--dashboard">
-        <a class="card-link admin-shortcut" href="/admin/financeiro/repasses"><span>Repasses</span><small>Geracao e pagamento por competencia</small></a>
-        <a class="card-link admin-shortcut" href="/admin/professores-fiscais"><span>Professores fiscais</span><small>Gestao detalhada de perfis</small></a>
-        <a class="card-link admin-shortcut" href="/admin/rateios"><span>Rateios</span><small>Acompanhamento por curso/turma</small></a>
-        <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
-    </div>
-</section>
-
-<?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
-<?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
-
-<section class="grid-2">
-    <article class="status-card">
-        <strong>Parametro atual</strong>
-        <p>Rateio maximo: <?php echo number_format((float) $configuracao_financeira['percentual_rateio_maximo'], 2, ',', '.'); ?>%</p>
-        <p>Fechamento por competencia: <?php echo htmlspecialchars((string) $configuracao_financeira['data_corte_financeiro'], ENT_QUOTES, 'UTF-8'); ?></p>
-        <p><?php echo htmlspecialchars((string) $configuracao_financeira['observacao_repasse'], ENT_QUOTES, 'UTF-8'); ?></p>
-    </article>
-
-    <article class="status-card">
-        <strong>Nova apuracao</strong>
-        <form method="post" action="/admin/financeiro/apurar" class="form-grid">
-            <label>
-                Competência
-                <input type="month" name="competencia" required>
-            </label>
-            <div>
-                <button type="submit">Apurar</button>
+        <div class="hero__panel admin-dashboard-hero__panel">
+            <strong>Resumo rápido</strong>
+            <div class="admin-dashboard-highlight">
+                <span>Apurações registradas</span>
+                <strong><?php echo (int) $totalApuracoes; ?></strong>
+                <small>histórico consolidado</small>
             </div>
-        </form>
-    </article>
-</section>
+            <div class="admin-dashboard-highlight">
+                <span>Apurações em aberto</span>
+                <strong><?php echo (int) $apuracoesAbertas; ?></strong>
+                <small>pendentes de fechamento</small>
+            </div>
+            <div class="admin-dashboard-highlight">
+                <span>Perfis fiscais</span>
+                <strong><?php echo (int) $totalPerfisFiscais; ?></strong>
+                <small>professores cadastrados</small>
+            </div>
+        </div>
+    </section>
 
-<section class="status-card">
-    <strong>Apuracoes</strong>
-    <div class="table-wrap">
-        <table class="admin-table">
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Atalhos financeiros</h2>
+        </div>
+        <div class="quick-actions quick-actions--dashboard">
+            <a class="card-link admin-shortcut" href="/admin/financeiro/repasses"><span>Repasses</span><small>Geração e pagamento por competência</small></a>
+            <a class="card-link admin-shortcut" href="/admin/professores-fiscais"><span>Professores fiscais</span><small>Gestão detalhada de perfis</small></a>
+            <a class="card-link admin-shortcut" href="/admin/rateios"><span>Rateios</span><small>Acompanhamento por curso/turma</small></a>
+            <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
+        </div>
+    </section>
+
+    <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
+    <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+
+    <section class="grid-2">
+        <article class="status-card">
+            <strong>Parâmetro atual</strong>
+            <p>Rateio máximo: <?php echo number_format((float) $configuracao_financeira['percentual_rateio_maximo'], 2, ',', '.'); ?>%</p>
+            <p>Fechamento por competência: <?php echo htmlspecialchars((string) $configuracao_financeira['data_corte_financeiro'], ENT_QUOTES, 'UTF-8'); ?></p>
+            <p><?php echo htmlspecialchars((string) $configuracao_financeira['observacao_repasse'], ENT_QUOTES, 'UTF-8'); ?></p>
+        </article>
+
+        <article class="status-card">
+            <strong>Nova apuração</strong>
+            <form method="post" action="/admin/financeiro/apurar" class="form-grid">
+                <label>
+                    Competência
+                    <input type="month" name="competencia" required>
+                </label>
+                <div class="full admin-actions">
+                    <button type="submit">Apurar</button>
+                </div>
+            </form>
+        </article>
+    </section>
+
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Apurações</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="admin-table">
             <thead>
                 <tr>
                     <th>Competência</th>
                     <th>Base bruta</th>
-                    <th>Liquida</th>
+                    <th>Líquida</th>
                     <th>Rateio</th>
                     <th>Retido</th>
                     <th>Status</th>
@@ -88,7 +93,7 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
             <tbody>
                 <?php if (empty($apuracoes)): ?>
                     <tr>
-                        <td colspan="7">Nenhuma apuracao encontrada.</td>
+                        <td colspan="7">Nenhuma apuração encontrada.</td>
                     </tr>
                 <?php endif; ?>
                 <?php foreach ($apuracoes as $apuracao): ?>
@@ -103,13 +108,15 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-        </table>
-    </div>
-</section>
+            </table>
+        </div>
+    </section>
 
-<section class="status-card">
-    <strong>Perfil fiscal dos professores</strong>
-    <form method="post" action="/admin/financeiro/professor-fiscal" class="form-grid">
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Perfil fiscal dos professores</h2>
+        </div>
+        <form method="post" action="/admin/financeiro/professor-fiscal" class="form-grid">
         <label>
             Professor
             <select name="usuario_id" required>
@@ -141,7 +148,7 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
         </label>
 
         <label>
-            Razao social
+            Razão social
             <input type="text" name="razao_social" maxlength="191">
         </label>
 
@@ -156,7 +163,7 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
         </label>
 
         <label>
-            Alíquota de retencao (%)
+            Alíquota de retenção (%)
             <input type="number" step="0.01" min="0" max="100" name="aliquota_retencao" value="0.00">
         </label>
 
@@ -186,13 +193,15 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
         <div class="full">
             <button type="submit">Salvar perfil fiscal</button>
         </div>
-    </form>
-</section>
+        </form>
+    </section>
 
-<section class="status-card">
-    <strong>Perfis cadastrados</strong>
-    <div class="table-wrap">
-        <table class="admin-table">
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Perfis cadastrados</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="admin-table">
             <thead>
                 <tr>
                     <th>Professor</th>
@@ -220,7 +229,8 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-        </table>
-    </div>
-</section>
+            </table>
+        </div>
+    </section>
+</div>
 

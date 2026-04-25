@@ -1,11 +1,11 @@
 <?php
 use App\Core\Helpers;
-use App\Services\ConfiguraçãoGlobalService;
+use App\Services\ConfiguracaoGlobalService;
 
 $pageTitle = isset($title) ? $title : 'Polo Rainbow';
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $requestPath = $requestPath ?: '/';
-$globalConfigService = new ConfiguraçãoGlobalService();
+$globalConfigService = new ConfiguracaoGlobalService();
 $institucional = $globalConfigService->institucional();
 $frontend = $globalConfigService->frontend();
 $brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : 'Polo Rainbow';
@@ -28,6 +28,9 @@ $publicMenu = array(
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="/assets/css/app.css">
+    <?php if ($isAdmin): ?>
+        <link rel="stylesheet" href="/assets/css/admin.css">
+    <?php endif; ?>
 </head>
 <body class="<?php echo Helpers::e($scopeClass); ?> theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
     <?php if ($isAdmin): ?>
@@ -102,4 +105,5 @@ $publicMenu = array(
     <?php endif; ?>
 </body>
 </html>
+
 

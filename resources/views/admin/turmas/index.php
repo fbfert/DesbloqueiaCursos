@@ -4,32 +4,36 @@
 
 <?php $canManage = (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar'); ?>
 
-<section class="hero">
-    <h1>Turmas</h1>
-    <p>Instancias do catalogo para operacao e acompanhamento.</p>
-</section>
-
-<?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
-<?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
-
-<?php if ($canManage): ?>
-    <section class="quick-actions">
-        <a class="card-link" href="/admin/turmas/criar">Nova turma</a>
+<div class="admin-page">
+    <section class="admin-page__header">
+        <div>
+            <h1 class="admin-page__title">Turmas</h1>
+            <p class="admin-page__subtitle">Instâncias do catálogo para operação e acompanhamento.</p>
+        </div>
+        <?php if ($canManage): ?>
+            <div class="admin-page__actions">
+                <a class="button-link" href="/admin/turmas/criar">Nova turma</a>
+            </div>
+        <?php endif; ?>
     </section>
-<?php endif; ?>
 
-<section class="status-card">
-    <strong>Turmas cadastradas</strong>
-    <div class="table-wrap">
-        <table class="admin-table">
+    <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
+    <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Turmas cadastradas</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="admin-table">
             <thead>
                 <tr>
                     <th>Nome</th>
-                    <th>Codigo</th>
+                    <th>Código</th>
                     <th>Curso</th>
                     <th>Professor</th>
                     <th>Modalidade</th>
-                    <th>Inicio</th>
+                    <th>Início</th>
                     <th>Fim</th>
                     <th>Status</th>
                     <th>Ações</th>
@@ -65,7 +69,8 @@
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-        </table>
-    </div>
-</section>
+            </table>
+        </div>
+    </section>
+</div>
 

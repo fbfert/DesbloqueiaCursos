@@ -10,46 +10,51 @@ foreach ((array) $permissions as $grupoPermissoes) {
 }
 ?>
 
-<section class="hero admin-dashboard-hero">
-    <div class="hero__content">
-        <h1>RBAC</h1>
-        <p>Perfis, permissoes e controle de acesso.</p>
-    </div>
-    <div class="hero__panel admin-dashboard-hero__panel">
-        <strong>Resumo rapido</strong>
-        <div class="admin-dashboard-highlight">
-            <span>Perfis ativos</span>
-            <strong><?php echo (int) $totalPerfis; ?></strong>
-            <small>grupos de acesso cadastrados</small>
+<div class="admin-page">
+    <section class="hero admin-dashboard-hero">
+        <div class="hero__content">
+            <h1>RBAC</h1>
+            <p>Perfis, permissões e controle de acesso.</p>
         </div>
-        <div class="admin-dashboard-highlight">
-            <span>Permissões</span>
-            <strong><?php echo (int) $totalPermissoes; ?></strong>
-            <small>regras disponiveis</small>
+        <div class="hero__panel admin-dashboard-hero__panel">
+            <strong>Resumo rápido</strong>
+            <div class="admin-dashboard-highlight">
+                <span>Perfis ativos</span>
+                <strong><?php echo (int) $totalPerfis; ?></strong>
+                <small>grupos de acesso cadastrados</small>
+            </div>
+            <div class="admin-dashboard-highlight">
+                <span>Permissões</span>
+                <strong><?php echo (int) $totalPermissoes; ?></strong>
+                <small>regras disponíveis</small>
+            </div>
+            <div class="admin-dashboard-highlight">
+                <span>Módulos</span>
+                <strong><?php echo (int) $totalModulos; ?></strong>
+                <small>agrupamentos de permissão</small>
+            </div>
         </div>
-        <div class="admin-dashboard-highlight">
-            <span>Modulos</span>
-            <strong><?php echo (int) $totalModulos; ?></strong>
-            <small>agrupamentos de permissao</small>
+    </section>
+
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Atalhos de acesso</h2>
         </div>
-    </div>
-</section>
+        <div class="quick-actions quick-actions--dashboard">
+            <a class="card-link admin-shortcut" href="/admin/configuracoes-globais/seguranca"><span>Configurações de segurança</span><small>Políticas gerais de acesso</small></a>
+            <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
+        </div>
+    </section>
 
-<section class="status-card">
-    <strong>Atalhos de acesso</strong>
-    <div class="quick-actions quick-actions--dashboard">
-        <a class="card-link admin-shortcut" href="/admin/configuracoes-globais/seguranca"><span>Configurações de seguranca</span><small>Politicas gerais de acesso</small></a>
-        <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
-    </div>
-</section>
+    <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
+    <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
-<?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
-<?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
-
-<section class="status-card">
-    <strong>Perfis</strong>
-    <div class="table-wrap">
-        <table class="admin-table">
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Perfis</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="admin-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -68,16 +73,18 @@ foreach ((array) $permissions as $grupoPermissoes) {
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-        </table>
-    </div>
-</section>
+            </table>
+        </div>
+    </section>
 
-<section class="status-card">
-    <strong>Permissões</strong>
-    <?php foreach ($permissions as $module => $items): ?>
-        <h2><?php echo htmlspecialchars($module, ENT_QUOTES, 'UTF-8'); ?></h2>
-        <div class="table-wrap">
-            <table class="admin-table">
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Permissões</h2>
+        </div>
+        <?php foreach ($permissions as $module => $items): ?>
+            <h3><?php echo htmlspecialchars($module, ENT_QUOTES, 'UTF-8'); ?></h3>
+            <div class="table-wrap">
+                <table class="admin-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -96,14 +103,16 @@ foreach ((array) $permissions as $grupoPermissoes) {
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
-            </table>
-        </div>
-    <?php endforeach; ?>
-</section>
+                </table>
+            </div>
+        <?php endforeach; ?>
+    </section>
 
-<section class="status-card">
-    <strong>Atribuir permissoes a perfil</strong>
-    <form method="post" action="/admin/rbac/perfis/permissoes" class="admin-form">
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Atribuir permissões a perfil</h2>
+        </div>
+        <form method="post" action="/admin/rbac/perfis/permissoes" class="admin-form">
         <label>
             Perfil
             <select name="perfil_id" required>
@@ -126,15 +135,17 @@ foreach ((array) $permissions as $grupoPermissoes) {
                 </div>
             <?php endforeach; ?>
         </div>
-        <button type="submit">Salvar permissoes</button>
-    </form>
-</section>
+            <button type="submit">Salvar permissões</button>
+        </form>
+    </section>
 
-<section class="status-card">
-    <strong>Atribuir perfis a usuario</strong>
-    <form method="post" action="/admin/rbac/usuarios/perfis" class="admin-form">
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Atribuir perfis a usuário</h2>
+        </div>
+        <form method="post" action="/admin/rbac/usuarios/perfis" class="admin-form">
         <label>
-            ID do usuario
+            ID do usuário
             <input type="number" name="usuario_id" min="1" required>
         </label>
         <div class="permission-grid">
@@ -146,6 +157,7 @@ foreach ((array) $permissions as $grupoPermissoes) {
             <?php endforeach; ?>
         </div>
         <button type="submit">Salvar perfis</button>
-    </form>
-</section>
+        </form>
+    </section>
+</div>
 

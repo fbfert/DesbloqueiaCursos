@@ -4,24 +4,28 @@
 
 <?php $canManage = (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar'); ?>
 
-<section class="hero">
-    <h1>Cursos e eventos</h1>
-    <p>Operação administrativa do catalogo principal.</p>
-</section>
-
-<?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
-<?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
-
-<?php if ($canManage): ?>
-    <section class="quick-actions">
-        <a class="card-link" href="/admin/cursos/criar">Novo curso/evento</a>
+<div class="admin-page">
+    <section class="admin-page__header">
+        <div>
+            <h1 class="admin-page__title">Cursos e eventos</h1>
+            <p class="admin-page__subtitle">Operação administrativa do catálogo principal.</p>
+        </div>
+        <?php if ($canManage): ?>
+            <div class="admin-page__actions">
+                <a class="button-link" href="/admin/cursos/criar">Novo curso/evento</a>
+            </div>
+        <?php endif; ?>
     </section>
-<?php endif; ?>
 
-<section class="status-card">
-    <strong>Cursos e eventos</strong>
-    <div class="table-wrap">
-        <table class="admin-table">
+    <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
+    <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Cursos e eventos</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="admin-table">
             <thead>
                 <tr>
                     <th>Nome</th>
@@ -63,7 +67,8 @@
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-        </table>
-    </div>
-</section>
+            </table>
+        </div>
+    </section>
+</div>
 
