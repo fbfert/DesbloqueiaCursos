@@ -80,7 +80,7 @@
                             <td><?php echo Helpers::e(isset($inscricao['percentual_progresso']) ? $inscricao['percentual_progresso'] . '%' : '-'); ?></td>
                             <td><?php echo Helpers::e(isset($inscricao['presenca_percentual']) ? $inscricao['presenca_percentual'] . '%' : '-'); ?></td>
                             <td><?php echo Helpers::e(isset($inscricao['nota_final']) ? $inscricao['nota_final'] : '-'); ?></td>
-                            <td><?php echo !empty($inscricao['apto_certificado']) ? 'sim' : 'não'; ?></td>
+                            <td><?php echo !empty($inscricao['apto_certificado']) ? 'Sim' : 'Não'; ?></td>
                             <td>
                                 <form method="post" action="/admin/academico/recalcular" class="form-grid">
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
@@ -143,7 +143,7 @@
                     <?php foreach ($avaliacoes as $avaliacao): ?>
                         <tr>
                             <td><?php echo Helpers::e($avaliacao['titulo']); ?></td>
-                            <td><?php echo !empty($avaliacao['obrigatoria']) ? 'sim' : 'não'; ?></td>
+                            <td><?php echo !empty($avaliacao['obrigatoria']) ? 'Sim' : 'Não'; ?></td>
                             <td><?php echo count(isset($avaliacao['perguntas']) ? $avaliacao['perguntas'] : array()); ?></td>
                         </tr>
                     <?php endforeach; ?>

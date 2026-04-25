@@ -36,7 +36,7 @@
         <div><dt>Participante</dt><dd><?php echo Helpers::e($certificado['participante_nome']); ?></dd></div>
         <div><dt>CPF</dt><dd><?php echo Helpers::e($certificado['cpf_participante']); ?></dd></div>
         <div><dt>Curso</dt><dd><?php echo Helpers::e($certificado['curso_nome']); ?></dd></div>
-        <div><dt>Turma</dt><dd><?php echo Helpers::e(isset($certificado['turma_nome']) ? $certificado['turma_nome'] : 'N/A'); ?></dd></div>
+        <div><dt>Turma</dt><dd><?php echo Helpers::e(isset($certificado['turma_nome']) ? $certificado['turma_nome'] : 'Não informada'); ?></dd></div>
     </dl>
 
     <div class="pill-row admin-mt-16">

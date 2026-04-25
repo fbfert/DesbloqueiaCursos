@@ -52,15 +52,15 @@
                             <form method="post" action="/admin/inscricoes/status" class="admin-form">
                                 <input type="hidden" name="inscricao_id" value="<?php echo (int) $inscricao['id']; ?>">
                                 <select name="status">
-                                    <option value="pendente" <?php echo $inscricao['status'] === 'pendente' ? 'selected' : ''; ?>>pendente</option>
-                                    <option value="ativa" <?php echo $inscricao['status'] === 'ativa' ? 'selected' : ''; ?>>ativa</option>
-                                    <option value="em_andamento" <?php echo $inscricao['status'] === 'em_andamento' ? 'selected' : ''; ?>>em andamento</option>
-                                    <option value="com_pendencia" <?php echo $inscricao['status'] === 'com_pendencia' ? 'selected' : ''; ?>>com pendência</option>
-                                    <option value="cancelada" <?php echo $inscricao['status'] === 'cancelada' ? 'selected' : ''; ?>>cancelada</option>
-                                    <option value="reprovada" <?php echo $inscricao['status'] === 'reprovada' ? 'selected' : ''; ?>>reprovada</option>
-                                    <option value="concluida" <?php echo $inscricao['status'] === 'concluida' ? 'selected' : ''; ?>>concluída</option>
-                                    <option value="concluida_sem_certificado" <?php echo $inscricao['status'] === 'concluida_sem_certificado' ? 'selected' : ''; ?>>concluída sem certificado</option>
-                                    <option value="certificado_emitido" <?php echo $inscricao['status'] === 'certificado_emitido' ? 'selected' : ''; ?>>certificado emitido</option>
+                                    <option value="pendente" <?php echo $inscricao['status'] === 'pendente' ? 'selected' : ''; ?>>Pendente</option>
+                                    <option value="ativa" <?php echo $inscricao['status'] === 'ativa' ? 'selected' : ''; ?>>Ativa</option>
+                                    <option value="em_andamento" <?php echo $inscricao['status'] === 'em_andamento' ? 'selected' : ''; ?>>Em andamento</option>
+                                    <option value="com_pendencia" <?php echo $inscricao['status'] === 'com_pendencia' ? 'selected' : ''; ?>>Com pendência</option>
+                                    <option value="cancelada" <?php echo $inscricao['status'] === 'cancelada' ? 'selected' : ''; ?>>Cancelada</option>
+                                    <option value="reprovada" <?php echo $inscricao['status'] === 'reprovada' ? 'selected' : ''; ?>>Reprovada</option>
+                                    <option value="concluida" <?php echo $inscricao['status'] === 'concluida' ? 'selected' : ''; ?>>Concluída</option>
+                                    <option value="concluida_sem_certificado" <?php echo $inscricao['status'] === 'concluida_sem_certificado' ? 'selected' : ''; ?>>Concluída sem certificado</option>
+                                    <option value="certificado_emitido" <?php echo $inscricao['status'] === 'certificado_emitido' ? 'selected' : ''; ?>>Certificado emitido</option>
                                 </select>
                                 <input type="text" name="observacao" placeholder="Observação">
                                 <button type="submit">Salvar</button>
