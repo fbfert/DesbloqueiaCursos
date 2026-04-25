@@ -12,7 +12,7 @@
 <section class="status-card">
     <strong>Categorias</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--catalogo-categorias">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -40,7 +40,7 @@
 <section class="status-card">
     <strong>Cursos e eventos</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--catalogo-cursos">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -78,7 +78,7 @@
 <section class="status-card">
     <strong>Turmas</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--catalogo-turmas">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -107,13 +107,10 @@
             </tbody>
         </table>
     </div>
-</section>
-</div>
-
 <section class="status-card">
     <strong>Destaques</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--catalogo-destaques">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -137,4 +134,5 @@
         </table>
     </div>
 </section>
+</div>
 

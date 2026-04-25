@@ -674,6 +674,46 @@
     min-width: 220px;
 }
 
+.app-admin .admin-table--rbac-perfis th:nth-child(2),
+.app-admin .admin-table--rbac-perfis td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--rbac-permissoes th:nth-child(2),
+.app-admin .admin-table--rbac-permissoes td:nth-child(2),
+.app-admin .admin-table--rbac-permissoes th:nth-child(4),
+.app-admin .admin-table--rbac-permissoes td:nth-child(4) {
+    min-width: 240px;
+}
+
+.app-admin .admin-table--catalogo-categorias th:nth-child(2),
+.app-admin .admin-table--catalogo-categorias td:nth-child(2),
+.app-admin .admin-table--catalogo-categorias th:nth-child(3),
+.app-admin .admin-table--catalogo-categorias td:nth-child(3) {
+    min-width: 180px;
+}
+
+.app-admin .admin-table--catalogo-cursos th:nth-child(2),
+.app-admin .admin-table--catalogo-cursos td:nth-child(2),
+.app-admin .admin-table--catalogo-cursos th:nth-child(4),
+.app-admin .admin-table--catalogo-cursos td:nth-child(4) {
+    min-width: 210px;
+}
+
+.app-admin .admin-table--catalogo-turmas th:nth-child(2),
+.app-admin .admin-table--catalogo-turmas td:nth-child(2),
+.app-admin .admin-table--catalogo-turmas th:nth-child(4),
+.app-admin .admin-table--catalogo-turmas td:nth-child(4) {
+    min-width: 200px;
+}
+
+.app-admin .admin-table--catalogo-destaques th:nth-child(2),
+.app-admin .admin-table--catalogo-destaques td:nth-child(2),
+.app-admin .admin-table--catalogo-destaques th:nth-child(3),
+.app-admin .admin-table--catalogo-destaques td:nth-child(3) {
+    min-width: 220px;
+}
+
 .app-admin .hero {
     padding: 0;
     gap: 14px;

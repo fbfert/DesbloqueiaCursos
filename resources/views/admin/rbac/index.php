@@ -54,7 +54,7 @@ foreach ((array) $permissions as $grupoPermissoes) {
             <h2 class="admin-section__title">Perfis</h2>
         </div>
         <div class="table-wrap">
-            <table class="admin-table">
+            <table class="admin-table admin-table--rbac-perfis">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -84,7 +84,7 @@ foreach ((array) $permissions as $grupoPermissoes) {
         <?php foreach ($permissions as $module => $items): ?>
             <h3><?php echo htmlspecialchars($module, ENT_QUOTES, 'UTF-8'); ?></h3>
             <div class="table-wrap">
-                <table class="admin-table">
+                <table class="admin-table admin-table--rbac-permissoes">
                 <thead>
                     <tr>
                         <th>ID</th>
