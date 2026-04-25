@@ -249,12 +249,21 @@ class CursoService
         $cursos = $this->cursoModel->allPublic();
 
         foreach ($cursos as &$curso) {
-            $curso['turmas'] = $this->turmaModel->forCourse($curso['id']);
-            $curso['pessoas_vinculadas'] = $this->cursoPessoaModel->forCourse($curso['id']);
+            $curso['professor_responsavel'] = $this->cursoPessoaModel->findProfessorResponsavel($curso['id']);
+            $curso['turmas_abertas'] = $this->turmaModel->forPublicCourse($curso['id'], true);
+            $curso['total_turmas_abertas'] = count($curso['turmas_abertas']);
         }
         unset($curso);
 
         return array('cursos' => $cursos);
+    }
+
+    public function listPublicHome($limit = 3)
+    {
+        $contexto = $this->listPublic();
+        $cursos = isset($contexto['cursos']) ? $contexto['cursos'] : array();
+
+        return array_slice($cursos, 0, max(1, (int) $limit));
     }
 
     public function showPublic($cursoId, $turmaId = null)
@@ -265,20 +274,45 @@ class CursoService
             return array('curso' => null);
         }
 
-        $curso['turmas'] = $this->turmaModel->forCourse($cursoId);
-        $curso['pessoas_vinculadas'] = $this->cursoPessoaModel->forCourse($cursoId);
+        $curso['professor_responsavel'] = $this->cursoPessoaModel->findProfessorResponsavel($cursoId);
+        $curso['turmas_abertas'] = $this->turmaModel->forPublicCourse($cursoId, true);
+        $curso['turmas'] = $curso['turmas_abertas'];
         $curso['turma_selecionada'] = null;
+        $curso['inscricao_disponivel'] = !empty($curso['turmas_abertas']);
 
         if ($turmaId) {
-            foreach ($curso['turmas'] as $turma) {
-                if ((int) $turma['id'] === (int) $turmaId) {
-                    $curso['turma_selecionada'] = $turma;
-                    break;
-                }
-            }
+            $curso['turma_selecionada'] = $this->turmaModel->findPublicOpenForCourse($cursoId, $turmaId);
+        }
+
+        if ($curso['turma_selecionada'] === null && !empty($curso['turmas_abertas'])) {
+            $curso['turma_selecionada'] = $curso['turmas_abertas'][0];
         }
 
         return array('curso' => $curso);
+    }
+
+    public function validarTurmaPublicaParaInscricao($cursoId, $turmaId = null)
+    {
+        $curso = $this->cursoModel->findPublicById($cursoId);
+        if (!$curso) {
+            return array('ok' => false, 'message' => 'Curso nao encontrado.');
+        }
+
+        $usarTurmas = isset($curso['usar_turmas']) ? (int) $curso['usar_turmas'] : 1;
+        if ($usarTurmas !== 1) {
+            return array('ok' => true, 'curso' => $curso, 'turma' => null);
+        }
+
+        if ((int) $turmaId <= 0) {
+            return array('ok' => false, 'message' => 'Selecione uma turma aberta para continuar.');
+        }
+
+        $turma = $this->turmaModel->findPublicOpenForCourse($cursoId, $turmaId);
+        if (!$turma) {
+            return array('ok' => false, 'message' => 'A turma selecionada nao esta aberta para inscricao.');
+        }
+
+        return array('ok' => true, 'curso' => $curso, 'turma' => $turma);
     }
 
     public function modalidadeLabel($modalidade)

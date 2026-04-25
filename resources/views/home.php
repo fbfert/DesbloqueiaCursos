@@ -1,9 +1,24 @@
-<section class="hero">
-    <h1>Polo Rainbow</h1>
-    <p>Bootstrap PHP MVC preparado para evoluir para um portal de cursos e eventos.</p>
-    <div class="cta-group">
-        <a class="button-link" href="/cursos">Ver cursos</a>
-        <a class="button-link button-link--ghost" href="/meus-cursos">Meus Cursos</a>
+<?php use App\Core\Helpers; ?>
+
+<section class="hero hero--public">
+    <div class="hero__content">
+        <span class="eyebrow">Portal de cursos</span>
+        <h1>Formacoes com turmas publicas, inscricao guiada e acesso separado por perfil.</h1>
+        <p>O portal publico consome o catalogo do backoffice sem expor dados administrativos. Aqui entram apenas cursos ativos, turmas abertas e a porta de entrada da inscricao.</p>
+        <div class="cta-group">
+            <a class="button-link" href="/cursos">Explorar cursos</a>
+            <a class="button-link button-link--ghost" href="/como-funciona">Como funciona</a>
+        </div>
+    </div>
+    <div class="hero__panel">
+        <div class="hero-stat">
+            <strong><?php echo count($cursos); ?></strong>
+            <span>Cursos em destaque agora</span>
+        </div>
+        <div class="hero-stat">
+            <strong>100%</strong>
+            <span>Fluxo publico separado do admin e da area do professor</span>
+        </div>
     </div>
 </section>
 
@@ -26,22 +41,22 @@
 
 <section class="status-grid" aria-label="Status da estrutura">
     <article class="status-card">
-        <strong>MVC</strong>
-        <span>Controllers, Services, Models e Views separados.</span>
+        <strong>Catalogo publico</strong>
+        <span>Lista apenas cursos ativos e publicaveis, sem depender de permissao administrativa.</span>
     </article>
     <article class="status-card">
-        <strong>API futura</strong>
-        <span>Rotas web e API separadas desde o inicio.</span>
+        <strong>Detalhe seguro</strong>
+        <span>O detalhe do curso exibe somente professor responsavel e turmas abertas para inscricao.</span>
     </article>
     <article class="status-card">
-        <strong>Storage privado</strong>
-        <span>Arquivos sensiveis devem ficar fora da pasta publica.</span>
+        <strong>Inscricao inicial</strong>
+        <span>O frontend encaminha a inscricao apenas para turma aberta e vinculada ao curso correto.</span>
     </article>
 </section>
 
 <section class="page-header">
-    <h2>Cursos ativos</h2>
-    <p>Lista inicial para iniciar o fluxo de inscrição.</p>
+    <h2>Cursos ativos em destaque</h2>
+    <p>Entrada inicial do portal publico usando o catalogo ja mantido no backend/admin.</p>
 </section>
 
 <section class="card-grid">
@@ -51,16 +66,26 @@
             <span>O catalogo ainda esta vazio.</span>
         </article>
     <?php else: ?>
-        <?php foreach (array_slice($cursos, 0, 3) as $curso): ?>
+        <?php foreach ($cursos as $curso): ?>
             <article class="course-card">
+                <?php if (!empty($curso['thumbnail'])): ?>
+                    <div class="course-card__image">
+                        <img src="<?php echo Helpers::e($curso['thumbnail']); ?>" alt="<?php echo Helpers::e($curso['nome']); ?>">
+                    </div>
+                <?php endif; ?>
                 <div class="course-card__media">
-                    <strong><?php echo htmlspecialchars($curso['nome'], ENT_QUOTES, 'UTF-8'); ?></strong>
-                    <span><?php echo htmlspecialchars($curso['categoria_nome'], ENT_QUOTES, 'UTF-8'); ?></span>
+                    <strong><?php echo Helpers::e($curso['nome']); ?></strong>
+                    <span><?php echo Helpers::e($curso['categoria_nome'] ?: 'Sem categoria'); ?></span>
                 </div>
                 <div class="course-card__body">
-                    <p><?php echo htmlspecialchars($curso['descricao_curta'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    <div class="pill-row">
+                        <span class="pill"><?php echo Helpers::e($curso['tipo']); ?></span>
+                        <span class="pill"><?php echo Helpers::e($curso['modalidade']); ?></span>
+                        <span class="pill"><?php echo (int) $curso['total_turmas_abertas']; ?> turma(s) aberta(s)</span>
+                    </div>
+                    <p><?php echo Helpers::e($curso['descricao_curta']); ?></p>
                     <div class="cta-group">
-                        <a class="button-link" href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>">Abrir</a>
+                        <a class="button-link" href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>">Ver detalhes</a>
                     </div>
                 </div>
             </article>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\HomeController;
+use App\Controllers\PagesController;
 use App\Controllers\AuthController;
 use App\Controllers\Admin\RbacController;
 use App\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -34,6 +35,11 @@ use App\Controllers\Professor\FinanceiroController as ProfessorFinanceiroControl
 $app->get('/', array(HomeController::class, 'index'));
 $app->get('/cursos', array(PublicCursosController::class, 'index'));
 $app->get('/cursos/detalhe', array(PublicCursosController::class, 'show'));
+$app->get('/como-funciona', array(PagesController::class, 'comoFunciona'));
+$app->get('/sobre', array(PagesController::class, 'sobre'));
+$app->get('/contato', array(PagesController::class, 'contato'));
+$app->get('/inscricao', array(CheckoutController::class, 'inscricao'));
+$app->post('/inscricao', array(CheckoutController::class, 'inscricao'));
 $app->get('/checkout/inscricao', array(CheckoutController::class, 'inscricao'));
 $app->post('/checkout/inscricao', array(CheckoutController::class, 'inscricao'));
 $app->get('/checkout/participantes', array(CheckoutController::class, 'participantes'));

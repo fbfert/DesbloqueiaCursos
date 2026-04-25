@@ -44,6 +44,11 @@ class CheckoutController extends Controller
             )), 404);
         }
 
+        if (!empty($curso['curso']['usar_turmas']) && empty($curso['curso']['turma_selecionada'])) {
+            Session::flash('errors', array('turma' => 'Selecione uma turma aberta para iniciar a inscricao.'));
+            return $this->redirect('/cursos/detalhe?curso_id=' . $cursoId);
+        }
+
         return $this->view('checkout/inscricao', array(
             'title' => 'Inscricao',
             'curso' => $curso['curso'],
@@ -376,6 +381,15 @@ class CheckoutController extends Controller
 
         if ((int) $request->input('curso_evento_id', 0) <= 0) {
             $errors[] = 'Selecione um curso valido.';
+        }
+
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if ($cursoId > 0) {
+            $validacaoTurma = $this->cursoService->validarTurmaPublicaParaInscricao($cursoId, $turmaId ?: null);
+            if (empty($validacaoTurma['ok'])) {
+                $errors[] = isset($validacaoTurma['message']) ? $validacaoTurma['message'] : 'A turma selecionada nao esta disponivel para inscricao.';
+            }
         }
 
         if ((int) $request->input('quantidade', 0) <= 0) {

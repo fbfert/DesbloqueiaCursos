@@ -31,7 +31,23 @@
 <?php endif; ?>
 
 <?php if (!empty($loggedIn)): ?>
-    <form class="admin-form checkout-form" method="post" action="/checkout/inscricao">
+    <section class="checkout-panel">
+        <h2>Resumo da inscricao</h2>
+        <dl class="summary-list">
+            <dt>Curso</dt>
+            <dd><?php echo Helpers::e($curso['nome']); ?></dd>
+            <?php if (!empty($curso['turma_selecionada']['nome'])): ?>
+                <dt>Turma</dt>
+                <dd><?php echo Helpers::e($curso['turma_selecionada']['nome']); ?></dd>
+                <dt>Status</dt>
+                <dd><?php echo Helpers::e($curso['turma_selecionada']['status']); ?></dd>
+            <?php endif; ?>
+            <dt>Valor</dt>
+            <dd>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></dd>
+        </dl>
+    </section>
+
+    <form class="admin-form checkout-form" method="post" action="/inscricao">
         <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
         <input type="hidden" name="turma_id" value="<?php echo !empty($curso['turma_selecionada']['id']) ? (int) $curso['turma_selecionada']['id'] : ''; ?>">
 

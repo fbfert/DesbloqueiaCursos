@@ -2,7 +2,7 @@
 
 <section class="page-header">
     <h1><?php echo Helpers::e($curso['nome']); ?></h1>
-    <p><?php echo Helpers::e($curso['descricao_curta']); ?></p>
+    <p><?php echo Helpers::e($curso['descricao_curta'] ?: 'Curso disponivel para inscricao publica.'); ?></p>
 </section>
 
 <?php if (!empty($success)): ?>
@@ -29,35 +29,49 @@
 <section class="checkout-grid">
     <article class="checkout-panel">
         <h2>Detalhes</h2>
+        <?php if (!empty($curso['thumbnail'])): ?>
+            <div class="course-detail__image">
+                <img src="<?php echo Helpers::e($curso['thumbnail']); ?>" alt="<?php echo Helpers::e($curso['nome']); ?>">
+            </div>
+        <?php endif; ?>
         <dl class="summary-list">
             <dt>Categoria</dt>
-            <dd><?php echo Helpers::e($curso['categoria_nome']); ?></dd>
+            <dd><?php echo Helpers::e($curso['categoria_nome'] ?: 'Sem categoria'); ?></dd>
             <dt>Tipo</dt>
             <dd><?php echo Helpers::e($curso['tipo']); ?></dd>
             <dt>Modalidade</dt>
             <dd><?php echo Helpers::e($curso['modalidade']); ?></dd>
             <dt>Valor</dt>
-            <dd><?php echo Helpers::e($curso['valor']); ?></dd>
+            <dd>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></dd>
+            <?php if (!empty($curso['professor_responsavel']['nome'])): ?>
+                <dt>Professor responsavel</dt>
+                <dd><?php echo Helpers::e($curso['professor_responsavel']['nome']); ?></dd>
+            <?php endif; ?>
         </dl>
-        <p><?php echo Helpers::e($curso['descricao_completa']); ?></p>
+        <p><?php echo Helpers::e($curso['descricao_completa'] ?: $curso['descricao_curta']); ?></p>
     </article>
 
     <article class="checkout-panel">
-        <h2>Turmas</h2>
-        <?php if (empty($curso['turmas'])): ?>
-            <p class="muted">Nenhuma turma cadastrada para este item.</p>
+        <h2>Turmas abertas</h2>
+        <?php if (empty($curso['turmas_abertas'])): ?>
+            <p class="muted">Nao ha turma aberta no momento para inscricao publica.</p>
         <?php else: ?>
             <div class="stack">
-                <?php foreach ($curso['turmas'] as $turma): ?>
-                    <div class="status-card">
+                <?php foreach ($curso['turmas_abertas'] as $turma): ?>
+                    <div class="status-card<?php echo !empty($curso['turma_selecionada']) && (int) $curso['turma_selecionada']['id'] === (int) $turma['id'] ? ' status-card--selected' : ''; ?>">
                         <strong><?php echo Helpers::e($turma['nome']); ?></strong>
-                        <span><?php echo Helpers::e($turma['codigo']); ?></span>
-                        <span><?php echo Helpers::e($turma['status']); ?></span>
-                        <?php if ($turma['status'] !== 'cancelada'): ?>
-                            <div class="cta-group">
-                                <a class="button-link" href="/checkout/inscricao?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo (int) $turma['id']; ?>">Inscrever nesta turma</a>
-                            </div>
+                        <span>Codigo <?php echo Helpers::e($turma['codigo']); ?></span>
+                        <?php if (!empty($turma['data_inicio'])): ?>
+                            <span>Inicio <?php echo Helpers::e($turma['data_inicio']); ?></span>
                         <?php endif; ?>
+                        <?php if (!empty($turma['data_fim'])): ?>
+                            <span>Fim <?php echo Helpers::e($turma['data_fim']); ?></span>
+                        <?php endif; ?>
+                        <span>Status <?php echo Helpers::e($turma['status']); ?></span>
+                        <div class="cta-group">
+                            <a class="button-link button-link--ghost" href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo (int) $turma['id']; ?>">Ver turma</a>
+                            <a class="button-link" href="/inscricao?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo (int) $turma['id']; ?>">Inscrever nesta turma</a>
+                        </div>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -65,18 +79,20 @@
     </article>
 </section>
 
-<section class="checkout-panel">
-    <h2>Pessoas vinculadas</h2>
-    <?php if (empty($curso['pessoas_vinculadas'])): ?>
-        <p class="muted">Sem vinculos cadastrados.</p>
-    <?php else: ?>
-        <div class="pill-row">
-            <?php foreach ($curso['pessoas_vinculadas'] as $pessoa): ?>
-                <span class="pill"><?php echo Helpers::e($pessoa['tipo_pessoa']); ?> - <?php echo Helpers::e($pessoa['nome']); ?></span>
-            <?php endforeach; ?>
+<?php if (!empty($curso['inscricao_disponivel']) && !empty($curso['turma_selecionada'])): ?>
+    <section class="notice notice--success">
+        <strong>Inscricao disponivel</strong>
+        <p>A turma <?php echo Helpers::e($curso['turma_selecionada']['nome']); ?> esta aberta e pode receber inscricoes agora.</p>
+        <div class="cta-group">
+            <a class="button-link" href="/inscricao?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo (int) $curso['turma_selecionada']['id']; ?>">Iniciar inscricao</a>
         </div>
-    <?php endif; ?>
-</section>
+    </section>
+<?php else: ?>
+    <section class="notice">
+        <strong>Sem inscricao aberta</strong>
+        <p>Este curso esta publico, mas ainda nao possui turma aberta para inscricao.</p>
+    </section>
+<?php endif; ?>
 
 <?php if (empty($loggedIn)): ?>
     <section class="notice">

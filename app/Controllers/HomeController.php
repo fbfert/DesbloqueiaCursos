@@ -18,11 +18,13 @@ class HomeController extends Controller
 
     public function index(Request $request)
     {
+        $cursosDestaque = $this->cursoService->listPublicHome(3);
+
         return $this->view('home', array(
             'title' => 'Polo Rainbow',
             'success' => Session::pullFlash('success'),
             'usuarioNome' => Session::get('usuario_nome'),
-            'cursos' => $this->cursoService->listPublic()['cursos'],
+            'cursos' => $cursosDestaque,
         ));
     }
 }

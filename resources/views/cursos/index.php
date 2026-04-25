@@ -2,7 +2,7 @@
 
 <section class="page-header">
     <h1>Cursos e eventos</h1>
-    <p>Confira a oferta ativa do portal e abra o fluxo de inscrição pelo curso ou pela turma.</p>
+    <p>Confira apenas cursos ativos do portal. O frontend nao publica itens inativos nem dados operacionais do backoffice.</p>
 </section>
 
 <section class="card-grid">
@@ -14,22 +14,30 @@
     <?php else: ?>
         <?php foreach ($cursos as $curso): ?>
             <article class="course-card">
+                <?php if (!empty($curso['thumbnail'])): ?>
+                    <div class="course-card__image">
+                        <img src="<?php echo Helpers::e($curso['thumbnail']); ?>" alt="<?php echo Helpers::e($curso['nome']); ?>">
+                    </div>
+                <?php endif; ?>
                 <div class="course-card__media">
                     <strong><?php echo Helpers::e($curso['nome']); ?></strong>
-                    <span><?php echo Helpers::e($curso['categoria_nome']); ?></span>
+                    <span><?php echo Helpers::e($curso['categoria_nome'] ?: 'Sem categoria'); ?></span>
                 </div>
                 <div class="course-card__body">
                     <div class="pill-row">
                         <span class="pill"><?php echo Helpers::e($curso['tipo']); ?></span>
                         <span class="pill"><?php echo Helpers::e($curso['modalidade']); ?></span>
+                        <?php if (!empty($curso['professor_responsavel']['nome'])): ?>
+                            <span class="pill">Professor: <?php echo Helpers::e($curso['professor_responsavel']['nome']); ?></span>
+                        <?php endif; ?>
                         <?php if (!empty($curso['em_promocao'])): ?>
                             <span class="pill pill--alert">Promocao</span>
                         <?php endif; ?>
                     </div>
-                    <p><?php echo Helpers::e($curso['descricao_curta']); ?></p>
+                    <p><?php echo Helpers::e($curso['descricao_curta'] ?: 'Descricao resumida em breve.'); ?></p>
                     <div class="course-card__meta">
-                        <span><?php echo (int) $curso['total_turmas']; ?> turma(s)</span>
-                        <strong><?php echo Helpers::e($curso['valor']); ?></strong>
+                        <span><?php echo (int) $curso['total_turmas_abertas']; ?> turma(s) aberta(s)</span>
+                        <strong>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></strong>
                     </div>
                     <div class="cta-group">
                         <a class="button-link" href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>">Ver detalhe</a>
