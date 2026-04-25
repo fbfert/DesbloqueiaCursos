@@ -60,7 +60,7 @@ foreach ((array) $pedidos as $pedidoResumo) {
             <h2 class="admin-section__title">Pedidos</h2>
         </div>
         <div class="table-wrap">
-            <table class="admin-table">
+            <table class="admin-table admin-table--pedidos-lista">
             <thead>
                 <tr>
                     <th>Código</th>

@@ -78,7 +78,7 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
             <h2 class="admin-section__title">Apurações</h2>
         </div>
         <div class="table-wrap">
-            <table class="admin-table">
+            <table class="admin-table admin-table--financeiro-apuracoes">
             <thead>
                 <tr>
                     <th>Competência</th>
@@ -201,7 +201,7 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
             <h2 class="admin-section__title">Perfis cadastrados</h2>
         </div>
         <div class="table-wrap">
-            <table class="admin-table">
+            <table class="admin-table admin-table--financeiro-perfis">
             <thead>
                 <tr>
                     <th>Professor</th>

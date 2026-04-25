@@ -536,6 +536,81 @@
     background: #f9fbff;
 }
 
+.app-admin .admin-table--pedidos-lista th:nth-child(1),
+.app-admin .admin-table--pedidos-lista td:nth-child(1) {
+    min-width: 120px;
+}
+
+.app-admin .admin-table--pedidos-lista th:nth-child(2),
+.app-admin .admin-table--pedidos-lista td:nth-child(2) {
+    min-width: 240px;
+}
+
+.app-admin .admin-table--pedidos-lista th:nth-child(5),
+.app-admin .admin-table--pedidos-lista td:nth-child(5),
+.app-admin .admin-table--pedidos-lista th:nth-child(6),
+.app-admin .admin-table--pedidos-lista td:nth-child(6) {
+    min-width: 130px;
+}
+
+.app-admin .admin-table--pedidos-lista th:nth-child(8),
+.app-admin .admin-table--pedidos-lista td:nth-child(8) {
+    min-width: 160px;
+}
+
+.app-admin .admin-table--pedido-itens th:nth-child(1),
+.app-admin .admin-table--pedido-itens td:nth-child(1),
+.app-admin .admin-table--pedido-itens th:nth-child(2),
+.app-admin .admin-table--pedido-itens td:nth-child(2) {
+    min-width: 210px;
+}
+
+.app-admin .admin-table--pedido-participantes th:nth-child(1),
+.app-admin .admin-table--pedido-participantes td:nth-child(1),
+.app-admin .admin-table--pedido-participantes th:nth-child(3),
+.app-admin .admin-table--pedido-participantes td:nth-child(3) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--pedido-inscricoes th:nth-child(2),
+.app-admin .admin-table--pedido-inscricoes td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--pedido-comprovantes th:nth-child(4),
+.app-admin .admin-table--pedido-comprovantes td:nth-child(4) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--pedido-historico th:nth-child(3),
+.app-admin .admin-table--pedido-historico td:nth-child(3) {
+    min-width: 260px;
+}
+
+.app-admin .admin-table--financeiro-apuracoes th:nth-child(1),
+.app-admin .admin-table--financeiro-apuracoes td:nth-child(1),
+.app-admin .admin-table--financeiro-repasses th:nth-child(1),
+.app-admin .admin-table--financeiro-repasses td:nth-child(1) {
+    min-width: 120px;
+}
+
+.app-admin .admin-table--financeiro-repasses th:nth-child(2),
+.app-admin .admin-table--financeiro-repasses td:nth-child(2) {
+    min-width: 200px;
+}
+
+.app-admin .admin-table--financeiro-repasses th:nth-child(8),
+.app-admin .admin-table--financeiro-repasses td:nth-child(8),
+.app-admin .admin-table--financeiro-repasses th:nth-child(9),
+.app-admin .admin-table--financeiro-repasses td:nth-child(9) {
+    min-width: 130px;
+}
+
+.app-admin .admin-table--financeiro-perfis th:nth-child(1),
+.app-admin .admin-table--financeiro-perfis td:nth-child(1) {
+    min-width: 220px;
+}
+
 .app-admin .hero {
     padding: 0;
     gap: 14px;

@@ -55,7 +55,7 @@
 <section class="status-card">
     <strong>Itens</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--pedido-itens">
             <thead>
                 <tr>
                     <th>Curso</th>
@@ -89,7 +89,7 @@
 <section class="status-card">
     <strong>Participantes</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--pedido-participantes">
             <thead>
                 <tr>
                     <th>Nome</th>
@@ -115,7 +115,7 @@
 <section class="status-card">
     <strong>Inscrições vinculadas</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--pedido-inscricoes">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -146,7 +146,7 @@
     <strong>Comprovantes PIX</strong>
     <?php if (!empty($can_see_pix)): ?>
         <div class="table-wrap">
-            <table class="admin-table">
+            <table class="admin-table admin-table--pedido-comprovantes">
                 <thead>
                     <tr>
                     <th>Versão</th>
@@ -175,7 +175,7 @@
 <section class="status-card">
     <strong>Histórico do pedido</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+        <table class="admin-table admin-table--pedido-historico">
             <thead>
                 <tr>
                     <th>Status anterior</th>

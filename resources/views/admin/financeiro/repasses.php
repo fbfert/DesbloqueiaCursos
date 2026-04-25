@@ -52,7 +52,7 @@
 <section class="status-card">
     <strong>Repasses</strong>
     <div class="table-wrap">
-        <table class="admin-table">
+            <table class="admin-table admin-table--financeiro-repasses">
             <thead>
                 <tr>
                     <th>Competência</th>
