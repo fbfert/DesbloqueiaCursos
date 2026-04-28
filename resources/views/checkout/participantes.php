@@ -39,28 +39,60 @@
 <?php if (!empty($loggedIn)): ?>
     <form class="admin-form checkout-form" method="post" action="/checkout/participantes?pedido_id=<?php echo (int) $pedido['id']; ?>">
         <?php for ($i = 0; $i < $quantidade; $i++): ?>
+            <?php
+            $nomeParticipante = $i === 0 ? $pedido['pagador_nome'] : '';
+            $cpfParticipante = $i === 0 && !empty($pedido['pagador_cpf']) ? (string) $pedido['pagador_cpf'] : '';
+            $emailParticipante = $i === 0 ? $pedido['pagador_email'] : '';
+            $telefoneParticipante = $i === 0 && !empty($pedido['pagador_telefone']) ? (string) $pedido['pagador_telefone'] : '';
+
+            if ($i === 0 && !empty($participantePrefill)) {
+                $nomeParticipante = isset($participantePrefill['nome']) ? $participantePrefill['nome'] : $nomeParticipante;
+                if (isset($participantePrefill['cpf']) && trim((string) $participantePrefill['cpf']) !== '') {
+                    $cpfParticipante = $participantePrefill['cpf'];
+                }
+                $emailParticipante = isset($participantePrefill['email']) ? $participantePrefill['email'] : $emailParticipante;
+                if (isset($participantePrefill['telefone']) && trim((string) $participantePrefill['telefone']) !== '') {
+                    $telefoneParticipante = $participantePrefill['telefone'];
+                }
+            }
+            ?>
             <section class="checkout-panel">
                 <h2>Participante <?php echo $i + 1; ?></h2>
                 <input type="hidden" name="participantes[<?php echo $i; ?>][pedido_item_id]" value="<?php echo !empty($pedido['itens'][0]['id']) ? (int) $pedido['itens'][0]['id'] : ''; ?>">
                 <label>
                     Nome
-                    <input type="text" name="participantes[<?php echo $i; ?>][nome]" value="<?php echo $i === 0 ? Helpers::e($pedido['pagador_nome']) : ''; ?>">
+                    <input type="text" name="participantes[<?php echo $i; ?>][nome]" value="<?php echo Helpers::e($nomeParticipante); ?>">
                 </label>
                 <label>
                     CPF
-                    <input type="text" name="participantes[<?php echo $i; ?>][cpf]" value="">
+                    <input type="text" id="<?php echo $i === 0 ? 'participante-1-cpf' : ''; ?>" name="participantes[<?php echo $i; ?>][cpf]" value="<?php echo Helpers::e($cpfParticipante); ?>" <?php echo $i === 0 ? 'data-skip-old-input="1"' : ''; ?>>
                 </label>
                 <label>
                     E-mail
-                    <input type="email" name="participantes[<?php echo $i; ?>][email]" value="<?php echo $i === 0 ? Helpers::e($pedido['pagador_email']) : ''; ?>">
+                    <input type="email" name="participantes[<?php echo $i; ?>][email]" value="<?php echo Helpers::e($emailParticipante); ?>">
                 </label>
                 <label>
                     Telefone
-                    <input type="text" name="participantes[<?php echo $i; ?>][telefone]" value="">
+                    <input type="text" id="<?php echo $i === 0 ? 'participante-1-telefone' : ''; ?>" name="participantes[<?php echo $i; ?>][telefone]" value="<?php echo Helpers::e($telefoneParticipante); ?>" <?php echo $i === 0 ? 'data-skip-old-input="1"' : ''; ?>>
                 </label>
             </section>
         <?php endfor; ?>
 
         <button type="submit">Salvar participantes</button>
     </form>
+
+    <script>
+    (function () {
+        try {
+            var campoCpf = document.getElementById('participante-1-cpf');
+            var campoTelefone = document.getElementById('participante-1-telefone');
+            if (campoCpf && !campoCpf.value) {
+                campoCpf.value = sessionStorage.getItem('checkout_pagador_cpf') || '';
+            }
+            if (campoTelefone && !campoTelefone.value) {
+                campoTelefone.value = sessionStorage.getItem('checkout_pagador_telefone') || '';
+            }
+        } catch (e) {}
+    })();
+    </script>
 <?php endif; ?>

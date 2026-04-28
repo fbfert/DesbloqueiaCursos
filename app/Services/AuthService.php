@@ -6,7 +6,9 @@ use App\Core\Database;
 use App\Core\Session;
 use App\Core\Validator;
 use App\Models\ConsentimentoUsuario;
+use App\Models\Perfil;
 use App\Models\Usuario;
+use App\Models\UsuarioPerfil;
 
 class AuthService
 {
@@ -14,6 +16,8 @@ class AuthService
     const LOCK_MINUTES = 15;
 
     private $usuarios;
+    private $perfilModel;
+    private $usuarioPerfilModel;
     private $consentimentos;
     private $accessLogs;
     private $emailService;
@@ -23,10 +27,12 @@ class AuthService
     public function __construct()
     {
         $this->usuarios = new Usuario();
+        $this->perfilModel = new Perfil();
+        $this->usuarioPerfilModel = new UsuarioPerfil();
         $this->consentimentos = new ConsentimentoUsuario();
         $this->accessLogs = new AccessLogService();
         $this->emailService = new EmailService();
-        $this->globalConfigService = new ConfiguraçãoGlobalService();
+        $this->globalConfigService = new ConfiguracaoGlobalService();
         $this->rbacService = new RbacService();
     }
 
@@ -102,6 +108,11 @@ class AuthService
                 ),
             ));
 
+            $perfilAluno = $this->perfilModel->findBySlug('aluno');
+            if ($perfilAluno) {
+                $this->usuarioPerfilModel->sync($usuarioId, array((int) $perfilAluno['id']));
+            }
+
             $connection->commit();
         } catch (\Exception $exception) {
             $connection->rollBack();
@@ -163,6 +174,8 @@ class AuthService
         Session::put('usuario_id', $usuario['id']);
         Session::put('usuario_nome', $usuario['nome']);
         Session::put('usuario_email', $usuario['email']);
+        Session::put('usuario_cpf', isset($usuario['cpf']) ? (string) $usuario['cpf'] : '');
+        Session::put('usuario_telefone', isset($usuario['telefone']) ? (string) $usuario['telefone'] : '');
 
         $this->accessLogs->record($usuario['id'], 'login', 'success', $ipAddress, $userAgent);
 
@@ -178,6 +191,110 @@ class AuthService
         $usuarioId = Session::get('usuario_id');
         $this->accessLogs->record($usuarioId, 'logout', 'success', $ipAddress, $userAgent);
         Session::destroy();
+    }
+
+    public function accountData($usuarioId)
+    {
+        $usuario = $this->usuarios->findById((int) $usuarioId);
+        if (!$usuario) {
+            return null;
+        }
+
+        return array(
+            'nome' => isset($usuario['nome']) ? (string) $usuario['nome'] : '',
+            'email' => isset($usuario['email']) ? (string) $usuario['email'] : '',
+            'cpf' => isset($usuario['cpf']) ? (string) $usuario['cpf'] : '',
+            'telefone' => isset($usuario['telefone']) ? (string) $usuario['telefone'] : '',
+            'cidade' => isset($usuario['cidade']) ? (string) $usuario['cidade'] : '',
+            'estado' => isset($usuario['estado']) ? (string) $usuario['estado'] : '',
+        );
+    }
+
+    public function updateAccount($usuarioId, array $input, $ipAddress, $userAgent)
+    {
+        $usuarioAtual = $this->usuarios->findById((int) $usuarioId);
+        if (!$usuarioAtual) {
+            return array('ok' => false, 'errors' => array('conta' => 'Usuário não encontrado.'));
+        }
+
+        $errors = array();
+        $nome = trim((string) (isset($input['nome']) ? $input['nome'] : ''));
+        $email = strtolower(trim((string) (isset($input['email']) ? $input['email'] : '')));
+        $cpf = Validator::onlyDigits(isset($input['cpf']) ? $input['cpf'] : '');
+        $telefone = trim((string) (isset($input['telefone']) ? $input['telefone'] : ''));
+        $cidade = trim((string) (isset($input['cidade']) ? $input['cidade'] : ''));
+        $estado = strtoupper(trim((string) (isset($input['estado']) ? $input['estado'] : '')));
+        $novaSenha = (string) (isset($input['nova_senha']) ? $input['nova_senha'] : '');
+        $confirmacaoNovaSenha = (string) (isset($input['nova_senha_confirmacao']) ? $input['nova_senha_confirmacao'] : '');
+
+        if ($nome === '') {
+            $errors['nome'] = 'Informe o nome.';
+        }
+
+        if (!Validator::email($email)) {
+            $errors['email'] = 'Informe um e-mail válido.';
+        }
+
+        if (!Validator::cpf($cpf)) {
+            $errors['cpf'] = 'Informe um CPF válido.';
+        }
+
+        if ($estado !== '' && !preg_match('/^[A-Z]{2}$/', $estado)) {
+            $errors['estado'] = 'Informe um estado válido com 2 letras.';
+        }
+
+        if ($estado !== '' && $cidade === '') {
+            $errors['cidade'] = 'Selecione uma cidade.';
+        }
+
+        if ($cidade !== '' && $estado === '') {
+            $errors['estado'] = 'Selecione um estado.';
+        }
+
+        if ($novaSenha !== '' || $confirmacaoNovaSenha !== '') {
+            if (strlen($novaSenha) < 8) {
+                $errors['nova_senha'] = 'A nova senha deve ter pelo menos 8 caracteres.';
+            }
+
+            if ($novaSenha !== $confirmacaoNovaSenha) {
+                $errors['nova_senha_confirmacao'] = 'A confirmação da nova senha não confere.';
+            }
+        }
+
+        $emailExistente = $this->usuarios->findByEmail($email);
+        if ($emailExistente && (int) $emailExistente['id'] !== (int) $usuarioId) {
+            $errors['email'] = 'Este e-mail já está cadastrado.';
+        }
+
+        $cpfExistente = $this->usuarios->findByCpf($cpf);
+        if ($cpfExistente && (int) $cpfExistente['id'] !== (int) $usuarioId) {
+            $errors['cpf'] = 'Este CPF já está cadastrado.';
+        }
+
+        if ($errors) {
+            return array('ok' => false, 'errors' => $errors);
+        }
+
+        $this->usuarios->updateProfile((int) $usuarioId, array(
+            'nome' => Validator::upperName($nome),
+            'email' => $email,
+            'cpf' => $cpf,
+            'telefone' => $telefone,
+            'cidade' => $cidade !== '' ? $cidade : null,
+            'estado' => $estado !== '' ? $estado : null,
+        ));
+
+        if ($novaSenha !== '') {
+            $this->usuarios->updatePassword((int) $usuarioId, password_hash($novaSenha, PASSWORD_DEFAULT));
+        }
+
+        Session::put('usuario_nome', Validator::upperName($nome));
+        Session::put('usuario_email', $email);
+        Session::put('usuario_cpf', $cpf);
+        Session::put('usuario_telefone', $telefone);
+        $this->accessLogs->record($usuarioId, 'account_update', 'success', $ipAddress, $userAgent);
+
+        return array('ok' => true);
     }
 
     public function requestPasswordReset($login, $ipAddress, $userAgent)
@@ -341,4 +458,5 @@ class AuthService
         ));
     }
 }
+
 

@@ -8,8 +8,10 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Core\Validator;
+use App\Models\Pedido;
+use App\Models\Usuario;
 use App\Services\ComprovantePixService;
-use App\Services\InscriçãoService;
+use App\Services\InscricaoService;
 use App\Services\PedidoService;
 use App\Services\CursoService;
 
@@ -19,19 +21,23 @@ class CheckoutController extends Controller
     private $inscricaoService;
     private $comprovanteService;
     private $cursoService;
+    private $usuarioModel;
+    private $pedidoModel;
 
     public function __construct()
     {
         $this->pedidoService = new PedidoService();
-        $this->inscricaoService = new InscriçãoService();
+        $this->inscricaoService = new InscricaoService();
         $this->comprovanteService = new ComprovantePixService();
         $this->cursoService = new CursoService();
+        $this->usuarioModel = new Usuario();
+        $this->pedidoModel = new Pedido();
     }
 
     public function inscricao(Request $request)
     {
         if ($request->method() === 'POST') {
-            return $this->processarInscrição($request);
+            return $this->processarInscricao($request);
         }
 
         $cursoId = (int) $request->query('curso_id', 0);
@@ -49,12 +55,25 @@ class CheckoutController extends Controller
             return $this->redirect('/cursos/detalhe?curso_id=' . $cursoId);
         }
 
+        $pagadorPrefill = $this->carregarPagadorPrefill((int) Session::get('usuario_id', 0));
+        if (trim((string) $pagadorPrefill['cpf']) === '' && trim((string) Session::get('usuario_cpf', '')) !== '') {
+            $pagadorPrefill['cpf'] = (string) Session::get('usuario_cpf');
+        }
+        if (trim((string) $pagadorPrefill['telefone']) === '' && trim((string) Session::get('usuario_telefone', '')) !== '') {
+            $pagadorPrefill['telefone'] = (string) Session::get('usuario_telefone');
+        }
+        if (trim((string) $pagadorPrefill['cpf']) === '' || trim((string) $pagadorPrefill['telefone']) === '') {
+            Session::flash('errors', array('Atualize seu cadastro com CPF e telefone antes de iniciar a inscrição.'));
+            return $this->redirect('/minha-conta');
+        }
+
         return $this->view('checkout/inscricao', array(
-            'title' => 'Inscrição',
+            'title' => 'Inscricao',
             'curso' => $curso['curso'],
             'loggedIn' => Session::get('usuario_id') !== null,
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
+            'pagadorPrefill' => $pagadorPrefill,
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
         ));
@@ -83,10 +102,37 @@ class CheckoutController extends Controller
             $quantidade = max(1, (int) $pedido['pedido']['itens'][0]['quantidade']);
         }
 
+        $usuarioPrefillId = $this->resolverUsuarioPrefillIdDoPedido($pedido['pedido']);
+        $participantePrefill = $this->carregarParticipantePrefill($usuarioPrefillId);
+        $pagadorPrefill = $this->carregarPagadorPrefill($usuarioPrefillId);
+        if ($participantePrefill['cpf'] === '' && trim((string) Session::get('usuario_cpf', '')) !== '') {
+            $participantePrefill['cpf'] = (string) Session::get('usuario_cpf');
+        }
+        if ($participantePrefill['telefone'] === '' && trim((string) Session::get('usuario_telefone', '')) !== '') {
+            $participantePrefill['telefone'] = (string) Session::get('usuario_telefone');
+        }
+        if ($participantePrefill['cpf'] === '' && !empty($pagadorPrefill['cpf'])) {
+            $participantePrefill['cpf'] = (string) $pagadorPrefill['cpf'];
+        }
+        if ($participantePrefill['telefone'] === '' && !empty($pagadorPrefill['telefone'])) {
+            $participantePrefill['telefone'] = (string) $pagadorPrefill['telefone'];
+        }
+        $isCompraPropria = $this->isCompraPropriaPedido(isset($pedido['pedido']['tipo_pedido']) ? $pedido['pedido']['tipo_pedido'] : '');
+        if ($isCompraPropria) {
+            if ($participantePrefill['cpf'] === '' && !empty($pedido['pedido']['pagador_cpf'])) {
+                $participantePrefill['cpf'] = (string) $pedido['pedido']['pagador_cpf'];
+            }
+            if ($participantePrefill['telefone'] === '' && !empty($pedido['pedido']['pagador_telefone'])) {
+                $participantePrefill['telefone'] = (string) $pedido['pedido']['pagador_telefone'];
+            }
+        }
+
         return $this->view('checkout/participantes', array(
             'title' => 'Participantes',
             'pedido' => $pedido['pedido'],
             'quantidade' => $quantidade,
+            'participantePrefill' => $participantePrefill,
+            'isCompraPropria' => $isCompraPropria,
             'loggedIn' => Session::get('usuario_id') !== null,
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
@@ -217,46 +263,70 @@ class CheckoutController extends Controller
         ));
     }
 
-    private function processarInscrição(Request $request)
+    private function processarInscricao(Request $request)
     {
         if (!Session::get('usuario_id')) {
             Session::flash('errors', array('auth' => 'Faça login ou crie sua conta para continuar.'));
             return $this->redirect('/login');
         }
 
-        $errors = $this->validateInscrição($request);
+        $errors = $this->validateInscricao($request);
         if (!empty($errors)) {
             Session::flash('errors', $errors);
             $cursoIdErro = (int) $request->input('curso_evento_id', 0);
             $turmaIdErro = (int) $request->input('turma_id', 0);
-            return $this->redirect('/cursos/detalhe?curso_id=' . $cursoIdErro . ($turmaIdErro ? '&turma_id=' . $turmaIdErro : ''));
+            return $this->redirect('/inscricao?curso_id=' . $cursoIdErro . ($turmaIdErro ? '&turma_id=' . $turmaIdErro : ''));
         }
 
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
-        $quantidade = max(1, (int) $request->input('quantidade', 1));
+        $tipoPedido = (string) $request->input('tipo_pedido', 'propria');
+        $quantidade = $tipoPedido === 'propria' ? 1 : max(1, (int) $request->input('quantidade', 1));
+        $pagadorPrefill = $this->carregarPagadorPrefill((int) Session::get('usuario_id', 0));
         $pagadorNome = trim((string) $request->input('pagador_nome', ''));
         if ($pagadorNome === '' && Session::get('usuario_nome')) {
             $pagadorNome = Session::get('usuario_nome');
         }
+        if ($pagadorNome === '' && !empty($pagadorPrefill['nome'])) {
+            $pagadorNome = (string) $pagadorPrefill['nome'];
+        }
         $pagadorEmail = trim((string) $request->input('pagador_email', ''));
         if ($pagadorEmail === '' && Session::get('usuario_email')) {
             $pagadorEmail = Session::get('usuario_email');
+        }
+        if ($pagadorEmail === '' && !empty($pagadorPrefill['email'])) {
+            $pagadorEmail = (string) $pagadorPrefill['email'];
+        }
+        $pagadorCpf = trim((string) $request->input('pagador_cpf', ''));
+        if ($pagadorCpf === '' && !empty($pagadorPrefill['cpf'])) {
+            $pagadorCpf = (string) $pagadorPrefill['cpf'];
+        }
+        $pagadorTelefone = trim((string) $request->input('pagador_telefone', ''));
+        if ($pagadorTelefone === '' && !empty($pagadorPrefill['telefone'])) {
+            $pagadorTelefone = (string) $pagadorPrefill['telefone'];
+        }
+        $pagadorCidade = trim((string) $request->input('pagador_cidade', ''));
+        if ($pagadorCidade === '' && !empty($pagadorPrefill['cidade'])) {
+            $pagadorCidade = (string) $pagadorPrefill['cidade'];
+        }
+        $pagadorEstado = trim((string) $request->input('pagador_estado', ''));
+        if ($pagadorEstado === '' && !empty($pagadorPrefill['estado'])) {
+            $pagadorEstado = (string) $pagadorPrefill['estado'];
         }
 
         $resultado = $this->pedidoService->criarCheckoutDraft(array(
             'curso_evento_id' => $cursoId,
             'turma_id' => $turmaId ?: null,
             'quantidade' => $quantidade,
-            'tipo_pedido' => $request->input('tipo_pedido', 'propria'),
+            'tipo_pedido' => $tipoPedido,
             'comprador_usuario_id' => Session::get('usuario_id'),
             'pagador_usuario_id' => Session::get('usuario_id'),
             'pagador_nome' => $pagadorNome,
-            'pagador_cpf' => $request->input('pagador_cpf'),
+            'pagador_cpf' => $pagadorCpf,
             'pagador_email' => $pagadorEmail,
-            'pagador_telefone' => $request->input('pagador_telefone'),
-            'pagador_cidade' => $request->input('pagador_cidade'),
-            'pagador_estado' => $request->input('pagador_estado'),
+            'pagador_telefone' => $pagadorTelefone,
+            'pagador_cidade' => $pagadorCidade !== '' ? $pagadorCidade : null,
+            'pagador_estado' => $pagadorEstado !== '' ? $pagadorEstado : null,
             'pagador_empresa_nome' => $request->input('pagador_empresa_nome'),
             'pagador_empresa_documento' => $request->input('pagador_empresa_documento'),
             'observacoes_publicas' => $request->input('observacoes_publicas'),
@@ -265,7 +335,7 @@ class CheckoutController extends Controller
 
         if (empty($resultado['ok'])) {
             Session::flash('errors', array('pedido' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel iniciar o checkout.'));
-            return $this->redirect('/cursos/detalhe?curso_id=' . $cursoId . ($turmaId ? '&turma_id=' . $turmaId : ''));
+            return $this->redirect('/inscricao?curso_id=' . $cursoId . ($turmaId ? '&turma_id=' . $turmaId : ''));
         }
 
         Session::put('checkout_pedido_id', $resultado['pedido_id']);
@@ -289,6 +359,32 @@ class CheckoutController extends Controller
         $participantes = $request->input('participantes', array());
         if (!is_array($participantes)) {
             $participantes = array();
+        }
+
+        $isCompraPropria = $this->isCompraPropriaPedido(isset($pedido['pedido']['tipo_pedido']) ? $pedido['pedido']['tipo_pedido'] : '');
+        if ($isCompraPropria) {
+            $usuarioPrefillId = $this->resolverUsuarioPrefillIdDoPedido($pedido['pedido']);
+            $prefill = $this->carregarParticipantePrefill($usuarioPrefillId);
+            $pagadorPrefill = $this->carregarPagadorPrefill($usuarioPrefillId);
+            if ($prefill['cpf'] === '' && trim((string) Session::get('usuario_cpf', '')) !== '') {
+                $prefill['cpf'] = (string) Session::get('usuario_cpf');
+            }
+            if ($prefill['telefone'] === '' && trim((string) Session::get('usuario_telefone', '')) !== '') {
+                $prefill['telefone'] = (string) Session::get('usuario_telefone');
+            }
+            if ($prefill['cpf'] === '' && !empty($pagadorPrefill['cpf'])) {
+                $prefill['cpf'] = (string) $pagadorPrefill['cpf'];
+            }
+            if ($prefill['telefone'] === '' && !empty($pagadorPrefill['telefone'])) {
+                $prefill['telefone'] = (string) $pagadorPrefill['telefone'];
+            }
+            if ($prefill['cpf'] === '' && !empty($pedido['pedido']['pagador_cpf'])) {
+                $prefill['cpf'] = (string) $pedido['pedido']['pagador_cpf'];
+            }
+            if ($prefill['telefone'] === '' && !empty($pedido['pedido']['pagador_telefone'])) {
+                $prefill['telefone'] = (string) $pedido['pedido']['pagador_telefone'];
+            }
+            $participantes = $this->aplicarPrefillParticipanteCompraPropria($participantes, $prefill);
         }
 
         $errors = $this->validateParticipantes($participantes);
@@ -375,7 +471,7 @@ class CheckoutController extends Controller
         return (int) Session::get('checkout_pedido_id', 0);
     }
 
-    private function validateInscrição(Request $request)
+    private function validateInscricao(Request $request)
     {
         $errors = array();
 
@@ -386,13 +482,14 @@ class CheckoutController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if ($cursoId > 0) {
-            $validacaoTurma = $this->cursoService->validarTurmaPublicaParaInscrição($cursoId, $turmaId ?: null);
+            $validacaoTurma = $this->cursoService->validarTurmaPublicaParaInscricao($cursoId, $turmaId ?: null);
             if (empty($validacaoTurma['ok'])) {
                 $errors[] = isset($validacaoTurma['message']) ? $validacaoTurma['message'] : 'A turma selecionada nao esta disponivel para inscricao.';
             }
         }
 
-        if ((int) $request->input('quantidade', 0) <= 0) {
+        $tipoPedido = (string) $request->input('tipo_pedido', 'propria');
+        if ($tipoPedido !== 'propria' && (int) $request->input('quantidade', 0) <= 0) {
             $errors[] = 'Informe uma quantidade valida de vagas.';
         }
 
@@ -415,6 +512,11 @@ class CheckoutController extends Controller
         }
         if (!Validator::email($pagadorEmail)) {
             $errors[] = 'Informe um e-mail valido do pagador.';
+        }
+
+        $pagadorTelefone = trim((string) $request->input('pagador_telefone', ''));
+        if ($pagadorTelefone === '') {
+            $errors[] = 'Informe o telefone do pagador.';
         }
 
         return $errors;
@@ -440,5 +542,152 @@ class CheckoutController extends Controller
 
         return $errors;
     }
+
+    private function carregarPagadorPrefill($usuarioId)
+    {
+        $prefill = array(
+            'nome' => '',
+            'cpf' => '',
+            'email' => '',
+            'telefone' => '',
+            'cidade' => '',
+            'estado' => '',
+        );
+
+        if ($usuarioId <= 0) {
+            $usuario = $this->buscarUsuarioDaSessaoPorEmail();
+            if ($usuario) {
+                $usuarioId = (int) $usuario['id'];
+                $prefill['nome'] = isset($usuario['nome']) ? (string) $usuario['nome'] : '';
+                $prefill['cpf'] = isset($usuario['cpf']) ? (string) $usuario['cpf'] : '';
+                $prefill['email'] = isset($usuario['email']) ? (string) $usuario['email'] : '';
+                $prefill['telefone'] = isset($usuario['telefone']) ? (string) $usuario['telefone'] : '';
+                $prefill['cidade'] = isset($usuario['cidade']) ? (string) $usuario['cidade'] : '';
+                $prefill['estado'] = isset($usuario['estado']) ? strtoupper((string) $usuario['estado']) : '';
+            } else {
+                return $prefill;
+            }
+        }
+
+        $usuario = $this->usuarioModel->findById($usuarioId);
+        if ($usuario) {
+            $prefill['nome'] = isset($usuario['nome']) ? (string) $usuario['nome'] : '';
+            $prefill['cpf'] = isset($usuario['cpf']) ? (string) $usuario['cpf'] : '';
+            $prefill['email'] = isset($usuario['email']) ? (string) $usuario['email'] : '';
+            $prefill['telefone'] = isset($usuario['telefone']) ? (string) $usuario['telefone'] : '';
+            $prefill['cidade'] = isset($usuario['cidade']) ? (string) $usuario['cidade'] : '';
+            $prefill['estado'] = isset($usuario['estado']) ? strtoupper((string) $usuario['estado']) : '';
+        }
+
+        $ultimoPedido = $this->pedidoModel->findLatestByUsuarioForPrefill($usuarioId);
+        if ($ultimoPedido) {
+            if ($prefill['nome'] === '' && !empty($ultimoPedido['pagador_nome'])) {
+                $prefill['nome'] = (string) $ultimoPedido['pagador_nome'];
+            }
+            if ($prefill['cpf'] === '' && !empty($ultimoPedido['pagador_cpf'])) {
+                $prefill['cpf'] = (string) $ultimoPedido['pagador_cpf'];
+            }
+            if ($prefill['email'] === '' && !empty($ultimoPedido['pagador_email'])) {
+                $prefill['email'] = (string) $ultimoPedido['pagador_email'];
+            }
+            if ($prefill['telefone'] === '' && !empty($ultimoPedido['pagador_telefone'])) {
+                $prefill['telefone'] = (string) $ultimoPedido['pagador_telefone'];
+            }
+
+            if ($prefill['cidade'] === '' && !empty($ultimoPedido['pagador_cidade'])) {
+                $prefill['cidade'] = (string) $ultimoPedido['pagador_cidade'];
+            }
+            if ($prefill['estado'] === '' && !empty($ultimoPedido['pagador_estado'])) {
+                $prefill['estado'] = strtoupper((string) $ultimoPedido['pagador_estado']);
+            }
+        }
+
+        return $prefill;
+    }
+
+    private function carregarParticipantePrefill($usuarioId)
+    {
+        $prefill = array(
+            'nome' => '',
+            'cpf' => '',
+            'email' => '',
+            'telefone' => '',
+        );
+
+        if ($usuarioId <= 0) {
+            $usuario = $this->buscarUsuarioDaSessaoPorEmail();
+            if ($usuario) {
+                $prefill['nome'] = isset($usuario['nome']) ? (string) $usuario['nome'] : '';
+                $prefill['cpf'] = isset($usuario['cpf']) ? (string) $usuario['cpf'] : '';
+                $prefill['email'] = isset($usuario['email']) ? (string) $usuario['email'] : '';
+                $prefill['telefone'] = isset($usuario['telefone']) ? (string) $usuario['telefone'] : '';
+            }
+            return $prefill;
+        }
+
+        $usuario = $this->usuarioModel->findById($usuarioId);
+        if (!$usuario) {
+            return $prefill;
+        }
+
+        $prefill['nome'] = isset($usuario['nome']) ? (string) $usuario['nome'] : '';
+        $prefill['cpf'] = isset($usuario['cpf']) ? (string) $usuario['cpf'] : '';
+        $prefill['email'] = isset($usuario['email']) ? (string) $usuario['email'] : '';
+        $prefill['telefone'] = isset($usuario['telefone']) ? (string) $usuario['telefone'] : '';
+
+        return $prefill;
+    }
+
+    private function aplicarPrefillParticipanteCompraPropria(array $participantes, array $prefill)
+    {
+        if (empty($participantes) || !isset($participantes[0]) || !is_array($participantes[0])) {
+            $participantes[0] = array();
+        }
+
+        $participantes[0]['nome'] = $prefill['nome'];
+        $participantes[0]['cpf'] = $prefill['cpf'];
+        $participantes[0]['email'] = $prefill['email'];
+        $participantes[0]['telefone'] = $prefill['telefone'];
+
+        return $participantes;
+    }
+
+    private function isCompraPropriaPedido($tipoPedido)
+    {
+        $normalizado = mb_strtolower(trim((string) $tipoPedido), 'UTF-8');
+
+        return in_array($normalizado, array(
+            'propria',
+            'própria',
+            'compra_propria',
+            'compra_própria',
+        ), true);
+    }
+
+    private function resolverUsuarioPrefillIdDoPedido(array $pedido)
+    {
+        $pagadorUsuarioId = isset($pedido['pagador_usuario_id']) ? (int) $pedido['pagador_usuario_id'] : 0;
+        if ($pagadorUsuarioId > 0) {
+            return $pagadorUsuarioId;
+        }
+
+        $compradorUsuarioId = isset($pedido['comprador_usuario_id']) ? (int) $pedido['comprador_usuario_id'] : 0;
+        if ($compradorUsuarioId > 0) {
+            return $compradorUsuarioId;
+        }
+
+        return (int) Session::get('usuario_id', 0);
+    }
+
+    private function buscarUsuarioDaSessaoPorEmail()
+    {
+        $email = trim((string) Session::get('usuario_email', ''));
+        if ($email === '') {
+            return null;
+        }
+
+        return $this->usuarioModel->findByEmail($email);
+    }
 }
+
 
