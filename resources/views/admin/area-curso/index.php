@@ -32,17 +32,6 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                 <?php endforeach; ?>
             </select>
         </label>
-        <label>
-            Turma
-            <select name="turma_id">
-                <option value="">Curso inteiro</option>
-                <?php foreach ($turmas as $item): ?>
-                    <option value="<?php echo (int) $item['id']; ?>" <?php echo !empty($turma) && (int) $turma['id'] === (int) $item['id'] ? 'selected' : ''; ?>>
-                        <?php echo Helpers::e($item['curso_nome'] . ' - ' . $item['nome']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </label>
         <button type="submit">Abrir contexto</button>
     </form>
 </section>
@@ -53,7 +42,6 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         <form method="post" action="/admin/area-curso/instrucoes" class="form-grid">
             <input type="hidden" name="id" value="<?php echo !empty($instrucaoEditar['id']) ? (int) $instrucaoEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-            <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
             <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($instrucaoEditar['titulo'] ?? ''); ?>"></label>
             <label>Conteúdo<textarea name="conteudo" rows="4"><?php echo Helpers::e($instrucaoEditar['conteudo'] ?? ''); ?></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($instrucaoEditar['ordem'] ?? 1)); ?>" min="1"></label>
@@ -67,7 +55,6 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         <form method="post" action="/admin/area-curso/modulos" class="form-grid">
             <input type="hidden" name="id" value="<?php echo !empty($moduloEditar['id']) ? (int) $moduloEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-            <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
             <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($moduloEditar['titulo'] ?? ''); ?>"></label>
             <label>Descrição<textarea name="descricao" rows="3"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($moduloEditar['ordem'] ?? 1)); ?>" min="1"></label>
@@ -86,13 +73,12 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                             <td><?php echo !empty($modulo['visivel']) ? 'visível' : 'oculto'; ?></td>
                             <td>
                                 <div class="split-actions">
-                                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>&modulo_id=<?php echo (int) $modulo['id']; ?>">Editar</a>
+                                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&modulo_id=<?php echo (int) $modulo['id']; ?>">Editar</a>
                                 </div>
                                 <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-mt-8">
                                     <input type="hidden" name="tipo" value="modulo">
                                     <input type="hidden" name="id" value="<?php echo (int) $modulo['id']; ?>">
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-                                    <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
                                     <input type="text" name="justificativa" placeholder="Justificativa" required>
                                     <button type="submit">Remover</button>
                                 </form>
@@ -109,7 +95,6 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         <form method="post" action="/admin/area-curso/aulas" class="form-grid">
             <input type="hidden" name="id" value="<?php echo !empty($aulaEditar['id']) ? (int) $aulaEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-            <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
             <label>Módulo
                 <select name="modulo_id">
                     <?php foreach ($modulos as $modulo): ?>
@@ -142,13 +127,12 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                                 <td><?php echo (int) $aula['ordem']; ?></td>
                                 <td>
                                     <div class="split-actions">
-                                        <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>&aula_id=<?php echo (int) $aula['id']; ?>">Editar</a>
+                                        <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&aula_id=<?php echo (int) $aula['id']; ?>">Editar</a>
                                     </div>
                                     <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-mt-8">
                                         <input type="hidden" name="tipo" value="aula">
                                         <input type="hidden" name="id" value="<?php echo (int) $aula['id']; ?>">
                                         <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-                                        <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
                                         <input type="text" name="justificativa" placeholder="Justificativa" required>
                                         <button type="submit">Remover</button>
                                     </form>
@@ -166,7 +150,6 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         <form method="post" action="/admin/area-curso/materiais" class="form-grid" enctype="multipart/form-data">
             <input type="hidden" name="id" value="<?php echo !empty($materialEditar['id']) ? (int) $materialEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-            <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
             <label>Módulo
                 <select name="modulo_id">
                     <option value="">Sem módulo</option>
@@ -209,13 +192,12 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                             <td><a href="/admin/area-curso/material?material_id=<?php echo (int) $material['id']; ?>">Abrir</a></td>
                             <td>
                                 <div class="split-actions">
-                                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>&material_id=<?php echo (int) $material['id']; ?>">Editar</a>
+                                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&material_id=<?php echo (int) $material['id']; ?>">Editar</a>
                                 </div>
                                 <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-mt-8">
                                     <input type="hidden" name="tipo" value="material">
                                     <input type="hidden" name="id" value="<?php echo (int) $material['id']; ?>">
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-                                    <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
                                     <input type="text" name="justificativa" placeholder="Justificativa" required>
                                     <button type="submit">Remover</button>
                                 </form>
@@ -232,7 +214,6 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
         <form method="post" action="/admin/area-curso/links" class="form-grid">
             <input type="hidden" name="id" value="<?php echo !empty($linkEditar['id']) ? (int) $linkEditar['id'] : 0; ?>">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-            <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
             <label>Módulo
                 <select name="modulo_id">
                     <option value="">Sem módulo</option>
@@ -274,13 +255,12 @@ $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
                             <td><a href="<?php echo Helpers::e($link['url']); ?>" target="_blank" rel="noopener">Abrir</a></td>
                             <td>
                                 <div class="split-actions">
-                                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>&link_id=<?php echo (int) $link['id']; ?>">Editar</a>
+                                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?>&link_id=<?php echo (int) $link['id']; ?>">Editar</a>
                                 </div>
                                 <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-mt-8">
                                     <input type="hidden" name="tipo" value="link">
                                     <input type="hidden" name="id" value="<?php echo (int) $link['id']; ?>">
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-                                    <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
                                     <input type="text" name="justificativa" placeholder="Justificativa" required>
                                     <button type="submit">Remover</button>
                                 </form>

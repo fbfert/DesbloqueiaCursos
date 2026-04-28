@@ -34,13 +34,13 @@ class AreaCursoController extends Controller
     {
         return $this->view('admin/area-curso/index', array_merge(
             array(
-                'title' => 'Area interna do curso',
+                'title' => 'Área interna do curso',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
             ),
             $this->areaCursoService->carregarAdmin(
                 (int) $request->query('curso_id', 0),
-                (int) $request->query('turma_id', 0),
+                null,
                 array(
                     'instrucao_id' => (int) $request->query('instrucao_id', 0),
                     'modulo_id' => (int) $request->query('modulo_id', 0),
@@ -55,31 +55,31 @@ class AreaCursoController extends Controller
     public function salvarInstrução(Request $request)
     {
         $resultado = $this->areaCursoService->salvarInstrução($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0));
     }
 
     public function salvarModulo(Request $request)
     {
         $resultado = $this->moduloService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0));
     }
 
     public function salvarAula(Request $request)
     {
         $resultado = $this->aulaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0));
     }
 
     public function salvarMaterial(Request $request)
     {
         $resultado = $this->materialService->salvar($request->all(), isset($_FILES['arquivo']) ? $_FILES['arquivo'] : null, Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0));
     }
 
     public function salvarLink(Request $request)
     {
         $resultado = $this->areaCursoService->salvarLink($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0));
     }
 
     public function excluir(Request $request)
@@ -93,14 +93,14 @@ class AreaCursoController extends Controller
             $request->userAgent()
         );
 
-        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm($resultado, '/admin/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0));
     }
 
     public function participantes(Request $request)
     {
         return $this->json(array(
             'ok' => true,
-            'participantes' => $this->areaCursoService->listarParticipantes((int) $request->query('curso_id', 0), (int) $request->query('turma_id', 0)),
+            'participantes' => $this->areaCursoService->listarParticipantes((int) $request->query('curso_id', 0), null),
         ));
     }
 
