@@ -79,6 +79,53 @@ class AuthController extends Controller
         )));
     }
 
+    public function minhaPagina(Request $request)
+    {
+        $sessionPerfis = Session::get('usuario_perfis', array());
+        $hasAdminAccess = Session::get('usuario_admin') || Session::get('is_admin') || in_array('admin', $sessionPerfis, true);
+        $hasProfessorAccess = Session::get('usuario_professor') || Session::get('is_professor') || in_array('professor', $sessionPerfis, true);
+
+        if ($hasAdminAccess) {
+            return $this->redirect('/admin/dashboard');
+        }
+        if ($hasProfessorAccess) {
+            return $this->redirect('/professor/dashboard');
+        }
+
+        return $this->redirect('/meus-cursos');
+    }
+
+    public function showAccount(Request $request)
+    {
+        $usuarioId = Session::get('usuario_id');
+        $conta = $this->authService->accountData($usuarioId);
+
+        if (!$conta) {
+            Session::flash('errors', array('Conta não encontrada.'));
+            return $this->redirect('/login');
+        }
+
+        return $this->view('auth/account', $this->flashData(array(
+            'title' => 'Minha conta',
+            'conta' => $conta,
+        )));
+    }
+
+    public function updateAccount(Request $request)
+    {
+        $usuarioId = Session::get('usuario_id');
+        $result = $this->authService->updateAccount($usuarioId, $request->all(), $request->ip(), $request->userAgent());
+
+        if (!$result['ok']) {
+            Session::flash('errors', $result['errors']);
+            Session::flash('old', $request->all());
+            return $this->redirect('/minha-conta');
+        }
+
+        Session::flash('success', 'Dados atualizados com sucesso.');
+        return $this->redirect('/minha-conta');
+    }
+
     public function requestPasswordReset(Request $request)
     {
         $result = $this->authService->requestPasswordReset(
@@ -93,13 +140,7 @@ class AuthController extends Controller
             return $this->redirect('/recuperar-senha');
         }
 
-        Session::flash('success', 'Se os dados existirem, um token de recuperacao foi gerado.');
-
-        if (!empty($result['token'])) {
-            Session::flash('reset_token', $result['token']);
-            return $this->redirect('/recuperar-senha/redefinir');
-        }
-
+        Session::flash('success', 'Se os dados existirem, enviamos um link de recuperação para o e-mail cadastrado.');
         return $this->redirect('/recuperar-senha');
     }
 
@@ -107,7 +148,7 @@ class AuthController extends Controller
     {
         return $this->view('auth/reset-password', $this->flashData(array(
             'title' => 'Redefinir senha',
-            'token' => Session::pullFlash('reset_token', $request->query('token')),
+            'token' => $request->query('token'),
         )));
     }
 
@@ -124,8 +165,7 @@ class AuthController extends Controller
         if (!$result['ok']) {
             Session::flash('errors', $result['errors']);
             Session::flash('old', array('token' => $request->input('token')));
-            Session::flash('reset_token', $request->input('token'));
-            return $this->redirect('/recuperar-senha/redefinir');
+            return $this->redirect('/recuperar-senha/redefinir?token=' . urlencode((string) $request->input('token')));
         }
 
         Session::flash('success', 'Senha redefinida com sucesso.');

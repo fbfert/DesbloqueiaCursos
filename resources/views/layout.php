@@ -37,21 +37,31 @@ $preFooterModulo = null;
 $preFooterMenuItems = array();
 $footerModulo = null;
 $footerText = '';
+$headerMenu = array('menu' => null, 'itens' => $publicMenu, 'from_fallback' => true);
 
 if (!$isAdmin) {
-    $frontendModuloService = new FrontendModuloService();
-    $frontendMenuService = new FrontendMenuService();
-    $placeholderService = new PlaceholderService();
+    try {
+        $frontendModuloService = new FrontendModuloService();
+        $frontendMenuService = new FrontendMenuService();
+        $placeholderService = new PlaceholderService();
 
-    $preFooterModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('antes_rodape', 'antes_rodape');
-    $preFooterMenu = $frontendMenuService->buscarMenuAtivoPorPosicao('antes_rodape', 'menu_antes_rodape');
-    if ($preFooterMenu) {
-        $preFooterMenuItems = $frontendMenuService->listarItensAtivos((int) $preFooterMenu['id']);
-    }
+        $preFooterModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('antes_rodape', 'antes_rodape');
+        $preFooterMenu = $frontendMenuService->buscarMenuAtivoPorPosicao('antes_rodape', 'menu_antes_rodape');
+        if ($preFooterMenu) {
+            $preFooterMenuItems = $frontendMenuService->listarItensAtivos((int) $preFooterMenu['id']);
+        }
+        $headerMenu = $frontendMenuService->menuTopoPublico($isAuthenticated);
 
-    $footerModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('rodape', 'rodape');
-    if ($footerModulo && !empty($footerModulo['conteudo'])) {
-        $footerText = $placeholderService->render((string) $footerModulo['conteudo']);
+        $footerModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('rodape', 'rodape');
+        if ($footerModulo && !empty($footerModulo['conteudo'])) {
+            $footerText = $placeholderService->render((string) $footerModulo['conteudo']);
+        }
+    } catch (\Throwable $exception) {
+        $preFooterModulo = null;
+        $preFooterMenuItems = array();
+        $footerModulo = null;
+        $footerText = '';
+        $headerMenu = array('menu' => null, 'itens' => $publicMenu, 'from_fallback' => true);
     }
 }
 ?>
@@ -71,134 +81,7 @@ if (!$isAdmin) {
         <?php require BASE_PATH . '/resources/views/admin/_shell.php'; ?>
     <?php else: ?>
         <div class="site-shell">
-            <?php if ($isProfessor): ?>
-                <header class="public-header">
-                    <div class="site-header">
-                        <a class="brand" href="/professor">Painel do professor</a>
-                        <nav class="public-nav" aria-label="Menu do professor">
-                            <a class="public-nav__link<?php echo $requestPath === '/professor' || $requestPath === '/professor/dashboard' ? ' is-active' : ''; ?>" href="/professor/dashboard">Inicio</a>
-                            <a class="public-nav__link<?php echo strpos($requestPath, '/professor/catalogo') === 0 ? ' is-active' : ''; ?>" href="/professor/catalogo">Catálogo</a>
-                            <a class="public-nav__link<?php echo strpos($requestPath, '/professor/area-curso') === 0 ? ' is-active' : ''; ?>" href="/professor/area-curso">Area do curso</a>
-                            <a class="public-nav__link<?php echo strpos($requestPath, '/professor/academico') === 0 ? ' is-active' : ''; ?>" href="/professor/academico">Acadêmico</a>
-                        </nav>
-                        <?php if ($isAuthenticated): ?>
-                            <div class="public-header__actions">
-                                <a class="button-link button-link--ghost" href="<?php echo Helpers::e($minhaAreaHref); ?>">Minha Área</a>
-                                <a class="button-link button-link--ghost button-link--icon" href="/minha-conta" aria-label="Editar dados da conta" title="Editar dados da conta">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                        <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"></path>
-                                    </svg>
-                                </a>
-                                <form method="post" action="/logout" class="header-logout-form">
-                                    <button type="submit" class="button-link button-link--ghost button-link--icon" aria-label="Sair" title="Sair">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                            <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4v-2H6V6h4V4Z"></path>
-                                            <path d="M13 8l1.41 1.41L12.83 11H20v2h-7.17l1.58 1.59L13 16l-4-4 4-4Z"></path>
-                                        </svg>
-                                    </button>
-                                </form>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </header>
-            <?php elseif ($isAluno): ?>
-                <header class="public-header">
-                    <div class="site-header">
-                        <a class="brand" href="/meus-cursos">Area do aluno</a>
-                        <nav class="public-nav" aria-label="Menu do aluno">
-                            <a class="public-nav__link<?php echo $requestPath === '/meus-cursos' ? ' is-active' : ''; ?>" href="/meus-cursos">Meus cursos</a>
-                            <a class="public-nav__link<?php echo strpos($requestPath, '/area-curso') === 0 ? ' is-active' : ''; ?>" href="/area-curso">Conteudo</a>
-                            <a class="public-nav__link" href="/cursos">Catálogo</a>
-                        </nav>
-                        <?php if ($isAuthenticated): ?>
-                            <div class="public-header__actions">
-                                <a class="button-link button-link--ghost" href="<?php echo Helpers::e($minhaAreaHref); ?>">Minha Área</a>
-                                <a class="button-link button-link--ghost button-link--icon" href="/minha-conta" aria-label="Editar dados da conta" title="Editar dados da conta">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                        <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"></path>
-                                    </svg>
-                                </a>
-                                <form method="post" action="/logout" class="header-logout-form">
-                                    <button type="submit" class="button-link button-link--ghost button-link--icon" aria-label="Sair" title="Sair">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                            <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4v-2H6V6h4V4Z"></path>
-                                            <path d="M13 8l1.41 1.41L12.83 11H20v2h-7.17l1.58 1.59L13 16l-4-4 4-4Z"></path>
-                                        </svg>
-                                    </button>
-                                </form>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </header>
-            <?php else: ?>
-                <header class="public-header">
-                    <div class="site-header">
-                        <a class="brand" href="/" aria-label="Página inicial do Polo Rainbow"><?php echo Helpers::e($brandName); ?></a>
-                        <nav class="public-nav public-nav--desktop" aria-label="Menu principal">
-                            <?php foreach ($publicMenu as $item): ?>
-                                <a class="public-nav__link<?php echo $item['active'] ? ' is-active' : ''; ?>" href="<?php echo Helpers::e($item['href']); ?>">
-                                    <?php echo Helpers::e($item['label']); ?>
-                                </a>
-                            <?php endforeach; ?>
-                        </nav>
-                        <div class="public-header__actions public-header__actions--public">
-                            <?php if ($isAuthenticated): ?>
-                                <a class="button-link button-link--ghost" href="<?php echo Helpers::e($minhaAreaHref); ?>">Minha Página</a>
-                                <a class="button-link button-link--ghost button-link--icon" href="/minha-conta" aria-label="Editar dados da conta" title="Editar dados da conta">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                        <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"></path>
-                                    </svg>
-                                </a>
-                                <form method="post" action="/logout" class="header-logout-form">
-                                    <button type="submit" class="button-link button-link--ghost button-link--icon" aria-label="Sair" title="Sair">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                            <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4v-2H6V6h4V4Z"></path>
-                                            <path d="M13 8l1.41 1.41L12.83 11H20v2h-7.17l1.58 1.59L13 16l-4-4 4-4Z"></path>
-                                        </svg>
-                                    </button>
-                                </form>
-                            <?php else: ?>
-                                <a class="button-link button-link--ghost" href="/login">Entrar</a>
-                            <?php endif; ?>
-                            <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-controls="menu-publico-mobile" aria-expanded="false" data-menu-toggle>
-                                <span class="menu-toggle__line" aria-hidden="true"></span>
-                                <span class="menu-toggle__line" aria-hidden="true"></span>
-                                <span class="menu-toggle__line" aria-hidden="true"></span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="public-menu-overlay" hidden data-menu-overlay></div>
-                    <nav class="public-menu-mobile" id="menu-publico-mobile" aria-label="Menu principal mobile" hidden tabindex="-1" data-menu-mobile>
-                        <div class="public-menu-mobile__header">
-                            <strong>Menu</strong>
-                            <button class="public-menu-mobile__close" type="button" aria-label="Fechar menu" data-menu-close>&times;</button>
-                        </div>
-                        <div class="public-menu-mobile__links">
-                            <?php foreach ($publicMenu as $item): ?>
-                                <a class="public-menu-mobile__link<?php echo $item['active'] ? ' is-active' : ''; ?>" href="<?php echo Helpers::e($item['href']); ?>">
-                                    <?php echo Helpers::e($item['label']); ?>
-                                </a>
-                            <?php endforeach; ?>
-                            <?php if ($isAuthenticated): ?>
-                                <a class="public-menu-mobile__link" href="<?php echo Helpers::e($minhaAreaHref); ?>">Minha Página</a>
-                                <?php if ($hasAdminAccess): ?>
-                                    <a class="public-menu-mobile__link" href="/admin/dashboard">Backoffice</a>
-                                <?php endif; ?>
-                                <?php if ($hasProfessorAccess): ?>
-                                    <a class="public-menu-mobile__link" href="/professor/dashboard">Área do professor</a>
-                                <?php endif; ?>
-                                <form method="post" action="/logout" class="public-menu-mobile__logout">
-                                    <button type="submit" class="button-link button-link--ghost">Sair</button>
-                                </form>
-                            <?php else: ?>
-                                <a class="public-menu-mobile__link" href="/login">Entrar</a>
-                                <a class="public-menu-mobile__link" href="/cadastro">Criar conta</a>
-                                <a class="public-menu-mobile__link" href="/recuperar-senha">Recuperar senha</a>
-                            <?php endif; ?>
-                        </div>
-                    </nav>
-                </header>
-            <?php endif; ?>
+            <?php require BASE_PATH . '/resources/views/partials/public/header.php'; ?>
 
             <main class="site-main">
                 <?php echo $content; ?>

@@ -56,7 +56,9 @@ $app->get('/checkout/comprovante', array(CheckoutController::class, 'comprovante
 $app->post('/checkout/comprovante', array(CheckoutController::class, 'comprovante'));
 $app->get('/checkout/sucesso', array(CheckoutController::class, 'sucesso'));
 $app->get('/meus-cursos', array(MeusCursosController::class, 'index'), array('auth'));
+$app->get('/pedidos', array(MeusCursosController::class, 'index'), array('auth'));
 $app->post('/meus-cursos/pedidos/cancelar', array(MeusCursosController::class, 'cancelarPedido'), array('auth'));
+$app->get('/minha-pagina', array(AuthController::class, 'minhaPagina'), array('auth'));
 $app->get('/minha-conta', array(AuthController::class, 'showAccount'), array('auth'));
 $app->post('/minha-conta', array(AuthController::class, 'updateAccount'), array('auth'));
 $app->get('/area-curso', array(AreaCursoController::class, 'index'), array('auth'));
@@ -225,6 +227,7 @@ $app->post('/admin/certificados/cancelar', array(AdminCertificadosController::cl
 $app->post('/admin/certificados/revogar', array(AdminCertificadosController::class, 'revogar'), array('auth', 'permission:certificados.gerenciar'));
 $app->get('/admin/certificados/pdf', array(AdminCertificadosController::class, 'pdf'), array('auth', 'permission:certificados.ver'));
 $app->get('/certificados/validar', array(CertificadosController::class, 'validar'));
+$app->get('/certificados', array(CertificadosController::class, 'validar'));
 $app->post('/certificados/validar', array(CertificadosController::class, 'validar'));
 $app->get('/certificados/show', array(CertificadosController::class, 'show'));
 $app->get('/certificados/pdf', array(CertificadosController::class, 'pdf'));

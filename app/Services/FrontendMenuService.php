@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\Logger;
 use App\Models\FrontendMenu;
 use App\Models\FrontendMenuItem;
 use PDO;
@@ -63,6 +64,69 @@ class FrontendMenuService
     public function listarItensAtivos($menuId)
     {
         return $this->itemModel->listActiveByMenu((int) $menuId);
+    }
+
+    public function menuTopoPublico($isAuthenticated)
+    {
+        $fallbackPublico = array(
+            array('rotulo' => 'Início', 'url' => '/', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Cursos', 'url' => '/cursos', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Como funciona', 'url' => '/como-funciona', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Sobre', 'url' => '/sobre', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Contato', 'url' => '/contato', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Entrar', 'url' => '/login', 'target' => '_self', 'rel' => null),
+        );
+        $fallbackLogado = array(
+            array('rotulo' => 'Minha Página', 'url' => '/minha-pagina', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Meus Cursos', 'url' => '/area-curso', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Certificados', 'url' => '/certificados', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Cursos', 'url' => '/cursos', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Sair', 'url' => '/logout', 'target' => '_self', 'rel' => null),
+        );
+
+        $codigo = $isAuthenticated ? 'menu_topo_logado' : 'menu_topo_publico';
+        $posicao = $isAuthenticated ? 'topo_logado' : 'topo_publico';
+        $fallback = $isAuthenticated ? $fallbackLogado : $fallbackPublico;
+
+        try {
+            $menu = $this->menuModel->findActiveByPositionOrCode($posicao, $codigo);
+            if (!$menu) {
+                $menu = $this->menuModel->findActiveByPositionOrCode($posicao, null);
+            }
+            if (!$menu) {
+                return array(
+                    'menu' => null,
+                    'itens' => $fallback,
+                    'from_fallback' => true,
+                );
+            }
+
+            $itens = $this->sanitizeItens($this->itemModel->listActiveByMenu((int) $menu['id']));
+            if (!$itens) {
+                return array(
+                    'menu' => $menu,
+                    'itens' => $fallback,
+                    'from_fallback' => true,
+                );
+            }
+
+            return array(
+                'menu' => $menu,
+                'itens' => $itens,
+                'from_fallback' => false,
+            );
+        } catch (\Throwable $exception) {
+            Logger::error('frontend_menu.topo.carregamento_falhou', array(
+                'codigo' => $codigo,
+                'posicao' => $posicao,
+                'message' => $exception->getMessage(),
+            ));
+            return array(
+                'menu' => null,
+                'itens' => $fallback,
+                'from_fallback' => true,
+            );
+        }
     }
 
     public function salvarMenu(array $input, $usuarioId = null, $ipAddress = null, $userAgent = null)
@@ -257,6 +321,9 @@ class FrontendMenuService
         if ($payload['rotulo'] === '') {
             $errors[] = 'Informe o rótulo do item.';
         }
+        if (preg_match('/<[^>]*>/', $payload['rotulo'])) {
+            $errors[] = 'O rótulo do item não pode conter HTML.';
+        }
         if ($payload['url'] === '') {
             $errors[] = 'Informe a URL do item.';
         } elseif (!$this->urlValida($payload['url'])) {
@@ -272,6 +339,9 @@ class FrontendMenuService
     {
         $url = trim((string) $url);
         if ($url === '') {
+            return false;
+        }
+        if ($this->hasBlockedScheme($url)) {
             return false;
         }
         if (strpos($url, '/') === 0) {
@@ -306,5 +376,43 @@ class FrontendMenuService
         );
         $stmt->execute(array('tipo' => $entidadeTipo));
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function sanitizeItens(array $items)
+    {
+        $sanitized = array();
+
+        foreach ($items as $item) {
+            $url = trim((string) (isset($item['url']) ? $item['url'] : ''));
+            $target = trim((string) (isset($item['target']) ? $item['target'] : '_self'));
+            $rotulo = trim((string) (isset($item['rotulo']) ? $item['rotulo'] : ''));
+            $rel = $this->nullableTrim(isset($item['rel']) ? $item['rel'] : null);
+
+            if ($rotulo === '' || preg_match('/<[^>]*>/', $rotulo)) {
+                continue;
+            }
+            if (!$this->urlValida($url)) {
+                continue;
+            }
+            if (!in_array($target, array('_self', '_blank'), true)) {
+                $target = '_self';
+            }
+            if ($target === '_blank' && ($rel === null || $rel === '')) {
+                $rel = 'noopener noreferrer';
+            }
+
+            $item['url'] = $url;
+            $item['target'] = $target;
+            $item['rotulo'] = $rotulo;
+            $item['rel'] = $rel;
+            $sanitized[] = $item;
+        }
+
+        return $sanitized;
+    }
+
+    private function hasBlockedScheme($url)
+    {
+        return preg_match('/^\s*(javascript|data|vbscript)\s*:/i', (string) $url) === 1;
     }
 }
