@@ -46,8 +46,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 12px;
+    min-height: 68px;
+    padding-top: 12px;
+    padding-bottom: 12px;
 }
 
 .brand {
@@ -73,6 +75,22 @@ body {
     align-items: center;
 }
 
+.header-logout-form {
+    margin: 0;
+}
+
+.header-logout-form .button-link {
+    min-width: 44px;
+    padding: 10px;
+}
+
+.button-link--icon svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    display: block;
+}
+
 .public-nav__link {
     display: inline-flex;
     align-items: center;
@@ -83,6 +101,112 @@ body {
     text-decoration: none;
     font-size: 14px;
     font-weight: 600;
+}
+
+.public-header__actions--public {
+    margin-left: auto;
+    gap: 10px;
+}
+
+.public-nav--desktop {
+    display: none;
+}
+
+.menu-toggle {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid #4f5255;
+    border-radius: 8px;
+    background: #242628;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.menu-toggle__line {
+    width: 18px;
+    height: 2px;
+    margin: 0 auto;
+    border-radius: 2px;
+    background: currentColor;
+}
+
+.public-menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 24;
+}
+
+.public-menu-mobile {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(86vw, 340px);
+    height: 100vh;
+    padding: 14px;
+    background: #1c1d1f;
+    border-left: 1px solid #3e4143;
+    z-index: 25;
+    overflow-y: auto;
+    outline: none;
+}
+
+.public-menu-mobile__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: #ffffff;
+}
+
+.public-menu-mobile__close {
+    width: 44px;
+    height: 44px;
+    border: 1px solid #4f5255;
+    border-radius: 8px;
+    background: #242628;
+    color: #ffffff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.public-menu-mobile__links {
+    display: grid;
+    gap: 8px;
+}
+
+.public-menu-mobile__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.public-menu-mobile__link:hover,
+.public-menu-mobile__link.is-active {
+    background: #2d2f31;
+}
+
+.public-menu-mobile__logout {
+    margin-top: 8px;
+}
+
+.public-menu-mobile__logout .button-link {
+    width: 100%;
+}
+
+body.is-menu-open {
+    overflow: hidden;
 }
 
 .public-nav__link.is-active,
@@ -320,6 +444,11 @@ body {
     background: #fff0d9;
 }
 
+.pill--success {
+    background: #dcfce7;
+    color: #166534;
+}
+
 .button-link {
     display: inline-flex;
     align-items: center;
@@ -531,6 +660,28 @@ body {
     width: auto;
 }
 
+.auth-check span {
+    display: grid;
+    gap: 6px;
+}
+
+.consent-link {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 36px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #f3f1ff;
+    color: var(--color-primary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.consent-link:hover {
+    background: #ebe7ff;
+}
+
 .auth-message {
     padding: 12px;
     border-radius: 8px;
@@ -639,19 +790,60 @@ body {
     font-size: 14px;
 }
 
-.public-footer {
+.pre-footer {
     margin-top: 32px;
+    border-top: 1px solid rgba(12, 91, 79, 0.12);
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.pre-footer .site-footer {
+    display: grid;
+    gap: 14px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+}
+
+.pre-footer__title {
+    color: var(--color-text);
+    font-size: 18px;
+}
+
+.pre-footer__text {
+    margin: 6px 0 0;
+}
+
+.pre-footer__menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+}
+
+.pre-footer__link {
+    color: var(--color-primary);
+    text-decoration: none;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.pre-footer__link:hover {
+    text-decoration: underline;
+}
+
+.public-footer {
+    margin-top: 0;
     border-top: 1px solid rgba(12, 91, 79, 0.12);
 }
 
 .public-footer .site-footer {
     display: grid;
-    gap: 14px;
+    gap: 8px;
+    padding-top: 14px;
+    padding-bottom: 18px;
 }
 
-.public-footer__links a {
-    color: var(--color-primary);
-    text-decoration: none;
+.site-footer__content {
+    color: var(--color-muted);
 }
 
 .admin-shell {
@@ -883,6 +1075,39 @@ body {
     font: inherit;
 }
 
+.meus-cursos-layout {
+    display: grid;
+    gap: 16px;
+}
+
+.meus-cursos-side .status-card {
+    height: 100%;
+}
+
+.pedidos-pendentes-lista {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.pedido-pendente-item {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 10px;
+    display: grid;
+    gap: 4px;
+    background: rgba(12, 91, 79, 0.03);
+}
+
+.pedido-pendente-item strong {
+    color: var(--color-primary);
+}
+
+.pedido-pendente-item span {
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
 @media (min-width: 720px) {
     .hero h1 {
         font-size: 48px;
@@ -907,6 +1132,34 @@ body {
     .checkout-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .meus-cursos-layout {
+        grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+        align-items: start;
+    }
+}
+
+@media (min-width: 768px) {
+    .site-header {
+        gap: 16px;
+        min-height: 80px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+
+    .public-nav--desktop {
+        display: flex;
+    }
+
+    .menu-toggle,
+    .public-menu-mobile,
+    .public-menu-overlay {
+        display: none !important;
+    }
+
+    .public-header__actions--public {
+        gap: 8px;
+    }
 }
 
 @media (min-width: 1080px) {
@@ -914,4 +1167,12 @@ body {
         grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
         align-items: stretch;
     }
+}
+
+input.is-restored-input,
+textarea.is-restored-input,
+select.is-restored-input {
+    border-color: #2f9e44;
+    box-shadow: 0 0 0 2px rgba(47, 158, 68, 0.15);
+    background: #f4fff6;
 }

@@ -13,6 +13,7 @@ $menu = array(
     array('group' => 'Painel', 'items' => array(
         array('label' => 'Dashboard', 'href' => '/admin/dashboard', 'icon' => '◼'),
         array('label' => 'Catálogo', 'href' => '/admin/catalogo', 'icon' => '▣', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Páginas', 'href' => '/admin/paginas', 'icon' => '▤', 'permissions_any' => array('conteudo.ver')),
     )),
     array('group' => 'Conteudo', 'items' => array(
         array('label' => 'Categorias', 'href' => '/admin/categorias', 'icon' => '◦', 'permissions_any' => array('conteudo.ver')),
@@ -37,7 +38,11 @@ $menu = array(
         array('label' => 'Rateios', 'href' => '/admin/rateios', 'icon' => '≋', 'permissions_any' => array('financeiro.ver')),
     )),
     array('group' => 'Configurações', 'items' => array(
+        array('label' => 'Frontend · Módulos', 'href' => '/admin/frontend/modulos', 'icon' => '▦', 'permissions_any' => array('frontend.modulos.ver')),
+        array('label' => 'Frontend · Menus', 'href' => '/admin/frontend/menus', 'icon' => '☷', 'permissions_any' => array('frontend.menus.ver')),
         array('label' => 'Globais', 'href' => '/admin/configuracoes-globais', 'icon' => '⚙', 'permissions_any' => array('configuracoes_globais.ver')),
+        array('label' => 'Usuários', 'href' => '/admin/usuarios', 'icon' => '👤', 'permissions_any' => array('usuarios.ver')),
+        array('label' => 'Permissões', 'href' => '/admin/permissoes', 'icon' => '🛡', 'permissions_any' => array('rbac.permissoes.ver')),
         array('label' => 'E-mails', 'href' => '/admin/emails', 'icon' => '✉', 'permissions_any' => array('emails.ver')),
         array('label' => 'RBAC', 'href' => '/admin/rbac', 'icon' => '☰', 'permissions_any' => array('rbac.dashboard.ver')),
     )),

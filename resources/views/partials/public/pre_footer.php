@@ -1,0 +1,26 @@
+<?php use App\Core\Helpers; ?>
+<?php if (!empty($preFooterModulo) || !empty($preFooterMenuItems)): ?>
+    <section class="pre-footer">
+        <div class="site-footer">
+            <?php if (!empty($preFooterModulo)): ?>
+                <div class="pre-footer__content">
+                    <?php if (!empty($preFooterModulo['titulo'])): ?>
+                        <strong class="pre-footer__title"><?php echo Helpers::e($preFooterModulo['titulo']); ?></strong>
+                    <?php endif; ?>
+                    <?php if (!empty($preFooterModulo['subtitulo'])): ?>
+                        <p class="pre-footer__text"><?php echo Helpers::e($preFooterModulo['subtitulo']); ?></p>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+            <?php if (!empty($preFooterMenuItems)): ?>
+                <nav class="pre-footer__menu" aria-label="Links institucionais">
+                    <?php foreach ($preFooterMenuItems as $item): ?>
+                        <a class="pre-footer__link" href="<?php echo Helpers::e($item['url']); ?>" target="<?php echo Helpers::e($item['target']); ?>"<?php echo !empty($item['rel']) ? ' rel="' . Helpers::e($item['rel']) . '"' : ''; ?>>
+                            <?php echo Helpers::e($item['rotulo']); ?>
+                        </a>
+                    <?php endforeach; ?>
+                </nav>
+            <?php endif; ?>
+        </div>
+    </section>
+<?php endif; ?>

@@ -2,6 +2,9 @@
 use App\Core\Helpers;
 use App\Core\Session;
 use App\Services\ConfiguracaoGlobalService;
+use App\Services\FrontendModuloService;
+use App\Services\FrontendMenuService;
+use App\Services\PlaceholderService;
 
 $pageTitle = isset($title) ? $title : 'Polo Rainbow';
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
@@ -15,9 +18,10 @@ $isProfessor = strpos($requestPath, '/professor') === 0;
 $isAluno = in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true);
 $scopeClass = $isAdmin ? 'app-admin' : ($isProfessor ? 'app-professor' : ($isAluno ? 'app-aluno' : 'app-public'));
 $publicMenu = array(
-    array('label' => 'Inicio', 'href' => '/', 'active' => $requestPath === '/'),
+    array('label' => 'Início', 'href' => '/', 'active' => $requestPath === '/'),
     array('label' => 'Cursos', 'href' => '/cursos', 'active' => strpos($requestPath, '/cursos') === 0 || $requestPath === '/inscricao'),
     array('label' => 'Como funciona', 'href' => '/como-funciona', 'active' => $requestPath === '/como-funciona'),
+    array('label' => 'Validar certificado', 'href' => '/certificados/validar', 'active' => strpos($requestPath, '/certificados/validar') === 0),
     array('label' => 'Sobre', 'href' => '/sobre', 'active' => $requestPath === '/sobre'),
     array('label' => 'Contato', 'href' => '/contato', 'active' => $requestPath === '/contato'),
 );
@@ -25,6 +29,30 @@ $isAuthenticated = Session::get('usuario_id') !== null;
 $minhaAreaHref = '/meus-cursos';
 if ($isProfessor) {
     $minhaAreaHref = '/professor/dashboard';
+}
+$sessionPerfis = Session::get('usuario_perfis', array());
+$hasAdminAccess = Session::get('usuario_admin') || Session::get('is_admin') || in_array('admin', $sessionPerfis, true);
+$hasProfessorAccess = Session::get('usuario_professor') || Session::get('is_professor') || in_array('professor', $sessionPerfis, true);
+$preFooterModulo = null;
+$preFooterMenuItems = array();
+$footerModulo = null;
+$footerText = '';
+
+if (!$isAdmin) {
+    $frontendModuloService = new FrontendModuloService();
+    $frontendMenuService = new FrontendMenuService();
+    $placeholderService = new PlaceholderService();
+
+    $preFooterModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('antes_rodape', 'antes_rodape');
+    $preFooterMenu = $frontendMenuService->buscarMenuAtivoPorPosicao('antes_rodape', 'menu_antes_rodape');
+    if ($preFooterMenu) {
+        $preFooterMenuItems = $frontendMenuService->listarItensAtivos((int) $preFooterMenu['id']);
+    }
+
+    $footerModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('rodape', 'rodape');
+    if ($footerModulo && !empty($footerModulo['conteudo'])) {
+        $footerText = $placeholderService->render((string) $footerModulo['conteudo']);
+    }
 }
 ?>
 <!doctype html>
@@ -105,17 +133,17 @@ if ($isProfessor) {
             <?php else: ?>
                 <header class="public-header">
                     <div class="site-header">
-                        <a class="brand" href="/"><?php echo Helpers::e($brandName); ?></a>
-                        <nav class="public-nav" aria-label="Menu principal">
+                        <a class="brand" href="/" aria-label="Página inicial do Polo Rainbow"><?php echo Helpers::e($brandName); ?></a>
+                        <nav class="public-nav public-nav--desktop" aria-label="Menu principal">
                             <?php foreach ($publicMenu as $item): ?>
                                 <a class="public-nav__link<?php echo $item['active'] ? ' is-active' : ''; ?>" href="<?php echo Helpers::e($item['href']); ?>">
                                     <?php echo Helpers::e($item['label']); ?>
                                 </a>
                             <?php endforeach; ?>
                         </nav>
-                        <div class="public-header__actions">
+                        <div class="public-header__actions public-header__actions--public">
                             <?php if ($isAuthenticated): ?>
-                                <a class="button-link button-link--ghost" href="<?php echo Helpers::e($minhaAreaHref); ?>">Minha Área</a>
+                                <a class="button-link button-link--ghost" href="<?php echo Helpers::e($minhaAreaHref); ?>">Minha Página</a>
                                 <a class="button-link button-link--ghost button-link--icon" href="/minha-conta" aria-label="Editar dados da conta" title="Editar dados da conta">
                                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                         <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"></path>
@@ -132,8 +160,43 @@ if ($isProfessor) {
                             <?php else: ?>
                                 <a class="button-link button-link--ghost" href="/login">Entrar</a>
                             <?php endif; ?>
+                            <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-controls="menu-publico-mobile" aria-expanded="false" data-menu-toggle>
+                                <span class="menu-toggle__line" aria-hidden="true"></span>
+                                <span class="menu-toggle__line" aria-hidden="true"></span>
+                                <span class="menu-toggle__line" aria-hidden="true"></span>
+                            </button>
                         </div>
                     </div>
+                    <div class="public-menu-overlay" hidden data-menu-overlay></div>
+                    <nav class="public-menu-mobile" id="menu-publico-mobile" aria-label="Menu principal mobile" hidden tabindex="-1" data-menu-mobile>
+                        <div class="public-menu-mobile__header">
+                            <strong>Menu</strong>
+                            <button class="public-menu-mobile__close" type="button" aria-label="Fechar menu" data-menu-close>&times;</button>
+                        </div>
+                        <div class="public-menu-mobile__links">
+                            <?php foreach ($publicMenu as $item): ?>
+                                <a class="public-menu-mobile__link<?php echo $item['active'] ? ' is-active' : ''; ?>" href="<?php echo Helpers::e($item['href']); ?>">
+                                    <?php echo Helpers::e($item['label']); ?>
+                                </a>
+                            <?php endforeach; ?>
+                            <?php if ($isAuthenticated): ?>
+                                <a class="public-menu-mobile__link" href="<?php echo Helpers::e($minhaAreaHref); ?>">Minha Página</a>
+                                <?php if ($hasAdminAccess): ?>
+                                    <a class="public-menu-mobile__link" href="/admin/dashboard">Backoffice</a>
+                                <?php endif; ?>
+                                <?php if ($hasProfessorAccess): ?>
+                                    <a class="public-menu-mobile__link" href="/professor/dashboard">Área do professor</a>
+                                <?php endif; ?>
+                                <form method="post" action="/logout" class="public-menu-mobile__logout">
+                                    <button type="submit" class="button-link button-link--ghost">Sair</button>
+                                </form>
+                            <?php else: ?>
+                                <a class="public-menu-mobile__link" href="/login">Entrar</a>
+                                <a class="public-menu-mobile__link" href="/cadastro">Criar conta</a>
+                                <a class="public-menu-mobile__link" href="/recuperar-senha">Recuperar senha</a>
+                            <?php endif; ?>
+                        </div>
+                    </nav>
                 </header>
             <?php endif; ?>
 
@@ -141,24 +204,70 @@ if ($isProfessor) {
                 <?php echo $content; ?>
             </main>
 
-            <footer class="public-footer">
-                <div class="site-footer">
-                    <div>
-                        <strong><?php echo Helpers::e($brandName); ?></strong>
-                        <p>Portal publico para cursos, turmas e inscricoes iniciais.</p>
-                    </div>
-                    <div class="public-footer__links">
-                        <a href="/cursos">Cursos</a>
-                        <a href="/como-funciona">Como funciona</a>
-                        <a href="/sobre">Sobre</a>
-                        <a href="/contato">Contato</a>
-                    </div>
-                    <span><?php echo Helpers::e(date('Y')); ?> <?php echo Helpers::e($brandName); ?>.</span>
-                </div>
-            </footer>
+            <?php require BASE_PATH . '/resources/views/partials/public/pre_footer.php'; ?>
+            <?php require BASE_PATH . '/resources/views/partials/public/footer.php'; ?>
         </div>
     <?php endif; ?>
 </body>
+<script>
+(function () {
+    var body = document.body;
+    var menu = document.querySelector('[data-menu-mobile]');
+    var toggle = document.querySelector('[data-menu-toggle]');
+    var overlay = document.querySelector('[data-menu-overlay]');
+    var closeButton = document.querySelector('[data-menu-close]');
+
+    if (!menu || !toggle || !overlay) {
+        return;
+    }
+
+    function setMenuState(isOpen) {
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        toggle.setAttribute('aria-label', isOpen ? 'Fechar menu' : 'Abrir menu');
+        menu.hidden = !isOpen;
+        overlay.hidden = !isOpen;
+        body.classList.toggle('is-menu-open', isOpen);
+        if (isOpen) {
+            menu.focus();
+        } else {
+            toggle.focus();
+        }
+    }
+
+    function closeMenu() {
+        setMenuState(false);
+    }
+
+    toggle.addEventListener('click', function () {
+        setMenuState(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    overlay.addEventListener('click', closeMenu);
+
+    if (closeButton) {
+        closeButton.addEventListener('click', closeMenu);
+    }
+
+    menu.addEventListener('click', function (event) {
+        var target = event.target;
+        if (target && target.tagName === 'A') {
+            closeMenu();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+            closeMenu();
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 768 && toggle.getAttribute('aria-expanded') === 'true') {
+            setMenuState(false);
+        }
+    });
+})();
+</script>
 <?php if (!empty($oldInput) && is_array($oldInput)): ?>
 <script>
 (function () {
