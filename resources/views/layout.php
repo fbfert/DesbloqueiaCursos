@@ -16,6 +16,7 @@ $brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fant
 $isAdmin = strpos($requestPath, '/admin') === 0;
 $isProfessor = strpos($requestPath, '/professor') === 0;
 $isAluno = in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true);
+$useFrontendTheme = !$isAdmin && !$isProfessor;
 $scopeClass = $isAdmin ? 'app-admin' : ($isProfessor ? 'app-professor' : ($isAluno ? 'app-aluno' : 'app-public'));
 $publicMenu = array(
     array('label' => 'Início', 'href' => '/', 'active' => $requestPath === '/'),
@@ -72,11 +73,14 @@ if (!$isAdmin) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="/assets/css/app.css">
+    <?php if ($useFrontendTheme): ?>
+        <link rel="stylesheet" href="/assets/css/frontend.css">
+    <?php endif; ?>
     <?php if ($isAdmin): ?>
         <link rel="stylesheet" href="/assets/css/admin.css">
     <?php endif; ?>
 </head>
-<body class="<?php echo Helpers::e($scopeClass); ?> theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
+<body class="<?php echo Helpers::e($scopeClass); ?><?php echo $useFrontendTheme ? ' frontend-theme' : ''; ?> theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
     <?php if ($isAdmin): ?>
         <?php require BASE_PATH . '/resources/views/admin/_shell.php'; ?>
     <?php else: ?>
