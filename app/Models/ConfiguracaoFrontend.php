@@ -33,6 +33,7 @@ class ConfiguracaoFrontend
             'logo_caminho' => isset($data['logo_caminho']) ? trim((string) $data['logo_caminho']) : null,
             'banner_caminho' => isset($data['banner_caminho']) ? trim((string) $data['banner_caminho']) : null,
             'descricao_home' => isset($data['descricao_home']) ? trim((string) $data['descricao_home']) : null,
+            'home_destaques_limite' => $this->normalizeHomeDestaquesLimite(isset($data['home_destaques_limite']) ? $data['home_destaques_limite'] : null),
         );
 
         if ($current) {
@@ -44,6 +45,7 @@ class ConfiguracaoFrontend
                      logo_caminho = :logo_caminho,
                      banner_caminho = :banner_caminho,
                      descricao_home = :descricao_home,
+                     home_destaques_limite = :home_destaques_limite,
                      updated_at = NOW()
                  WHERE id = :id'
             );
@@ -54,13 +56,32 @@ class ConfiguracaoFrontend
 
         $stmt = Database::connection()->prepare(
             'INSERT INTO configuracoes_frontend
-             (template_visual_portal, cor_primaria, cor_secundaria, logo_caminho, banner_caminho, descricao_home, created_at, updated_at, deleted_at)
+             (template_visual_portal, cor_primaria, cor_secundaria, logo_caminho, banner_caminho, descricao_home, home_destaques_limite, created_at, updated_at, deleted_at)
              VALUES
-             (:template_visual_portal, :cor_primaria, :cor_secundaria, :logo_caminho, :banner_caminho, :descricao_home, NOW(), NOW(), NULL)'
+             (:template_visual_portal, :cor_primaria, :cor_secundaria, :logo_caminho, :banner_caminho, :descricao_home, :home_destaques_limite, NOW(), NOW(), NULL)'
         );
 
         $stmt->execute($payload);
 
         return (int) Database::connection()->lastInsertId();
+    }
+
+    private function normalizeHomeDestaquesLimite($value)
+    {
+        if ($value === null) {
+            return 6;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !preg_match('/^\d+$/', $value)) {
+            return 6;
+        }
+
+        $limite = (int) $value;
+        if ($limite < 1 || $limite > 12) {
+            return 6;
+        }
+
+        return $limite;
     }
 }

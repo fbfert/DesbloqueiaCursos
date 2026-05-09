@@ -26,7 +26,10 @@ class UsuarioPerfil
     {
         $perfilIds = array_values(array_unique(array_map('intval', $perfilIds)));
         $pdo = Database::connection();
-        $pdo->beginTransaction();
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
 
         try {
             $delete = $pdo->prepare('DELETE FROM usuario_perfis WHERE usuario_id = :usuario_id');
@@ -46,9 +49,13 @@ class UsuarioPerfil
                 }
             }
 
-            $pdo->commit();
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
         } catch (\Exception $exception) {
-            $pdo->rollBack();
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             throw $exception;
         }
     }

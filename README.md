@@ -14,6 +14,7 @@ Portal de cursos e eventos em PHP MVC, preparado para Linux/cPanel, MySQL 5.7, c
 
 ## Documentacao operacional
 
+- [Documentação do projeto](docs/projeto.md)
 - [Deploy](docs/deploy.md)
 - [Go-live checklist](docs/go-live-checklist.md)
 - [Rollback](docs/rollback.md)

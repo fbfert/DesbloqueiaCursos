@@ -2,6 +2,8 @@
 
 namespace App\Core;
 
+use App\Controllers\PaginasController;
+
 class Router
 {
     private $routes = array();
@@ -24,6 +26,14 @@ class Router
         $key = $request->method() . ' ' . $request->path();
 
         if (!isset($this->routes[$key])) {
+            if ($request->method() === 'GET') {
+                $paginasController = new PaginasController();
+                $paginaResponse = $paginasController->showByRoute($request);
+                if ($paginaResponse instanceof Response) {
+                    return $paginaResponse;
+                }
+            }
+
             return new Response(View::render('errors/404', array(
                 'title' => 'Pagina nao encontrada',
             )), 404);
@@ -42,7 +52,24 @@ class Router
             return call_user_func($handler, $request);
         };
 
-        return $this->executeMiddlewareStack($middleware, $request, $runner);
+        try {
+            return $this->executeMiddlewareStack($middleware, $request, $runner);
+        } catch (\Throwable $exception) {
+            Logger::error('admin.route.error', array(
+                'path' => $request->path(),
+                'method' => $request->method(),
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ));
+
+            if (strpos($request->path(), '/admin') === 0) {
+                Session::flash('errors', array('Ocorreu um erro interno ao carregar a página administrativa.'));
+                return Response::redirect('/admin/dashboard');
+            }
+
+            throw $exception;
+        }
     }
 
     private function add($method, $path, $handler, array $middleware = array())

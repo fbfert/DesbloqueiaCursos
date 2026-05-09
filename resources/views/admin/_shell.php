@@ -123,9 +123,7 @@ if (!empty($title)) {
             <div class="admin-topbar__actions">
                 <span class="muted"><?php echo Helpers::e($userName); ?></span>
                 <a class="button-link button-link--ghost" href="/">Portal</a>
-                <form method="post" action="/logout">
-                    <button type="submit">Sair</button>
-                </form>
+                <a class="button-link button-link--ghost" href="/logout">Sair</a>
             </div>
         </header>
 

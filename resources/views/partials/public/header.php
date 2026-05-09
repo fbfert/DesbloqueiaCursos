@@ -77,24 +77,17 @@ foreach ($menuItens as $item) {
                     }
                     $target = (string) ($item['target'] ?? '_self');
                     $rel = isset($item['rel']) ? trim((string) $item['rel']) : '';
-                    $isLogout = $url === '/logout';
                     ?>
-                    <?php if ($isLogout): ?>
-                        <form method="post" action="/logout" class="mobile-menu__logout-form">
-                            <button type="submit" class="mobile-menu__link mobile-menu__link--button">Sair</button>
-                        </form>
-                    <?php else: ?>
-                        <a
-                            class="mobile-menu__link"
-                            href="<?php echo Helpers::e($url); ?>"
-                            target="<?php echo Helpers::e($target); ?>"
-                            <?php if ($target === '_blank'): ?>
-                                rel="<?php echo Helpers::e($rel !== '' ? $rel : 'noopener noreferrer'); ?>"
-                            <?php endif; ?>
-                        >
-                            <?php echo Helpers::e((string) ($item['rotulo'] ?? '')); ?>
-                        </a>
-                    <?php endif; ?>
+                    <a
+                        class="mobile-menu__link"
+                        href="<?php echo Helpers::e($url); ?>"
+                        target="<?php echo Helpers::e($target); ?>"
+                        <?php if ($target === '_blank'): ?>
+                            rel="<?php echo Helpers::e($rel !== '' ? $rel : 'noopener noreferrer'); ?>"
+                        <?php endif; ?>
+                    >
+                        <?php echo Helpers::e((string) ($item['rotulo'] ?? '')); ?>
+                    </a>
                 <?php endforeach; ?>
             </div>
         </div>

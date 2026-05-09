@@ -22,6 +22,8 @@ class CursoService
     private $usuarioCursoModel;
     private $auditService;
     private $trashService;
+    private $thumbnailDirectoryPublic;
+    private $thumbnailDirectoryAbsolute;
 
     private $modalidades = array(
         'presencial',
@@ -40,6 +42,8 @@ class CursoService
         $this->usuarioCursoModel = new UsuarioCurso();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
+        $this->thumbnailDirectoryPublic = '/assets/uploads/thumbnails';
+        $this->thumbnailDirectoryAbsolute = BASE_PATH . '/public_html' . $this->thumbnailDirectoryPublic;
     }
 
     public function allowedModalidades()
@@ -84,10 +88,11 @@ class CursoService
             'professores' => $this->usuarioModel->professores(),
             'professor_responsavel' => $professorResponsavel,
             'modalidades' => $this->modalidades,
+            'thumbnails_disponiveis' => $this->listarThumbnailsDisponiveis(),
         );
     }
 
-    public function salvar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function salvar(array $data, array $files = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $id = !empty($data['id']) ? (int) $data['id'] : 0;
         $nome = trim((string) (isset($data['nome']) ? $data['nome'] : ''));
@@ -96,6 +101,7 @@ class CursoService
         $tipo = isset($data['tipo']) && in_array($data['tipo'], array('curso', 'evento'), true) ? $data['tipo'] : 'curso';
         $modalidade = isset($data['modalidade']) && in_array($data['modalidade'], $this->modalidades, true) ? $data['modalidade'] : 'presencial';
         $thumbnail = isset($data['thumbnail']) ? trim((string) $data['thumbnail']) : null;
+        $thumbnailSelecionada = isset($data['thumbnail_existente']) ? trim((string) $data['thumbnail_existente']) : '';
         $descricaoCurta = isset($data['descricao_curta']) ? trim((string) $data['descricao_curta']) : null;
         $descricaoCompleta = isset($data['descricao_completa']) ? trim((string) $data['descricao_completa']) : null;
         $cargaHoraria = isset($data['carga_horaria']) && $data['carga_horaria'] !== '' ? (int) $data['carga_horaria'] : null;
@@ -118,6 +124,24 @@ class CursoService
         }
         if ($categoriaId !== null && !$this->categoriaModel->findById($categoriaId)) {
             $errors[] = 'Categoria nao encontrada.';
+        }
+
+        if ($thumbnailSelecionada !== '') {
+            $thumbnailNormalizada = $this->normalizarThumbnailSelecionada($thumbnailSelecionada);
+            if ($thumbnailNormalizada === null) {
+                $errors[] = 'Thumbnail selecionada nao encontrada na pasta de thumbnails.';
+            } else {
+                $thumbnail = $thumbnailNormalizada;
+            }
+        }
+
+        if (isset($files['thumbnail_upload']) && !empty($files['thumbnail_upload']['tmp_name'])) {
+            $resultadoUpload = $this->salvarThumbnailUpload($files['thumbnail_upload']);
+            if (empty($resultadoUpload['ok'])) {
+                $errors[] = isset($resultadoUpload['message']) ? $resultadoUpload['message'] : 'Nao foi possivel enviar a thumbnail.';
+            } else {
+                $thumbnail = $resultadoUpload['path'];
+            }
         }
 
         $professorResponsavel = null;
@@ -147,7 +171,7 @@ class CursoService
             'slug' => $slug,
             'tipo' => $tipo,
             'modalidade' => $modalidade,
-            'thumbnail' => $thumbnail,
+            'thumbnail' => $thumbnail !== '' ? $thumbnail : null,
             'descricao_curta' => $descricaoCurta,
             'descricao_completa' => $descricaoCompleta,
             'carga_horaria' => $cargaHoraria,
@@ -200,9 +224,148 @@ class CursoService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.curso.falhou', array('message' => $exception->getMêssage()));
+            Logger::error('catalogo.curso.falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
+    }
+
+    private function listarThumbnailsDisponiveis()
+    {
+        if (!is_dir($this->thumbnailDirectoryAbsolute)) {
+            return array();
+        }
+
+        $arquivos = @scandir($this->thumbnailDirectoryAbsolute);
+        if ($arquivos === false) {
+            return array();
+        }
+
+        $permitidas = array('jpg', 'jpeg', 'png', 'webp', 'gif');
+        $lista = array();
+
+        foreach ($arquivos as $arquivo) {
+            if ($arquivo === '.' || $arquivo === '..') {
+                continue;
+            }
+
+            $caminhoAbsoluto = $this->thumbnailDirectoryAbsolute . '/' . $arquivo;
+            if (!is_file($caminhoAbsoluto)) {
+                continue;
+            }
+
+            $extensao = strtolower((string) pathinfo($arquivo, PATHINFO_EXTENSION));
+            if (!in_array($extensao, $permitidas, true)) {
+                continue;
+            }
+
+            $lista[] = $this->thumbnailDirectoryPublic . '/' . $arquivo;
+        }
+
+        sort($lista, SORT_NATURAL | SORT_FLAG_CASE);
+        return $lista;
+    }
+
+    private function normalizarThumbnailSelecionada($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return null;
+        }
+
+        $valor = str_replace('\\', '/', $valor);
+        $prefixo = $this->thumbnailDirectoryPublic . '/';
+
+        if (strpos($valor, $prefixo) !== 0) {
+            return null;
+        }
+
+        $nomeArquivo = basename($valor);
+        if ($nomeArquivo === '' || $nomeArquivo === '.' || $nomeArquivo === '..') {
+            return null;
+        }
+
+        $caminhoAbsoluto = $this->thumbnailDirectoryAbsolute . '/' . $nomeArquivo;
+        if (!is_file($caminhoAbsoluto)) {
+            return null;
+        }
+
+        return $this->thumbnailDirectoryPublic . '/' . $nomeArquivo;
+    }
+
+    private function salvarThumbnailUpload(array $arquivo)
+    {
+        if (!isset($arquivo['error']) || (int) $arquivo['error'] !== UPLOAD_ERR_OK) {
+            return array('ok' => false, 'message' => 'Upload de thumbnail invalido.');
+        }
+
+        if (empty($arquivo['tmp_name']) || !is_uploaded_file($arquivo['tmp_name'])) {
+            return array('ok' => false, 'message' => 'Arquivo de thumbnail invalido.');
+        }
+
+        $tamanho = isset($arquivo['size']) ? (int) $arquivo['size'] : 0;
+        if ($tamanho <= 0) {
+            return array('ok' => false, 'message' => 'O arquivo de thumbnail esta vazio.');
+        }
+
+        if ($tamanho > 5 * 1024 * 1024) {
+            return array('ok' => false, 'message' => 'A thumbnail deve ter no maximo 5 MB.');
+        }
+
+        $nomeOriginal = isset($arquivo['name']) ? (string) $arquivo['name'] : '';
+        $extensao = strtolower((string) pathinfo($nomeOriginal, PATHINFO_EXTENSION));
+        $extensoesPermitidas = array('jpg', 'jpeg', 'png', 'webp', 'gif');
+
+        if (!in_array($extensao, $extensoesPermitidas, true)) {
+            return array('ok' => false, 'message' => 'Formato de thumbnail nao permitido. Use JPG, PNG, WEBP ou GIF.');
+        }
+
+        $mime = $this->detectarMimeType($arquivo['tmp_name']);
+        $mimesPermitidos = array('image/jpeg', 'image/png', 'image/webp', 'image/gif');
+        if (!in_array(strtolower((string) $mime), $mimesPermitidos, true)) {
+            return array('ok' => false, 'message' => 'Tipo de arquivo de thumbnail nao permitido.');
+        }
+
+        if (!is_dir($this->thumbnailDirectoryAbsolute)) {
+            if (!@mkdir($this->thumbnailDirectoryAbsolute, 0775, true) && !is_dir($this->thumbnailDirectoryAbsolute)) {
+                return array('ok' => false, 'message' => 'Nao foi possivel criar a pasta de thumbnails.');
+            }
+        }
+
+        try {
+            $nomeSeguro = 'thumb-' . date('YmdHis') . '-' . bin2hex(random_bytes(6)) . '.' . $extensao;
+        } catch (Exception $exception) {
+            $nomeSeguro = 'thumb-' . date('YmdHis') . '-' . mt_rand(100000, 999999) . '.' . $extensao;
+        }
+
+        $destino = $this->thumbnailDirectoryAbsolute . '/' . $nomeSeguro;
+        if (!move_uploaded_file($arquivo['tmp_name'], $destino)) {
+            return array('ok' => false, 'message' => 'Nao foi possivel salvar a thumbnail enviada.');
+        }
+
+        return array(
+            'ok' => true,
+            'path' => $this->thumbnailDirectoryPublic . '/' . $nomeSeguro,
+        );
+    }
+
+    private function detectarMimeType($arquivoTmp)
+    {
+        if (!is_file($arquivoTmp)) {
+            return null;
+        }
+
+        if (function_exists('finfo_open')) {
+            $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $mime = @finfo_file($finfo, $arquivoTmp);
+                @finfo_close($finfo);
+                if ($mime) {
+                    return $mime;
+                }
+            }
+        }
+
+        return null;
     }
 
     public function excluir($id, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -239,7 +402,7 @@ class CursoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.curso.excluir_falhou', array('message' => $exception->getMêssage()));
+            Logger::error('catalogo.curso.excluir_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
@@ -258,12 +421,16 @@ class CursoService
         return array('cursos' => $cursos);
     }
 
-    public function listPublicHome($limit = 3)
+    public function listPublicHome($limit = 6)
     {
         $contexto = $this->listPublic();
         $cursos = isset($contexto['cursos']) ? $contexto['cursos'] : array();
+        $limit = (int) $limit;
+        if ($limit < 1 || $limit > 12) {
+            $limit = 6;
+        }
 
-        return array_slice($cursos, 0, max(1, (int) $limit));
+        return array_slice($cursos, 0, $limit);
     }
 
     public function showPublic($cursoId, $turmaId = null)
@@ -291,7 +458,7 @@ class CursoService
         return array('curso' => $curso);
     }
 
-    public function validarTurmaPublicaParaInscrição($cursoId, $turmaId = null)
+    public function validarTurmaPublicaParaInscricao($cursoId, $turmaId = null)
     {
         $curso = $this->cursoModel->findPublicById($cursoId);
         if (!$curso) {
@@ -348,23 +515,31 @@ class CursoService
             return array('ok' => false, 'message' => 'Status invalido para o curso/evento.');
         }
 
-        $payload = $curso;
-        $payload['status'] = $status;
-        $this->cursoModel->update($payload, $id);
+        try {
+            $this->cursoModel->updateStatus($id, $status);
 
-        $this->auditService->record(
-            'catalogo.curso.status_atualizado',
-            'curso_evento',
-            $id,
-            array('status_anterior' => $curso['status'], 'status_novo' => $status),
-            $actorUserId,
-            $ipAddress,
-            $userAgent
-        );
+            $this->auditService->record(
+                'catalogo.curso.status_atualizado',
+                'curso_evento',
+                $id,
+                array('status_anterior' => $curso['status'], 'status_novo' => $status),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
 
-        Logger::info('catalogo.curso.status_atualizado', array('curso_evento_id' => $id, 'status' => $status));
+            Logger::info('catalogo.curso.status_atualizado', array('curso_evento_id' => $id, 'status' => $status));
 
-        return array('ok' => true);
+            return array('ok' => true);
+        } catch (Exception $exception) {
+            Logger::error('catalogo.curso.status_falhou', array(
+                'curso_evento_id' => $id,
+                'status' => $status,
+                'message' => $exception->getMessage(),
+            ));
+
+            return array('ok' => false, 'message' => 'Nao foi possivel atualizar o status do curso/evento.');
+        }
     }
 
     private function validarProfessorResponsavel($usuarioId)
@@ -378,4 +553,6 @@ class CursoService
         return null;
     }
 }
+
+
 

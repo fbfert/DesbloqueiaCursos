@@ -6,11 +6,11 @@ use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
 use App\Services\AreaCursoService;
-use App\Services\AptidãoCertificadoService;
+use App\Services\AptidaoCertificadoService;
 use App\Services\AvaliacaoService;
 use App\Services\PresencaService;
 
-class AcadêmicoController extends Controller
+class AcademicoController extends Controller
 {
     private $areaCursoService;
     private $aptidaoService;
@@ -20,7 +20,7 @@ class AcadêmicoController extends Controller
     public function __construct()
     {
         $this->areaCursoService = new AreaCursoService();
-        $this->aptidaoService = new AptidãoCertificadoService();
+        $this->aptidaoService = new AptidaoCertificadoService();
         $this->presencaService = new PresencaService();
         $this->avaliacaoService = new AvaliacaoService();
     }
@@ -43,9 +43,9 @@ class AcadêmicoController extends Controller
         ));
     }
 
-    public function salvarConfiguração(Request $request)
+    public function salvarConfiguracao(Request $request)
     {
-        $resultado = $this->aptidaoService->salvarConfiguração($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $resultado = $this->aptidaoService->salvarConfiguracao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         return $this->respondForm($resultado, '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
     }
 
@@ -73,9 +73,9 @@ class AcadêmicoController extends Controller
         return $this->respondForm($resultado, '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
     }
 
-    public function recalcularAptidão(Request $request)
+    public function recalcularAptidao(Request $request)
     {
-        $resultado = $this->aptidaoService->recalcularInscrição((int) $request->input('inscricao_id', 0), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $resultado = $this->aptidaoService->recalcularInscricao((int) $request->input('inscricao_id', 0), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         return $this->respondForm($resultado, '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
     }
 
@@ -90,4 +90,7 @@ class AcadêmicoController extends Controller
         return $this->redirect($redirectTo);
     }
 }
+
+
+
 

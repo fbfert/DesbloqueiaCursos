@@ -30,7 +30,7 @@ class Modulo
             $sql .= ' AND m.turma_id IS NULL';
         }
 
-        $sql .= ' ORDER BY m.turma_id IS NULL ASC, m.ordem ASC, m.id ASC';
+        $sql .= ' ORDER BY m.turma_id IS NULL ASC, FIELD(m.status, "publicado", "rascunho", "oculto") ASC, m.ordem ASC, m.id ASC';
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
@@ -41,9 +41,9 @@ class Modulo
     {
         $stmt = Database::connection()->prepare(
             'INSERT INTO modulos
-             (curso_evento_id, turma_id, titulo, descricao, visivel, ordem, created_at, updated_at, deleted_at)
+             (curso_evento_id, turma_id, titulo, descricao, visivel, status, criado_por, atualizado_por, ordem, created_at, updated_at, deleted_at)
              VALUES
-             (:curso_evento_id, :turma_id, :titulo, :descricao, :visivel, :ordem, NOW(), NOW(), NULL)'
+             (:curso_evento_id, :turma_id, :titulo, :descricao, :visivel, :status, :criado_por, :atualizado_por, :ordem, NOW(), NOW(), NULL)'
         );
 
         $stmt->execute(array(
@@ -52,6 +52,9 @@ class Modulo
             'titulo' => $data['titulo'],
             'descricao' => isset($data['descricao']) ? $data['descricao'] : null,
             'visivel' => !empty($data['visivel']) ? 1 : 0,
+            'status' => isset($data['status']) ? $data['status'] : 'publicado',
+            'criado_por' => isset($data['criado_por']) ? $data['criado_por'] : null,
+            'atualizado_por' => isset($data['atualizado_por']) ? $data['atualizado_por'] : null,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         ));
 
@@ -67,6 +70,9 @@ class Modulo
                  titulo = :titulo,
                  descricao = :descricao,
                  visivel = :visivel,
+                 status = :status,
+                 criado_por = COALESCE(:criado_por, criado_por),
+                 atualizado_por = :atualizado_por,
                  ordem = :ordem,
                  updated_at = NOW()
              WHERE id = :id'
@@ -78,6 +84,9 @@ class Modulo
             'titulo' => $data['titulo'],
             'descricao' => isset($data['descricao']) ? $data['descricao'] : null,
             'visivel' => !empty($data['visivel']) ? 1 : 0,
+            'status' => isset($data['status']) ? $data['status'] : 'publicado',
+            'criado_por' => isset($data['criado_por']) ? $data['criado_por'] : null,
+            'atualizado_por' => isset($data['atualizado_por']) ? $data['atualizado_por'] : null,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
             'id' => $id,
         ));

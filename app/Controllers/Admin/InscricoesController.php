@@ -5,15 +5,15 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
-use App\Services\InscriçãoService;
+use App\Services\InscricaoService;
 
-class InscriçõesController extends Controller
+class InscricoesController extends Controller
 {
     private $inscricaoService;
 
     public function __construct()
     {
-        $this->inscricaoService = new InscriçãoService();
+        $this->inscricaoService = new InscricaoService();
     }
 
     public function index(Request $request)
@@ -52,4 +52,5 @@ class InscriçõesController extends Controller
         return $this->redirect('/admin/inscricoes');
     }
 }
+
 

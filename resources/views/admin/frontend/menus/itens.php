@@ -30,7 +30,7 @@
                             <td><?php echo Helpers::e($item['target']); ?></td>
                             <td><?php echo (int) $item['ativo'] === 1 ? 'Ativo' : 'Inativo'; ?></td>
                             <td><input type="number" name="ordens[<?php echo (int) $item['id']; ?>]" value="<?php echo (int) $item['ordem']; ?>" style="width:90px;"></td>
-                            <td><a href="/admin/frontend/menus/itens/editar?menu_id=<?php echo (int) $menu['id']; ?>&item_id=<?php echo (int) $item['id']; ?>">Editar</a> | <a href="#" onclick="return excluirItem(<?php echo (int) $menu['id']; ?>, <?php echo (int) $item['id']; ?>);">Excluir</a></td>
+                            <td><a href="/admin/frontend/menus/itens/editar?menu_id=<?php echo (int) $menu['id']; ?>&item_id=<?php echo (int) $item['id']; ?>">Editar</a> | <a href="#" onclick="return excluirItem(<?php echo (int) $menu['id']; ?>, <?php echo (int) $item['id']; ?>);">Lixeira</a></td>
                         </tr>
                     <?php endforeach; endif; ?>
                     </tbody>

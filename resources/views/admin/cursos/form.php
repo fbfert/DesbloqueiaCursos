@@ -4,6 +4,7 @@
 <?php $categorias = isset($form_data['categorias']) ? $form_data['categorias'] : array(); ?>
 <?php $professores = isset($form_data['professores']) ? $form_data['professores'] : array(); ?>
 <?php $professorResponsavel = isset($form_data['professor_responsavel']) ? $form_data['professor_responsavel'] : null; ?>
+<?php $thumbnailsDisponiveis = isset($form_data['thumbnails_disponiveis']) ? $form_data['thumbnails_disponiveis'] : array(); ?>
 
 <div class="admin-page">
 <section class="admin-page__header">
@@ -17,7 +18,7 @@
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
 <section class="status-card">
-    <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form">
+    <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?php echo !empty($curso['id']) ? (int) $curso['id'] : 0; ?>">
         <label>
             Nome
@@ -67,8 +68,23 @@
             </select>
         </label>
         <label>
-            Thumbnail
+            Thumbnail (URL ou caminho)
             <input type="text" name="thumbnail" value="<?php echo Helpers::e($curso['thumbnail'] ?? ''); ?>">
+        </label>
+        <label>
+            Escolher thumbnail da pasta
+            <select name="thumbnail_existente">
+                <option value="">Manter ou usar o campo acima</option>
+                <?php foreach ($thumbnailsDisponiveis as $thumbnailPath): ?>
+                    <option value="<?php echo Helpers::e($thumbnailPath); ?>" <?php echo (($curso['thumbnail'] ?? '') === $thumbnailPath) ? 'selected' : ''; ?>>
+                        <?php echo Helpers::e($thumbnailPath); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>
+            Enviar nova thumbnail
+            <input type="file" name="thumbnail_upload" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif">
         </label>
         <label class="full">
             Descrição curta

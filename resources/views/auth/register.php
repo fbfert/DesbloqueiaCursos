@@ -16,7 +16,7 @@
 
         <label>
             CPF
-            <input type="text" name="cpf" value="<?php echo htmlspecialchars(isset($old['cpf']) ? $old['cpf'] : '', ENT_QUOTES, 'UTF-8'); ?>" required>
+            <input type="text" name="cpf" value="<?php echo htmlspecialchars(isset($old['cpf']) ? $old['cpf'] : '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" pattern="^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$" required>
         </label>
 
         <label>
@@ -34,19 +34,25 @@
             <input type="password" name="senha_confirmacao" required>
         </label>
 
-        <label class="auth-check">
+        <label class="auth-check form-check-row">
             <input type="checkbox" name="aceite_termos" value="1" <?php echo !empty($old['aceite_termos']) ? 'checked' : ''; ?>>
-            Aceito os termos de uso
+            <span>
+                Aceito os termos de uso
+                <a class="consent-link" href="/termos-de-uso" target="_blank" rel="noopener">Ler termos</a>
+            </span>
         </label>
 
-        <label class="auth-check">
+        <label class="auth-check form-check-row">
             <input type="checkbox" name="aceite_privacidade" value="1" <?php echo !empty($old['aceite_privacidade']) ? 'checked' : ''; ?>>
-            Aceito a politica de privacidade
+            <span>
+                Aceito a política de privacidade
+                <a class="consent-link" href="/politica-de-privacidade" target="_blank" rel="noopener">Ler política</a>
+            </span>
         </label>
 
-        <label class="auth-check">
+        <label class="auth-check form-check-row">
             <input type="checkbox" name="aceite_marketing" value="1" <?php echo !empty($old['aceite_marketing']) ? 'checked' : ''; ?>>
-            Quero receber comunicacoes
+            <span>Quero receber comunicacoes</span>
         </label>
 
         <button type="submit">Criar conta</button>
@@ -54,3 +60,36 @@
 
     <p><a href="/login">Ja tenho conta</a></p>
 </section>
+
+<script>
+(function () {
+    var cpfInput = document.querySelector('input[name="cpf"]');
+    if (!cpfInput) {
+        return;
+    }
+
+    function formatCpf(value) {
+        var digits = String(value || '').replace(/\D+/g, '').slice(0, 11);
+
+        if (digits.length <= 3) {
+            return digits;
+        }
+
+        if (digits.length <= 6) {
+            return digits.slice(0, 3) + '.' + digits.slice(3);
+        }
+
+        if (digits.length <= 9) {
+            return digits.slice(0, 3) + '.' + digits.slice(3, 6) + '.' + digits.slice(6);
+        }
+
+        return digits.slice(0, 3) + '.' + digits.slice(3, 6) + '.' + digits.slice(6, 9) + '-' + digits.slice(9);
+    }
+
+    cpfInput.addEventListener('input', function (event) {
+        event.target.value = formatCpf(event.target.value);
+    });
+
+    cpfInput.value = formatCpf(cpfInput.value);
+})();
+</script>

@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Core\Validator;
+use App\Models\InstrucoesCurso;
 use App\Models\Pedido;
 use App\Models\Usuario;
 use App\Services\ComprovantePixService;
@@ -21,6 +22,7 @@ class CheckoutController extends Controller
     private $inscricaoService;
     private $comprovanteService;
     private $cursoService;
+    private $instrucoesCursoModel;
     private $usuarioModel;
     private $pedidoModel;
 
@@ -30,6 +32,7 @@ class CheckoutController extends Controller
         $this->inscricaoService = new InscricaoService();
         $this->comprovanteService = new ComprovantePixService();
         $this->cursoService = new CursoService();
+        $this->instrucoesCursoModel = new InstrucoesCurso();
         $this->usuarioModel = new Usuario();
         $this->pedidoModel = new Pedido();
     }
@@ -102,6 +105,18 @@ class CheckoutController extends Controller
             $quantidade = max(1, (int) $pedido['pedido']['itens'][0]['quantidade']);
         }
 
+        $isCompraPropria = $this->isCompraPropriaPedido(isset($pedido['pedido']['tipo_pedido']) ? $pedido['pedido']['tipo_pedido'] : '');
+        if ($isCompraPropria) {
+            $resultadoCompraPropria = $this->concluirCheckoutCompraPropria($pedidoId, $request, $pedido['pedido']);
+            if (empty($resultadoCompraPropria['ok'])) {
+                Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
+                return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            }
+
+            Session::flash('success', 'Compra própria concluída com participante automático.');
+            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+        }
+
         $usuarioPrefillId = $this->resolverUsuarioPrefillIdDoPedido($pedido['pedido']);
         $participantePrefill = $this->carregarParticipantePrefill($usuarioPrefillId);
         $pagadorPrefill = $this->carregarPagadorPrefill($usuarioPrefillId);
@@ -117,22 +132,12 @@ class CheckoutController extends Controller
         if ($participantePrefill['telefone'] === '' && !empty($pagadorPrefill['telefone'])) {
             $participantePrefill['telefone'] = (string) $pagadorPrefill['telefone'];
         }
-        $isCompraPropria = $this->isCompraPropriaPedido(isset($pedido['pedido']['tipo_pedido']) ? $pedido['pedido']['tipo_pedido'] : '');
-        if ($isCompraPropria) {
-            if ($participantePrefill['cpf'] === '' && !empty($pedido['pedido']['pagador_cpf'])) {
-                $participantePrefill['cpf'] = (string) $pedido['pedido']['pagador_cpf'];
-            }
-            if ($participantePrefill['telefone'] === '' && !empty($pedido['pedido']['pagador_telefone'])) {
-                $participantePrefill['telefone'] = (string) $pedido['pedido']['pagador_telefone'];
-            }
-        }
 
         return $this->view('checkout/participantes', array(
             'title' => 'Participantes',
             'pedido' => $pedido['pedido'],
             'quantidade' => $quantidade,
             'participantePrefill' => $participantePrefill,
-            'isCompraPropria' => $isCompraPropria,
             'loggedIn' => Session::get('usuario_id') !== null,
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
@@ -251,11 +256,24 @@ class CheckoutController extends Controller
     public function sucesso(Request $request)
     {
         $pedidoId = (int) $this->pedidoIdFromRequest($request);
-        $pedido = $pedidoId > 0 ? $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id')) : array('pedido' => null);
+        $usuarioId = Session::get('usuario_id');
+        if (!$usuarioId) {
+            Session::flash('errors', array('auth' => 'Faça login para acessar este pedido.'));
+            return $this->redirect('/login');
+        }
+
+        $pedido = $pedidoId > 0 ? $this->pedidoService->detalharCheckout($pedidoId, $usuarioId, true) : array('pedido' => null);
+        if (empty($pedido['pedido'])) {
+            return new Response(View::render('errors/404', array(
+                'title' => 'Pedido nao encontrado',
+            )), 404);
+        }
+        $proximasAcoes = !empty($pedido['pedido']) ? $this->carregarProximasAcoesCheckout($pedido['pedido']) : array();
 
         return $this->view('checkout/sucesso', array(
             'title' => 'Pedido recebido',
             'pedido' => $pedido['pedido'],
+            'proximas_acoes' => $proximasAcoes,
             'loggedIn' => Session::get('usuario_id') !== null,
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
@@ -340,6 +358,17 @@ class CheckoutController extends Controller
 
         Session::put('checkout_pedido_id', $resultado['pedido_id']);
 
+        if ($this->isCompraPropriaPedido($tipoPedido)) {
+            $resultadoCompraPropria = $this->concluirCheckoutCompraPropria((int) $resultado['pedido_id'], $request);
+            if (empty($resultadoCompraPropria['ok'])) {
+                Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
+                return $this->redirect('/checkout/resumo?pedido_id=' . (int) $resultado['pedido_id']);
+            }
+
+            Session::flash('success', 'Compra própria iniciada com sucesso. O participante foi gerado automaticamente.');
+            return $this->redirect('/checkout/resumo?pedido_id=' . (int) $resultado['pedido_id']);
+        }
+
         return $this->redirect('/checkout/participantes?pedido_id=' . $resultado['pedido_id']);
     }
 
@@ -356,35 +385,20 @@ class CheckoutController extends Controller
             return $this->redirect('/cursos');
         }
 
+        if ($this->isCompraPropriaPedido(isset($pedido['pedido']['tipo_pedido']) ? $pedido['pedido']['tipo_pedido'] : '')) {
+            $resultadoCompraPropria = $this->concluirCheckoutCompraPropria($pedidoId, $request, $pedido['pedido']);
+            if (empty($resultadoCompraPropria['ok'])) {
+                Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
+                return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            }
+
+            Session::flash('success', 'Compra própria concluída com participante automático.');
+            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+        }
+
         $participantes = $request->input('participantes', array());
         if (!is_array($participantes)) {
             $participantes = array();
-        }
-
-        $isCompraPropria = $this->isCompraPropriaPedido(isset($pedido['pedido']['tipo_pedido']) ? $pedido['pedido']['tipo_pedido'] : '');
-        if ($isCompraPropria) {
-            $usuarioPrefillId = $this->resolverUsuarioPrefillIdDoPedido($pedido['pedido']);
-            $prefill = $this->carregarParticipantePrefill($usuarioPrefillId);
-            $pagadorPrefill = $this->carregarPagadorPrefill($usuarioPrefillId);
-            if ($prefill['cpf'] === '' && trim((string) Session::get('usuario_cpf', '')) !== '') {
-                $prefill['cpf'] = (string) Session::get('usuario_cpf');
-            }
-            if ($prefill['telefone'] === '' && trim((string) Session::get('usuario_telefone', '')) !== '') {
-                $prefill['telefone'] = (string) Session::get('usuario_telefone');
-            }
-            if ($prefill['cpf'] === '' && !empty($pagadorPrefill['cpf'])) {
-                $prefill['cpf'] = (string) $pagadorPrefill['cpf'];
-            }
-            if ($prefill['telefone'] === '' && !empty($pagadorPrefill['telefone'])) {
-                $prefill['telefone'] = (string) $pagadorPrefill['telefone'];
-            }
-            if ($prefill['cpf'] === '' && !empty($pedido['pedido']['pagador_cpf'])) {
-                $prefill['cpf'] = (string) $pedido['pedido']['pagador_cpf'];
-            }
-            if ($prefill['telefone'] === '' && !empty($pedido['pedido']['pagador_telefone'])) {
-                $prefill['telefone'] = (string) $pedido['pedido']['pagador_telefone'];
-            }
-            $participantes = $this->aplicarPrefillParticipanteCompraPropria($participantes, $prefill);
         }
 
         $errors = $this->validateParticipantes($participantes);
@@ -543,6 +557,53 @@ class CheckoutController extends Controller
         return $errors;
     }
 
+    private function concluirCheckoutCompraPropria($pedidoId, Request $request, ?array $pedido = null)
+    {
+        if ($pedido === null) {
+            $pedidoDetalhado = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
+            if (empty($pedidoDetalhado['pedido'])) {
+                return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            }
+
+            $pedido = $pedidoDetalhado['pedido'];
+        }
+
+        $participante = array(
+            'usuario_id' => Session::get('usuario_id'),
+            'nome' => isset($pedido['pagador_nome']) && trim((string) $pedido['pagador_nome']) !== '' ? (string) $pedido['pagador_nome'] : (string) Session::get('usuario_nome'),
+            'cpf' => isset($pedido['pagador_cpf']) ? (string) $pedido['pagador_cpf'] : '',
+            'email' => isset($pedido['pagador_email']) ? (string) $pedido['pagador_email'] : (string) Session::get('usuario_email'),
+            'telefone' => isset($pedido['pagador_telefone']) ? (string) $pedido['pagador_telefone'] : '',
+        );
+
+        if (trim((string) $participante['nome']) === '') {
+            return array('ok' => false, 'message' => 'Informe os dados do pagador antes de continuar.');
+        }
+
+        $resultadoParticipante = $this->pedidoService->sincronizarParticipanteCompraPropria(
+            $pedidoId,
+            $participante,
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+        if (empty($resultadoParticipante['ok'])) {
+            return $resultadoParticipante;
+        }
+
+        $resultadoInscricoes = $this->inscricaoService->gerarDoPedido($pedidoId, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        if (empty($resultadoInscricoes['ok'])) {
+            return $resultadoInscricoes;
+        }
+
+        $finalizacao = $this->pedidoService->finalizarCheckout($pedidoId, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        if (empty($finalizacao['ok'])) {
+            return $finalizacao;
+        }
+
+        return array('ok' => true);
+    }
+
     private function carregarPagadorPrefill($usuarioId)
     {
         $prefill = array(
@@ -638,23 +699,21 @@ class CheckoutController extends Controller
         return $prefill;
     }
 
-    private function aplicarPrefillParticipanteCompraPropria(array $participantes, array $prefill)
+    private function buscarUsuarioDaSessaoPorEmail()
     {
-        if (empty($participantes) || !isset($participantes[0]) || !is_array($participantes[0])) {
-            $participantes[0] = array();
+        $email = trim((string) Session::get('usuario_email', ''));
+        if ($email === '') {
+            return null;
         }
 
-        $participantes[0]['nome'] = $prefill['nome'];
-        $participantes[0]['cpf'] = $prefill['cpf'];
-        $participantes[0]['email'] = $prefill['email'];
-        $participantes[0]['telefone'] = $prefill['telefone'];
-
-        return $participantes;
+        return $this->usuarioModel->findByEmail($email);
     }
 
     private function isCompraPropriaPedido($tipoPedido)
     {
-        $normalizado = mb_strtolower(trim((string) $tipoPedido), 'UTF-8');
+        $normalizado = function_exists('mb_strtolower')
+            ? mb_strtolower(trim((string) $tipoPedido), 'UTF-8')
+            : strtolower(trim((string) $tipoPedido));
 
         return in_array($normalizado, array(
             'propria',
@@ -679,14 +738,32 @@ class CheckoutController extends Controller
         return (int) Session::get('usuario_id', 0);
     }
 
-    private function buscarUsuarioDaSessaoPorEmail()
+    private function carregarProximasAcoesCheckout(array $pedido)
     {
-        $email = trim((string) Session::get('usuario_email', ''));
-        if ($email === '') {
-            return null;
+        if (empty($pedido['itens']) || !is_array($pedido['itens'])) {
+            return array();
         }
 
-        return $this->usuarioModel->findByEmail($email);
+        $primeiroItem = $pedido['itens'][0];
+        $cursoId = !empty($primeiroItem['curso_evento_id']) ? (int) $primeiroItem['curso_evento_id'] : 0;
+        if ($cursoId <= 0) {
+            return array();
+        }
+
+        $turmaId = !empty($primeiroItem['turma_id']) ? (int) $primeiroItem['turma_id'] : null;
+        $acoes = $this->instrucoesCursoModel->listForContext($cursoId, $turmaId);
+        if (empty($acoes)) {
+            return array();
+        }
+
+        $acoesVisiveis = array();
+        foreach ($acoes as $acao) {
+            if (!empty($acao['visivel'])) {
+                $acoesVisiveis[] = $acao;
+            }
+        }
+
+        return $acoesVisiveis;
     }
 }
 

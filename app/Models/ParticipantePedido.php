@@ -90,6 +90,37 @@ class ParticipantePedido
         return (int) Database::connection()->lastInsertId();
     }
 
+    public function update($participantePedidoId, array $data)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE participantes_pedido
+             SET pedido_id = :pedido_id,
+                 pedido_item_id = :pedido_item_id,
+                 usuario_id = :usuario_id,
+                 nome = :nome,
+                 cpf = :cpf,
+                 email = :email,
+                 telefone = :telefone,
+                 ordem = :ordem,
+                 status = :status,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array(
+            'id' => $participantePedidoId,
+            'pedido_id' => $data['pedido_id'],
+            'pedido_item_id' => isset($data['pedido_item_id']) ? $data['pedido_item_id'] : null,
+            'usuario_id' => isset($data['usuario_id']) ? $data['usuario_id'] : null,
+            'nome' => $data['nome'],
+            'cpf' => isset($data['cpf']) ? $data['cpf'] : null,
+            'email' => isset($data['email']) ? $data['email'] : null,
+            'telefone' => isset($data['telefone']) ? $data['telefone'] : null,
+            'ordem' => isset($data['ordem']) ? $data['ordem'] : 0,
+            'status' => isset($data['status']) ? $data['status'] : 'ativo',
+        ));
+    }
+
     public function softDelete($participantePedidoId)
     {
         $stmt = Database::connection()->prepare(

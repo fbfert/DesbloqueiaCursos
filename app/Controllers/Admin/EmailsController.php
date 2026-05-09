@@ -41,8 +41,9 @@ class EmailsController extends Controller
             return $this->redirect('/admin/emails');
         }
 
-        Session::flash('success', 'Configuração SMTP atualizada.');
+        Session::flash('success', 'Configuracao SMTP atualizada.');
         return $this->redirect('/admin/emails');
     }
 }
+
 

@@ -42,7 +42,7 @@ class CursosController extends Controller
 
     public function store(Request $request)
     {
-        $result = $this->cursoService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->cursoService->salvar($request->all(), isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o curso/evento.'));
@@ -69,7 +69,7 @@ class CursosController extends Controller
 
     public function update(Request $request)
     {
-        $result = $this->cursoService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->cursoService->salvar($request->all(), isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $cursoId = (int) $request->input('id', 0);
 
         if (empty($result['ok'])) {
@@ -126,11 +126,11 @@ class CursosController extends Controller
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['message']) ? $result['message'] : 'Não foi possivel atualizar o status do curso/evento.');
-            return $this->redirect('/admin/cursos/show?curso_id=' . $cursoId);
+            return $this->redirect('/admin/cursos');
         }
 
         Session::flash('success', 'Status do curso/evento atualizado com sucesso.');
-        return $this->redirect('/admin/cursos/show?curso_id=' . $cursoId);
+        return $this->redirect('/admin/cursos');
     }
 }
 

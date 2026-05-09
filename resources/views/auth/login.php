@@ -17,6 +17,8 @@
         <button type="submit">Entrar</button>
     </form>
 
-    <p><a href="/cadastro">Criar conta</a></p>
-    <p><a href="/recuperar-senha">Recuperar senha</a></p>
+    <div class="cta-group login-secondary-actions">
+        <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>
+        <a class="button-link button-link--ghost" href="/recuperar-senha">Recuperar senha</a>
+    </div>
 </section>

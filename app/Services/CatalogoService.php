@@ -10,7 +10,7 @@ use App\Models\Turma;
 use App\Models\UsuarioCurso;
 use App\Models\UsuarioTurma;
 
-class CatálogoService
+class CatalogoService
 {
     private $categoriaModel;
     private $cursoModel;
@@ -66,4 +66,5 @@ class CatálogoService
         );
     }
 }
+
 

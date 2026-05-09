@@ -6,7 +6,7 @@ use App\Models\Aula;
 use App\Models\Avaliacao;
 use App\Models\AvaliacaoPergunta;
 use App\Models\CursoEvento;
-use App\Models\Inscrição;
+use App\Models\Inscricao;
 use App\Models\Turma;
 
 class ProfessorAcademicScopeService
@@ -22,7 +22,7 @@ class ProfessorAcademicScopeService
     {
         $this->cursoModel = isset($dependencies['cursoModel']) ? $dependencies['cursoModel'] : new CursoEvento();
         $this->turmaModel = isset($dependencies['turmaModel']) ? $dependencies['turmaModel'] : new Turma();
-        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscrição();
+        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscricao();
         $this->avaliacaoModel = isset($dependencies['avaliacaoModel']) ? $dependencies['avaliacaoModel'] : new Avaliacao();
         $this->perguntaModel = isset($dependencies['perguntaModel']) ? $dependencies['perguntaModel'] : new AvaliacaoPergunta();
         $this->aulaModel = isset($dependencies['aulaModel']) ? $dependencies['aulaModel'] : new Aula();
@@ -56,11 +56,11 @@ class ProfessorAcademicScopeService
         return array('ok' => true);
     }
 
-    public function validarInscriçãoNoContexto($inscricaoId, $cursoId, $turmaId = null)
+    public function validarInscricaoNoContexto($inscricaoId, $cursoId, $turmaId = null)
     {
         $inscricao = $this->inscricaoModel->findById((int) $inscricaoId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
         return $this->compararRegistroComContexto($inscricao, $cursoId, $turmaId, 'A inscricao informada nao pertence ao contexto selecionado.');
@@ -96,7 +96,7 @@ class ProfessorAcademicScopeService
         return $this->compararRegistroComContexto($aula, $cursoId, $turmaId, 'A aula informada nao pertence ao contexto selecionado.');
     }
 
-    public function validarAvaliacaoInscriçãoConsistentes($avaliacaoId, $inscricaoId)
+    public function validarAvaliacaoInscricaoConsistentes($avaliacaoId, $inscricaoId)
     {
         $avaliacao = $this->avaliacaoModel->findById((int) $avaliacaoId);
         if (!$avaliacao) {
@@ -105,7 +105,7 @@ class ProfessorAcademicScopeService
 
         $inscricao = $this->inscricaoModel->findById((int) $inscricaoId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
         if ((int) $avaliacao['curso_evento_id'] !== (int) $inscricao['curso_evento_id']) {
@@ -113,15 +113,15 @@ class ProfessorAcademicScopeService
         }
 
         $turmaAvaliacao = !empty($avaliacao['turma_id']) ? (int) $avaliacao['turma_id'] : null;
-        $turmaInscrição = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null;
-        if ($turmaAvaliacao !== $turmaInscrição) {
+        $turmaInscricao = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null;
+        if ($turmaAvaliacao !== $turmaInscricao) {
             return array('ok' => false, 'message' => 'A avaliacao informada nao pertence a turma da inscricao.');
         }
 
         return array('ok' => true);
     }
 
-    public function validarAulaInscriçãoConsistentes($aulaId, $inscricaoId)
+    public function validarAulaInscricaoConsistentes($aulaId, $inscricaoId)
     {
         $aula = $this->aulaModel->findById((int) $aulaId);
         if (!$aula) {
@@ -130,7 +130,7 @@ class ProfessorAcademicScopeService
 
         $inscricao = $this->inscricaoModel->findById((int) $inscricaoId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
         if ((int) $aula['curso_evento_id'] !== (int) $inscricao['curso_evento_id']) {
@@ -138,8 +138,8 @@ class ProfessorAcademicScopeService
         }
 
         $turmaAula = !empty($aula['turma_id']) ? (int) $aula['turma_id'] : null;
-        $turmaInscrição = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null;
-        if ($turmaAula !== $turmaInscrição) {
+        $turmaInscricao = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null;
+        if ($turmaAula !== $turmaInscricao) {
             return array('ok' => false, 'message' => 'A aula informada nao pertence a turma da inscricao.');
         }
 
@@ -190,4 +190,5 @@ class ProfessorAcademicScopeService
         return array('ok' => true);
     }
 }
+
 

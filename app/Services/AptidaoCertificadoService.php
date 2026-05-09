@@ -6,7 +6,7 @@ use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Avaliacao;
 use App\Models\CursoEvento;
-use App\Models\Inscrição;
+use App\Models\Inscricao;
 use App\Models\NotaAvaliacao;
 use App\Models\Modulo;
 use App\Models\ProgressoUsuarioModulo;
@@ -14,7 +14,7 @@ use App\Models\Presenca;
 use App\Models\Turma;
 use Exception;
 
-class AptidãoCertificadoService
+class AptidaoCertificadoService
 {
     private $inscricaoModel;
     private $cursoModel;
@@ -29,7 +29,7 @@ class AptidãoCertificadoService
 
     public function __construct(array $dependencies = array())
     {
-        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscrição();
+        $this->inscricaoModel = isset($dependencies['inscricaoModel']) ? $dependencies['inscricaoModel'] : new Inscricao();
         $this->cursoModel = isset($dependencies['cursoModel']) ? $dependencies['cursoModel'] : new CursoEvento();
         $this->turmaModel = isset($dependencies['turmaModel']) ? $dependencies['turmaModel'] : new Turma();
         $this->moduloModel = isset($dependencies['moduloModel']) ? $dependencies['moduloModel'] : new Modulo();
@@ -57,7 +57,7 @@ class AptidãoCertificadoService
         );
     }
 
-    public function salvarConfiguração(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function salvarConfiguracao(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $cursoId = isset($data['curso_evento_id']) ? (int) $data['curso_evento_id'] : 0;
         $turmaId = !empty($data['turma_id']) ? (int) $data['turma_id'] : null;
@@ -136,12 +136,12 @@ class AptidãoCertificadoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('academico.configuracao.falhou', array('message' => $exception->getMêssage()));
+            Logger::error('academico.configuracao.falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
 
-    public function recalcularInscrição($inscricaoId, $actorUserId = null, $ipAddress = null, $userAgent = null, $cursoId = null, $turmaId = null)
+    public function recalcularInscricao($inscricaoId, $actorUserId = null, $ipAddress = null, $userAgent = null, $cursoId = null, $turmaId = null)
     {
         if ($cursoId !== null && $cursoId !== '') {
             $validacaoContexto = $this->scopeService->validarContexto($cursoId, $turmaId);
@@ -149,21 +149,21 @@ class AptidãoCertificadoService
                 return $validacaoContexto;
             }
 
-            $validacaoInscrição = $this->scopeService->validarInscriçãoNoContexto($inscricaoId, $cursoId, $turmaId);
-            if (empty($validacaoInscrição['ok'])) {
-                return $validacaoInscrição;
+            $validacaoInscricao = $this->scopeService->validarInscricaoNoContexto($inscricaoId, $cursoId, $turmaId);
+            if (empty($validacaoInscricao['ok'])) {
+                return $validacaoInscricao;
             }
         }
 
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
 
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
         $curso = $this->cursoModel->findById((int) $inscricao['curso_evento_id']);
         $turma = !empty($inscricao['turma_id']) ? $this->turmaModel->findById((int) $inscricao['turma_id']) : null;
-        $config = $this->resolverConfiguração($curso, $turma);
+        $config = $this->resolverConfiguracao($curso, $turma);
 
         $presencaPercentual = $this->calcularPresenca($inscricao);
         $notaFinal = $this->calcularNotaFinal($inscricao);
@@ -176,7 +176,7 @@ class AptidãoCertificadoService
 
         $apto = $this->calcularApto($config, $percentualProgresso, $presencaPercentual, $notaFinal);
 
-        $this->inscricaoModel->updateAcadêmico((int) $inscricaoId, array(
+        $this->inscricaoModel->updateAcademico((int) $inscricaoId, array(
             'percentual_progresso' => $percentualProgresso,
             'presenca_percentual' => $presencaPercentual,
             'nota_final' => $notaFinal,
@@ -214,7 +214,7 @@ class AptidãoCertificadoService
         );
     }
 
-    private function resolverConfiguração(?array $curso = null, ?array $turma = null)
+    private function resolverConfiguracao(?array $curso = null, ?array $turma = null)
     {
         $config = array(
             'exige_presenca' => 0,
@@ -246,7 +246,7 @@ class AptidãoCertificadoService
 
     private function calcularPresenca(array $inscricao)
     {
-        $presencas = $this->presencaModel->listForInscrição((int) $inscricao['id']);
+        $presencas = $this->presencaModel->listForInscricao((int) $inscricao['id']);
         $presentes = 0;
         $total = 0;
 
@@ -262,7 +262,7 @@ class AptidãoCertificadoService
 
     private function calcularNotaFinal(array $inscricao)
     {
-        $notas = $this->notaModel->listForInscrição((int) $inscricao['id']);
+        $notas = $this->notaModel->listForInscricao((int) $inscricao['id']);
         if (empty($notas)) {
             return null;
         }
@@ -332,4 +332,7 @@ class AptidãoCertificadoService
         return 1;
     }
 }
+
+
+
 

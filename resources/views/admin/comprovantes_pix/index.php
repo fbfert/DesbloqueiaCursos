@@ -11,6 +11,22 @@
 
 <section class="status-card">
     <strong>Comprovantes</strong>
+    <?php
+    function statusComprovanteMeta($status)
+    {
+        $valor = strtolower(trim((string) $status));
+
+        if ($valor === 'aprovado') {
+            return array('icone' => '✔', 'classe' => 'badge badge--status badge--status-aprovado', 'texto' => 'Aprovado');
+        }
+
+        if ($valor === 'reprovado') {
+            return array('icone' => '✖', 'classe' => 'badge badge--status badge--status-reprovado', 'texto' => 'Reprovado');
+        }
+
+        return array('icone' => '◷', 'classe' => 'badge badge--status badge--status-pendente', 'texto' => 'Pendente');
+    }
+    ?>
     <div class="table-wrap">
         <table class="admin-table">
             <thead>
@@ -22,7 +38,7 @@
                     <th>Enviado em</th>
                     <th>Pedido</th>
                     <th>Motivo do reenvio</th>
-                    <th>Ações</th>
+                    <th>Abrir</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,6 +48,7 @@
                     </tr>
                 <?php endif; ?>
                 <?php foreach ($comprovantes_pix as $comprovante): ?>
+                    <?php $statusMeta = statusComprovanteMeta(isset($comprovante['status']) ? $comprovante['status'] : ''); ?>
                     <tr>
                         <td>
                             <a href="/admin/pedidos/show?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>">
@@ -43,21 +60,17 @@
                             <small><?php echo htmlspecialchars((string) $comprovante['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>
                         </td>
                         <td><?php echo (int) $comprovante['versao']; ?></td>
-                        <td><?php echo htmlspecialchars((string) $comprovante['status'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td>
+                            <span class="<?php echo htmlspecialchars($statusMeta['classe'], ENT_QUOTES, 'UTF-8'); ?>">
+                                <?php echo htmlspecialchars($statusMeta['icone'], ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars($statusMeta['texto'], ENT_QUOTES, 'UTF-8'); ?>
+                            </span>
+                        </td>
                         <td><?php echo htmlspecialchars((string) $comprovante['enviado_em'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars((string) $comprovante['pedido_status'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars((string) $comprovante['motivo_reenvio'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
-                            <form method="post" action="/admin/comprovantes-pix/aprovar" class="admin-form">
-                                <input type="hidden" name="comprovante_id" value="<?php echo (int) $comprovante['id']; ?>">
-                                <input type="text" name="observacao" placeholder="Observação">
-                                <button type="submit">Aprovar</button>
-                            </form>
-                            <form method="post" action="/admin/comprovantes-pix/reprovar" class="admin-form">
-                                <input type="hidden" name="comprovante_id" value="<?php echo (int) $comprovante['id']; ?>">
-                                <input type="text" name="observacao" placeholder="Motivo">
-                                <button type="submit">Reprovar</button>
-                            </form>
+                            <a href="/admin/pedidos/show?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>">Abrir pedido</a><br>
+                            <a href="/admin/pedidos/comprovante?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>&comprovante_id=<?php echo (int) $comprovante['id']; ?>" target="_blank" rel="noopener">Ver comprovante</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

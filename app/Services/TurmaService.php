@@ -163,7 +163,7 @@ class TurmaService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.turma.falhou', array('message' => $exception->getMêssage()));
+            Logger::error('catalogo.turma.falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
@@ -210,7 +210,7 @@ class TurmaService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.turma.excluir_falhou', array('message' => $exception->getMêssage()));
+            Logger::error('catalogo.turma.excluir_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
@@ -266,4 +266,5 @@ class TurmaService
         return null;
     }
 }
+
 

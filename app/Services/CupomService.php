@@ -209,7 +209,7 @@ class CupomService
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('cupom.salvar_falhou', array(
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
                 'codigo' => $codigo,
             ));
 
@@ -261,7 +261,7 @@ class CupomService
             $pdo->rollBack();
             Logger::error('cupom.excluir_falhou', array(
                 'cupom_id' => $cupomId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -437,7 +437,7 @@ class CupomService
             Logger::error('cupom.aplicar_falhou', array(
                 'pedido_id' => $pedidoId,
                 'cupom_codigo' => $cupomCodigo,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -760,4 +760,5 @@ class CupomService
         return null;
     }
 }
+
 

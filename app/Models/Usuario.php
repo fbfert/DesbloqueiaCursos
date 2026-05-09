@@ -7,6 +7,68 @@ use PDO;
 
 class Usuario
 {
+    private static $hasCidadeEstadoColumns = null;
+
+    public function allForAdmin(array $filters = array())
+    {
+        $allowedSort = array('id', 'nome', 'email', 'cpf', 'status');
+        $sortBy = isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSort, true) ? $filters['sort_by'] : 'id';
+        $sortDir = isset($filters['sort_dir']) && strtolower((string) $filters['sort_dir']) === 'asc' ? 'ASC' : 'DESC';
+        $search = isset($filters['q']) ? trim((string) $filters['q']) : '';
+        $status = isset($filters['status']) ? trim((string) $filters['status']) : '';
+        $perfil = isset($filters['perfil']) ? trim((string) $filters['perfil']) : '';
+
+        $where = array('u.deleted_at IS NULL');
+        $params = array();
+
+        if ($search !== '') {
+            $where[] = '(u.nome LIKE :q OR u.email LIKE :q OR u.cpf LIKE :q)';
+            $params['q'] = '%' . $search . '%';
+        }
+
+        if (in_array($status, array('ativo', 'inativo', 'bloqueado'), true)) {
+            $where[] = 'u.status = :status';
+            $params['status'] = $status;
+        }
+
+        if ($perfil !== '') {
+            $where[] = 'EXISTS (
+                SELECT 1
+                FROM usuario_perfis upx
+                INNER JOIN perfis px ON px.id = upx.perfil_id AND px.deleted_at IS NULL
+                WHERE upx.usuario_id = u.id
+                  AND px.slug = :perfil
+            )';
+            $params['perfil'] = $perfil;
+        }
+
+        $sql = 'SELECT u.*,
+                       COALESCE(GROUP_CONCAT(DISTINCT p.nome ORDER BY p.nome SEPARATOR ", "), "") AS perfis
+                FROM usuarios u
+                LEFT JOIN usuario_perfis up ON up.usuario_id = u.id
+                LEFT JOIN perfis p ON p.id = up.perfil_id AND p.deleted_at IS NULL
+                WHERE ' . implode(' AND ', $where) . '
+                GROUP BY u.id
+                ORDER BY u.' . $sortBy . ' ' . $sortDir;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findById($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT * FROM usuarios WHERE deleted_at IS NULL AND id = :id LIMIT 1'
+        );
+        $stmt->execute(array('id' => (int) $id));
+
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $usuario ?: null;
+    }
+
     public function findByLogin($login)
     {
         $login = trim((string) $login);
@@ -73,22 +135,35 @@ class Usuario
 
     public function create(array $data)
     {
-        $stmt = Database::connection()->prepare(
-            'INSERT INTO usuarios
-             (nome, email, cpf, senha_hash, telefone, status, tentativas_login, bloqueado_ate,
-              token_recuperacao, token_recuperacao_expira_em, ultimo_login_em, created_at, updated_at, deleted_at)
-             VALUES
-             (:nome, :email, :cpf, :senha_hash, :telefone, :status, 0, NULL, NULL, NULL, NULL, NOW(), NOW(), NULL)'
-        );
+        $hasCidadeEstado = $this->supportsCidadeEstadoColumns();
+        $sql = $hasCidadeEstado
+            ? 'INSERT INTO usuarios
+               (nome, email, cpf, senha_hash, telefone, cidade, estado, status, tentativas_login, bloqueado_ate,
+                token_recuperacao, token_recuperacao_expira_em, ultimo_login_em, created_at, updated_at, deleted_at)
+               VALUES
+               (:nome, :email, :cpf, :senha_hash, :telefone, :cidade, :estado, :status, 0, NULL, NULL, NULL, NULL, NOW(), NOW(), NULL)'
+            : 'INSERT INTO usuarios
+               (nome, email, cpf, senha_hash, telefone, status, tentativas_login, bloqueado_ate,
+                token_recuperacao, token_recuperacao_expira_em, ultimo_login_em, created_at, updated_at, deleted_at)
+               VALUES
+               (:nome, :email, :cpf, :senha_hash, :telefone, :status, 0, NULL, NULL, NULL, NULL, NOW(), NOW(), NULL)';
 
-        $stmt->execute(array(
+        $params = array(
             'nome' => $data['nome'],
             'email' => strtolower(trim($data['email'])),
             'cpf' => preg_replace('/\D+/', '', $data['cpf']),
             'senha_hash' => $data['senha_hash'],
             'telefone' => isset($data['telefone']) ? preg_replace('/\D+/', '', $data['telefone']) : null,
             'status' => 'ativo',
-        ));
+        );
+
+        if ($hasCidadeEstado) {
+            $params['cidade'] = isset($data['cidade']) ? trim((string) $data['cidade']) : null;
+            $params['estado'] = isset($data['estado']) ? strtoupper(trim((string) $data['estado'])) : null;
+        }
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
 
         return (int) Database::connection()->lastInsertId();
     }
@@ -126,6 +201,133 @@ class Usuario
             'token' => $token,
             'id' => $usuarioId,
         ));
+    }
+
+    public function updateProfile($usuarioId, array $data)
+    {
+        $hasCidadeEstado = $this->supportsCidadeEstadoColumns();
+        $sql = 'UPDATE usuarios
+                SET nome = :nome,
+                    email = :email,
+                    cpf = :cpf,
+                    telefone = :telefone';
+
+        if ($hasCidadeEstado) {
+            $sql .= ',
+                    cidade = :cidade,
+                    estado = :estado';
+        }
+
+        $sql .= ',
+                    updated_at = NOW()
+                WHERE id = :id
+                  AND deleted_at IS NULL';
+
+        $params = array(
+            'id' => (int) $usuarioId,
+            'nome' => $data['nome'],
+            'email' => strtolower(trim((string) $data['email'])),
+            'cpf' => preg_replace('/\D+/', '', (string) $data['cpf']),
+            'telefone' => isset($data['telefone']) ? preg_replace('/\D+/', '', (string) $data['telefone']) : null,
+        );
+
+        if ($hasCidadeEstado) {
+            $params['cidade'] = isset($data['cidade']) ? trim((string) $data['cidade']) : null;
+            $params['estado'] = isset($data['estado']) ? strtoupper(trim((string) $data['estado'])) : null;
+        }
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+    }
+
+    public function updateAdmin($usuarioId, array $data)
+    {
+        $hasCidadeEstado = $this->supportsCidadeEstadoColumns();
+        $sql = 'UPDATE usuarios
+                SET nome = :nome,
+                    email = :email,
+                    cpf = :cpf,
+                    telefone = :telefone,
+                    status = :status,
+                    updated_at = NOW()';
+
+        if ($hasCidadeEstado) {
+            $sql .= ',
+                    cidade = :cidade,
+                    estado = :estado';
+        }
+
+        $params = array(
+            'id' => (int) $usuarioId,
+            'nome' => $data['nome'],
+            'email' => strtolower(trim((string) $data['email'])),
+            'cpf' => preg_replace('/\D+/', '', (string) $data['cpf']),
+            'telefone' => isset($data['telefone']) ? preg_replace('/\D+/', '', (string) $data['telefone']) : null,
+            'status' => isset($data['status']) ? $data['status'] : 'ativo',
+        );
+
+        if ($hasCidadeEstado) {
+            $params['cidade'] = isset($data['cidade']) ? trim((string) $data['cidade']) : null;
+            $params['estado'] = isset($data['estado']) ? strtoupper(trim((string) $data['estado'])) : null;
+        }
+
+        if (!empty($data['senha_hash'])) {
+            $sql .= ', senha_hash = :senha_hash';
+            $params['senha_hash'] = $data['senha_hash'];
+        }
+
+        $sql .= ' WHERE id = :id
+                  AND deleted_at IS NULL';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+    }
+
+    public function softDelete($usuarioId)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE usuarios
+             SET deleted_at = NOW(),
+                 updated_at = NOW()
+             WHERE id = :id
+               AND deleted_at IS NULL'
+        );
+        $stmt->execute(array('id' => (int) $usuarioId));
+    }
+
+    public function setStatus($usuarioId, $status)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE usuarios
+             SET status = :status,
+                 updated_at = NOW()
+             WHERE id = :id
+               AND deleted_at IS NULL'
+        );
+        $stmt->execute(array(
+            'id' => (int) $usuarioId,
+            'status' => (string) $status,
+        ));
+    }
+
+    private function supportsCidadeEstadoColumns()
+    {
+        if (self::$hasCidadeEstadoColumns !== null) {
+            return self::$hasCidadeEstadoColumns;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS total
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = "usuarios"
+               AND COLUMN_NAME IN ("cidade", "estado")'
+        );
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        self::$hasCidadeEstadoColumns = !empty($row) && (int) $row['total'] === 2;
+
+        return self::$hasCidadeEstadoColumns;
     }
 
     public function resetLoginAttempts($usuarioId)
@@ -170,7 +372,6 @@ class Usuario
              INNER JOIN usuario_perfis up ON up.usuario_id = u.id
              INNER JOIN perfis p ON p.id = up.perfil_id
              WHERE u.deleted_at IS NULL
-               AND up.deleted_at IS NULL
                AND p.deleted_at IS NULL
                AND p.slug = "professor"
              ORDER BY u.nome ASC'

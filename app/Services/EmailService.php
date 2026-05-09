@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Core\Helpers;
 use App\Core\Logger;
 use App\Core\View;
-use App\Models\EmailConfiguração;
+use App\Models\EmailConfiguracao;
 use App\Models\EmailEnvio;
 use Exception;
 
@@ -16,12 +16,13 @@ class EmailService
     private $globalConfigService;
     private $auditService;
     private $configFallback;
+    private $runtimeDiagnosticsLogged = false;
 
     public function __construct()
     {
-        $this->configModel = new EmailConfiguração();
+        $this->configModel = new EmailConfiguracao();
         $this->emailModel = new EmailEnvio();
-        $this->globalConfigService = new ConfiguraçãoGlobalService();
+        $this->globalConfigService = new ConfiguracaoGlobalService();
         $this->auditService = new AuditService();
         $this->configFallback = require BASE_PATH . '/config/mail.php';
     }
@@ -32,15 +33,35 @@ class EmailService
 
         if (!$stored) {
             $globalDefaults = $this->globalConfigService->emailDefaults();
+            $fallbackFrom = $this->resolveSenderEmail(
+                !empty($globalDefaults['from_email']) ? $globalDefaults['from_email'] : null,
+                $this->configFallback['from_email'],
+                $globalDefaults
+            );
+            $fallbackReplyTo = $this->resolveSenderEmail(
+                !empty($globalDefaults['reply_to']) ? $globalDefaults['reply_to'] : null,
+                $this->configFallback['reply_to'],
+                $globalDefaults
+            );
 
             return array_merge($this->configFallback, array(
-                'from_email' => !empty($globalDefaults['from_email']) ? $globalDefaults['from_email'] : $this->configFallback['from_email'],
+                'from_email' => $fallbackFrom,
                 'from_name' => !empty($globalDefaults['from_name']) ? $globalDefaults['from_name'] : $this->configFallback['from_name'],
-                'reply_to' => !empty($globalDefaults['reply_to']) ? $globalDefaults['reply_to'] : $this->configFallback['reply_to'],
+                'reply_to' => $fallbackReplyTo,
             ));
         }
 
         $globalDefaults = $this->globalConfigService->emailDefaults();
+        $storedFrom = $this->resolveSenderEmail(
+            !empty($stored['from_email']) ? $stored['from_email'] : null,
+            isset($stored['usuario']) ? $stored['usuario'] : null,
+            $globalDefaults
+        );
+        $storedReplyTo = $this->resolveSenderEmail(
+            !empty($stored['reply_to_email']) ? $stored['reply_to_email'] : null,
+            isset($stored['usuario']) ? $stored['usuario'] : null,
+            $globalDefaults
+        );
 
         return array_merge($this->configFallback, array(
             'enabled' => (bool) $stored['ativo'],
@@ -49,9 +70,9 @@ class EmailService
             'username' => $stored['usuario'],
             'password' => $stored['senha'],
             'encryption' => $stored['criptografia'],
-            'from_email' => !empty($stored['from_email']) ? $stored['from_email'] : $globalDefaults['from_email'],
+            'from_email' => $storedFrom,
             'from_name' => !empty($stored['from_name']) ? $stored['from_name'] : $globalDefaults['from_name'],
-            'reply_to' => !empty($stored['reply_to_email']) ? $stored['reply_to_email'] : $globalDefaults['reply_to'],
+            'reply_to' => $storedReplyTo,
             'queue_processing' => (bool) $stored['fila_ativa'],
         ));
     }
@@ -293,6 +314,7 @@ class EmailService
         );
 
         $emailId = $this->emailModel->create($payload);
+        $this->logRuntimeDiagnostics($config);
 
         $this->auditService->record(
             'emails.fila.criada',
@@ -308,10 +330,10 @@ class EmailService
             $userAgent
         );
 
-        Logger::info('emails.fila.criada', array('email_id' => $emailId, 'evento' => $evento));
+            Logger::info('emails.fila.criada', array('email_id' => $emailId, 'evento' => $evento));
 
         if (empty($config['enabled']) || empty($config['host'])) {
-            $erro = 'Configuração SMTP indisponivel.';
+            $erro = 'Configuracao SMTP indisponivel.';
             $this->emailModel->markFailed($emailId, $erro);
             $this->auditService->record(
                 'emails.falhou',
@@ -328,7 +350,8 @@ class EmailService
         }
 
         try {
-            $response = $this->sendSmtpMêssage($config, array(
+            $rendered = View::render($template, $data, false, 'emails');
+            $response = $this->sendSmtpMessage($config, array(
                 'from_email' => $config['from_email'],
                 'from_name' => $config['from_name'],
                 'reply_to' => $config['reply_to'],
@@ -358,13 +381,13 @@ class EmailService
 
             return array('ok' => true, 'email_id' => $emailId, 'response' => $response);
         } catch (Exception $exception) {
-            $this->emailModel->markFailed($emailId, $exception->getMêssage());
+            $this->emailModel->markFailed($emailId, $exception->getMessage());
 
             $this->auditService->record(
                 'emails.falhou',
                 'email',
                 $emailId,
-                array('erro' => $exception->getMêssage()),
+                array('erro' => $exception->getMessage()),
                 $actorUserId,
                 $ipAddress,
                 $userAgent
@@ -373,10 +396,10 @@ class EmailService
             Logger::error('emails.falhou', array(
                 'email_id' => $emailId,
                 'evento' => $evento,
-                'erro' => $exception->getMêssage(),
+                'erro' => $exception->getMessage(),
             ));
 
-            return array('ok' => false, 'message' => $exception->getMêssage(), 'email_id' => $emailId);
+            return array('ok' => false, 'message' => $exception->getMessage(), 'email_id' => $emailId);
         }
     }
 
@@ -410,16 +433,100 @@ class EmailService
         );
     }
 
-    private function sendSmtpMêssage(array $config, array $email)
+    private function sendSmtpMessage(array $config, array $email)
+    {
+        $attemptedFallback = false;
+        $lastException = null;
+
+        foreach ($this->smtpEncryptionAttempts($config['encryption']) as $encryptionMode) {
+            try {
+                return $this->sendSmtpMessageWithMode($config, $email, $encryptionMode);
+            } catch (Exception $exception) {
+                $lastException = $exception;
+                $allowPlaintextFallback = !empty($config['allow_plaintext_fallback']);
+                if (!$this->shouldFallbackToPlain($encryptionMode, $exception) || $attemptedFallback) {
+                    throw $exception;
+                }
+
+                if (!$allowPlaintextFallback) {
+                    Logger::info('emails.smtp.tls.falhou.sem_fallback', array(
+                        'host' => $config['host'],
+                        'port' => $config['port'],
+                        'encryption' => $encryptionMode,
+                        'erro' => $exception->getMessage(),
+                    ));
+                    throw $exception;
+                }
+
+                $attemptedFallback = true;
+                Logger::info('emails.smtp.tls.falhou.fallback', array(
+                    'host' => $config['host'],
+                    'port' => $config['port'],
+                    'encryption' => $encryptionMode,
+                    'erro' => $exception->getMessage(),
+                ));
+            }
+        }
+
+        if ($lastException instanceof Exception) {
+            throw $lastException;
+        }
+
+        throw new Exception('Falha ao enviar email.');
+    }
+
+    private function logRuntimeDiagnostics(array $config)
+    {
+        if ($this->runtimeDiagnosticsLogged) {
+            return;
+        }
+
+        $this->runtimeDiagnosticsLogged = true;
+
+        Logger::info('emails.smtp.runtime', array(
+            'php_version' => PHP_VERSION,
+            'app_env' => getenv('APP_ENV') !== false ? getenv('APP_ENV') : (require BASE_PATH . '/config/app.php')['env'],
+            'openssl_loaded' => extension_loaded('openssl'),
+            'stream_socket_enable_crypto' => function_exists('stream_socket_enable_crypto'),
+            'host' => isset($config['host']) ? $config['host'] : null,
+            'port' => isset($config['port']) ? (int) $config['port'] : null,
+            'encryption' => isset($config['encryption']) ? $config['encryption'] : null,
+            'allow_plaintext_fallback' => !empty($config['allow_plaintext_fallback']),
+            'username_present' => !empty($config['username']),
+            'from_email' => isset($config['from_email']) ? $config['from_email'] : null,
+            'reply_to' => isset($config['reply_to']) ? $config['reply_to'] : null,
+        ));
+    }
+
+    private function sendSmtpMessageWithMode(array $config, array $email, $encryptionMode)
     {
         $host = trim((string) $config['host']);
         $port = (int) $config['port'];
-        $encryption = strtolower((string) $config['encryption']);
+        $encryption = strtolower((string) $encryptionMode);
         $target = ($encryption === 'ssl' ? 'ssl://' : '') . $host . ':' . $port;
 
-        $socket = @stream_socket_client($target, $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
+        $socket = null;
+        $erroConexao = null;
+        for ($tentativa = 1; $tentativa <= 2; $tentativa++) {
+            $socket = @stream_socket_client($target, $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
+            if ($socket) {
+                break;
+            }
+
+            $erroConexao = $errstr;
+            if ($tentativa === 1) {
+                Logger::info('emails.smtp.conexao.retentativa', array(
+                    'host' => $host,
+                    'port' => $port,
+                    'encryption' => $encryptionMode,
+                    'erro' => $errstr,
+                ));
+                usleep(350000);
+            }
+        }
+
         if (!$socket) {
-            throw new Exception('Falha na conexao SMTP: ' . $errstr);
+            throw new Exception('Falha na conexao SMTP: ' . $erroConexao);
         }
 
         $this->smtpRead($socket, array(220));
@@ -427,7 +534,7 @@ class EmailService
 
         if ($encryption === 'tls') {
             $this->smtpCommand($socket, 'STARTTLS', array(220));
-            if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+            if (!@stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
                 throw new Exception('Não foi possivel iniciar TLS.');
             }
 
@@ -469,6 +576,61 @@ class EmailService
         fclose($socket);
 
         return trim($response);
+    }
+
+    private function smtpEncryptionAttempts($encryption)
+    {
+        $encryption = strtolower(trim((string) $encryption));
+
+        if ($encryption === 'tls') {
+            return array('tls', 'nenhuma');
+        }
+
+        return array($encryption === '' ? 'nenhuma' : $encryption);
+    }
+
+    private function shouldFallbackToPlain($encryption, Exception $exception)
+    {
+        if ($encryption !== 'tls') {
+            return false;
+        }
+
+        $message = strtolower($exception->getMessage());
+        return strpos($message, 'tls') !== false
+            || strpos($message, 'crypto') !== false
+            || strpos($message, 'openssl') !== false
+            || strpos($message, 'starttls') !== false;
+    }
+
+    private function resolveSenderEmail($primary, $secondary = null, array $fallbacks = array())
+    {
+        $candidatos = array(
+            $primary,
+            $secondary,
+            isset($fallbacks['from_email']) ? $fallbacks['from_email'] : null,
+            isset($fallbacks['reply_to']) ? $fallbacks['reply_to'] : null,
+            isset($fallbacks['username']) ? $fallbacks['username'] : null,
+            'no-reply@polorainbow.com.br',
+        );
+
+        foreach ($candidatos as $candidate) {
+            $candidate = trim((string) $candidate);
+            if ($candidate === '') {
+                continue;
+            }
+
+            if (filter_var($candidate, FILTER_VALIDATE_EMAIL) === false) {
+                continue;
+            }
+
+            if (preg_match('/@localhost$/i', $candidate) === 1) {
+                continue;
+            }
+
+            return $candidate;
+        }
+
+        return 'no-reply@polorainbow.com.br';
     }
 
     private function smtpCommand($socket, $command, array $expectedCodes)
@@ -528,4 +690,7 @@ class EmailService
         return '=?UTF-8?B?' . base64_encode($value) . '?=';
     }
 }
+
+
+
 

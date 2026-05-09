@@ -28,12 +28,38 @@
                         <td><?php echo Helpers::e($modulo['tipo']); ?></td>
                         <td><?php echo (int) $modulo['ativo'] === 1 ? 'Ativo' : 'Inativo'; ?></td>
                         <td><?php echo (int) $modulo['ordem']; ?></td>
-                        <td><a href="/admin/frontend/modulos/editar?modulo_id=<?php echo (int) $modulo['id']; ?>">Editar</a> | <a href="#" onclick="return excluirModulo(<?php echo (int) $modulo['id']; ?>);">Excluir</a></td>
+                        <td><a href="/admin/frontend/modulos/editar?modulo_id=<?php echo (int) $modulo['id']; ?>">Editar</a> | <a href="#" onclick="return excluirModulo(<?php echo (int) $modulo['id']; ?>);">Lixeira</a></td>
                     </tr>
                 <?php endforeach; endif; ?>
                 </tbody>
             </table>
         </div>
+    </section>
+
+    <section class="status-card">
+        <details>
+            <summary><strong>Lixeira de módulos</strong></summary>
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>ID lixeira</th><th>ID módulo</th><th>Nome</th><th>Código</th><th>Justificativa</th><th>Excluído por</th><th>Data</th></tr></thead>
+                    <tbody>
+                    <?php if (empty($lixeira_modulos)): ?>
+                        <tr><td colspan="7">Nenhum módulo na lixeira.</td></tr>
+                    <?php else: foreach ($lixeira_modulos as $registro): $snapshot = json_decode((string) $registro['snapshot_dados'], true); ?>
+                        <tr>
+                            <td><?php echo (int) $registro['id']; ?></td>
+                            <td><?php echo (int) $registro['entidade_id']; ?></td>
+                            <td><?php echo Helpers::e(is_array($snapshot) && isset($snapshot['nome_admin']) ? $snapshot['nome_admin'] : '-'); ?></td>
+                            <td><?php echo Helpers::e(is_array($snapshot) && isset($snapshot['codigo']) ? $snapshot['codigo'] : '-'); ?></td>
+                            <td><?php echo Helpers::e($registro['justificativa']); ?></td>
+                            <td><?php echo Helpers::e($registro['excluido_por_nome'] ?: '-'); ?></td>
+                            <td><?php echo Helpers::e($registro['created_at']); ?></td>
+                        </tr>
+                    <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
     </section>
 </section>
 

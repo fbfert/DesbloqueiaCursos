@@ -254,4 +254,19 @@ class CursoEvento
         $stmt = Database::connection()->prepare('UPDATE cursos_eventos SET deleted_at = NOW(), updated_at = NOW() WHERE id = :id');
         $stmt->execute(array('id' => $id));
     }
+
+    public function updateStatus($id, $status)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE cursos_eventos
+             SET status = :status,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array(
+            'status' => $status,
+            'id' => $id,
+        ));
+    }
 }

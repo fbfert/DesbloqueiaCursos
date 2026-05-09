@@ -49,7 +49,7 @@ class FinanceiroController extends Controller
     public function apurar(Request $request)
     {
         $competencia = trim((string) $request->input('competencia', ''));
-        $result = $this->financeiroService->apurarCompetência(
+        $result = $this->financeiroService->apurarCompetencia(
             $competencia,
             Session::get('usuario_id'),
             $request->ip(),
@@ -150,4 +150,5 @@ class FinanceiroController extends Controller
         return $this->redirect('/admin/financeiro/repasses');
     }
 }
+
 

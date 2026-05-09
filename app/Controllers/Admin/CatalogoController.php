@@ -5,22 +5,22 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
-use App\Services\CatálogoService;
+use App\Services\CatalogoService;
 
-class CatálogoController extends Controller
+class CatalogoController extends Controller
 {
     private $catalogoService;
 
     public function __construct()
     {
-        $this->catalogoService = new CatálogoService();
+        $this->catalogoService = new CatalogoService();
     }
 
     public function index(Request $request)
     {
         return $this->view('admin/catalogo/index', array_merge(
             array(
-                'title' => 'Catálogo',
+                'title' => 'Catalogo',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
             ),
@@ -28,4 +28,6 @@ class CatálogoController extends Controller
         ));
     }
 }
+
+
 

@@ -31,6 +31,20 @@ class Session
         $_SESSION['_flash'][$key] = $value;
     }
 
+    public static function hasFlash($key)
+    {
+        return isset($_SESSION['_flash']) && array_key_exists($key, $_SESSION['_flash']);
+    }
+
+    public static function peekFlash($key, $default = null)
+    {
+        if (!isset($_SESSION['_flash']) || !array_key_exists($key, $_SESSION['_flash'])) {
+            return $default;
+        }
+
+        return $_SESSION['_flash'][$key];
+    }
+
     public static function pullFlash($key, $default = null)
     {
         if (!isset($_SESSION['_flash'][$key])) {

@@ -10,6 +10,8 @@ use Exception;
 
 class AulaService
 {
+    private const STATUS_VALIDOS = array('rascunho', 'publicado', 'oculto');
+
     private $aulaModel;
     private $moduloModel;
     private $auditService;
@@ -31,6 +33,7 @@ class AulaService
     public function salvar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $id = isset($data['id']) ? (int) $data['id'] : 0;
+        $status = $this->determinarStatus($data, true);
         $payload = array(
             'modulo_id' => (int) $data['modulo_id'],
             'curso_evento_id' => (int) $data['curso_evento_id'],
@@ -41,6 +44,9 @@ class AulaService
             'url_video' => isset($data['url_video']) ? trim((string) $data['url_video']) : null,
             'duracao_minutos' => isset($data['duracao_minutos']) && $data['duracao_minutos'] !== '' ? (int) $data['duracao_minutos'] : null,
             'visivel' => !empty($data['visivel']) ? 1 : 0,
+            'status' => $status,
+            'criado_por' => $id > 0 ? null : ($actorUserId ? (int) $actorUserId : (isset($data['criado_por']) ? (int) $data['criado_por'] : null)),
+            'atualizado_por' => isset($data['atualizado_por']) ? (int) $data['atualizado_por'] : $actorUserId,
             'obrigatoria' => !empty($data['obrigatoria']) ? 1 : 0,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         );
@@ -64,6 +70,16 @@ class AulaService
             return array('ok' => false, 'message' => 'Aula nao encontrada.');
         }
 
+        if (empty($payload['titulo'])) {
+            return array('ok' => false, 'message' => 'Informe o titulo da aula.');
+        }
+
+        $payload['visivel'] = $payload['status'] === 'publicado' ? 1 : 0;
+        $payload['atualizado_por'] = $actorUserId ? (int) $actorUserId : $payload['atualizado_por'];
+        if ($id <= 0 && !$payload['criado_por']) {
+            $payload['criado_por'] = $actorUserId ? (int) $actorUserId : null;
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -85,9 +101,37 @@ class AulaService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.aula.falhou', array('message' => $exception->getMêssage()));
+            Logger::error('area_curso.aula.falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
+    }
+
+    private function normalizarStatus($status, $defaultPublicada = false)
+    {
+        $status = is_string($status) ? trim($status) : '';
+
+        if ($status === '') {
+            return $defaultPublicada ? 'publicado' : 'rascunho';
+        }
+
+        if (!in_array($status, self::STATUS_VALIDOS, true)) {
+            return $defaultPublicada ? 'publicado' : 'rascunho';
+        }
+
+        return $status;
+    }
+
+    private function determinarStatus(array $data, $defaultPublicada = false)
+    {
+        if (isset($data['status']) && $data['status'] !== '') {
+            return $this->normalizarStatus($data['status'], $defaultPublicada);
+        }
+
+        if (array_key_exists('visivel', $data)) {
+            return !empty($data['visivel']) ? 'publicado' : 'oculto';
+        }
+
+        return $defaultPublicada ? 'publicado' : 'rascunho';
     }
 
     public function excluir($id, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -109,9 +153,10 @@ class AulaService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.aula.excluir_falhou', array('message' => $exception->getMêssage()));
+            Logger::error('area_curso.aula.excluir_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
 }
+
 

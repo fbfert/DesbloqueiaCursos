@@ -7,6 +7,23 @@ use PDO;
 
 class Pedido
 {
+    public function findLatestByUsuarioForPrefill($usuarioId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT pagador_nome, pagador_cpf, pagador_email, pagador_telefone, pagador_cidade, pagador_estado
+             FROM pedidos
+             WHERE deleted_at IS NULL
+               AND (comprador_usuario_id = :usuario_id OR pagador_usuario_id = :usuario_id)
+             ORDER BY id DESC
+             LIMIT 1'
+        );
+
+        $stmt->execute(array('usuario_id' => (int) $usuarioId));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function findByCodigo($codigo)
     {
         $stmt = Database::connection()->prepare(
@@ -48,6 +65,63 @@ class Pedido
         );
 
         $stmt->execute(array('usuario_id' => $usuarioId));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function pendentesParaMeusCursos($usuarioId, $limit = 5)
+    {
+        $limit = (int) $limit;
+        if ($limit <= 0) {
+            $limit = 5;
+        }
+        if ($limit > 20) {
+            $limit = 20;
+        }
+
+        $statusPendentes = array(
+            'rascunho',
+            'aguardando_pagamento',
+            'pendencia',
+            'aguardando_reenvio',
+            'comprovante_enviado',
+            'em_analise',
+        );
+
+        $placeholders = array();
+        $params = array(
+            'usuario_id' => (int) $usuarioId,
+        );
+
+        foreach ($statusPendentes as $idx => $status) {
+            $key = 'status_' . $idx;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $status;
+        }
+
+        $sql = 'SELECT p.*,
+                       pi.curso_evento_id,
+                       pi.turma_id,
+                       ce.nome AS curso_nome,
+                       t.nome AS turma_nome
+                FROM pedidos p
+                LEFT JOIN pedido_itens pi
+                    ON pi.pedido_id = p.id
+                   AND pi.deleted_at IS NULL
+                LEFT JOIN cursos_eventos ce
+                    ON ce.id = pi.curso_evento_id
+                   AND ce.deleted_at IS NULL
+                LEFT JOIN turmas t
+                    ON t.id = pi.turma_id
+                   AND t.deleted_at IS NULL
+                WHERE p.deleted_at IS NULL
+                  AND (p.comprador_usuario_id = :usuario_id OR p.pagador_usuario_id = :usuario_id)
+                  AND p.status IN (' . implode(', ', $placeholders) . ')
+                ORDER BY p.id DESC
+                LIMIT ' . $limit;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

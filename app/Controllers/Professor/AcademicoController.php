@@ -8,12 +8,12 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Services\AreaCursoService;
-use App\Services\AptidãoCertificadoService;
+use App\Services\AptidaoCertificadoService;
 use App\Services\AvaliacaoService;
 use App\Services\ProfessorAcademicScopeService;
 use App\Services\PresencaService;
 
-class AcadêmicoController extends Controller
+class AcademicoController extends Controller
 {
     private $areaCursoService;
     private $aptidaoService;
@@ -24,7 +24,7 @@ class AcadêmicoController extends Controller
     public function __construct()
     {
         $this->areaCursoService = new AreaCursoService();
-        $this->aptidaoService = new AptidãoCertificadoService();
+        $this->aptidaoService = new AptidaoCertificadoService();
         $this->presencaService = new PresencaService();
         $this->avaliacaoService = new AvaliacaoService();
         $this->scopeService = new ProfessorAcademicScopeService();
@@ -55,13 +55,13 @@ class AcadêmicoController extends Controller
         ));
     }
 
-    public function salvarConfiguração(Request $request)
+    public function salvarConfiguracao(Request $request)
     {
         if (!$this->contextoAutorizado((int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             return $this->forbidden();
         }
 
-        $resultado = $this->aptidaoService->salvarConfiguração($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $resultado = $this->aptidaoService->salvarConfiguracao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
     }
 
@@ -117,13 +117,13 @@ class AcadêmicoController extends Controller
         return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
     }
 
-    public function recalcularAptidão(Request $request)
+    public function recalcularAptidao(Request $request)
     {
         if (!$this->inscricaoAutorizada((int) $request->input('inscricao_id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
             return $this->forbidden();
         }
 
-        $resultado = $this->aptidaoService->recalcularInscrição(
+        $resultado = $this->aptidaoService->recalcularInscricao(
             (int) $request->input('inscricao_id', 0),
             Session::get('usuario_id'),
             $request->ip(),
@@ -166,12 +166,12 @@ class AcadêmicoController extends Controller
             return false;
         }
 
-        $validacao = $this->scopeService->validarInscriçãoNoContexto($inscricaoId, $cursoId, $turmaId > 0 ? $turmaId : null);
+        $validacao = $this->scopeService->validarInscricaoNoContexto($inscricaoId, $cursoId, $turmaId > 0 ? $turmaId : null);
         if (!empty($validacao['ok'])) {
             return true;
         }
 
-        return isset($validacao['message']) && $validacao['message'] === 'Inscrição nao encontrada.';
+        return isset($validacao['message']) && $validacao['message'] === 'Inscricao nao encontrada.';
     }
 
     private function avaliacaoAutorizada($avaliacaoId, $cursoId, $turmaId)
@@ -225,4 +225,7 @@ class AcadêmicoController extends Controller
         return new Response(View::render('errors/403', array('title' => 'Acesso negado')), 403);
     }
 }
+
+
+
 

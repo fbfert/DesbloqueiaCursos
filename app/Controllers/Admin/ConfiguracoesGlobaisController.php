@@ -5,15 +5,15 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
-use App\Services\ConfiguraçãoGlobalService;
+use App\Services\ConfiguracaoGlobalService;
 
-class ConfiguraçõesGlobaisController extends Controller
+class ConfiguracoesGlobaisController extends Controller
 {
     private $service;
 
     public function __construct()
     {
-        $this->service = new ConfiguraçãoGlobalService();
+        $this->service = new ConfiguracaoGlobalService();
     }
 
     public function index(Request $request)
@@ -90,9 +90,9 @@ class ConfiguraçõesGlobaisController extends Controller
         return $this->handleSaveResult($result, '/admin/configuracoes-globais/frontend');
     }
 
-    public function salvarSegurança(Request $request)
+    public function salvarSeguranca(Request $request)
     {
-        $result = $this->service->saveSegurança($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->service->saveSeguranca($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         return $this->handleSaveResult($result, '/admin/configuracoes-globais/seguranca');
     }
 
@@ -118,4 +118,6 @@ class ConfiguraçõesGlobaisController extends Controller
         return $this->redirect($redirectTo);
     }
 }
+
+
 

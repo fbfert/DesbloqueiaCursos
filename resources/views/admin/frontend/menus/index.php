@@ -26,12 +26,38 @@
                         <td><?php echo Helpers::e($menu['posicao']); ?></td>
                         <td><?php echo (int) $menu['ativo'] === 1 ? 'Ativo' : 'Inativo'; ?></td>
                         <td><?php echo (int) $menu['ordem']; ?></td>
-                        <td><a href="/admin/frontend/menus/editar?menu_id=<?php echo (int) $menu['id']; ?>">Editar</a> | <a href="/admin/frontend/menus/itens?menu_id=<?php echo (int) $menu['id']; ?>">Itens</a> | <a href="#" onclick="return excluirMenu(<?php echo (int) $menu['id']; ?>);">Excluir</a></td>
+                        <td><a href="/admin/frontend/menus/editar?menu_id=<?php echo (int) $menu['id']; ?>">Editar</a> | <a href="/admin/frontend/menus/itens?menu_id=<?php echo (int) $menu['id']; ?>">Itens</a> | <a href="#" onclick="return excluirMenu(<?php echo (int) $menu['id']; ?>);">Lixeira</a></td>
                     </tr>
                 <?php endforeach; endif; ?>
                 </tbody>
             </table>
         </div>
+    </section>
+
+    <section class="status-card">
+        <details>
+            <summary><strong>Lixeira de menus</strong></summary>
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>ID lixeira</th><th>ID menu</th><th>Nome</th><th>Código</th><th>Justificativa</th><th>Excluído por</th><th>Data</th></tr></thead>
+                    <tbody>
+                    <?php if (empty($lixeira_menus)): ?>
+                        <tr><td colspan="7">Nenhum menu na lixeira.</td></tr>
+                    <?php else: foreach ($lixeira_menus as $registro): $snapshot = json_decode((string) $registro['snapshot_dados'], true); ?>
+                        <tr>
+                            <td><?php echo (int) $registro['id']; ?></td>
+                            <td><?php echo (int) $registro['entidade_id']; ?></td>
+                            <td><?php echo Helpers::e(is_array($snapshot) && isset($snapshot['nome_admin']) ? $snapshot['nome_admin'] : '-'); ?></td>
+                            <td><?php echo Helpers::e(is_array($snapshot) && isset($snapshot['codigo']) ? $snapshot['codigo'] : '-'); ?></td>
+                            <td><?php echo Helpers::e($registro['justificativa']); ?></td>
+                            <td><?php echo Helpers::e($registro['excluido_por_nome'] ?: '-'); ?></td>
+                            <td><?php echo Helpers::e($registro['created_at']); ?></td>
+                        </tr>
+                    <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
     </section>
 </section>
 <form method="post" action="/admin/frontend/menus/excluir" id="form-excluir-menu" style="display:none;">

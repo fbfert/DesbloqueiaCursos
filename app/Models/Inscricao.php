@@ -68,6 +68,7 @@ class Inscricao
                     ce.nome AS curso_nome,
                     ce.slug AS curso_slug,
                     ce.tipo AS curso_tipo,
+                    ce.modalidade AS curso_modalidade,
                     t.nome AS turma_nome,
                     t.codigo AS turma_codigo,
                     cp.status AS comprovante_status,
@@ -85,8 +86,9 @@ class Inscricao
              LEFT JOIN comprovantes_pix cp ON cp.pedido_id = i.pedido_id AND cp.is_atual = 1 AND cp.deleted_at IS NULL
              LEFT JOIN certificados c ON c.inscricao_id = i.id AND c.deleted_at IS NULL AND c.status = "emitido"
              WHERE i.deleted_at IS NULL
-               AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
-               AND (i.usuario_id = :usuario_id OR p.comprador_usuario_id = :usuario_id OR p.pagador_usuario_id = :usuario_id)
+               AND i.status NOT IN ("pendente", "cancelada", "reprovada")
+               AND i.usuario_id = :usuario_id
+               AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
              ORDER BY i.id DESC'
         );
 
@@ -108,6 +110,7 @@ class Inscricao
                     ce.nome AS curso_nome,
                     ce.slug AS curso_slug,
                     ce.tipo AS curso_tipo,
+                    ce.modalidade AS curso_modalidade,
                     t.nome AS turma_nome,
                     t.codigo AS turma_codigo,
                     cp.status AS comprovante_status,
@@ -125,7 +128,9 @@ class Inscricao
              LEFT JOIN comprovantes_pix cp ON cp.pedido_id = i.pedido_id AND cp.is_atual = 1 AND cp.deleted_at IS NULL
              LEFT JOIN certificados c ON c.inscricao_id = i.id AND c.deleted_at IS NULL AND c.status = "emitido"
              WHERE i.deleted_at IS NULL
-               AND (i.usuario_id = :usuario_id OR p.comprador_usuario_id = :usuario_id OR p.pagador_usuario_id = :usuario_id)
+               AND i.status NOT IN ("pendente", "cancelada", "reprovada")
+               AND i.usuario_id = :usuario_id
+               AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
              ORDER BY i.id DESC'
         );
 

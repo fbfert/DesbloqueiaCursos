@@ -4,13 +4,13 @@ namespace App\Services;
 
 use App\Core\Logger;
 use App\Core\Validator;
-use App\Models\ConfiguraçãoCertificado;
-use App\Models\ConfiguraçãoFinanceira;
-use App\Models\ConfiguraçãoFrontend;
-use App\Models\ConfiguraçãoGlobal;
-use App\Models\ConfiguraçãoSegurança;
+use App\Models\ConfiguracaoCertificado;
+use App\Models\ConfiguracaoFinanceira;
+use App\Models\ConfiguracaoFrontend;
+use App\Models\ConfiguracaoGlobal;
+use App\Models\ConfiguracaoSeguranca;
 
-class ConfiguraçãoGlobalService
+class ConfiguracaoGlobalService
 {
     private $globalModel;
     private $certificadoModel;
@@ -21,11 +21,11 @@ class ConfiguraçãoGlobalService
 
     public function __construct()
     {
-        $this->globalModel = new ConfiguraçãoGlobal();
-        $this->certificadoModel = new ConfiguraçãoCertificado();
-        $this->financeiraModel = new ConfiguraçãoFinanceira();
-        $this->frontendModel = new ConfiguraçãoFrontend();
-        $this->segurancaModel = new ConfiguraçãoSegurança();
+        $this->globalModel = new ConfiguracaoGlobal();
+        $this->certificadoModel = new ConfiguracaoCertificado();
+        $this->financeiraModel = new ConfiguracaoFinanceira();
+        $this->frontendModel = new ConfiguracaoFrontend();
+        $this->segurancaModel = new ConfiguracaoSeguranca();
         $this->auditService = new AuditService();
     }
 
@@ -92,6 +92,7 @@ class ConfiguraçãoGlobalService
             'logo_caminho' => null,
             'banner_caminho' => null,
             'descricao_home' => null,
+            'home_destaques_limite' => 6,
         );
     }
 
@@ -199,6 +200,7 @@ class ConfiguraçãoGlobalService
             'logo_caminho' => isset($data['logo_caminho']) ? trim((string) $data['logo_caminho']) : null,
             'banner_caminho' => isset($data['banner_caminho']) ? trim((string) $data['banner_caminho']) : null,
             'descricao_home' => isset($data['descricao_home']) ? trim((string) $data['descricao_home']) : null,
+            'home_destaques_limite' => $this->normalizeHomeDestaquesLimite(isset($data['home_destaques_limite']) ? $data['home_destaques_limite'] : null),
         );
 
         $errors = $this->validateFrontend($payload);
@@ -212,7 +214,7 @@ class ConfiguraçãoGlobalService
         return array('ok' => true, 'id' => $id);
     }
 
-    public function saveSegurança(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function saveSeguranca(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $payload = array(
             'politica_login' => isset($data['politica_login']) ? trim((string) $data['politica_login']) : 'email_cpf',
@@ -221,7 +223,7 @@ class ConfiguraçãoGlobalService
             'tempo_bloqueio_login_minutos' => isset($data['tempo_bloqueio_login_minutos']) ? (int) $data['tempo_bloqueio_login_minutos'] : 15,
         );
 
-        $errors = $this->validateSegurança($payload);
+        $errors = $this->validateSeguranca($payload);
         if ($errors) {
             return array('ok' => false, 'errors' => $errors);
         }
@@ -236,6 +238,12 @@ class ConfiguraçãoGlobalService
     {
         $frontend = $this->frontend();
         return $frontend['template_visual_portal'];
+    }
+
+    public function homeDestaquesLimite()
+    {
+        $frontend = $this->frontend();
+        return $this->normalizeHomeDestaquesLimite(isset($frontend['home_destaques_limite']) ? $frontend['home_destaques_limite'] : null);
     }
 
     private function auditSave($entityType, $entityId, $action, array $metadata, $actorUserId, $ipAddress, $userAgent)
@@ -312,7 +320,7 @@ class ConfiguraçãoGlobalService
         return $errors;
     }
 
-    private function validateSegurança(array $payload)
+    private function validateSeguranca(array $payload)
     {
         $errors = array();
         $allowed = array('email_cpf', 'email', 'cpf');
@@ -335,5 +343,26 @@ class ConfiguraçãoGlobalService
 
         return $errors;
     }
+
+    private function normalizeHomeDestaquesLimite($value)
+    {
+        if ($value === null) {
+            return 6;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !preg_match('/^\d+$/', $value)) {
+            return 6;
+        }
+
+        $limite = (int) $value;
+        if ($limite < 1 || $limite > 12) {
+            return 6;
+        }
+
+        return $limite;
+    }
 }
+
+
 

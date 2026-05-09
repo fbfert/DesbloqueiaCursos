@@ -15,7 +15,14 @@
             <?php if (!empty($preFooterMenuItems)): ?>
                 <nav class="pre-footer__menu" aria-label="Links institucionais">
                     <?php foreach ($preFooterMenuItems as $item): ?>
-                        <a class="pre-footer__link" href="<?php echo Helpers::e($item['url']); ?>" target="<?php echo Helpers::e($item['target']); ?>"<?php echo !empty($item['rel']) ? ' rel="' . Helpers::e($item['rel']) . '"' : ''; ?>>
+                        <?php
+                        $target = isset($item['target']) ? (string) $item['target'] : '_self';
+                        $rel = isset($item['rel']) ? trim((string) $item['rel']) : '';
+                        if ($target === '_blank' && $rel === '') {
+                            $rel = 'noopener noreferrer';
+                        }
+                        ?>
+                        <a class="pre-footer__link" href="<?php echo Helpers::e($item['url']); ?>" target="<?php echo Helpers::e($target); ?>"<?php echo $rel !== '' ? ' rel="' . Helpers::e($rel) . '"' : ''; ?>>
                             <?php echo Helpers::e($item['rotulo']); ?>
                         </a>
                     <?php endforeach; ?>

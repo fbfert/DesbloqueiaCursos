@@ -8,7 +8,7 @@ use App\Core\Session;
 use App\Services\CursoService;
 use App\Services\TurmaService;
 
-class CatálogoController extends Controller
+class CatalogoController extends Controller
 {
     private $cursoService;
     private $turmaService;
@@ -34,4 +34,5 @@ class CatálogoController extends Controller
         ));
     }
 }
+
 

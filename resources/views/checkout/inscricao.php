@@ -103,7 +103,7 @@
             </label>
         </section>
 
-        <button type="submit">Avançar para participantes</button>
+        <button type="submit" id="checkout-avancar-btn">Avançar para pagamento</button>
     </form>
 <?php endif; ?>
 
@@ -118,6 +118,7 @@
     var tipoPedidoSelect = document.getElementById('tipo-pedido');
     var quantidadeWrap = document.getElementById('quantidade-vagas-wrap');
     var quantidadeInput = document.getElementById('quantidade-vagas');
+    var avancarButton = document.getElementById('checkout-avancar-btn');
 
     var estadoInicial = <?php echo json_encode(strtoupper((string) (isset($pagadorPrefill['estado']) ? $pagadorPrefill['estado'] : '')), JSON_UNESCAPED_UNICODE); ?>;
     var cidadeInicial = <?php echo json_encode((string) (isset($pagadorPrefill['cidade']) ? $pagadorPrefill['cidade'] : ''), JSON_UNESCAPED_UNICODE); ?>;
@@ -214,9 +215,24 @@
         }
     }
 
+    function syncTextoBotao() {
+        if (!tipoPedidoSelect || !avancarButton) {
+            return;
+        }
+
+        if (tipoPedidoSelect.value === 'propria') {
+            avancarButton.textContent = 'Avançar para pagamento';
+            return;
+        }
+
+        avancarButton.textContent = 'Avançar para participantes';
+    }
+
     if (tipoPedidoSelect) {
         tipoPedidoSelect.addEventListener('change', syncQuantidadePorTipoPedido);
+        tipoPedidoSelect.addEventListener('change', syncTextoBotao);
         syncQuantidadePorTipoPedido();
+        syncTextoBotao();
     }
 
     var form = document.querySelector('form.checkout-form');

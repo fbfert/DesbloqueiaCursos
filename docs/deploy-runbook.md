@@ -57,6 +57,19 @@ Se o smoke retornar `500` em rotas publicas, pare e verifique:
 3. Fazer backup dos arquivos.
 4. Confirmar `APP_URL`, PHP e extensoes.
 5. Confirmar storage fora de `public_html`.
+
+## Caminho ativo da aplicação (obrigatório)
+
+- O runtime HTTP usa `public_html/index.php` com `BASE_PATH = dirname(__DIR__)`.
+- Portanto, o código ativo fica fora de `public_html`, nas pastas:
+  - `app/`
+  - `routes/`
+  - `resources/`
+  - `sql/`
+  - `storage/`
+- Em `public_html/` devem ficar apenas arquivos públicos (ex.: `index.php`, `assets/` e estáticos).
+- Não publicar `app/`, `routes/` ou `resources/` dentro de `public_html`.
+- Antes de validar hash/upload, confirmar sempre o caminho ativo no bootstrap (`public_html/index.php`).
 6. Confirmar SMTP.
 7. Publicar o codigo.
 8. Aplicar migrations pendentes apenas.
@@ -113,4 +126,3 @@ Somente saia da manutencao depois de confirmar:
 - upload privado funcionando
 - dashboard admin e professor abrindo
 - certificado validando publicamente
-

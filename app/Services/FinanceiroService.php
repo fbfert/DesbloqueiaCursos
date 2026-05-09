@@ -24,7 +24,7 @@ class FinanceiroService
 
     public function __construct()
     {
-        $this->configuracaoGlobalService = new ConfiguraçãoGlobalService();
+        $this->configuracaoGlobalService = new ConfiguracaoGlobalService();
         $this->rateioService = new RateioService();
         $this->repasseService = new RepasseProfessorService();
         $this->apuracaoModel = new ApuracaoMensal();
@@ -49,7 +49,7 @@ class FinanceiroService
         try {
             $payload['configuracao_financeira'] = $this->configuracaoGlobalService->financeiro();
         } catch (\Exception $exception) {
-            Logger::error('financeiro.painel.configuracao_falha', array('message' => $exception->getMêssage()));
+            Logger::error('financeiro.painel.configuracao_falha', array('message' => $exception->getMessage()));
             $payload['configuracao_financeira'] = array(
                 'data_corte_financeiro' => null,
                 'percentual_rateio_maximo' => 75.00,
@@ -60,25 +60,25 @@ class FinanceiroService
         try {
             $payload['apuracoes'] = $this->apuracaoModel->allAdmin();
         } catch (\Exception $exception) {
-            Logger::error('financeiro.painel.apuracoes_falha', array('message' => $exception->getMêssage()));
+            Logger::error('financeiro.painel.apuracoes_falha', array('message' => $exception->getMessage()));
         }
 
         try {
             $payload['repasses'] = $this->repasseModel->allAdmin();
         } catch (\Exception $exception) {
-            Logger::error('financeiro.painel.repasses_falha', array('message' => $exception->getMêssage()));
+            Logger::error('financeiro.painel.repasses_falha', array('message' => $exception->getMessage()));
         }
 
         try {
             $payload['professores_fiscal'] = $this->professorFiscalModel->allActive();
         } catch (\Exception $exception) {
-            Logger::error('financeiro.painel.professores_fiscal_falha', array('message' => $exception->getMêssage()));
+            Logger::error('financeiro.painel.professores_fiscal_falha', array('message' => $exception->getMessage()));
         }
 
         try {
             $payload['professores'] = $this->usuarioModel->professores();
         } catch (\Exception $exception) {
-            Logger::error('financeiro.painel.professores_falha', array('message' => $exception->getMêssage()));
+            Logger::error('financeiro.painel.professores_falha', array('message' => $exception->getMessage()));
         }
 
         return $payload;
@@ -89,9 +89,9 @@ class FinanceiroService
         return $this->repasseService->listarPorProfessor($usuarioId);
     }
 
-    public function apurarCompetência($competencia, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function apurarCompetencia($competencia, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
-        $result = $this->rateioService->apurarCompetência($competencia, $actorUserId, $ipAddress, $userAgent);
+        $result = $this->rateioService->apurarCompetencia($competencia, $actorUserId, $ipAddress, $userAgent);
 
         if (empty($result['ok'])) {
             return $result;
@@ -252,4 +252,6 @@ class FinanceiroService
         Logger::error($evento, $payload);
     }
 }
+
+
 

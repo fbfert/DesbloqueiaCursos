@@ -1,7 +1,7 @@
 <?php use App\Core\Helpers; ?>
 
 <section class="page-header">
-    <h1>Area do professor</h1>
+    <h1>Área do professor</h1>
     <p>Somente cursos e turmas atribuídos ao professor.</p>
 </section>
 
@@ -254,6 +254,10 @@
             </table>
         </div>
     </section>
+
+    <?php $areaCursoBaseUrl = '/professor/area-curso'; require BASE_PATH . '/resources/views/admin/area-curso/_atividades.php'; ?>
+
+    <?php $areaCursoBaseUrl = '/professor/area-curso'; require BASE_PATH . '/resources/views/admin/area-curso/_relatorios.php'; ?>
 
     <section class="panel">
         <div class="panel-header"><div><h2>Participantes</h2></div></div>

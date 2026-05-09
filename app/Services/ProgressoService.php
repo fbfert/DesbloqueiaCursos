@@ -6,7 +6,7 @@ use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Aula;
 use App\Models\CursoEvento;
-use App\Models\Inscrição;
+use App\Models\Inscricao;
 use App\Models\Pedido;
 use App\Models\Modulo;
 use App\Models\Turma;
@@ -30,7 +30,7 @@ class ProgressoService
 
     public function __construct()
     {
-        $this->inscricaoModel = new Inscrição();
+        $this->inscricaoModel = new Inscricao();
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
         $this->moduloModel = new Modulo();
@@ -38,9 +38,82 @@ class ProgressoService
         $this->pedidoModel = new Pedido();
         $this->progressoModuloModel = new ProgressoUsuarioModulo();
         $this->progressoAulaModel = new ProgressoUsuarioAula();
-        $this->aptidaoService = new AptidãoCertificadoService();
+        $this->aptidaoService = new AptidaoCertificadoService();
         $this->auditService = new AuditService();
         $this->rbacService = new RbacService();
+    }
+
+    public function resumoAluno($inscricaoId, $usuarioId)
+    {
+        $inscricao = $this->inscricaoModel->findById($inscricaoId);
+        if (!$inscricao || !$this->inscricaoPertenceAoUsuario($inscricao, $usuarioId)) {
+            return array(
+                'total_aulas_publicadas' => 0,
+                'aulas_concluidas' => 0,
+                'total_modulos_publicados' => 0,
+                'modulos_concluidos' => 0,
+                'percentual' => 0.00,
+                'aulas_concluidas_ids' => array(),
+                'modulos_concluidos_ids' => array(),
+            );
+        }
+
+        $turmaId = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null;
+        $modulos = $this->moduloModel->listForContext((int) $inscricao['curso_evento_id'], $turmaId);
+        $totalAulas = 0;
+        $aulasConcluidas = 0;
+        $totalModulos = 0;
+        $modulosConcluidos = 0;
+        $aulasConcluidasIds = array();
+        $modulosConcluidosIds = array();
+
+        foreach ($modulos as $modulo) {
+            if (!$this->conteudoPublicado($modulo)) {
+                continue;
+            }
+
+            $totalModulos++;
+            $aulas = $this->aulaModel->listForModulo($modulo['id']);
+            $aulasConcluidasModulo = 0;
+            $totalAulasModulo = 0;
+
+            foreach ($aulas as $aula) {
+                if (!$this->conteudoPublicado($aula)) {
+                    continue;
+                }
+
+                $totalAulasModulo++;
+                $totalAulas++;
+
+                $progressoAula = $this->progressoAulaModel->findByContext($inscricaoId, $usuarioId, $aula['id']);
+                if ($progressoAula && !empty($progressoAula['concluido'])) {
+                    $aulasConcluidas++;
+                    $aulasConcluidasModulo++;
+                    $aulasConcluidasIds[] = (int) $aula['id'];
+                }
+            }
+
+            $progressoModulo = $this->progressoModuloModel->findByContext($inscricaoId, $usuarioId, $modulo['id']);
+            if ($progressoModulo && !empty($progressoModulo['concluido'])) {
+                $modulosConcluidos++;
+                $modulosConcluidosIds[] = (int) $modulo['id'];
+            } elseif ($totalAulasModulo > 0 && $aulasConcluidasModulo >= $totalAulasModulo) {
+                $modulosConcluidos++;
+                $modulosConcluidosIds[] = (int) $modulo['id'];
+            }
+        }
+
+        $percentual = $totalAulas > 0 ? round(($aulasConcluidas / $totalAulas) * 100, 2) : 0.00;
+
+        return array(
+            'total_aulas_publicadas' => $totalAulas,
+            'aulas_concluidas' => $aulasConcluidas,
+            'total_modulos_publicados' => $totalModulos,
+            'modulos_concluidos' => $modulosConcluidos,
+            'percentual' => $percentual,
+            'aulas_concluidas_ids' => array_values(array_unique($aulasConcluidasIds)),
+            'modulos_concluidos_ids' => array_values(array_unique($modulosConcluidosIds)),
+        );
     }
 
     public function concluirAula($inscricaoId, $aulaId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -49,7 +122,7 @@ class ProgressoService
         $aula = $this->aulaModel->findById($aulaId);
 
         if (!$inscricao || !$aula) {
-            return array('ok' => false, 'message' => 'Inscrição ou aula nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscricao ou aula nao encontrada.');
         }
 
         if (!$this->inscricaoPertenceAoUsuario($inscricao, $usuarioId)) {
@@ -60,6 +133,12 @@ class ProgressoService
         if (!$this->aulaPertenceAoContexto($aula, $inscricao)) {
             $this->registrarAcessoNegado('area_curso.aula.contexto_invalido', $inscricaoId, $usuarioId, $aulaId, $actorUserId, $ipAddress, $userAgent);
             return array('ok' => false, 'message' => 'Aula nao pertence ao contexto desta inscricao.');
+        }
+
+        $modulo = $this->moduloModel->findById((int) $aula['modulo_id']);
+        if (!$modulo || !$this->conteudoPublicado($modulo) || !$this->conteudoPublicado($aula)) {
+            $this->registrarAcessoNegado('area_curso.aula.nao_publicada', $inscricaoId, $usuarioId, $aulaId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Aula nao disponivel para conclusao.');
         }
 
         $pdo = Database::connection();
@@ -78,7 +157,7 @@ class ProgressoService
                 'concluido_em' => date('Y-m-d H:i:s'),
             ));
 
-            $this->recalcularInscriçãoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
+            $this->recalcularInscricaoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
 
             $this->auditService->record(
                 'area_curso.aula.concluida',
@@ -96,7 +175,7 @@ class ProgressoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.aula.concluir_falhou', array('message' => $exception->getMêssage()));
+            Logger::error('area_curso.aula.concluir_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
@@ -107,7 +186,7 @@ class ProgressoService
         $modulo = $this->moduloModel->findById($moduloId);
 
         if (!$inscricao || !$modulo) {
-            return array('ok' => false, 'message' => 'Inscrição ou modulo nao encontrado.');
+            return array('ok' => false, 'message' => 'Inscricao ou modulo nao encontrado.');
         }
 
         if (!$this->inscricaoPertenceAoUsuario($inscricao, $usuarioId)) {
@@ -135,7 +214,7 @@ class ProgressoService
                 'concluido_em' => date('Y-m-d H:i:s'),
             ));
 
-            $this->recalcularInscriçãoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
+            $this->recalcularInscricaoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
 
             $this->auditService->record(
                 'area_curso.modulo.concluido',
@@ -153,26 +232,26 @@ class ProgressoService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.modulo.concluir_falhou', array('message' => $exception->getMêssage()));
+            Logger::error('area_curso.modulo.concluir_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
 
-    public function recalcularInscrição($inscricaoId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function recalcularInscricao($inscricaoId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
-        return $this->recalcularInscriçãoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
+        return $this->recalcularInscricaoInterno($inscricaoId, $usuarioId, $actorUserId, $ipAddress, $userAgent);
     }
 
-    private function recalcularInscriçãoInterno($inscricaoId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    private function recalcularInscricaoInterno($inscricaoId, $usuarioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
         $curso = $this->cursoModel->findById($inscricao['curso_evento_id']);
         $turma = !empty($inscricao['turma_id']) ? $this->turmaModel->findById($inscricao['turma_id']) : null;
-        $config = $this->resolverConfiguração($curso, $turma);
+        $config = $this->resolverConfiguracao($curso, $turma);
         $modulos = $this->moduloModel->listForContext($inscricao['curso_evento_id'], !empty($inscricao['turma_id']) ? $inscricao['turma_id'] : null);
         $totalAulas = 0;
         $aulasConcluidas = 0;
@@ -180,7 +259,7 @@ class ProgressoService
         $modulosConcluidos = 0;
 
         foreach ($modulos as $modulo) {
-            if (empty($modulo['visivel'])) {
+            if (!$this->conteudoPublicado($modulo)) {
                 continue;
             }
 
@@ -190,7 +269,7 @@ class ProgressoService
             $aulasConcluidasModulo = 0;
 
             foreach ($aulas as $aula) {
-                if (empty($aula['visivel'])) {
+                if (!$this->conteudoPublicado($aula)) {
                     continue;
                 }
 
@@ -221,12 +300,12 @@ class ProgressoService
         $percentualMinimo = isset($config['percentual_minimo_conclusao']) ? (float) $config['percentual_minimo_conclusao'] : 75.00;
         $concluidaEm = $percentual >= $percentualMinimo ? date('Y-m-d H:i:s') : null;
 
-        $this->inscricaoModel->updateAcadêmico($inscricaoId, array(
+        $this->inscricaoModel->updateAcademico($inscricaoId, array(
             'percentual_progresso' => $percentual,
             'concluida_em' => $concluidaEm,
         ));
 
-        $this->aptidaoService->recalcularInscrição($inscricaoId, $actorUserId, $ipAddress, $userAgent);
+        $this->aptidaoService->recalcularInscricao($inscricaoId, $actorUserId, $ipAddress, $userAgent);
 
         $this->auditService->record(
             'area_curso.progresso.recalculado',
@@ -249,7 +328,7 @@ class ProgressoService
         return array('ok' => true, 'percentual' => $percentual);
     }
 
-    private function resolverConfiguração(?array $curso = null, ?array $turma = null)
+    private function resolverConfiguracao(?array $curso = null, ?array $turma = null)
     {
         $config = array(
             'exige_presenca' => 0,
@@ -292,7 +371,7 @@ class ProgressoService
         }
 
         if (!empty($inscricao['usuario_id']) && (int) $inscricao['usuario_id'] === (int) $usuarioId) {
-            return true;
+            return $this->inscricaoTemAcessoComercial($inscricao);
         }
 
         $pedido = $this->pedidoModel->findById((int) $inscricao['pedido_id']);
@@ -300,8 +379,11 @@ class ProgressoService
             return false;
         }
 
-        return ((int) $pedido['comprador_usuario_id'] === (int) $usuarioId)
-            || ((int) $pedido['pagador_usuario_id'] === (int) $usuarioId);
+        if ((int) $pedido['comprador_usuario_id'] !== (int) $usuarioId && (int) $pedido['pagador_usuario_id'] !== (int) $usuarioId) {
+            return false;
+        }
+
+        return $this->inscricaoTemAcessoComercial($inscricao);
     }
 
     private function registrarAcessoNegado($evento, $inscricaoId, $usuarioId, $recursoId = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -314,6 +396,36 @@ class ProgressoService
 
         $this->auditService->record($evento, 'inscricao', $inscricaoId, $payload, $actorUserId, $ipAddress, $userAgent);
         Logger::error($evento, $payload);
+    }
+
+    private function conteudoPublicado(array $registro)
+    {
+        if (isset($registro['status']) && $registro['status'] !== '') {
+            return (string) $registro['status'] === 'publicado';
+        }
+
+        if (array_key_exists('visivel', $registro)) {
+            return !empty($registro['visivel']);
+        }
+
+        return true;
+    }
+
+    private function inscricaoTemAcessoComercial(array $inscricao)
+    {
+        $statusInscricao = isset($inscricao['status']) ? (string) $inscricao['status'] : '';
+        if (!in_array($statusInscricao, array('ativa', 'em_andamento', 'concluida', 'concluida_sem_certificado', 'certificado_emitido'), true)) {
+            return false;
+        }
+
+        $pedidoStatus = isset($inscricao['pedido_status']) ? (string) $inscricao['pedido_status'] : '';
+        $comprovanteStatus = isset($inscricao['comprovante_status']) ? (string) $inscricao['comprovante_status'] : '';
+
+        if (in_array($pedidoStatus, array('aprovado', 'pago'), true)) {
+            return true;
+        }
+
+        return $comprovanteStatus === 'aprovado';
     }
 
     private function aulaPertenceAoContexto(array $aula, array $inscricao)
@@ -355,4 +467,7 @@ class ProgressoService
         return true;
     }
 }
+
+
+
 

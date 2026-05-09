@@ -16,6 +16,7 @@ class View
             $data = array_merge($data, array(
                 'csrfToken' => Csrf::token(),
                 'csrfField' => Csrf::field(),
+                'oldInput' => Session::pullFlash('old_input', array()),
             ));
         }
 

@@ -9,6 +9,8 @@ use Exception;
 
 class ModuloService
 {
+    private const STATUS_VALIDOS = array('rascunho', 'publicado', 'oculto');
+
     private $moduloModel;
     private $auditService;
     private $trashService;
@@ -28,12 +30,16 @@ class ModuloService
     public function salvar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $id = isset($data['id']) ? (int) $data['id'] : 0;
+        $status = $this->determinarStatus($data, true);
         $payload = array(
             'curso_evento_id' => (int) $data['curso_evento_id'],
             'turma_id' => !empty($data['turma_id']) ? (int) $data['turma_id'] : null,
             'titulo' => trim((string) $data['titulo']),
             'descricao' => isset($data['descricao']) ? trim((string) $data['descricao']) : null,
+            'status' => $status,
             'visivel' => !empty($data['visivel']) ? 1 : 0,
+            'criado_por' => $id > 0 ? null : ($actorUserId ? (int) $actorUserId : (isset($data['criado_por']) ? (int) $data['criado_por'] : null)),
+            'atualizado_por' => isset($data['atualizado_por']) ? (int) $data['atualizado_por'] : $actorUserId,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         );
 
@@ -41,8 +47,20 @@ class ModuloService
             return array('ok' => false, 'message' => 'Curso invalido para o modulo.');
         }
 
+        if (empty($payload['titulo'])) {
+            return array('ok' => false, 'message' => 'Informe o titulo do modulo.');
+        }
+
         if ($id > 0 && !$this->moduloModel->findById($id)) {
             return array('ok' => false, 'message' => 'Modulo nao encontrado.');
+        }
+
+        $payload['visivel'] = $payload['status'] === 'publicado' ? 1 : 0;
+        $payload['atualizado_por'] = $actorUserId ? (int) $actorUserId : $payload['atualizado_por'];
+        if ($id > 0) {
+            $payload['criado_por'] = null;
+        } elseif (!$payload['criado_por']) {
+            $payload['criado_por'] = $actorUserId ? (int) $actorUserId : null;
         }
 
         $pdo = Database::connection();
@@ -76,10 +94,38 @@ class ModuloService
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('area_curso.modulo.falhou', array(
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
             throw $exception;
         }
+    }
+
+    private function normalizarStatus($status, $defaultPublicada = false)
+    {
+        $status = is_string($status) ? trim($status) : '';
+
+        if ($status === '') {
+            return $defaultPublicada ? 'publicado' : 'rascunho';
+        }
+
+        if (!in_array($status, self::STATUS_VALIDOS, true)) {
+            return $defaultPublicada ? 'publicado' : 'rascunho';
+        }
+
+        return $status;
+    }
+
+    private function determinarStatus(array $data, $defaultPublicada = false)
+    {
+        if (isset($data['status']) && $data['status'] !== '') {
+            return $this->normalizarStatus($data['status'], $defaultPublicada);
+        }
+
+        if (array_key_exists('visivel', $data)) {
+            return !empty($data['visivel']) ? 'publicado' : 'oculto';
+        }
+
+        return $defaultPublicada ? 'publicado' : 'rascunho';
     }
 
     public function excluir($id, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -112,9 +158,10 @@ class ModuloService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('area_curso.modulo.excluir_falhou', array('message' => $exception->getMêssage()));
+            Logger::error('area_curso.modulo.excluir_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
 }
+
 

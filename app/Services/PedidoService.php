@@ -6,7 +6,7 @@ use App\Core\Database;
 use App\Core\Logger;
 use App\Models\CursoEvento;
 use App\Models\ComprovantePix;
-use App\Models\Inscrição;
+use App\Models\Inscricao;
 use App\Models\PedidoCupom;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
@@ -36,7 +36,7 @@ class PedidoService
         $this->pedidoItemModel = new PedidoItem();
         $this->participanteModel = new ParticipantePedido();
         $this->comprovanteModel = new ComprovantePix();
-        $this->inscricaoModel = new Inscrição();
+        $this->inscricaoModel = new Inscricao();
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
         $this->pedidoCupomModel = new PedidoCupom();
@@ -196,7 +196,95 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('checkout.participantes.falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
+    }
+
+    public function sincronizarParticipanteCompraPropria($pedidoId, array $participante, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->isCompraPropriaPedido(isset($pedido['tipo_pedido']) ? $pedido['tipo_pedido'] : '')) {
+            return array('ok' => false, 'message' => 'Pedido nao e de compra propria.');
+        }
+
+        $itens = $this->pedidoItemModel->forPedido($pedidoId);
+        if (empty($itens)) {
+            return array('ok' => false, 'message' => 'Pedido sem itens.');
+        }
+
+        $pedidoItemId = isset($itens[0]['id']) ? (int) $itens[0]['id'] : null;
+        if ($pedidoItemId <= 0) {
+            return array('ok' => false, 'message' => 'Pedido sem item valido.');
+        }
+
+        $payload = array(
+            'pedido_id' => $pedidoId,
+            'pedido_item_id' => $pedidoItemId,
+            'usuario_id' => isset($participante['usuario_id']) ? (int) $participante['usuario_id'] : null,
+            'nome' => isset($participante['nome']) ? trim((string) $participante['nome']) : '',
+            'cpf' => isset($participante['cpf']) ? trim((string) $participante['cpf']) : null,
+            'email' => isset($participante['email']) ? trim((string) $participante['email']) : null,
+            'telefone' => isset($participante['telefone']) ? trim((string) $participante['telefone']) : null,
+            'ordem' => 1,
+            'status' => 'ativo',
+        );
+
+        if ($payload['nome'] === '') {
+            return array('ok' => false, 'message' => 'Informe os dados do pagador para gerar o participante automatico.');
+        }
+
+        $participantesExistentes = $this->participanteModel->forPedido($pedidoId);
+        $participanteExistente = $this->encontrarParticipanteCompraPropria($participantesExistentes, $payload);
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            if ($participanteExistente) {
+                $this->participanteModel->update((int) $participanteExistente['id'], $payload);
+                $participanteId = (int) $participanteExistente['id'];
+                $acao = 'checkout.participante_auto.atualizado';
+            } else {
+                $participanteId = $this->participanteModel->create($payload);
+                $acao = 'checkout.participante_auto.criado';
+            }
+
+            $this->auditService->record(
+                $acao,
+                'pedido',
+                $pedidoId,
+                array(
+                    'pedido_item_id' => $pedidoItemId,
+                    'participante_id' => $participanteId,
+                    'usuario_id' => $payload['usuario_id'],
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info($acao, array(
+                'pedido_id' => $pedidoId,
+                'pedido_item_id' => $pedidoItemId,
+                'participante_id' => $participanteId,
+                'usuario_id' => $payload['usuario_id'],
+            ));
+
+            $pdo->commit();
+
+            return array('ok' => true, 'participante_id' => $participanteId);
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('checkout.participante_auto.falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -271,18 +359,25 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('checkout.finalizar_falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
         }
     }
 
-    public function detalharCheckout($pedidoId, $usuarioId = null)
+    public function detalharCheckout($pedidoId, $usuarioId = null, $exigirUsuarioAutenticado = false)
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
+            return array('pedido' => null);
+        }
+
+        if ($exigirUsuarioAutenticado && !$usuarioId) {
+            $this->registrarAcessoNegado('pedido.detalhar_negado', $pedidoId, null, null, null, array(
+                'motivo' => 'auth_ausente',
+            ));
             return array('pedido' => null);
         }
 
@@ -366,7 +461,7 @@ class PedidoService
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('pedido.criar_falhou', array(
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
                 'usuario_id' => $actorUserId,
             ));
 
@@ -449,7 +544,7 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('pedido.status.falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -526,7 +621,7 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('comprovante_pix.falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -575,7 +670,7 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('pedido.excluir_falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -599,8 +694,27 @@ class PedidoService
         $pdo->beginTransaction();
 
         try {
-            $this->pedidoModel->markApproved($pedidoId, $actorUserId);
-            $this->pedidoModel->addStatusHistory($pedidoId, $pedido['status'], 'aprovado', $observacao, $actorUserId);
+            $comprovanteAtual = $this->comprovanteModel->findCurrentByPedido($pedidoId);
+            $statusNovoPedido = $comprovanteAtual ? 'pago' : 'aprovado';
+
+            if ($statusNovoPedido === 'pago') {
+                $this->pedidoModel->updateStatus($pedidoId, 'pago');
+            } else {
+                $this->pedidoModel->markApproved($pedidoId, $actorUserId);
+            }
+
+            if ($comprovanteAtual && (string) $comprovanteAtual['status'] !== 'aprovado') {
+                $this->comprovanteModel->updateStatus(
+                    (int) $comprovanteAtual['id'],
+                    'aprovado',
+                    $observacao,
+                    $actorUserId,
+                    date('Y-m-d H:i:s')
+                );
+            }
+
+            $this->pedidoModel->addStatusHistory($pedidoId, $pedido['status'], $statusNovoPedido, $observacao, $actorUserId);
+            $this->sincronizarInscricoesAprovadas($pedidoId, $actorUserId);
 
             $this->auditService->record(
                 'pedido.aprovado',
@@ -608,7 +722,8 @@ class PedidoService
                 $pedidoId,
                 array(
                     'status_anterior' => $pedido['status'],
-                    'status_novo' => 'aprovado',
+                    'status_novo' => $statusNovoPedido,
+                    'comprovante_pix_id' => $comprovanteAtual ? (int) $comprovanteAtual['id'] : null,
                     'observacao' => $observacao,
                 ),
                 $actorUserId,
@@ -618,6 +733,7 @@ class PedidoService
 
             Logger::info('pedido.aprovado', array(
                 'pedido_id' => $pedidoId,
+                'status_novo' => $statusNovoPedido,
                 'usuario_id' => $actorUserId,
             ));
 
@@ -630,10 +746,32 @@ class PedidoService
             $pdo->rollBack();
             Logger::error('pedido.aprovar_falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
+        }
+    }
+
+    private function sincronizarInscricoesAprovadas($pedidoId, $actorUserId = null)
+    {
+        $inscricoes = $this->inscricaoModel->forPedido($pedidoId);
+        if (empty($inscricoes)) {
+            return;
+        }
+
+        foreach ($inscricoes as $inscricao) {
+            $statusAtual = isset($inscricao['status']) ? (string) $inscricao['status'] : '';
+            if (in_array($statusAtual, array('pendente', 'em_analise', 'aprovado'), true)) {
+                $this->inscricaoModel->updateStatus((int) $inscricao['id'], 'ativa', date('Y-m-d H:i:s'));
+                $this->inscricaoModel->addStatusHistory(
+                    (int) $inscricao['id'],
+                    $statusAtual,
+                    'ativa',
+                    'Inscrição ativada automaticamente após aprovação do pedido.',
+                    $actorUserId
+                );
+            }
         }
     }
 
@@ -771,6 +909,37 @@ class PedidoService
         return in_array($pedido['status'], array('aguardando_pagamento', 'comprovante_enviado', 'pendencia', 'aguardando_reenvio'), true);
     }
 
+    private function isCompraPropriaPedido($tipoPedido)
+    {
+        $normalizado = function_exists('mb_strtolower') ? mb_strtolower(trim((string) $tipoPedido), 'UTF-8') : strtolower(trim((string) $tipoPedido));
+
+        return in_array($normalizado, array('propria', 'própria', 'compra_propria', 'compra_própria'), true);
+    }
+
+    private function encontrarParticipanteCompraPropria(array $participantes, array $dados)
+    {
+        $usuarioId = isset($dados['usuario_id']) ? (int) $dados['usuario_id'] : 0;
+        $cpf = isset($dados['cpf']) ? preg_replace('/\D+/', '', (string) $dados['cpf']) : '';
+        $pedidoItemId = isset($dados['pedido_item_id']) ? (int) $dados['pedido_item_id'] : 0;
+
+        foreach ($participantes as $participante) {
+            if ($pedidoItemId > 0 && isset($participante['pedido_item_id']) && (int) $participante['pedido_item_id'] === $pedidoItemId) {
+                return $participante;
+            }
+
+            $participanteUsuarioId = isset($participante['usuario_id']) ? (int) $participante['usuario_id'] : 0;
+            if ($usuarioId > 0 && $participanteUsuarioId === $usuarioId) {
+                return $participante;
+            }
+
+            if ($cpf !== '' && preg_replace('/\D+/', '', (string) $participante['cpf']) === $cpf) {
+                return $participante;
+            }
+        }
+
+        return null;
+    }
+
     private function registrarAcessoNegado($evento, $pedidoId, $usuarioId, $ipAddress = null, $userAgent = null, array $context = array())
     {
         $payload = array_merge($context, array(
@@ -783,4 +952,6 @@ class PedidoService
         Logger::error($evento, $payload);
     }
 }
+
+
 

@@ -25,7 +25,10 @@ class PerfilPermissao
     {
         $permissaoIds = array_values(array_unique(array_map('intval', $permissaoIds)));
         $pdo = Database::connection();
-        $pdo->beginTransaction();
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
 
         try {
             $delete = $pdo->prepare('DELETE FROM perfil_permissoes WHERE perfil_id = :perfil_id');
@@ -45,9 +48,13 @@ class PerfilPermissao
                 }
             }
 
-            $pdo->commit();
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
         } catch (\Exception $exception) {
-            $pdo->rollBack();
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             throw $exception;
         }
     }

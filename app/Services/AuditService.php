@@ -39,4 +39,53 @@ class AuditService
             ));
         }
     }
+
+    public function historyForEntity($entityType, $entityId, $limit = 20)
+    {
+        try {
+            $stmt = Database::connection()->prepare(
+                'SELECT al.acao,
+                        al.entidade_tipo,
+                        al.entidade_id,
+                        al.usuario_id,
+                        al.ip_address,
+                        al.user_agent,
+                        al.metadados,
+                        al.created_at,
+                        u.nome AS usuario_nome,
+                        u.email AS usuario_email
+                 FROM auditoria_logs al
+                 LEFT JOIN usuarios u ON u.id = al.usuario_id
+                 WHERE al.entidade_tipo = :entidade_tipo
+                   AND al.entidade_id = :entidade_id
+                 ORDER BY al.created_at DESC, al.id DESC
+                 LIMIT ' . (int) $limit
+            );
+
+            $stmt->execute(array(
+                'entidade_tipo' => $entityType,
+                'entidade_id' => $entityId,
+            ));
+
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $historico = array();
+            foreach ($rows as $row) {
+                $row['metadados'] = !empty($row['metadados']) ? json_decode($row['metadados'], true) : array();
+                if (!is_array($row['metadados'])) {
+                    $row['metadados'] = array();
+                }
+                $historico[] = $row;
+            }
+
+            return $historico;
+        } catch (Exception $exception) {
+            Logger::error('audit.history.falhou', array(
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+                'message' => $exception->getMessage(),
+            ));
+
+            return array();
+        }
+    }
 }

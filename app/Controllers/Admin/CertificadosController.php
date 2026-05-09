@@ -57,7 +57,7 @@ class CertificadosController extends Controller
                 'title' => 'Emitir certificado',
                 'aptos' => $this->certificadoService->listarAptos(),
                 'templates' => $this->certificadoService->listarTemplates(),
-                'selectedInscriçãoId' => $inscricaoId,
+                'selectedInscricaoId' => $inscricaoId,
                 'errors' => Session::pullFlash('errors', array()),
                 'success' => Session::pullFlash('success'),
             ));
@@ -155,4 +155,5 @@ class CertificadosController extends Controller
         ));
     }
 }
+
 

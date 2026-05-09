@@ -22,7 +22,7 @@ class Aula
              FROM aulas
              WHERE modulo_id = :modulo_id
                AND deleted_at IS NULL
-             ORDER BY ordem ASC, id ASC'
+             ORDER BY FIELD(status, "publicado", "rascunho", "oculto") ASC, ordem ASC, id ASC'
         );
         $stmt->execute(array('modulo_id' => $moduloId));
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -32,9 +32,9 @@ class Aula
     {
         $stmt = Database::connection()->prepare(
             'INSERT INTO aulas
-             (modulo_id, curso_evento_id, turma_id, titulo, conteudo, tipo, url_video, duracao_minutos, visivel, obrigatoria, ordem, created_at, updated_at, deleted_at)
+             (modulo_id, curso_evento_id, turma_id, titulo, conteudo, tipo, url_video, duracao_minutos, visivel, status, criado_por, atualizado_por, obrigatoria, ordem, created_at, updated_at, deleted_at)
              VALUES
-             (:modulo_id, :curso_evento_id, :turma_id, :titulo, :conteudo, :tipo, :url_video, :duracao_minutos, :visivel, :obrigatoria, :ordem, NOW(), NOW(), NULL)'
+             (:modulo_id, :curso_evento_id, :turma_id, :titulo, :conteudo, :tipo, :url_video, :duracao_minutos, :visivel, :status, :criado_por, :atualizado_por, :obrigatoria, :ordem, NOW(), NOW(), NULL)'
         );
 
         $stmt->execute(array(
@@ -47,6 +47,9 @@ class Aula
             'url_video' => isset($data['url_video']) ? $data['url_video'] : null,
             'duracao_minutos' => isset($data['duracao_minutos']) ? (int) $data['duracao_minutos'] : null,
             'visivel' => !empty($data['visivel']) ? 1 : 0,
+            'status' => isset($data['status']) ? $data['status'] : 'publicado',
+            'criado_por' => isset($data['criado_por']) ? $data['criado_por'] : null,
+            'atualizado_por' => isset($data['atualizado_por']) ? $data['atualizado_por'] : null,
             'obrigatoria' => !empty($data['obrigatoria']) ? 1 : 0,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         ));
@@ -67,6 +70,9 @@ class Aula
                  url_video = :url_video,
                  duracao_minutos = :duracao_minutos,
                  visivel = :visivel,
+                 status = :status,
+                 criado_por = COALESCE(:criado_por, criado_por),
+                 atualizado_por = :atualizado_por,
                  obrigatoria = :obrigatoria,
                  ordem = :ordem,
                  updated_at = NOW()
@@ -83,6 +89,9 @@ class Aula
             'url_video' => isset($data['url_video']) ? $data['url_video'] : null,
             'duracao_minutos' => isset($data['duracao_minutos']) ? (int) $data['duracao_minutos'] : null,
             'visivel' => !empty($data['visivel']) ? 1 : 0,
+            'status' => isset($data['status']) ? $data['status'] : 'publicado',
+            'criado_por' => isset($data['criado_por']) ? $data['criado_por'] : null,
+            'atualizado_por' => isset($data['atualizado_por']) ? $data['atualizado_por'] : null,
             'obrigatoria' => !empty($data['obrigatoria']) ? 1 : 0,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
             'id' => $id,

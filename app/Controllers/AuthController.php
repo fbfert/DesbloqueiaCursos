@@ -72,6 +72,14 @@ class AuthController extends Controller
         return $this->redirect('/login');
     }
 
+    public function logoutConfirm(Request $request)
+    {
+        return $this->view('auth/logout', $this->flashData(array(
+            'title' => 'Sair da conta',
+            'cancelUrl' => $this->resolveCancelUrl(),
+        )));
+    }
+
     public function showForgotPassword(Request $request)
     {
         return $this->view('auth/forgot-password', $this->flashData(array(
@@ -179,6 +187,23 @@ class AuthController extends Controller
             'success' => Session::pullFlash('success'),
             'old' => Session::pullFlash('old', array()),
         ));
+    }
+
+    private function resolveCancelUrl()
+    {
+        $sessionPerfis = Session::get('usuario_perfis', array());
+        $hasAdminAccess = Session::get('usuario_admin') || Session::get('is_admin') || in_array('admin', $sessionPerfis, true);
+        $hasProfessorAccess = Session::get('usuario_professor') || Session::get('is_professor') || in_array('professor', $sessionPerfis, true);
+
+        if ($hasAdminAccess) {
+            return '/admin';
+        }
+
+        if ($hasProfessorAccess) {
+            return '/professor/dashboard';
+        }
+
+        return '/aluno/meus-cursos';
     }
 }
 

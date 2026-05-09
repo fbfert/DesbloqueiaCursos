@@ -8,12 +8,12 @@ use App\Core\Logger;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
 use App\Models\ParticipantePedido;
-use App\Models\Inscrição;
+use App\Models\Inscricao;
 use App\Models\CursoEvento;
 use App\Models\Turma;
 use Exception;
 
-class InscriçãoService
+class InscricaoService
 {
     private $inscricaoModel;
     private $pedidoModel;
@@ -28,7 +28,7 @@ class InscriçãoService
 
     public function __construct()
     {
-        $this->inscricaoModel = new Inscrição();
+        $this->inscricaoModel = new Inscricao();
         $this->pedidoModel = new Pedido();
         $this->pedidoItemModel = new PedidoItem();
         $this->participanteModel = new ParticipantePedido();
@@ -106,7 +106,7 @@ class InscriçãoService
                 $inscricao = $this->inscricaoModel->findById($inscricaoId);
                 if ($inscricao) {
                     $this->emailService->cursoProximo(
-                        $this->envelopeInscriçãoParaEmail($inscricao),
+                        $this->envelopeInscricaoParaEmail($inscricao),
                         $actorUserId,
                         $ipAddress,
                         $userAgent
@@ -119,7 +119,7 @@ class InscriçãoService
             $pdo->rollBack();
             Logger::error('checkout.inscricoes.falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -156,7 +156,7 @@ class InscriçãoService
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('inscricao.criar_falhou', array(
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
                 'usuario_id' => $actorUserId,
             ));
 
@@ -169,7 +169,7 @@ class InscriçãoService
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
 
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
         if (!$this->inscricaoPodeSerAcessadaPor($inscricao, $actorUserId)) {
@@ -223,13 +223,13 @@ class InscriçãoService
 
             $inscricaoAtualizada = $this->inscricaoModel->findById($inscricaoId);
             if ($novoStatus === 'com_pendencia') {
-                $this->emailService->pendencia($this->envelopeInscriçãoParaEmail($inscricaoAtualizada), $observacao, $actorUserId, $ipAddress, $userAgent);
+                $this->emailService->pendencia($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $observacao, $actorUserId, $ipAddress, $userAgent);
             } elseif ($novoStatus === 'em_andamento') {
-                $this->emailService->cursoProximo($this->envelopeInscriçãoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
+                $this->emailService->cursoProximo($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
             } elseif ($novoStatus === 'concluida' || $novoStatus === 'concluida_sem_certificado') {
-                $this->emailService->concluido($this->envelopeInscriçãoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
+                $this->emailService->concluido($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
             } elseif ($novoStatus === 'certificado_emitido') {
-                $this->emailService->certificadoDisponivel($this->envelopeInscriçãoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
+                $this->emailService->certificadoDisponivel($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
             }
 
             return array('ok' => true);
@@ -237,7 +237,7 @@ class InscriçãoService
             $pdo->rollBack();
             Logger::error('inscricao.status.falhou', array(
                 'inscricao_id' => $inscricaoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -254,7 +254,7 @@ class InscriçãoService
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
 
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscrição nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
         if (!$this->inscricaoPodeSerAcessadaPor($inscricao, $actorUserId)) {
@@ -291,7 +291,7 @@ class InscriçãoService
             $pdo->rollBack();
             Logger::error('inscricao.excluir_falhou', array(
                 'inscricao_id' => $inscricaoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -321,7 +321,7 @@ class InscriçãoService
         return array('inscricoes' => $this->inscricaoModel->forUsuarioAprovadas($usuarioId));
     }
 
-    private function envelopeInscriçãoParaEmail(?array $inscricao = null)
+    private function envelopeInscricaoParaEmail(?array $inscricao = null)
     {
         if (!$inscricao) {
             return array();
@@ -426,4 +426,6 @@ class InscriçãoService
         Logger::error($evento, $payload);
     }
 }
+
+
 

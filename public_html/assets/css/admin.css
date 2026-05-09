@@ -289,6 +289,524 @@
     color: var(--admin-muted);
 }
 
+.app-admin .admin-config-frontend {
+    gap: 18px;
+}
+
+.app-admin .admin-config-frontend__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.app-admin .admin-config-frontend__main,
+.app-admin .admin-config-frontend__sidebar {
+    height: 100%;
+}
+
+.app-admin .admin-config-frontend__form {
+    margin-top: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-admin .admin-config-frontend__limit {
+    display: grid;
+    gap: 6px;
+}
+
+.app-admin .admin-config-frontend__limit small {
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.app-admin .admin-config-frontend__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2px;
+}
+
+.app-admin .admin-config-frontend__actions button {
+    min-width: 220px;
+}
+
+.app-admin .admin-config-frontend__summary {
+    display: grid;
+    gap: 14px;
+}
+
+.app-admin .admin-config-frontend__summary div {
+    padding: 12px 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .admin-area-curso {
+    gap: 18px;
+}
+
+.app-admin .admin-area-curso__selector-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+}
+
+.app-admin .admin-area-curso__course-list {
+    display: grid;
+    gap: 8px;
+    max-height: 340px;
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.app-admin .admin-area-curso__course-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--admin-text);
+    text-decoration: none;
+    transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.app-admin .admin-area-curso__course-link:hover {
+    border-color: var(--admin-primary);
+    color: var(--admin-primary);
+    background: #faf8ff;
+    transform: translateY(-1px);
+}
+
+.app-admin .admin-area-curso__course-link span {
+    min-width: 0;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.app-admin .admin-area-curso__course-link.is-active {
+    border-color: var(--admin-primary);
+    background: var(--admin-panel-muted);
+    box-shadow: inset 0 0 0 1px rgba(122, 92, 255, 0.16);
+}
+
+.app-admin .admin-area-curso__course-link strong {
+    font-size: 12px;
+    color: var(--admin-primary);
+    flex-shrink: 0;
+}
+
+.app-admin .admin-area-curso__inativos-details summary {
+    cursor: pointer;
+    user-select: none;
+}
+
+.app-admin .admin-area-curso__inativos-details summary .panel-header {
+    margin-bottom: 0;
+}
+
+.app-admin .admin-table--area-cursos td a {
+    color: var(--admin-primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.app-admin .admin-table--area-cursos td a:hover {
+    text-decoration: underline;
+}
+
+.app-admin .admin-table--area-cursos tr.is-active {
+    background: rgba(122, 92, 255, 0.06);
+}
+
+.app-admin .admin-table--muted {
+    opacity: 0.85;
+}
+
+.app-admin .badge--success {
+    background: #e6f9ed;
+    color: #1a7a42;
+}
+
+.app-admin .badge--warn {
+    background: #fff4e5;
+    color: #92400e;
+}
+
+.app-admin .admin-area-curso__tabs {
+    padding: 10px;
+}
+
+.app-admin .admin-area-curso__tablinks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.app-admin .admin-area-curso__tablink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--admin-text);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.app-admin .admin-area-curso__tablink.is-active,
+.app-admin .admin-area-curso__tablink:hover {
+    border-color: var(--admin-primary);
+    background: #f3ecff;
+    color: var(--admin-primary-strong);
+}
+
+.app-admin .admin-area-curso__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.8fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.app-admin .admin-area-curso__main {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+}
+
+.app-admin .admin-area-curso__aside {
+    display: grid;
+    gap: 16px;
+    align-self: start;
+    position: sticky;
+    top: 92px;
+}
+
+.app-admin .admin-area-curso__section {
+    scroll-margin-top: 110px;
+}
+
+.app-admin .admin-area-curso__overview .admin-area-curso__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .admin-area-curso__overview .admin-area-curso__stats div {
+    padding: 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .admin-area-curso__overview .admin-area-curso__stats small {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--admin-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .admin-area-curso__overview .admin-area-curso__stats strong {
+    font-size: 17px;
+}
+
+.app-admin .admin-area-curso__stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .admin-area-curso__stats div {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .admin-area-curso__stats small {
+    display: block;
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .admin-area-curso__stats strong {
+    font-size: 17px;
+}
+
+.app-admin .admin-area-curso__report-lists {
+    display: grid;
+    gap: 16px;
+}
+
+.app-admin .admin-area-curso__delivery-detail {
+    border-color: rgba(12, 91, 79, 0.16);
+    background: linear-gradient(180deg, rgba(244, 249, 247, 0.96), rgba(255, 255, 255, 0.99));
+}
+
+.app-admin .admin-area-curso__delivery-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.app-admin .admin-area-curso__delivery-meta,
+.app-admin .admin-area-curso__delivery-content,
+.app-admin .admin-area-curso__delivery-history {
+    display: grid;
+    gap: 10px;
+}
+
+.app-admin .admin-area-curso__delivery-box {
+    padding: 14px;
+    border: 1px solid rgba(12, 91, 79, 0.12);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.app-admin .admin-area-curso__delivery-actions {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 12px;
+}
+
+.app-admin .admin-area-curso__delivery-form {
+    padding: 14px;
+    border: 1px solid rgba(12, 91, 79, 0.12);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.app-admin .history-list {
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.app-admin .history-list li {
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid rgba(12, 91, 79, 0.08);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.app-admin .history-list__action {
+    font-weight: 700;
+}
+
+.app-admin .history-list__meta {
+    font-size: 12px;
+    color: var(--admin-muted);
+}
+
+.app-admin .admin-area-curso__placeholder {
+    border-style: dashed;
+}
+
+.app-admin .admin-area-curso__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.app-admin .admin-area-curso__actions a {
+    min-height: 38px;
+    padding: 7px 11px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: var(--admin-panel-muted);
+    color: var(--admin-text);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.app-admin .admin-area-curso__actions a:hover {
+    border-color: var(--admin-primary);
+    background: #f1ebff;
+}
+
+.app-admin .admin-area-curso__legacy {
+    border-color: rgba(122, 92, 255, 0.28);
+    background: linear-gradient(180deg, rgba(122, 92, 255, 0.04), rgba(122, 92, 255, 0));
+}
+
+.app-admin .admin-area-curso__legacy-details > summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.app-admin .admin-area-curso__legacy-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-admin .admin-area-curso__legacy-details > summary h2::after {
+    content: '▾';
+    margin-left: 8px;
+    color: var(--admin-primary);
+    font-size: 13px;
+}
+
+.app-admin .admin-area-curso__legacy-details:not([open]) > summary h2::after {
+    content: '▸';
+}
+
+.app-admin .admin-area-curso__legacy-details[open] > .admin-area-curso__anchors--secondary {
+    margin-top: 8px;
+}
+
+.app-admin .admin-area-curso__anchors--secondary {
+    margin: 0 0 14px;
+}
+
+.app-admin .admin-area-curso__form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+
+.app-admin .admin-area-curso__materials-form {
+    gap: 14px;
+}
+
+.app-admin .admin-area-curso__materials-form small {
+    display: block;
+    margin-top: 6px;
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.app-admin .admin-area-curso__delete-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+}
+
+.app-admin .admin-area-curso__anchors {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.app-admin .admin-area-curso__anchors a {
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: var(--admin-panel-muted);
+    color: var(--admin-text);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.app-admin .admin-area-curso__anchors a:hover {
+    border-color: var(--admin-primary);
+    background: #f1ebff;
+}
+
+.app-admin .admin-area-curso__summary .detail-list {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.app-admin .admin-area-curso__summary .detail-list div {
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .admin-area-curso__aula-materiais {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .admin-area-curso__aula-materiais-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.app-admin .admin-area-curso__aula-materiais-actions a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--admin-text);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.app-admin .admin-area-curso__aula-materiais-actions a:hover {
+    border-color: var(--admin-primary);
+    background: #f4edff;
+}
+
+.app-admin .admin-area-curso__aula-materiais-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.app-admin .admin-area-curso__inline-action {
+    display: inline-grid;
+    grid-template-columns: auto;
+    gap: 6px;
+    align-items: center;
+}
+
+.app-admin .admin-area-curso__inline-action input[type="text"] {
+    min-width: 150px;
+}
+
+.app-admin .admin-area-curso__material-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.app-admin .badge--soft {
+    background: #f1ebff;
+    border-color: rgba(122, 92, 255, 0.18);
+    color: var(--admin-primary-strong);
+}
+
+.app-admin .badge--warning {
+    background: #fff7e6;
+    border-color: rgba(234, 134, 19, 0.25);
+    color: #9a5a00;
+}
+
+.app-admin .admin-config-frontend__summary strong {
+    margin-bottom: 4px;
+}
+
+.app-admin .admin-config-frontend__summary span {
+    display: block;
+    color: var(--admin-muted);
+    line-height: 1.5;
+}
+
 .app-admin .admin-kpi-value,
 .app-admin .dashboard-kpi__value {
     margin: 0;
@@ -582,6 +1100,56 @@
     min-width: 220px;
 }
 
+.app-admin .admin-pedido-show__top {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.15fr);
+    align-items: start;
+}
+
+.app-admin .admin-pedido-comprovante-card {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+}
+
+.app-admin .admin-pedido-comprovante-meta {
+    display: grid;
+    gap: 4px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: var(--admin-muted);
+    font-size: 13px;
+}
+
+.app-admin .admin-pedido-comprovante-actions {
+    margin: 8px 0 12px;
+}
+
+.app-admin .admin-pedido-comprovante-zoom {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.app-admin .admin-pedido-comprovante-viewer {
+    overflow: auto;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: #fff;
+    width: 100%;
+    max-width: none;
+}
+
+.app-admin .admin-pedido-comprovante-frame {
+    width: 100%;
+    height: clamp(720px, 85vh, 1800px);
+    min-height: 720px;
+    border: 0;
+    background: #fff;
+}
+
 .app-admin .admin-table--pedido-historico th:nth-child(3),
 .app-admin .admin-table--pedido-historico td:nth-child(3) {
     min-width: 260px;
@@ -684,6 +1252,62 @@
 .app-admin .admin-table--rbac-permissoes th:nth-child(4),
 .app-admin .admin-table--rbac-permissoes td:nth-child(4) {
     min-width: 240px;
+}
+
+.app-admin .admin-table--usuarios-lista th a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.app-admin .admin-table--usuarios-lista th a:hover {
+    text-decoration: underline;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(1),
+.app-admin .admin-table--usuarios-lista td:nth-child(1) {
+    min-width: 70px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(2),
+.app-admin .admin-table--usuarios-lista td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(3),
+.app-admin .admin-table--usuarios-lista td:nth-child(3) {
+    min-width: 260px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(4),
+.app-admin .admin-table--usuarios-lista td:nth-child(4) {
+    min-width: 150px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(5),
+.app-admin .admin-table--usuarios-lista td:nth-child(5) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(6),
+.app-admin .admin-table--usuarios-lista td:nth-child(6) {
+    min-width: 110px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(7),
+.app-admin .admin-table--usuarios-lista td:nth-child(7) {
+    min-width: 110px;
+}
+
+.app-admin .usuarios-acoes-col {
+    white-space: nowrap;
+}
+
+.app-admin .usuarios-filtros-row {
+    grid-template-columns: 2fr 1fr 1fr;
+}
+
+.app-admin .usuarios-filtros-acoes {
+    margin-top: 8px;
 }
 
 .app-admin .admin-table--catalogo-categorias th:nth-child(2),
@@ -850,6 +1474,28 @@
     font-weight: 700;
 }
 
+.app-admin .badge--status {
+    gap: 6px;
+}
+
+.app-admin .badge--status-aprovado {
+    background: #effbf2;
+    border-color: #9adbb0;
+    color: #166534;
+}
+
+.app-admin .badge--status-pendente {
+    background: #fff9e6;
+    border-color: #f0d58a;
+    color: #7c5600;
+}
+
+.app-admin .badge--status-reprovado {
+    background: #fff0f0;
+    border-color: #e39a9a;
+    color: #9f1239;
+}
+
 @media (max-width: 1600px) {
     .app-admin .quick-actions--dashboard {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -901,6 +1547,31 @@
     .app-admin .quick-actions--dashboard {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .app-admin .admin-area-curso__layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso__aside {
+        position: static;
+    }
+
+    .app-admin .admin-area-curso__stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-area-curso__report-lists {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-area-curso__delivery-grid {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        align-items: start;
+    }
+
+    .app-admin .admin-area-curso__delivery-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 1200px) {
@@ -932,6 +1603,18 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .app-admin .admin-area-curso__selector-form,
+    .app-admin .admin-area-curso__form,
+    .app-admin .admin-area-curso__delete-form,
+    .app-admin .admin-area-curso__anchors {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso__tablinks,
+    .app-admin .admin-area-curso__actions {
+        flex-direction: column;
+    }
+
     .app-admin .permission-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -951,6 +1634,18 @@
         justify-content: flex-start;
     }
 
+    .app-admin .admin-area-curso__selector-form,
+    .app-admin .admin-area-curso__form,
+    .app-admin .admin-area-curso__delete-form,
+    .app-admin .admin-area-curso__anchors {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso__tablinks,
+    .app-admin .admin-area-curso__actions {
+        flex-direction: column;
+    }
+
     .app-admin .status-grid,
     .app-admin .admin-kpi-grid,
     .app-admin .grid-2,
@@ -964,6 +1659,23 @@
     }
 
     .app-admin .detail-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-pedido-show__top {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-pedido-comprovante-frame {
+        height: clamp(560px, 75vh, 1200px);
+        min-height: 560px;
+    }
+
+    .app-admin .admin-area-curso__stats {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso__report-lists {
         grid-template-columns: minmax(0, 1fr);
     }
 }

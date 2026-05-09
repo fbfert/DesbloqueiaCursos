@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Database;
 use App\Core\Logger;
 use App\Models\ComprovantePix;
+use App\Models\Inscricao;
 use App\Models\Pedido;
 use App\Services\FileStorageService;
 use Exception;
@@ -13,6 +14,7 @@ class ComprovantePixService
 {
     private $comprovanteModel;
     private $pedidoModel;
+    private $inscricaoModel;
     private $fileStorage;
     private $emailService;
     private $auditService;
@@ -22,6 +24,7 @@ class ComprovantePixService
     {
         $this->comprovanteModel = new ComprovantePix();
         $this->pedidoModel = new Pedido();
+        $this->inscricaoModel = new Inscricao();
         $this->fileStorage = new FileStorageService();
         $this->emailService = new EmailService();
         $this->auditService = new AuditService();
@@ -123,7 +126,7 @@ class ComprovantePixService
             $pdo->rollBack();
             Logger::error('comprovante_pix.enviar_falhou', array(
                 'pedido_id' => $pedidoId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -184,6 +187,30 @@ class ComprovantePixService
                 $actorUserId
             );
 
+            $inscricoes = $this->inscricaoModel->forPedido((int) $pedido['id']);
+            $statusBloqueados = array('cancelada', 'reprovada');
+            $inscricoesAtivadas = array();
+
+            foreach ($inscricoes as $inscricao) {
+                $statusAtualInscricao = isset($inscricao['status']) ? (string) $inscricao['status'] : '';
+
+                if ($statusAtualInscricao === 'ativa' || in_array($statusAtualInscricao, $statusBloqueados, true)) {
+                    continue;
+                }
+
+                $inscricaoId = (int) $inscricao['id'];
+                $this->inscricaoModel->updateStatus($inscricaoId, 'ativa', date('Y-m-d H:i:s'));
+                $this->inscricaoModel->addStatusHistory(
+                    $inscricaoId,
+                    $statusAtualInscricao,
+                    'ativa',
+                    'Inscricao ativada automaticamente apos aprovacao do comprovante PIX.',
+                    $actorUserId
+                );
+
+                $inscricoesAtivadas[] = $inscricaoId;
+            }
+
             $this->auditService->record(
                 'comprovante_pix.aprovado',
                 'comprovante_pix',
@@ -194,6 +221,7 @@ class ComprovantePixService
                     'status_novo_comprovante' => 'aprovado',
                     'status_anterior_pedido' => $pedido['status'],
                     'status_novo_pedido' => 'pago',
+                    'inscricoes_ativadas_ids' => $inscricoesAtivadas,
                     'observacao' => $observacao,
                 ),
                 $actorUserId,
@@ -216,7 +244,7 @@ class ComprovantePixService
             $pdo->rollBack();
             Logger::error('comprovante_pix.aprovar_falhou', array(
                 'comprovante_pix_id' => $comprovanteId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -297,7 +325,7 @@ class ComprovantePixService
             $pdo->rollBack();
             Logger::error('comprovante_pix.reprovar_falhou', array(
                 'comprovante_pix_id' => $comprovanteId,
-                'message' => $exception->getMêssage(),
+                'message' => $exception->getMessage(),
             ));
 
             throw $exception;
@@ -346,4 +374,5 @@ class ComprovantePixService
         Logger::error($evento, $payload);
     }
 }
+
 

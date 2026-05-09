@@ -106,7 +106,7 @@ class CategoriaService
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.categoria.falhou', array('message' => $exception->getMêssage()));
+            Logger::error('catalogo.categoria.falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
@@ -141,7 +141,7 @@ class CategoriaService
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('catalogo.categoria.excluir_falhou', array('message' => $exception->getMêssage()));
+            Logger::error('catalogo.categoria.excluir_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
@@ -156,4 +156,5 @@ class CategoriaService
         return $value;
     }
 }
+
 
