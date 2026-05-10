@@ -22,6 +22,7 @@ class PedidoService
     private $comprovanteModel;
     private $inscricaoModel;
     private $cursoModel;
+    private $cursoService;
     private $turmaModel;
     private $pedidoCupomModel;
     private $cupomService;
@@ -38,6 +39,7 @@ class PedidoService
         $this->comprovanteModel = new ComprovantePix();
         $this->inscricaoModel = new Inscricao();
         $this->cursoModel = new CursoEvento();
+        $this->cursoService = new CursoService();
         $this->turmaModel = new Turma();
         $this->pedidoCupomModel = new PedidoCupom();
         $this->cupomService = new CupomService();
@@ -66,9 +68,11 @@ class PedidoService
             }
         }
 
+        $valorBaseCurso = (float) $this->cursoService->calcularValorEfetivoCurso($curso);
+
         $valorUnitario = isset($dados['valor_unitario']) && $dados['valor_unitario'] !== ''
             ? (float) $dados['valor_unitario']
-            : (float) ($turma && $turma['valor_override'] !== null && $turma['valor_override'] !== '' ? $turma['valor_override'] : $curso['valor']);
+            : (float) ($turma && $turma['valor_override'] !== null && $turma['valor_override'] !== '' ? $turma['valor_override'] : $valorBaseCurso);
 
         $subtotal = $valorUnitario * $quantidade;
         $pedidoData = array(

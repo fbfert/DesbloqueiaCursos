@@ -43,7 +43,14 @@
                 <dd><?php echo Helpers::e($curso['turma_selecionada']['status']); ?></dd>
             <?php endif; ?>
             <dt>Valor</dt>
-            <dd>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></dd>
+            <dd>
+                <?php if (!empty($curso['desconto_promocional'])): ?>
+                    <div class="muted" style="text-decoration:line-through;">R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
+                    <div><strong>R$ <?php echo number_format((float) $curso['valor_efetivo'], 2, ',', '.'); ?></strong></div>
+                <?php else: ?>
+                    R$ <?php echo number_format((float) ($curso['valor_efetivo'] ?? $curso['valor']), 2, ',', '.'); ?>
+                <?php endif; ?>
+            </dd>
         </dl>
     </section>
 

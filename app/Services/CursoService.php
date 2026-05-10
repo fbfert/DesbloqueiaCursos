@@ -32,6 +32,12 @@ class CursoService
         'sob_demanda',
     );
 
+    private $conteudoProgramaticoTipos = array(
+        'texto',
+        'html',
+        'modulos',
+    );
+
     public function __construct()
     {
         $this->categoriaModel = new Categoria();
@@ -106,11 +112,37 @@ class CursoService
         $descricaoCompleta = isset($data['descricao_completa']) ? trim((string) $data['descricao_completa']) : null;
         $cargaHoraria = isset($data['carga_horaria']) && $data['carga_horaria'] !== '' ? (int) $data['carga_horaria'] : null;
         $valor = isset($data['valor']) && $data['valor'] !== '' ? (float) $data['valor'] : 0;
+        $valorPromocional = $this->normalizarDecimalOpcional(isset($data['valor_promocional']) ? $data['valor_promocional'] : null);
         $ordem = isset($data['ordem']) ? (int) $data['ordem'] : 0;
         $status = isset($data['status']) && in_array($data['status'], array('rascunho', 'ativo', 'inativo', 'arquivado'), true) ? $data['status'] : 'rascunho';
         $professorResponsavelUsuarioId = isset($data['professor_responsavel_usuario_id']) && $data['professor_responsavel_usuario_id'] !== ''
             ? (int) $data['professor_responsavel_usuario_id']
             : null;
+
+        $objetivoGeral = $this->normalizarTextoLongoOpcional(isset($data['objetivo_geral']) ? $data['objetivo_geral'] : null);
+        $objetivosEspecificos = $this->normalizarLinhasTexto(isset($data['objetivos_especificos']) ? $data['objetivos_especificos'] : null);
+        $publicoAlvo = $this->normalizarTextoLongoOpcional(isset($data['publico_alvo']) ? $data['publico_alvo'] : null);
+        $preRequisitosTexto = $this->normalizarTextoLongoOpcional(isset($data['pre_requisitos_texto']) ? $data['pre_requisitos_texto'] : null);
+        $preRequisitosItens = $this->normalizarLinhasTexto(isset($data['pre_requisitos_itens']) ? $data['pre_requisitos_itens'] : null);
+        $ementa = $this->normalizarTextoLongoOpcional(isset($data['ementa']) ? $data['ementa'] : null);
+        $metodologia = $this->normalizarTextoLongoOpcional(isset($data['metodologia']) ? $data['metodologia'] : null);
+        $produtoFinal = $this->normalizarLinhasTexto(isset($data['produto_final']) ? $data['produto_final'] : null);
+        $avaliacao = $this->normalizarTextoLongoOpcional(isset($data['avaliacao']) ? $data['avaliacao'] : null);
+
+        $conteudoProgramaticoTipo = isset($data['conteudo_programatico_tipo'])
+            ? trim((string) $data['conteudo_programatico_tipo'])
+            : 'texto';
+        if ($conteudoProgramaticoTipo === '') {
+            $conteudoProgramaticoTipo = 'texto';
+        }
+
+        $conteudoProgramaticoTexto = null;
+        $conteudoProgramaticoModulos = null;
+        if ($conteudoProgramaticoTipo === 'modulos') {
+            $conteudoProgramaticoModulos = $this->prepararConteudoProgramaticoModulos($data);
+        } else {
+            $conteudoProgramaticoTexto = $this->normalizarTextoLongoOpcional(isset($data['conteudo_programatico_texto']) ? $data['conteudo_programatico_texto'] : null);
+        }
 
         $errors = array();
         if ($nome === '') {
@@ -122,8 +154,22 @@ class CursoService
         if ($valor < 0) {
             $errors[] = 'Valor invalido.';
         }
+        if ($valorPromocional !== null && $valorPromocional < 0) {
+            $errors[] = 'Valor promocional invalido.';
+        }
+        if ($valorPromocional !== null) {
+            if ($valor <= 0) {
+                $errors[] = 'Para usar valor promocional, o valor normal deve ser maior que zero.';
+            } elseif ($valorPromocional >= $valor) {
+                $errors[] = 'O valor promocional deve ser menor que o valor normal.';
+            }
+        }
         if ($categoriaId !== null && !$this->categoriaModel->findById($categoriaId)) {
             $errors[] = 'Categoria nao encontrada.';
+        }
+        if (!in_array($conteudoProgramaticoTipo, $this->conteudoProgramaticoTipos, true)) {
+            $errors[] = 'Tipo de conteúdo programático inválido.';
+            $conteudoProgramaticoTipo = 'texto';
         }
 
         if ($thumbnailSelecionada !== '') {
@@ -176,6 +222,19 @@ class CursoService
             'descricao_completa' => $descricaoCompleta,
             'carga_horaria' => $cargaHoraria,
             'valor' => $valor,
+            'valor_promocional' => $valorPromocional,
+            'objetivo_geral' => $objetivoGeral,
+            'objetivos_especificos' => $objetivosEspecificos,
+            'publico_alvo' => $publicoAlvo,
+            'pre_requisitos_texto' => $preRequisitosTexto,
+            'pre_requisitos_itens' => $preRequisitosItens,
+            'ementa' => $ementa,
+            'conteudo_programatico_tipo' => $conteudoProgramaticoTipo,
+            'conteudo_programatico_texto' => $conteudoProgramaticoTexto,
+            'conteudo_programatico_modulos' => $conteudoProgramaticoModulos,
+            'metodologia' => $metodologia,
+            'produto_final' => $produtoFinal,
+            'avaliacao' => $avaliacao,
             'em_promocao' => !empty($data['em_promocao']) ? 1 : 0,
             'destaque' => !empty($data['destaque']) ? 1 : 0,
             'ordem' => $ordem,
@@ -415,6 +474,8 @@ class CursoService
             $curso['professor_responsavel'] = $this->cursoPessoaModel->findProfessorResponsavel($curso['id']);
             $curso['turmas_abertas'] = $this->turmaModel->forPublicCourse($curso['id'], true);
             $curso['total_turmas_abertas'] = count($curso['turmas_abertas']);
+            $curso['valor_efetivo'] = $this->calcularValorEfetivoCurso($curso);
+            $curso['desconto_promocional'] = $this->calcularDescontoPromocional($curso);
         }
         unset($curso);
 
@@ -446,6 +507,9 @@ class CursoService
         $curso['turmas'] = $curso['turmas_abertas'];
         $curso['turma_selecionada'] = null;
         $curso['inscricao_disponivel'] = !empty($curso['turmas_abertas']);
+        $curso['valor_efetivo'] = $this->calcularValorEfetivoCurso($curso);
+        $curso['desconto_promocional'] = $this->calcularDescontoPromocional($curso);
+        $curso['conteudo_programatico_view'] = $this->prepararConteudoProgramaticoParaView($curso);
 
         if ($turmaId) {
             $curso['turma_selecionada'] = $this->turmaModel->findPublicOpenForCourse($cursoId, $turmaId);
@@ -482,6 +546,119 @@ class CursoService
         return array('ok' => true, 'curso' => $curso, 'turma' => $turma);
     }
 
+    public function calcularValorEfetivoCurso(array $curso)
+    {
+        $valor = isset($curso['valor']) ? (float) $curso['valor'] : 0.0;
+        $emPromocao = !empty($curso['em_promocao']);
+        $valorPromocional = isset($curso['valor_promocional']) && $curso['valor_promocional'] !== '' ? (float) $curso['valor_promocional'] : null;
+
+        if ($emPromocao && $valorPromocional !== null && $valor > 0 && $valorPromocional >= 0 && $valorPromocional < $valor) {
+            return $valorPromocional;
+        }
+
+        return $valor;
+    }
+
+    public function calcularDescontoPromocional(array $curso)
+    {
+        $valor = isset($curso['valor']) ? (float) $curso['valor'] : 0.0;
+        $valorEfetivo = $this->calcularValorEfetivoCurso($curso);
+        if ($valor <= 0 || $valorEfetivo >= $valor) {
+            return null;
+        }
+
+        $descontoValor = $valor - $valorEfetivo;
+        $percentual = ($descontoValor / $valor) * 100;
+
+        return array(
+            'valor_original' => $valor,
+            'valor_promocional' => $valorEfetivo,
+            'desconto_valor' => $descontoValor,
+            'desconto_percentual' => $percentual,
+        );
+    }
+
+    public function prepararConteudoProgramaticoParaView(array $curso)
+    {
+        $tipo = isset($curso['conteudo_programatico_tipo']) && $curso['conteudo_programatico_tipo'] !== ''
+            ? (string) $curso['conteudo_programatico_tipo']
+            : 'texto';
+
+        if (!in_array($tipo, $this->conteudoProgramaticoTipos, true)) {
+            $tipo = 'texto';
+        }
+
+        $texto = isset($curso['conteudo_programatico_texto']) ? (string) $curso['conteudo_programatico_texto'] : '';
+        $modulos = isset($curso['conteudo_programatico_modulos']) ? (string) $curso['conteudo_programatico_modulos'] : '';
+
+        $resultado = array(
+            'tipo' => $tipo,
+            'texto' => null,
+            'html' => null,
+            'modulos' => array(),
+        );
+
+        if ($tipo === 'modulos') {
+            $resultado['modulos'] = $this->parsearConteudoProgramaticoModulosJson($modulos);
+            return $resultado;
+        }
+
+        if (trim($texto) === '') {
+            return $resultado;
+        }
+
+        if ($tipo === 'html') {
+            $resultado['html'] = $this->sanitizarHtmlBasico($texto);
+            return $resultado;
+        }
+
+        $resultado['texto'] = $texto;
+        return $resultado;
+    }
+
+    private function parsearConteudoProgramaticoModulosJson($json)
+    {
+        $json = trim((string) $json);
+        if ($json === '') {
+            return array();
+        }
+
+        $decoded = json_decode($json, true);
+        if (!is_array($decoded)) {
+            return array();
+        }
+
+        $saida = array();
+        foreach ($decoded as $modulo) {
+            if (!is_array($modulo)) {
+                continue;
+            }
+
+            $titulo = isset($modulo['titulo']) ? trim((string) $modulo['titulo']) : '';
+            $itens = isset($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array();
+
+            $itensLimpos = array();
+            foreach ($itens as $item) {
+                $item = trim((string) $item);
+                if ($item === '') {
+                    continue;
+                }
+                $itensLimpos[] = $item;
+            }
+
+            if ($titulo === '' && empty($itensLimpos)) {
+                continue;
+            }
+
+            $saida[] = array(
+                'titulo' => $titulo,
+                'itens' => $itensLimpos,
+            );
+        }
+
+        return $saida;
+    }
+
     public function modalidadeLabel($modalidade)
     {
         $map = array(
@@ -492,6 +669,189 @@ class CursoService
         );
 
         return isset($map[$modalidade]) ? $map[$modalidade] : (string) $modalidade;
+    }
+
+    public function normalizarLinhasTexto($texto)
+    {
+        if ($texto === null) {
+            return null;
+        }
+
+        $texto = str_replace("\r\n", "\n", (string) $texto);
+        $texto = str_replace("\r", "\n", $texto);
+        $linhas = explode("\n", $texto);
+
+        $limpas = array();
+        foreach ($linhas as $linha) {
+            $linha = trim((string) $linha);
+            if ($linha === '') {
+                continue;
+            }
+            $limpas[] = $linha;
+        }
+
+        if (empty($limpas)) {
+            return null;
+        }
+
+        return implode("\n", $limpas);
+    }
+
+    public function prepararConteudoProgramaticoModulos($data)
+    {
+        $titulos = isset($data['conteudo_programatico_modulos_titulo']) ? (array) $data['conteudo_programatico_modulos_titulo'] : array();
+        $itensPorModulo = isset($data['conteudo_programatico_modulos_itens']) ? (array) $data['conteudo_programatico_modulos_itens'] : array();
+
+        $modulos = array();
+        $max = max(count($titulos), count($itensPorModulo));
+
+        for ($i = 0; $i < $max; $i++) {
+            $titulo = isset($titulos[$i]) ? trim((string) $titulos[$i]) : '';
+            $itensRaw = isset($itensPorModulo[$i]) ? (string) $itensPorModulo[$i] : '';
+
+            $itensNormalizados = $this->normalizarLinhasTexto($itensRaw);
+            $itens = $itensNormalizados !== null ? explode("\n", $itensNormalizados) : array();
+
+            if ($titulo === '' && empty($itens)) {
+                continue;
+            }
+
+            $modulos[] = array(
+                'titulo' => $titulo,
+                'itens' => $itens,
+            );
+        }
+
+        if (empty($modulos)) {
+            return null;
+        }
+
+        return json_encode($modulos, JSON_UNESCAPED_UNICODE);
+    }
+
+    private function normalizarTextoLongoOpcional($texto)
+    {
+        $texto = $texto === null ? '' : (string) $texto;
+        $texto = trim($texto);
+        return $texto === '' ? null : $texto;
+    }
+
+    private function normalizarDecimalOpcional($valor)
+    {
+        if ($valor === null) {
+            return null;
+        }
+
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return null;
+        }
+
+        return (float) $valor;
+    }
+
+    private function sanitizarHtmlBasico($html)
+    {
+        $html = (string) $html;
+        if (trim($html) === '') {
+            return '';
+        }
+
+        if (!class_exists('DOMDocument')) {
+            return htmlspecialchars($html, ENT_QUOTES, 'UTF-8');
+        }
+
+        $allowedTags = array(
+            'p', 'br', 'strong', 'b', 'em', 'i', 'u',
+            'ul', 'ol', 'li',
+            'h3', 'h4', 'h5', 'h6',
+            'blockquote',
+            'a',
+        );
+
+        $allowedAttrs = array(
+            'a' => array('href', 'title', 'target', 'rel'),
+        );
+
+        $previous = libxml_use_internal_errors(true);
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+
+        $wrapped = '<div>' . $html . '</div>';
+        $dom->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+        $xpath = new \DOMXPath($dom);
+
+        foreach ($xpath->query('//*') as $node) {
+            $tag = strtolower($node->nodeName);
+
+            if (!in_array($tag, $allowedTags, true)) {
+                $this->domRemoverMantendoFilhos($node);
+                continue;
+            }
+
+            if ($node->hasAttributes()) {
+                $attrs = array();
+                foreach ($node->attributes as $attr) {
+                    $attrs[] = $attr->nodeName;
+                }
+
+                foreach ($attrs as $attrName) {
+                    $attrLower = strtolower($attrName);
+                    if (strpos($attrLower, 'on') === 0) {
+                        $node->removeAttribute($attrName);
+                        continue;
+                    }
+
+                    if (!isset($allowedAttrs[$tag]) || !in_array($attrLower, $allowedAttrs[$tag], true)) {
+                        $node->removeAttribute($attrName);
+                        continue;
+                    }
+
+                    if ($tag === 'a' && $attrLower === 'href') {
+                        $href = trim((string) $node->getAttribute('href'));
+                        if ($href === '' || preg_match('/^\\s*javascript:/i', $href)) {
+                            $node->removeAttribute('href');
+                        }
+                    }
+                }
+            }
+
+            if ($tag === 'a') {
+                $target = strtolower(trim((string) $node->getAttribute('target')));
+                if ($target === '_blank') {
+                    $node->setAttribute('rel', 'noopener noreferrer');
+                } else {
+                    $node->removeAttribute('target');
+                }
+            }
+        }
+
+        $saida = '';
+        $container = $dom->getElementsByTagName('div')->item(0);
+        if ($container) {
+            foreach ($container->childNodes as $child) {
+                $saida .= $dom->saveHTML($child);
+            }
+        }
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        return $saida;
+    }
+
+    private function domRemoverMantendoFilhos(\DOMNode $node)
+    {
+        $parent = $node->parentNode;
+        if (!$parent) {
+            return;
+        }
+
+        while ($node->firstChild) {
+            $parent->insertBefore($node->firstChild, $node);
+        }
+
+        $parent->removeChild($node);
     }
 
     private function slugify($value)

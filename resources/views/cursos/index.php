@@ -31,13 +31,20 @@
                             <span class="pill">Professor: <?php echo Helpers::e($curso['professor_responsavel']['nome']); ?></span>
                         <?php endif; ?>
                         <?php if (!empty($curso['em_promocao'])): ?>
-                            <span class="pill pill--alert">Promocao</span>
+                            <span class="pill pill--alert">Promoção</span>
                         <?php endif; ?>
                     </div>
                     <p><?php echo Helpers::e($curso['descricao_curta'] ?: 'Descrição resumida em breve.'); ?></p>
                     <div class="course-card__meta">
                         <span><?php echo (int) $curso['total_turmas_abertas']; ?> turma(s) aberta(s)</span>
-                        <strong>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></strong>
+                        <?php if (!empty($curso['desconto_promocional'])): ?>
+                            <div>
+                                <span class="muted" style="font-size:12px;text-decoration:line-through;">R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></span>
+                                <strong style="display:block;">R$ <?php echo number_format((float) $curso['valor_efetivo'], 2, ',', '.'); ?></strong>
+                            </div>
+                        <?php else: ?>
+                            <strong>R$ <?php echo number_format((float) ($curso['valor_efetivo'] ?? $curso['valor']), 2, ',', '.'); ?></strong>
+                        <?php endif; ?>
                     </div>
                     <div class="cta-group">
                         <a class="button-link button-link--ghost" href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>">Ver detalhes</a>

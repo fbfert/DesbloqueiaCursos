@@ -42,13 +42,126 @@
             <dt>Modalidade</dt>
             <dd><?php echo Helpers::e($curso['modalidade']); ?></dd>
             <dt>Valor</dt>
-            <dd>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></dd>
+            <dd>
+                <?php if (!empty($curso['desconto_promocional'])): ?>
+                    <div class="muted" style="text-decoration:line-through;">R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
+                    <div><strong>R$ <?php echo number_format((float) $curso['valor_efetivo'], 2, ',', '.'); ?></strong></div>
+                    <div class="muted" style="font-size:12px;">
+                        Desconto de R$ <?php echo number_format((float) $curso['desconto_promocional']['desconto_valor'], 2, ',', '.'); ?>
+                        (<?php echo (int) round((float) $curso['desconto_promocional']['desconto_percentual']); ?>%)
+                    </div>
+                <?php else: ?>
+                    R$ <?php echo number_format((float) ($curso['valor_efetivo'] ?? $curso['valor']), 2, ',', '.'); ?>
+                <?php endif; ?>
+            </dd>
             <?php if (!empty($curso['professor_responsavel']['nome'])): ?>
-                <dt>Professor responsavel</dt>
+                <dt>Professor responsável</dt>
                 <dd><?php echo Helpers::e($curso['professor_responsavel']['nome']); ?></dd>
             <?php endif; ?>
         </dl>
-        <p><?php echo Helpers::e($curso['descricao_completa'] ?: $curso['descricao_curta']); ?></p>
+
+        <?php if (!empty($curso['descricao_completa']) || !empty($curso['descricao_curta'])): ?>
+            <h3 style="margin:16px 0 6px;">Descritivo do curso</h3>
+            <p><?php echo nl2br(Helpers::e($curso['descricao_completa'] ?: $curso['descricao_curta'])); ?></p>
+        <?php endif; ?>
+
+        <?php if (!empty($curso['objetivo_geral'])): ?>
+            <h3 style="margin:16px 0 6px;">Objetivo geral</h3>
+            <p><?php echo nl2br(Helpers::e($curso['objetivo_geral'])); ?></p>
+        <?php endif; ?>
+
+        <?php if (!empty($curso['objetivos_especificos'])): ?>
+            <h3 style="margin:16px 0 6px;">Objetivos específicos</h3>
+            <p><strong>Ao final do curso, o participante deverá ser capaz de:</strong></p>
+            <ul>
+                <?php foreach (preg_split('/\\r\\n|\\r|\\n/', (string) $curso['objetivos_especificos']) as $linha): ?>
+                    <?php $linha = trim((string) $linha); ?>
+                    <?php if ($linha !== ''): ?><li><?php echo Helpers::e($linha); ?></li><?php endif; ?>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <?php if (!empty($curso['publico_alvo'])): ?>
+            <h3 style="margin:16px 0 6px;">Público-alvo</h3>
+            <p><strong>O curso é indicado para:</strong></p>
+            <p><?php echo nl2br(Helpers::e($curso['publico_alvo'])); ?></p>
+        <?php endif; ?>
+
+        <?php if (!empty($curso['pre_requisitos_texto']) || !empty($curso['pre_requisitos_itens'])): ?>
+            <h3 style="margin:16px 0 6px;">Pré-requisitos</h3>
+            <?php if (!empty($curso['pre_requisitos_texto'])): ?>
+                <p><?php echo nl2br(Helpers::e($curso['pre_requisitos_texto'])); ?></p>
+            <?php endif; ?>
+            <?php if (!empty($curso['pre_requisitos_itens'])): ?>
+                <ul>
+                    <?php foreach (preg_split('/\\r\\n|\\r|\\n/', (string) $curso['pre_requisitos_itens']) as $linha): ?>
+                        <?php $linha = trim((string) $linha); ?>
+                        <?php if ($linha !== ''): ?><li><?php echo Helpers::e($linha); ?></li><?php endif; ?>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if (!empty($curso['ementa'])): ?>
+            <h3 style="margin:16px 0 6px;">Ementa</h3>
+            <p><?php echo nl2br(Helpers::e($curso['ementa'])); ?></p>
+        <?php endif; ?>
+
+        <?php
+        $cp = isset($curso['conteudo_programatico_view']) && is_array($curso['conteudo_programatico_view'])
+            ? $curso['conteudo_programatico_view']
+            : array('tipo' => 'texto');
+        ?>
+        <?php if (!empty($cp['texto']) || !empty($cp['html']) || !empty($cp['modulos'])): ?>
+            <h3 style="margin:16px 0 6px;">Conteúdo programático</h3>
+            <?php if (($cp['tipo'] ?? 'texto') === 'modulos'): ?>
+                <div class="stack">
+                    <?php foreach (($cp['modulos'] ?? array()) as $modulo): ?>
+                        <?php if (!is_array($modulo)) continue; ?>
+                        <div class="status-card" style="padding:12px;">
+                            <?php if (!empty($modulo['titulo'])): ?>
+                                <strong><?php echo Helpers::e($modulo['titulo']); ?></strong>
+                            <?php endif; ?>
+                            <?php if (!empty($modulo['itens']) && is_array($modulo['itens'])): ?>
+                                <ul style="margin-top:8px;">
+                                    <?php foreach ($modulo['itens'] as $item): ?>
+                                        <?php $item = trim((string) $item); ?>
+                                        <?php if ($item !== ''): ?><li><?php echo Helpers::e($item); ?></li><?php endif; ?>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php elseif (($cp['tipo'] ?? 'texto') === 'html'): ?>
+                <div><?php echo (string) ($cp['html'] ?? ''); ?></div>
+            <?php else: ?>
+                <p><?php echo nl2br(Helpers::e((string) ($cp['texto'] ?? ''))); ?></p>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if (!empty($curso['metodologia'])): ?>
+            <h3 style="margin:16px 0 6px;">Metodologia</h3>
+            <p><?php echo nl2br(Helpers::e($curso['metodologia'])); ?></p>
+        <?php endif; ?>
+
+        <?php if (!empty($curso['produto_final'])): ?>
+            <h3 style="margin:16px 0 6px;">Produto final</h3>
+            <p><strong>O participante desenvolverá competências para:</strong></p>
+            <?php $linhas = array_values(array_filter(array_map('trim', preg_split('/\\r\\n|\\r|\\n/', (string) $curso['produto_final'])))); ?>
+            <?php if (count($linhas) > 1): ?>
+                <ul>
+                    <?php foreach ($linhas as $linha): ?><li><?php echo Helpers::e($linha); ?></li><?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p><?php echo nl2br(Helpers::e((string) $curso['produto_final'])); ?></p>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if (!empty($curso['avaliacao'])): ?>
+            <h3 style="margin:16px 0 6px;">Avaliação</h3>
+            <p><?php echo nl2br(Helpers::e($curso['avaliacao'])); ?></p>
+        <?php endif; ?>
     </article>
 
     <article class="checkout-panel">

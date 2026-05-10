@@ -60,7 +60,22 @@ foreach ($cursos ?? array() as $cursoItem) {
                         <td><?php echo Helpers::e($curso['professor_responsavel']['nome'] ?? '-'); ?></td>
                         <td><?php echo Helpers::e($curso['tipo']); ?></td>
                         <td><?php echo Helpers::e($curso['modalidade']); ?></td>
-                        <td>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></td>
+                        <td>
+                            <?php
+                            $temPromo = !empty($curso['em_promocao'])
+                                && isset($curso['valor_promocional'])
+                                && $curso['valor_promocional'] !== null
+                                && $curso['valor_promocional'] !== ''
+                                && (float) $curso['valor_promocional'] >= 0
+                                && (float) $curso['valor_promocional'] < (float) $curso['valor'];
+                            ?>
+                            <?php if ($temPromo): ?>
+                                <div><strong>R$ <?php echo number_format((float) $curso['valor_promocional'], 2, ',', '.'); ?></strong></div>
+                                <div class="muted" style="font-size:12px;">De R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
+                            <?php else: ?>
+                                R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?>
+                            <?php endif; ?>
+                        </td>
                         <td><?php echo Helpers::e($curso['status']); ?></td>
                         <td>
                             <div class="split-actions">
@@ -110,7 +125,22 @@ foreach ($cursos ?? array() as $cursoItem) {
                             <td><?php echo Helpers::e($curso['professor_responsavel']['nome'] ?? '-'); ?></td>
                             <td><?php echo Helpers::e($curso['tipo']); ?></td>
                             <td><?php echo Helpers::e($curso['modalidade']); ?></td>
-                            <td>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></td>
+                            <td>
+                                <?php
+                                $temPromo = !empty($curso['em_promocao'])
+                                    && isset($curso['valor_promocional'])
+                                    && $curso['valor_promocional'] !== null
+                                    && $curso['valor_promocional'] !== ''
+                                    && (float) $curso['valor_promocional'] >= 0
+                                    && (float) $curso['valor_promocional'] < (float) $curso['valor'];
+                                ?>
+                                <?php if ($temPromo): ?>
+                                    <div><strong>R$ <?php echo number_format((float) $curso['valor_promocional'], 2, ',', '.'); ?></strong></div>
+                                    <div class="muted" style="font-size:12px;">De R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
+                                <?php else: ?>
+                                    R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?>
+                                <?php endif; ?>
+                            </td>
                             <td><?php echo Helpers::e($curso['status']); ?></td>
                             <td>
                                 <div class="split-actions">

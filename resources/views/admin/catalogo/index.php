@@ -64,7 +64,22 @@
                         <td><?php echo htmlspecialchars((string) $curso['categoria_nome'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars($curso['tipo'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars($curso['modalidade'], ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></td>
+                        <td>
+                            <?php
+                            $temPromo = !empty($curso['em_promocao'])
+                                && isset($curso['valor_promocional'])
+                                && $curso['valor_promocional'] !== null
+                                && $curso['valor_promocional'] !== ''
+                                && (float) $curso['valor_promocional'] >= 0
+                                && (float) $curso['valor_promocional'] < (float) $curso['valor'];
+                            ?>
+                            <?php if ($temPromo): ?>
+                                <div><strong>R$ <?php echo number_format((float) $curso['valor_promocional'], 2, ',', '.'); ?></strong></div>
+                                <div style="font-size:12px;opacity:.75;">De R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
+                            <?php else: ?>
+                                R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?>
+                            <?php endif; ?>
+                        </td>
                         <td><?php echo (int) $curso['total_turmas']; ?></td>
                         <td><?php echo (int) $curso['total_pessoas_vinculadas']; ?></td>
                         <td><?php echo htmlspecialchars($curso['status'], ENT_QUOTES, 'UTF-8'); ?></td>
