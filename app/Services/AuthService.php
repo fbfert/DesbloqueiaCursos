@@ -418,7 +418,7 @@ class AuthService
             return '/professor/dashboard';
         }
 
-        return '/meus-cursos';
+        return '/';
     }
 
     private function canAccessAdminDashboard($usuarioId)

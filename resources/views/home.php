@@ -3,6 +3,13 @@ use App\Core\Helpers;
 
 $chamadaPrincipalCapa = isset($chamadaPrincipalCapa) && is_array($chamadaPrincipalCapa) ? $chamadaPrincipalCapa : array();
 $modulosCapaStatus = isset($modulosCapaStatus) && is_array($modulosCapaStatus) ? $modulosCapaStatus : array();
+$topCursos = isset($topCursos) && is_array($topCursos) ? $topCursos : array();
+$topCursosModulo = isset($topCursosModulo) && is_array($topCursosModulo) ? $topCursosModulo : array();
+$topAvaliacoesModulo = isset($topAvaliacoesModulo) && is_array($topAvaliacoesModulo) ? $topAvaliacoesModulo : array();
+$depoimentosModulo = isset($depoimentosModulo) && is_array($depoimentosModulo) ? $depoimentosModulo : array();
+$depoimentosCapa = isset($depoimentosCapa) && is_array($depoimentosCapa) ? $depoimentosCapa : array();
+$postLoginChoiceModal = isset($postLoginChoiceModal) && is_array($postLoginChoiceModal) ? $postLoginChoiceModal : array();
+$loggedIn = !empty($loggedIn);
 $textoModulo = function (array $modulo) {
     if (!empty($modulo['conteudo'])) {
         return (string) $modulo['conteudo'];
@@ -20,6 +27,12 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
     echo '<div class="' . Helpers::e($classe) . '"><img src="' . Helpers::e((string) $modulo['imagem_caminho']) . '" alt="' . Helpers::e($alt) . '"></div>';
 };
 ?>
+
+<?php if ($loggedIn): ?>
+<section class="home-greeting">
+    <strong><?php echo Helpers::e('Bem vindo' . (!empty($usuarioNome) ? ', ' . $usuarioNome : '')); ?></strong>
+</section>
+<?php endif; ?>
 
 <?php if (!empty($chamadaPrincipalCapa)): ?>
 <section class="hero hero--public">
@@ -50,16 +63,6 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 <section class="status-card">
     <strong>Estado</strong>
     <span><?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></span>
-</section>
-<?php endif; ?>
-
-<?php if (!empty($usuarioNome)): ?>
-<section class="status-card">
-    <strong>Conta ativa</strong>
-    <span><?php echo htmlspecialchars($usuarioNome, ENT_QUOTES, 'UTF-8'); ?></span>
-    <div style="margin-top: 12px;">
-        <a class="button-link button-link--ghost" href="/logout">Sair</a>
-    </div>
 </section>
 <?php endif; ?>
 
@@ -128,3 +131,169 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
         <a class="button-link" href="https://polorainbow.com.br/cursos">Ver todos os cursos</a>
     </div>
 </section>
+
+<?php if (!empty($topCursosModulo)): ?>
+<section class="status-card home-extra-card home-top-cursos-card">
+    <header class="home-extra-card__header">
+        <div>
+            <?php $imagemModulo($topCursosModulo, 'module-public-image module-public-image--section'); ?>
+            <?php if (!empty($topCursosModulo['titulo'])): ?>
+                <h2><?php echo Helpers::e($topCursosModulo['titulo']); ?></h2>
+            <?php endif; ?>
+            <?php $textoTopCursos = $textoModulo($topCursosModulo); ?>
+            <?php if ($textoTopCursos !== ''): ?>
+                <p><?php echo nl2br(Helpers::e($textoTopCursos)); ?></p>
+            <?php endif; ?>
+        </div>
+    </header>
+
+    <?php if (empty($topCursos)): ?>
+        <article class="home-empty-state">
+            <strong>Aguardando vendas aprovadas</strong>
+            <span>Quando houver pedidos aprovados ou pagos, os cinco cursos com mais vendas aparecerão aqui automaticamente.</span>
+        </article>
+    <?php else: ?>
+        <ol class="home-ranking-list" aria-label="Cursos com mais vendas">
+            <?php foreach ($topCursos as $indice => $cursoTop): ?>
+                <li class="home-ranking-item">
+                    <span class="home-ranking-item__position">#<?php echo (int) ($indice + 1); ?></span>
+                    <?php if (!empty($cursoTop['thumbnail'])): ?>
+                        <a class="home-ranking-item__image" href="/cursos/detalhe?curso_id=<?php echo (int) $cursoTop['id']; ?>">
+                            <img src="<?php echo Helpers::e($cursoTop['thumbnail']); ?>" alt="<?php echo Helpers::e($cursoTop['nome']); ?>">
+                        </a>
+                    <?php else: ?>
+                        <span class="home-ranking-item__image home-ranking-item__image--empty" aria-hidden="true"></span>
+                    <?php endif; ?>
+                    <div class="home-ranking-item__content">
+                        <strong><?php echo Helpers::e($cursoTop['nome']); ?></strong>
+                        <span><?php echo Helpers::e($cursoTop['categoria_nome'] ?: 'Sem categoria'); ?></span>
+                        <small><?php echo (int) $cursoTop['total_vendas']; ?> venda(s) confirmada(s)</small>
+                    </div>
+                    <a class="button-link button-link--ghost" href="/cursos/detalhe?curso_id=<?php echo (int) $cursoTop['id']; ?>">Ver curso</a>
+                </li>
+            <?php endforeach; ?>
+        </ol>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php if (!empty($topAvaliacoesModulo)): ?>
+<section class="status-card home-extra-card home-avaliacoes-card">
+    <header class="home-extra-card__header">
+        <div>
+            <?php $imagemModulo($topAvaliacoesModulo, 'module-public-image module-public-image--section'); ?>
+            <?php if (!empty($topAvaliacoesModulo['titulo'])): ?>
+                <h2><?php echo Helpers::e($topAvaliacoesModulo['titulo']); ?></h2>
+            <?php endif; ?>
+            <?php $textoTopAvaliacoes = $textoModulo($topAvaliacoesModulo); ?>
+            <?php if ($textoTopAvaliacoes !== ''): ?>
+                <p><?php echo nl2br(Helpers::e($textoTopAvaliacoes)); ?></p>
+            <?php endif; ?>
+        </div>
+    </header>
+
+    <article class="home-empty-state home-empty-state--soft">
+        <strong>Módulo preparado para avaliações</strong>
+        <span>Assim que o sistema tiver avaliações públicas consolidadas, esta área poderá exibir automaticamente os cinco cursos com melhor nota.</span>
+    </article>
+</section>
+<?php endif; ?>
+
+<?php if (!empty($depoimentosModulo)): ?>
+<section class="status-card home-extra-card home-depoimentos-card">
+    <header class="home-extra-card__header">
+        <div>
+            <?php $imagemModulo($depoimentosModulo, 'module-public-image module-public-image--section'); ?>
+            <?php if (!empty($depoimentosModulo['titulo'])): ?>
+                <h2><?php echo Helpers::e($depoimentosModulo['titulo']); ?></h2>
+            <?php endif; ?>
+            <?php $textoDepoimentos = $textoModulo($depoimentosModulo); ?>
+            <?php if ($textoDepoimentos !== ''): ?>
+                <p><?php echo nl2br(Helpers::e($textoDepoimentos)); ?></p>
+            <?php endif; ?>
+        </div>
+    </header>
+
+    <div class="testimonial-slider" aria-label="Depoimentos">
+        <?php if (empty($depoimentosCapa)): ?>
+            <article class="testimonial-slide testimonial-slide--empty">
+                <strong>Depoimentos em preparação</strong>
+                <span>Cadastre módulos ativos com posição <code>depoimentos_capa_item</code> para alimentar este carrossel.</span>
+            </article>
+        <?php else: ?>
+            <?php foreach ($depoimentosCapa as $depoimento): ?>
+                <?php $textoDepoimento = $textoModulo($depoimento); ?>
+                <article class="testimonial-slide">
+                    <?php $imagemModulo($depoimento, 'module-public-image module-public-image--testimonial'); ?>
+                    <?php if ($textoDepoimento !== ''): ?>
+                        <p>“<?php echo nl2br(Helpers::e($textoDepoimento)); ?>”</p>
+                    <?php endif; ?>
+                    <?php if (!empty($depoimento['titulo'])): ?>
+                        <strong><?php echo Helpers::e($depoimento['titulo']); ?></strong>
+                    <?php endif; ?>
+                    <?php if (!empty($depoimento['subtitulo'])): ?>
+                        <span><?php echo Helpers::e($depoimento['subtitulo']); ?></span>
+                    <?php endif; ?>
+                </article>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+</section>
+<?php endif; ?>
+
+<?php if (!empty($postLoginChoiceModal)): ?>
+<div class="post-login-modal" id="post-login-choice-modal" role="dialog" aria-modal="true" aria-labelledby="post-login-choice-modal-title">
+    <div class="post-login-modal__backdrop" data-post-login-modal-close></div>
+    <div class="post-login-modal__dialog" tabindex="-1">
+        <button type="button" class="post-login-modal__close" aria-label="Fechar" data-post-login-modal-close>&times;</button>
+        <h2 id="post-login-choice-modal-title">Você deseja ir para Minha Página ou Catálogo de Cursos?</h2>
+        <p>Escolha para onde deseja seguir agora.</p>
+        <div class="post-login-modal__actions">
+            <a class="button-link" href="/minha-pagina">Minha Página</a>
+            <a class="button-link button-link--ghost" href="/cursos">Catálogo de Cursos</a>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var modal = document.getElementById('post-login-choice-modal');
+    if (!modal) {
+        return;
+    }
+
+    var dialog = modal.querySelector('.post-login-modal__dialog');
+    var focusTarget = modal.querySelector('.post-login-modal__actions a');
+    var closeButtons = modal.querySelectorAll('[data-post-login-modal-close]');
+
+    function closeModal() {
+        modal.classList.remove('is-open');
+        document.body.classList.remove('has-post-login-modal');
+    }
+
+    for (var i = 0; i < closeButtons.length; i++) {
+        closeButtons[i].addEventListener('click', closeModal);
+    }
+
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    document.body.classList.add('has-post-login-modal');
+    modal.classList.add('is-open');
+
+    if (dialog && dialog.focus) {
+        dialog.focus();
+    } else if (focusTarget && focusTarget.focus) {
+        focusTarget.focus();
+    }
+})();
+</script>
+<?php endif; ?>

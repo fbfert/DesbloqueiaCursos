@@ -19,13 +19,6 @@
     </section>
 <?php endif; ?>
 
-<?php if (!empty($loggedIn)): ?>
-    <section class="notice notice--success">
-        <strong>Conta ativa</strong>
-        <span><?php echo Helpers::e($usuarioNome); ?></span>
-    </section>
-<?php endif; ?>
-
 <section class="checkout-grid">
     <article class="checkout-panel">
         <h2>Detalhes</h2>

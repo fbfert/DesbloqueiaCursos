@@ -740,3 +740,283 @@ body.frontend-theme {
 .frontend-theme .site-footer {
     gap: 12px;
 }
+
+/* ---------- capa: módulos pós-destaques ---------- */
+.frontend-theme .home-destaques-card .card-grid,
+.frontend-theme .card-grid--inside {
+    padding-top: 12px;
+}
+
+.frontend-theme .home-destaques-card__footer {
+    margin-top: 10px;
+}
+
+.frontend-theme .home-extra-card {
+    margin-top: 18px;
+    padding: 18px;
+}
+
+.frontend-theme .home-extra-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.frontend-theme .home-extra-card__header h2 {
+    margin: 0;
+    color: var(--color-coal);
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.frontend-theme .home-extra-card__header p {
+    max-width: 760px;
+    margin: 6px 0 0;
+    color: var(--text-muted);
+}
+
+.frontend-theme .home-empty-state,
+.frontend-theme .testimonial-slide {
+    border: 1px solid rgba(75, 0, 142, 0.1);
+    border-radius: var(--radius-md);
+    background: var(--surface-muted);
+    padding: 16px;
+}
+
+.frontend-theme .home-empty-state strong,
+.frontend-theme .testimonial-slide strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--color-coal);
+}
+
+.frontend-theme .home-empty-state span,
+.frontend-theme .testimonial-slide span,
+.frontend-theme .testimonial-slide p {
+    color: var(--text-muted);
+}
+
+.frontend-theme .home-ranking-list {
+    display: grid;
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.frontend-theme .home-ranking-item {
+    display: grid;
+    grid-template-columns: auto 64px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    border: 1px solid rgba(75, 0, 142, 0.1);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+    padding: 12px;
+}
+
+.frontend-theme .home-ranking-item__position {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-pill);
+    background: var(--gradient-primary);
+    color: var(--text-light);
+    font-weight: 800;
+}
+
+.frontend-theme .home-ranking-item__image img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+}
+
+.frontend-theme .home-ranking-item__content {
+    min-width: 0;
+}
+
+.frontend-theme .home-ranking-item__content strong,
+.frontend-theme .home-ranking-item__content span,
+.frontend-theme .home-ranking-item__content small {
+    display: block;
+}
+
+.frontend-theme .home-ranking-item__content strong {
+    color: var(--color-coal);
+    font-weight: 800;
+}
+
+.frontend-theme .home-ranking-item__content span,
+.frontend-theme .home-ranking-item__content small {
+    color: var(--text-muted);
+}
+
+.frontend-theme .home-ranking-item .button-link {
+    grid-column: 1 / -1;
+    justify-content: center;
+}
+
+.frontend-theme .testimonial-slider {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(260px, 82%);
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+    padding-bottom: 6px;
+}
+
+.frontend-theme .testimonial-slide {
+    scroll-snap-align: start;
+}
+
+.frontend-theme .testimonial-slide p {
+    margin: 0 0 14px;
+    font-size: 1rem;
+}
+
+.frontend-theme .module-public-image--section img {
+    max-height: 96px;
+}
+
+.frontend-theme .module-public-image--testimonial img {
+    width: 54px;
+    height: 54px;
+    border-radius: 999px;
+    object-fit: cover;
+}
+
+@media (min-width: 720px) {
+    .frontend-theme .home-ranking-item {
+        grid-template-columns: auto 76px minmax(0, 1fr) auto;
+    }
+
+    .frontend-theme .home-ranking-item__image img {
+        width: 76px;
+        height: 76px;
+    }
+
+    .frontend-theme .home-ranking-item .button-link {
+        grid-column: auto;
+    }
+
+    .frontend-theme .testimonial-slider {
+        grid-auto-columns: minmax(300px, 36%);
+    }
+}
+
+.frontend-theme .home-ranking-item__image--empty {
+    display: block;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, rgba(255, 106, 0, 0.12), rgba(225, 0, 255, 0.12));
+}
+
+@media (min-width: 720px) {
+    .frontend-theme .home-ranking-item__image--empty {
+        width: 76px;
+        height: 76px;
+    }
+}
+
+.frontend-theme .home-greeting {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(75, 0, 142, 0.1);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+}
+
+.frontend-theme .home-greeting strong {
+    color: var(--color-coal);
+    font-size: 1.08rem;
+}
+
+.frontend-theme .post-login-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 1200;
+}
+
+.frontend-theme .post-login-modal.is-open {
+    display: block;
+}
+
+.frontend-theme .post-login-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(7, 10, 20, 0.72);
+}
+
+.frontend-theme .post-login-modal__dialog {
+    position: relative;
+    z-index: 1;
+    width: calc(100% - 24px);
+    max-width: 520px;
+    margin: 10vh auto 0;
+    padding: 22px 18px 18px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(75, 0, 142, 0.1);
+    background: var(--surface);
+    color: var(--color-coal);
+    box-shadow: var(--shadow-soft);
+}
+
+.frontend-theme .post-login-modal__dialog h2 {
+    margin: 0 0 10px;
+    font-size: 1.35rem;
+    color: var(--color-coal);
+}
+
+.frontend-theme .post-login-modal__dialog p {
+    margin: 0 0 16px;
+    color: var(--text-muted);
+}
+
+.frontend-theme .post-login-modal__actions {
+    display: grid;
+    gap: 10px;
+}
+
+.frontend-theme .post-login-modal__actions .button-link {
+    justify-content: center;
+}
+
+.frontend-theme .post-login-modal__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(75, 0, 142, 0.08);
+    color: var(--color-coal);
+    font-size: 24px;
+    line-height: 1;
+}
+
+body.has-post-login-modal {
+    overflow: hidden;
+}
+
+@media (min-width: 720px) {
+    .frontend-theme .post-login-modal__dialog {
+        margin-top: 12vh;
+        padding: 26px 22px 22px;
+    }
+
+    .frontend-theme .post-login-modal__actions {
+        grid-template-columns: 1fr 1fr;
+    }
+}

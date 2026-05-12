@@ -60,7 +60,11 @@ class AuthController extends Controller
         }
 
         Session::flash('success', 'Login realizado com sucesso.');
-        return $this->redirect(isset($result['redirect_to']) ? $result['redirect_to'] : '/meus-cursos');
+        if (isset($result['redirect_to']) && $result['redirect_to'] === '/') {
+            Session::flash('post_login_choice_modal', array('enabled' => true));
+        }
+
+        return $this->redirect(isset($result['redirect_to']) ? $result['redirect_to'] : '/');
     }
 
     public function logout(Request $request)
