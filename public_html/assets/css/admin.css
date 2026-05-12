@@ -1679,3 +1679,46 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* ---------- imagens nos módulos de frontend ---------- */
+.app-admin .module-image-box {
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 18px;
+    padding: 16px;
+    background: rgba(248, 250, 252, 0.72);
+    margin: 12px 0;
+}
+
+.app-admin .module-image-box h2 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+}
+
+.app-admin .module-image-box p {
+    margin: 0 0 12px;
+    color: #64748b;
+}
+
+.app-admin .module-image-box__preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.app-admin .module-image-box__preview img {
+    max-width: 220px;
+    max-height: 90px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    padding: 8px;
+}
+
+.app-admin .module-image-box__preview span {
+    font-size: .85rem;
+    color: #475569;
+    word-break: break-all;
+}

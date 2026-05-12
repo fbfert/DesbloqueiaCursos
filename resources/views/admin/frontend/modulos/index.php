@@ -16,16 +16,17 @@
     <section class="status-card">
         <div class="table-wrap">
             <table class="admin-table">
-                <thead><tr><th>Código</th><th>Nome</th><th>Posição</th><th>Tipo</th><th>Status</th><th>Ordem</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Código</th><th>Nome</th><th>Posição</th><th>Tipo</th><th>Imagem</th><th>Status</th><th>Ordem</th><th>Ações</th></tr></thead>
                 <tbody>
                 <?php if (empty($modulos)): ?>
-                    <tr><td colspan="7">Nenhum módulo cadastrado.</td></tr>
+                    <tr><td colspan="8">Nenhum módulo cadastrado.</td></tr>
                 <?php else: foreach ($modulos as $modulo): ?>
                     <tr>
                         <td><?php echo Helpers::e($modulo['codigo']); ?></td>
                         <td><?php echo Helpers::e($modulo['nome_admin']); ?></td>
                         <td><?php echo Helpers::e($modulo['posicao']); ?></td>
                         <td><?php echo Helpers::e($modulo['tipo']); ?></td>
+                        <td><?php echo !empty($modulo['imagem_caminho']) ? 'Sim' : '-'; ?></td>
                         <td><?php echo (int) $modulo['ativo'] === 1 ? 'Ativo' : 'Inativo'; ?></td>
                         <td><?php echo (int) $modulo['ordem']; ?></td>
                         <td><a href="/admin/frontend/modulos/editar?modulo_id=<?php echo (int) $modulo['id']; ?>">Editar</a> | <a href="#" onclick="return excluirModulo(<?php echo (int) $modulo['id']; ?>);">Lixeira</a></td>

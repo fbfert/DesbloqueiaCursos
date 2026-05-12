@@ -6,6 +6,26 @@ $buttonLabel = $isAuthenticated ? 'Minha Página' : 'Entrar';
 $buttonHref = $isAuthenticated ? '/minha-pagina' : '/login';
 $buttonLabelLower = function_exists('mb_strtolower') ? mb_strtolower($buttonLabel, 'UTF-8') : strtolower($buttonLabel);
 
+$brandModulo = isset($brandModulo) && is_array($brandModulo) ? $brandModulo : null;
+$brandTexto = $brandName;
+$brandImagem = null;
+$brandImagemAlt = $brandName;
+
+if ($brandModulo) {
+    if (!empty($brandModulo['titulo'])) {
+        $brandTexto = (string) $brandModulo['titulo'];
+    } elseif (!empty($brandModulo['subtitulo'])) {
+        $brandTexto = (string) $brandModulo['subtitulo'];
+    } elseif (!empty($brandModulo['conteudo'])) {
+        $brandTexto = (string) $brandModulo['conteudo'];
+    }
+
+    if (!empty($brandModulo['imagem_caminho'])) {
+        $brandImagem = (string) $brandModulo['imagem_caminho'];
+        $brandImagemAlt = !empty($brandModulo['imagem_alt']) ? (string) $brandModulo['imagem_alt'] : $brandTexto;
+    }
+}
+
 $desktopItens = array();
 foreach ($menuItens as $item) {
     $label = trim((string) ($item['rotulo'] ?? ''));
@@ -24,7 +44,13 @@ foreach ($menuItens as $item) {
 ?>
 <header class="public-header">
     <div class="site-header site-header__inner">
-        <a class="brand site-header__brand" href="/" aria-label="Página inicial do Polo Rainbow"><?php echo Helpers::e($brandName); ?></a>
+        <a class="brand site-header__brand<?php echo $brandImagem ? ' brand--image' : ' brand--text'; ?>" href="/" aria-label="Página inicial de <?php echo Helpers::e($brandTexto); ?>">
+            <?php if ($brandImagem): ?>
+                <img class="brand__image" src="<?php echo Helpers::e($brandImagem); ?>" alt="<?php echo Helpers::e($brandImagemAlt); ?>">
+            <?php else: ?>
+                <?php echo Helpers::e($brandTexto); ?>
+            <?php endif; ?>
+        </a>
 
         <nav class="site-header__nav" aria-label="Menu principal">
             <ul class="site-header__nav-list">

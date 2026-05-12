@@ -42,7 +42,7 @@ class FrontendModuloController extends Controller
     public function store(Request $request)
     {
         $input = $request->all();
-        $result = $this->service->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->service->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o módulo.'));
             Session::flash('old', $input);
@@ -69,7 +69,7 @@ class FrontendModuloController extends Controller
     {
         $moduloId = (int) $request->input('id', 0);
         $input = $request->all();
-        $result = $this->service->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->service->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar o módulo.'));
             Session::flash('old', $input);

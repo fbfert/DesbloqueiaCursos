@@ -644,3 +644,70 @@ label.checkbox input { width: auto; min-height: auto; }
     .hero h1 { font-size: 24px; }
     .button-link { min-height: 44px; padding: 10px 20px; font-size: 14px; }
 }
+
+/* ---------- capa: destaques agrupados ---------- */
+.home-destaques-card {
+    margin-top: 24px;
+}
+
+.home-destaques-card__header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--cor-branco);
+}
+
+.home-destaques-card .card-grid,
+.card-grid--inside {
+    padding: 20px 0 0;
+}
+
+.home-destaques-card__footer {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 20px;
+}
+
+/* ---------- módulos visuais ---------- */
+.brand--image {
+    line-height: 0;
+}
+
+.brand__image {
+    display: block;
+    width: auto;
+    max-width: 220px;
+    max-height: 46px;
+    object-fit: contain;
+}
+
+.module-public-image {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.module-public-image img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: 140px;
+    object-fit: contain;
+    border-radius: 14px;
+}
+
+.module-public-image--card img {
+    max-height: 72px;
+}
+
+.module-public-image--pre-footer img,
+.site-footer__image img {
+    max-height: 48px;
+    width: auto;
+    object-fit: contain;
+}
+
+.site-footer__image {
+    display: inline-flex;
+    align-items: center;
+}

@@ -4,6 +4,10 @@
         <div class="site-footer">
             <?php if (!empty($preFooterModulo)): ?>
                 <div class="pre-footer__content">
+                    <?php if (!empty($preFooterModulo['imagem_caminho'])): ?>
+                        <?php $altPreFooter = !empty($preFooterModulo['imagem_alt']) ? (string) $preFooterModulo['imagem_alt'] : (!empty($preFooterModulo['titulo']) ? (string) $preFooterModulo['titulo'] : 'Imagem do módulo'); ?>
+                        <div class="module-public-image module-public-image--pre-footer"><img src="<?php echo Helpers::e($preFooterModulo['imagem_caminho']); ?>" alt="<?php echo Helpers::e($altPreFooter); ?>"></div>
+                    <?php endif; ?>
                     <?php if (!empty($preFooterModulo['titulo'])): ?>
                         <strong class="pre-footer__title"><?php echo Helpers::e($preFooterModulo['titulo']); ?></strong>
                     <?php endif; ?>

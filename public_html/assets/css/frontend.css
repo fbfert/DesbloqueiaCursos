@@ -696,3 +696,47 @@ body.frontend-theme {
         gap: 20px;
     }
 }
+
+/* ---------- capa: módulos e destaques ---------- */
+.frontend-theme .home-destaques-card {
+    margin-top: 20px;
+    padding: 18px;
+}
+
+.frontend-theme .home-destaques-card__header h2 {
+    margin: 0;
+    color: var(--color-coal);
+    font-size: 1.35rem;
+}
+
+.frontend-theme .home-destaques-card .card-grid,
+.frontend-theme .card-grid--inside {
+    padding: 16px 0 0;
+}
+
+.frontend-theme .home-destaques-card__footer {
+    margin-top: 18px;
+}
+
+/* ---------- imagens em módulos públicos ---------- */
+.frontend-theme .site-header__brand.brand--image {
+    padding: 4px 0;
+}
+
+.frontend-theme .brand__image {
+    max-height: 48px;
+    max-width: 220px;
+}
+
+.frontend-theme .module-public-image--hero img {
+    max-height: 150px;
+}
+
+.frontend-theme .module-public-image--card img {
+    max-height: 76px;
+    border-radius: 18px;
+}
+
+.frontend-theme .site-footer {
+    gap: 12px;
+}

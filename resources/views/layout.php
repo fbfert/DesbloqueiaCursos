@@ -39,6 +39,7 @@ $preFooterMenuItems = array();
 $footerModulo = null;
 $footerText = '';
 $headerMenu = array('menu' => null, 'itens' => $publicMenu, 'from_fallback' => true);
+$brandModulo = null;
 
 if (!$isAdmin) {
     try {
@@ -46,6 +47,7 @@ if (!$isAdmin) {
         $frontendMenuService = new FrontendMenuService();
         $placeholderService = new PlaceholderService();
 
+        $brandModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('topo_site', 'topo_site');
         $preFooterModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('antes_rodape', 'antes_rodape');
         $preFooterMenu = $frontendMenuService->buscarMenuAtivoPorPosicao('antes_rodape', 'menu_antes_rodape');
         if ($preFooterMenu) {
@@ -58,6 +60,7 @@ if (!$isAdmin) {
             $footerText = $placeholderService->render((string) $footerModulo['conteudo']);
         }
     } catch (\Throwable $exception) {
+        $brandModulo = null;
         $preFooterModulo = null;
         $preFooterMenuItems = array();
         $footerModulo = null;

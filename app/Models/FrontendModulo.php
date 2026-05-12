@@ -77,9 +77,9 @@ class FrontendModulo
     {
         $stmt = Database::connection()->prepare(
             'INSERT INTO frontend_modulos
-             (codigo, nome_admin, titulo, subtitulo, conteudo, posicao, tipo, ativo, ordem, permite_html, observacoes_admin, criado_por, atualizado_por, excluido_por, justificativa_exclusao, created_at, updated_at, deleted_at)
+             (codigo, nome_admin, titulo, subtitulo, conteudo, imagem_caminho, imagem_alt, posicao, tipo, ativo, ordem, permite_html, observacoes_admin, criado_por, atualizado_por, excluido_por, justificativa_exclusao, created_at, updated_at, deleted_at)
              VALUES
-             (:codigo, :nome_admin, :titulo, :subtitulo, :conteudo, :posicao, :tipo, :ativo, :ordem, :permite_html, :observacoes_admin, :criado_por, :atualizado_por, NULL, NULL, NOW(), NOW(), NULL)'
+             (:codigo, :nome_admin, :titulo, :subtitulo, :conteudo, :imagem_caminho, :imagem_alt, :posicao, :tipo, :ativo, :ordem, :permite_html, :observacoes_admin, :criado_por, :atualizado_por, NULL, NULL, NOW(), NOW(), NULL)'
         );
         $stmt->execute(array(
             'codigo' => $data['codigo'],
@@ -87,6 +87,8 @@ class FrontendModulo
             'titulo' => $data['titulo'],
             'subtitulo' => $data['subtitulo'],
             'conteudo' => $data['conteudo'],
+            'imagem_caminho' => $data['imagem_caminho'],
+            'imagem_alt' => $data['imagem_alt'],
             'posicao' => $data['posicao'],
             'tipo' => $data['tipo'],
             'ativo' => (int) $data['ativo'],
@@ -108,6 +110,8 @@ class FrontendModulo
                  titulo = :titulo,
                  subtitulo = :subtitulo,
                  conteudo = :conteudo,
+                 imagem_caminho = :imagem_caminho,
+                 imagem_alt = :imagem_alt,
                  posicao = :posicao,
                  tipo = :tipo,
                  ativo = :ativo,
@@ -126,6 +130,8 @@ class FrontendModulo
             'titulo' => $data['titulo'],
             'subtitulo' => $data['subtitulo'],
             'conteudo' => $data['conteudo'],
+            'imagem_caminho' => $data['imagem_caminho'],
+            'imagem_alt' => $data['imagem_alt'],
             'posicao' => $data['posicao'],
             'tipo' => $data['tipo'],
             'ativo' => (int) $data['ativo'],
