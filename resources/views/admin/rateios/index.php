@@ -31,7 +31,7 @@
                 <?php endforeach; ?>
             </select>
         </label>
-        <button type="submit">Filtrar</button>
+        <button type="submit" class="button-link button-link--primary">Filtrar</button>
     </form>
 </section>
 

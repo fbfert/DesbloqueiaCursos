@@ -55,8 +55,6 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
         <dt>Pessoas vinculadas</dt><dd><?php echo (int) $curso['total_pessoas_vinculadas']; ?></dd>
     </dl>
 </section>
-</div>
-
 <section class="status-card" style="margin:16px 0;">
     <h2 style="margin:0 0 12px;">Descritivo do curso</h2>
     <?php if (!empty($curso['descricao_curta'])): ?>
@@ -189,3 +187,4 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
         </form>
     <?php endif; ?>
 </section>
+</div>

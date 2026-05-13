@@ -16,10 +16,8 @@ $value = function($key,$default='') use ($oldData,$permissao){ if(array_key_exis
             <label>Slug<input type="text" name="slug" value="<?php echo Helpers::e($value('slug')); ?>" required></label>
             <label>Nome<input type="text" name="nome" value="<?php echo Helpers::e($value('nome')); ?>" required></label>
             <label>Descrição<textarea name="descricao" rows="3"><?php echo Helpers::e($value('descricao')); ?></textarea></label>
-            <div class="cta-group">
-                <button type="submit">Salvar permissão</button>
-                <a class="button-link button-link--ghost" href="/admin/permissoes">Voltar</a>
-            </div>
+            <?php $cancelUrl = '/admin/permissoes'; ?>
+            <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>
 </section>

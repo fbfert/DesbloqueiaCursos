@@ -19,7 +19,7 @@ class EmailsController extends Controller
     public function index(Request $request)
     {
         return $this->view('admin/emails/index', array(
-            'title' => 'Emails transacionais',
+            'title' => 'E-mails',
             'configuracao' => $this->emailService->configuration(),
             'emails' => $this->emailService->listQueue(),
             'errors' => Session::pullFlash('errors', array()),
@@ -36,13 +36,14 @@ class EmailsController extends Controller
             $request->userAgent()
         );
 
+        $action = $this->submitAction($request);
         if (!$result['ok']) {
             Session::flash('errors', array('config' => isset($result['message']) ? $result['message'] : 'Não foi possivel salvar a configuracao.'));
             return $this->redirect('/admin/emails');
         }
 
         Session::flash('success', 'Configuracao SMTP atualizada.');
-        return $this->redirect('/admin/emails');
+        return $action === 'save_exit' ? $this->redirect('/admin/emails') : $this->redirect('/admin/emails');
     }
 }
 

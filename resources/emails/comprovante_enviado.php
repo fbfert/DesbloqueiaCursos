@@ -7,7 +7,7 @@
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;">
             <h1 style="margin:0 0 16px;">Comprovante enviado</h1>
             <p>Recebemos o comprovante do pedido <strong><?php echo Helpers::e(isset($pedido['codigo']) ? $pedido['codigo'] : ''); ?></strong>.</p>
-            <p>Você pode acompanhar a situação em <a href="<?php echo Helpers::url('meus-cursos'); ?>">Meus Cursos</a>.</p>
+            <p>Você pode acompanhar a situação em <a href="<?php echo Helpers::url('meus-cursos'); ?>">Meus cursos</a>.</p>
         </div>
     </div>
 </body>

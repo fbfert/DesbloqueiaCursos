@@ -40,11 +40,15 @@
             <?php endforeach; ?>
         </select>
     </label>
-    <button type="submit">Abrir contexto</button>
+    <div class="cta-group">
+        <button type="submit" class="button-link button-link--primary">Abrir contexto</button>
+        <a class="button-link button-link--ghost" href="/professor/academico">Cancelar</a>
+    </div>
 </form>
 
 <?php if (!empty($curso)): ?>
     <?php $configContext = !empty($turma) ? $turma : $curso; ?>
+    <?php $academicoCancelUrl = '/professor/academico?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : ''); ?>
     <section class="panel">
         <div class="panel-header"><div><h2>Configuração</h2></div></div>
         <form method="post" action="/professor/academico/configuracao" class="form-grid">
@@ -61,7 +65,11 @@
                     <option value="modulos" <?php echo !empty($configContext['progresso_base']) && $configContext['progresso_base'] === 'modulos' ? 'selected' : ''; ?>>Modulos</option>
                 </select>
             </label>
-            <button type="submit">Salvar configuracao</button>
+            <?php
+            $cancel_url = $academicoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
     </section>
 
@@ -72,21 +80,21 @@
                 <thead><tr><th>Nome</th><th>Progresso</th><th>Presenca</th><th>Nota</th><th>Apto</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($inscricoes as $inscricao): ?>
-                        <tr>
-                            <td><?php echo Helpers::e($inscricao['participante_nome']); ?></td>
-                            <td><?php echo Helpers::e(isset($inscricao['percentual_progresso']) ? $inscricao['percentual_progresso'] . '%' : '-'); ?></td>
-                            <td><?php echo Helpers::e(isset($inscricao['presenca_percentual']) ? $inscricao['presenca_percentual'] . '%' : '-'); ?></td>
-                            <td><?php echo Helpers::e(isset($inscricao['nota_final']) ? $inscricao['nota_final'] : '-'); ?></td>
-                            <td><?php echo !empty($inscricao['apto_certificado']) ? 'sim' : 'não'; ?></td>
-                            <td>
-                                <form method="post" action="/professor/academico/recalcular" class="form-grid">
-                                    <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-                                    <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-                                    <input type="hidden" name="inscricao_id" value="<?php echo (int) $inscricao['id']; ?>">
-                                    <button type="submit">Recalcular</button>
-                                </form>
-                            </td>
-                        </tr>
+                                <tr>
+                                    <td><?php echo Helpers::e($inscricao['participante_nome']); ?></td>
+                                    <td><?php echo Helpers::e(isset($inscricao['percentual_progresso']) ? $inscricao['percentual_progresso'] . '%' : '-'); ?></td>
+                                    <td><?php echo Helpers::e(isset($inscricao['presenca_percentual']) ? $inscricao['presenca_percentual'] . '%' : '-'); ?></td>
+                                    <td><?php echo Helpers::e(isset($inscricao['nota_final']) ? $inscricao['nota_final'] : '-'); ?></td>
+                                    <td><?php echo !empty($inscricao['apto_certificado']) ? 'sim' : 'não'; ?></td>
+                                    <td>
+                                        <form method="post" action="/professor/academico/recalcular" class="form-grid">
+                                            <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
+                                            <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
+                                            <input type="hidden" name="inscricao_id" value="<?php echo (int) $inscricao['id']; ?>">
+                                            <button type="submit" class="button-link button-link--ghost">Recalcular</button>
+                                        </form>
+                                    </td>
+                                </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -114,7 +122,11 @@
                 </select>
             </label>
             <label>Observação<textarea name="observacao" rows="2"></textarea></label>
-            <button type="submit">Salvar presenca</button>
+            <?php
+            $cancel_url = $academicoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
     </section>
 
@@ -130,7 +142,11 @@
             <label>Ordem<input type="number" name="ordem" value="1"></label>
             <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
             <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1"> Obrigatoria</label>
-            <button type="submit">Salvar avaliacao</button>
+            <?php
+            $cancel_url = $academicoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
     </section>
 
@@ -163,7 +179,11 @@
                 </select>
             </label>
             <label>Observação<textarea name="observacao" rows="2"></textarea></label>
-            <button type="submit">Salvar nota</button>
+            <?php
+            $cancel_url = $academicoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
     </section>
 <?php endif; ?>

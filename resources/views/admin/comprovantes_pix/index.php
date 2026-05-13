@@ -69,8 +69,8 @@
                         <td><?php echo htmlspecialchars((string) $comprovante['pedido_status'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars((string) $comprovante['motivo_reenvio'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
-                            <a href="/admin/pedidos/show?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>">Abrir pedido</a><br>
-                            <a href="/admin/pedidos/comprovante?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>&comprovante_id=<?php echo (int) $comprovante['id']; ?>" target="_blank" rel="noopener">Ver comprovante</a>
+                            <a class="button-link button-link--ghost" href="/admin/pedidos/show?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>">Abrir pedido</a><br>
+                            <a class="button-link button-link--ghost" href="/admin/pedidos/comprovante?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>&comprovante_id=<?php echo (int) $comprovante['id']; ?>" target="_blank" rel="noopener">Ver comprovante</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

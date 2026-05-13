@@ -46,7 +46,11 @@
                 <small>Faixa recomendada entre 1 e 12. O padrão é 6.</small>
             </label>
             <div class="admin-config-frontend__actions full">
-                <button type="submit">Salvar frontend</button>
+                <?php $cancelUrl = '/admin/configuracoes-globais/frontend'; ?>
+                <?php $showSaveAndNew = false; ?>
+                <?php $showSaveAndExit = false; ?>
+                <?php $showSaveAsCopy = false; ?>
+                <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
             </div>
         </form>
     </section>

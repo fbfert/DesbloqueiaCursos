@@ -42,7 +42,6 @@ class UsuariosController extends Controller
         return $this->view('admin/usuarios/form', array(
             'title' => 'Novo usuário',
             'action_url' => '/admin/usuarios/criar',
-            'submit_label' => 'Salvar usuário',
             'form_data' => $this->service->dadosUsuario(null),
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
@@ -53,9 +52,18 @@ class UsuariosController extends Controller
     public function store(Request $request)
     {
         $result = $this->service->salvarUsuario($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível salvar o usuário.'));
             Session::flash('old', $request->all());
+            return $this->redirect('/admin/usuarios/criar');
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Usuário salvo com sucesso.');
+            return $this->redirect('/admin/usuarios/editar?usuario_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Usuário salvo com sucesso. Você já pode criar um novo usuário.');
             return $this->redirect('/admin/usuarios/criar');
         }
         Session::flash('success', 'Usuário salvo com sucesso.');
@@ -68,7 +76,6 @@ class UsuariosController extends Controller
         return $this->view('admin/usuarios/form', array(
             'title' => 'Editar usuário',
             'action_url' => '/admin/usuarios/editar',
-            'submit_label' => 'Atualizar usuário',
             'form_data' => $this->service->dadosUsuario($usuarioId),
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
@@ -80,10 +87,19 @@ class UsuariosController extends Controller
     {
         $result = $this->service->salvarUsuario($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $usuarioId = (int) $request->input('id', 0);
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível atualizar o usuário.'));
             Session::flash('old', $request->all());
             return $this->redirect('/admin/usuarios/editar?usuario_id=' . $usuarioId);
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Usuário atualizado com sucesso.');
+            return $this->redirect('/admin/usuarios/editar?usuario_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Usuário atualizado com sucesso. Você já pode criar um novo usuário.');
+            return $this->redirect('/admin/usuarios/criar');
         }
         Session::flash('success', 'Usuário atualizado com sucesso.');
         return $this->redirect('/admin/usuarios');

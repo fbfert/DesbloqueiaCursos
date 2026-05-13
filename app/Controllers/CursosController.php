@@ -34,6 +34,10 @@ class CursosController extends Controller
     {
         $cursoId = (int) $request->query('curso_id', 0);
         $turmaId = (int) $request->query('turma_id', 0);
+        $cupomPromocional = trim((string) $request->query('cupom', ''));
+        if ($cupomPromocional !== '') {
+            Session::put('cupom_promocional_codigo', $cupomPromocional);
+        }
         $contexto = $this->cursoService->showPublic($cursoId, $turmaId ?: null);
 
         if (empty($contexto['curso'])) {

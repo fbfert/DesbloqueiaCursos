@@ -38,6 +38,10 @@
         <dt>Total</dt>
         <dd><?php echo Helpers::e($pedido['total']); ?></dd>
     </dl>
+    <div class="status-card" style="margin-top:12px;">
+        <strong>Chave Pix</strong>
+        <span>cpeducacursos@gmail.com</span>
+    </div>
 </section>
 
 <?php if (!empty($loggedIn)): ?>

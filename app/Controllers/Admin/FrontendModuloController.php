@@ -43,12 +43,20 @@ class FrontendModuloController extends Controller
     {
         $input = $request->all();
         $result = $this->service->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o módulo.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/frontend/modulos/criar');
         }
-
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Módulo salvo com sucesso.');
+            return $this->redirect('/admin/frontend/modulos/editar?modulo_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Módulo salvo com sucesso. Você já pode criar um novo módulo.');
+            return $this->redirect('/admin/frontend/modulos/criar');
+        }
         Session::flash('success', 'Módulo salvo com sucesso.');
         return $this->redirect('/admin/frontend/modulos');
     }
@@ -70,12 +78,20 @@ class FrontendModuloController extends Controller
         $moduloId = (int) $request->input('id', 0);
         $input = $request->all();
         $result = $this->service->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar o módulo.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/frontend/modulos/editar?modulo_id=' . $moduloId);
         }
-
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Módulo atualizado com sucesso.');
+            return $this->redirect('/admin/frontend/modulos/editar?modulo_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Módulo atualizado com sucesso. Você já pode criar um novo módulo.');
+            return $this->redirect('/admin/frontend/modulos/criar');
+        }
         Session::flash('success', 'Módulo atualizado com sucesso.');
         return $this->redirect('/admin/frontend/modulos');
     }

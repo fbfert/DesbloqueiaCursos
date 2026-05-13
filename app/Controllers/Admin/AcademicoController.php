@@ -46,40 +46,70 @@ class AcademicoController extends Controller
     public function salvarConfiguracao(Request $request)
     {
         $resultado = $this->aptidaoService->salvarConfiguracao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/admin/academico'
+        );
     }
 
     public function registrarPresenca(Request $request)
     {
         $resultado = $this->presencaService->registrar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/admin/academico'
+        );
     }
 
     public function salvarAvaliacao(Request $request)
     {
         $resultado = $this->avaliacaoService->salvarAvaliacao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/admin/academico'
+        );
     }
 
     public function salvarPergunta(Request $request)
     {
         $resultado = $this->avaliacaoService->salvarPergunta($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/admin/academico'
+        );
     }
 
     public function registrarNota(Request $request)
     {
         $resultado = $this->avaliacaoService->registrarNota($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/admin/academico'
+        );
     }
 
     public function recalcularAptidao(Request $request)
     {
         $resultado = $this->aptidaoService->recalcularInscricao((int) $request->input('inscricao_id', 0), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/admin/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/admin/academico'
+        );
     }
 
-    private function respondForm(array $resultado, $redirectTo)
+    private function respondForm(array $resultado, Request $request, $redirectTo, $exitUrl = null)
     {
         if (empty($resultado['ok'])) {
             Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
@@ -87,7 +117,7 @@ class AcademicoController extends Controller
             Session::flash('success', 'Registro salvo com sucesso.');
         }
 
-        return $this->redirect($redirectTo);
+        return $this->redirectAfterFormAction($request, $redirectTo, $exitUrl);
     }
 }
 

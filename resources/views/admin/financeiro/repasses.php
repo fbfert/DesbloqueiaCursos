@@ -23,8 +23,9 @@
                 <?php endforeach; ?>
             </select>
         </label>
-        <div>
-            <button type="submit">Filtrar</button>
+        <div class="cta-group full">
+            <button type="submit" class="button-link button-link--primary">Filtrar</button>
+            <a class="button-link button-link--ghost" href="/admin/financeiro/repasses">Limpar filtros</a>
         </div>
     </form>
 </section>
@@ -43,8 +44,9 @@
                 <?php endforeach; ?>
             </select>
         </label>
-        <div>
-            <button type="submit">Gerar repasses</button>
+        <div class="cta-group full">
+            <button type="submit" class="button-link button-link--primary">Gerar repasses</button>
+            <a class="button-link button-link--ghost" href="/admin/financeiro/repasses">Cancelar</a>
         </div>
     </form>
 </section>
@@ -118,9 +120,9 @@
                                         Observação
                                         <textarea name="observacao" rows="2"></textarea>
                                     </label>
-                                    <div class="full">
-                                        <button type="submit">Registrar documento</button>
-                                    </div>
+                                        <div class="full cta-group">
+                                            <button type="submit" class="button-link button-link--primary">Registrar documento</button>
+                                        </div>
                                 </form>
 
                                 <form method="post" action="/admin/financeiro/pagamento" enctype="multipart/form-data" class="form-grid">
@@ -152,8 +154,8 @@
                                         Comprovante
                                         <input type="file" name="comprovante">
                                     </label>
-                                    <div class="full">
-                                        <button type="submit">Registrar pagamento</button>
+                                    <div class="full cta-group">
+                                        <button type="submit" class="button-link button-link--primary">Registrar pagamento</button>
                                     </div>
                                 </form>
                             </div>

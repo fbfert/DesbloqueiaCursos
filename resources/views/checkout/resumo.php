@@ -74,7 +74,7 @@
                 <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
                 <label>
                     Codigo do cupom
-                    <input type="text" name="cupom_codigo" placeholder="Codigo do cupom">
+                    <input type="text" name="cupom_codigo" placeholder="Codigo do cupom" value="<?php echo Helpers::e((string) ($cupomPromocional ?? '')); ?>">
                 </label>
                 <button type="submit">Aplicar cupom</button>
             </form>
@@ -87,6 +87,10 @@
 <section class="checkout-grid">
     <article class="checkout-panel">
         <h2>Comprovante PIX</h2>
+        <div class="status-card" style="margin-bottom:12px;">
+            <strong>Chave Pix</strong>
+            <span>cpeducacursos@gmail.com</span>
+        </div>
         <?php if ($canSeePix): ?>
             <?php if (!empty($pedido['comprovante_atual'])): ?>
                 <p class="muted">Status atual: <?php echo Helpers::e($pedido['comprovante_atual']['status']); ?></p>

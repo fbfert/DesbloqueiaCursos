@@ -69,21 +69,21 @@
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
             <label>Observação</label>
             <textarea name="observacao" rows="3"></textarea>
-            <button type="submit">Aprovar pedido</button>
+            <button type="submit" class="button-link button-link--primary">Aprovar pedido</button>
         </form>
 
         <form method="post" action="/admin/pedidos/marcar-pendencia" class="admin-form">
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
             <label>Observação</label>
             <textarea name="observacao" rows="3"></textarea>
-            <button type="submit">Marcar pendência</button>
+            <button type="submit" class="button-link button-link--primary">Marcar pendência</button>
         </form>
 
         <form method="post" action="/admin/pedidos/solicitar-reenvio" class="admin-form">
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
             <label>Observação</label>
             <textarea name="observacao" rows="3"></textarea>
-            <button type="submit">Solicitar reenvio PIX</button>
+            <button type="submit" class="button-link button-link--primary">Solicitar reenvio PIX</button>
         </form>
     </div>
 </section>

@@ -192,12 +192,8 @@ if ($alunoSelecionado) {
                 <small class="muted">Avisos com status <strong>Enviado</strong> aparecem para os alunos automaticamente dentro do período configurado.</small>
             </div>
 
-            <div class="cta-group" style="margin-top:16px; flex-wrap:wrap;">
-                <button type="submit" name="submit_action" value="save_stay">Salvar</button>
-                <button type="submit" name="submit_action" value="save_exit">Salvar e voltar</button>
-                <button type="submit" name="submit_action" value="save_new">Salvar e novo</button>
-                <a class="button-link button-link--ghost" href="/admin/avisos">Voltar</a>
-            </div>
+            <?php $cancelUrl = '/admin/avisos'; ?>
+            <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>
 </section>

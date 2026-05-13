@@ -46,13 +46,22 @@ class RateiosController extends Controller
     public function store(Request $request)
     {
         $result = $this->rateioService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? (array) $result['errors'] : array('Não foi possivel salvar o rateio.'));
+            Session::flash('old', $request->all());
             return $this->redirect('/admin/rateios/criar?apuracao_id=' . (int) $request->input('apuracao_id', 0));
         }
-
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Rateio salvo com sucesso.');
+            return $this->redirect('/admin/rateios/editar?rateio_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Rateio salvo com sucesso. Você já pode criar um novo rateio.');
+            return $this->redirect('/admin/rateios/criar?apuracao_id=' . (int) $request->input('apuracao_id', 0));
+        }
         Session::flash('success', 'Rateio salvo com sucesso.');
-        return $this->redirect('/admin/rateios/show?rateio_id=' . (int) $result['id']);
+        return $this->redirect('/admin/rateios');
     }
 
     public function edit(Request $request)
@@ -79,14 +88,24 @@ class RateiosController extends Controller
     {
         $result = $this->rateioService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $rateioId = (int) $request->input('id', 0);
+        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? (array) $result['errors'] : array('Não foi possivel atualizar o rateio.'));
+            Session::flash('old', $request->all());
             return $this->redirect('/admin/rateios/editar?rateio_id=' . $rateioId);
         }
 
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Rateio atualizado com sucesso.');
+            return $this->redirect('/admin/rateios/editar?rateio_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Rateio atualizado com sucesso. Você já pode criar um novo rateio.');
+            return $this->redirect('/admin/rateios/criar?apuracao_id=' . (int) $request->input('apuracao_id', 0));
+        }
         Session::flash('success', 'Rateio atualizado com sucesso.');
-        return $this->redirect('/admin/rateios/show?rateio_id=' . (int) $result['id']);
+        return $this->redirect('/admin/rateios');
     }
 
     public function show(Request $request)

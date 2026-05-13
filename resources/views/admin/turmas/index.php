@@ -31,9 +31,10 @@ $renderAcoes = function (array $turma, $canManage) {
 
     if ($canManage && empty($turma['deleted_at'])) {
         $html .= '<a href="/admin/turmas/editar?turma_id=' . (int) $turma['id'] . '">Editar</a>';
-        $html .= '<form method="post" action="/admin/turmas/status" class="admin-form">';
+        $html .= '<form method="post" action="/admin/turmas/status" class="admin-form js-turma-status-form">';
         $html .= '<input type="hidden" name="id" value="' . (int) $turma['id'] . '">';
         $html .= '<input type="hidden" name="status" value="' . ($turma['status'] === 'aberta' ? 'encerrada' : 'aberta') . '">';
+        $html .= '<input type="hidden" name="justificativa" value="">';
         $html .= '<button type="submit">' . ($turma['status'] === 'aberta' ? 'Encerrar' : 'Abrir') . '</button>';
         $html .= '</form>';
     }
@@ -214,8 +215,8 @@ $renderAcoes = function (array $turma, $canManage) {
                                         <td><?php echo Helpers::e($turma['curso_modalidade']); ?></td>
                                         <td><?php echo Helpers::e((string) $turma['data_inicio']); ?></td>
                                         <td><?php echo Helpers::e((string) $turma['data_fim']); ?></td>
-                                        <td><?php echo Helpers::e($formatStatus('excluida')); ?></td>
-                                        <td><?php echo $renderAcoes($turma, $canManage); ?></td>
+                            <td><?php echo Helpers::e($formatStatus('excluida')); ?></td>
+                            <td><?php echo $renderAcoes($turma, $canManage); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -226,3 +227,37 @@ $renderAcoes = function (array $turma, $canManage) {
         </section>
     <?php endif; ?>
 </div>
+
+<script>
+(function () {
+    var forms = document.querySelectorAll('.js-turma-status-form');
+    forms.forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            var statusInput = form.querySelector('input[name="status"]');
+            var justificativaInput = form.querySelector('input[name="justificativa"]');
+
+            if (!statusInput || statusInput.value !== 'encerrada') {
+                return;
+            }
+
+            event.preventDefault();
+            var motivo = window.prompt('Informe o motivo do encerramento da turma:');
+            if (motivo === null) {
+                return;
+            }
+
+            motivo = motivo.trim();
+            if (!motivo) {
+                window.alert('O motivo do encerramento é obrigatório.');
+                return;
+            }
+
+            if (justificativaInput) {
+                justificativaInput.value = motivo;
+            }
+
+            form.submit();
+        });
+    });
+})();
+</script>

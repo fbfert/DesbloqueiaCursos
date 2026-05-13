@@ -23,7 +23,8 @@ $value = function ($field, $default = '') use ($old, $menu) {
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) $value('ordem', 0)); ?>"></label>
             <label>Observações administrativas<textarea name="observacoes_admin" rows="4"><?php echo Helpers::e($value('observacoes_admin')); ?></textarea></label>
             <label><input type="checkbox" name="ativo" value="1" <?php echo (int) $value('ativo', 1) === 1 ? 'checked' : ''; ?>> Ativo</label>
-            <div class="cta-group"><button type="submit">Salvar</button><a class="button-link button-link--ghost" href="/admin/frontend/menus">Voltar</a></div>
+            <?php $cancelUrl = '/admin/frontend/menus'; ?>
+            <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>
 </section>

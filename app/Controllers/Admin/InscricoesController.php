@@ -33,6 +33,7 @@ class InscricoesController extends Controller
         $inscricaoId = (int) $request->input('inscricao_id', 0);
         $novoStatus = trim((string) $request->input('status', ''));
         $observacao = trim((string) $request->input('observacao', ''));
+        $action = $this->submitAction($request);
 
         $result = $this->inscricaoService->alterarStatus(
             $inscricaoId,
@@ -49,7 +50,7 @@ class InscricoesController extends Controller
         }
 
         Session::flash('success', 'Status da inscricao atualizado.');
-        return $this->redirect('/admin/inscricoes');
+        return $action === 'save_exit' ? $this->redirect('/admin/inscricoes') : $this->redirect('/admin/inscricoes');
     }
 }
 

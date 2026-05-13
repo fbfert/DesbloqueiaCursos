@@ -118,7 +118,12 @@ class AreaCursoController extends Controller
         }
 
         $resultado = $this->areaCursoService->salvarInstrução($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/area-curso'
+        );
     }
 
     public function salvarModulo(Request $request)
@@ -129,7 +134,12 @@ class AreaCursoController extends Controller
         }
 
         $resultado = $this->moduloService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/area-curso'
+        );
     }
 
     public function salvarAula(Request $request)
@@ -140,7 +150,12 @@ class AreaCursoController extends Controller
         }
 
         $resultado = $this->aulaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/area-curso'
+        );
     }
 
     public function salvarMaterial(Request $request)
@@ -151,7 +166,12 @@ class AreaCursoController extends Controller
         }
 
         $resultado = $this->materialService->salvar($request->all(), isset($_FILES['arquivo']) ? $_FILES['arquivo'] : null, Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/area-curso'
+        );
     }
 
     public function salvarAtividade(Request $request)
@@ -162,7 +182,12 @@ class AreaCursoController extends Controller
         }
 
         $resultado = $this->atividadeService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0) . '&aba=atividades');
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0) . '&aba=atividades',
+            '/professor/area-curso'
+        );
     }
 
     public function alterarStatusAtividade(Request $request)
@@ -184,7 +209,12 @@ class AreaCursoController extends Controller
         }
 
         $resultado = $this->areaCursoService->salvarLink($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/area-curso'
+        );
     }
 
     public function excluir(Request $request)
@@ -203,7 +233,12 @@ class AreaCursoController extends Controller
             $request->userAgent()
         );
 
-        return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/area-curso'
+        );
     }
 
     public function corrigirEntrega(Request $request)
@@ -214,7 +249,12 @@ class AreaCursoController extends Controller
         }
 
         $resultado = $this->atividadeService->corrigirEntrega($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0) . '&aba=atividades&atividade_id=' . (int) $request->input('atividade_id', 0) . '&entrega_id=' . (int) $request->input('entrega_id', 0) . '&entrega_status=' . urlencode((string) $request->input('entrega_status', '')));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0) . '&aba=atividades&atividade_id=' . (int) $request->input('atividade_id', 0) . '&entrega_id=' . (int) $request->input('entrega_id', 0) . '&entrega_status=' . urlencode((string) $request->input('entrega_status', '')),
+            '/professor/area-curso'
+        );
     }
 
     public function devolverEntrega(Request $request)
@@ -225,7 +265,12 @@ class AreaCursoController extends Controller
         }
 
         $resultado = $this->atividadeService->devolverEntrega($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0) . '&aba=atividades&atividade_id=' . (int) $request->input('atividade_id', 0) . '&entrega_id=' . (int) $request->input('entrega_id', 0) . '&entrega_status=' . urlencode((string) $request->input('entrega_status', '')));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0) . '&aba=atividades&atividade_id=' . (int) $request->input('atividade_id', 0) . '&entrega_id=' . (int) $request->input('entrega_id', 0) . '&entrega_status=' . urlencode((string) $request->input('entrega_status', '')),
+            '/professor/area-curso'
+        );
     }
 
     public function participantes(Request $request)
@@ -305,7 +350,7 @@ class AreaCursoController extends Controller
         ));
     }
 
-    private function respondForm(array $resultado, $redirectTo)
+    private function respondForm(array $resultado, Request $request, $redirectTo, $exitUrl = null)
     {
         if (empty($resultado['ok'])) {
             Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
@@ -313,7 +358,7 @@ class AreaCursoController extends Controller
             Session::flash('success', 'Registro salvo com sucesso.');
         }
 
-        return $this->redirect($redirectTo);
+        return $this->redirectAfterFormAction($request, $redirectTo, $exitUrl);
     }
 
     private function contextoAutorizado($cursoId, $turmaId)

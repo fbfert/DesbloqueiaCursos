@@ -52,7 +52,8 @@ $imagemAtual = (string) $value('imagem_caminho', '');
             <label>Observações administrativas<textarea name="observacoes_admin" rows="4"><?php echo Helpers::e($value('observacoes_admin')); ?></textarea></label>
             <label class="checkbox"><input type="checkbox" name="ativo" value="1" <?php echo (int) $value('ativo', 1) === 1 ? 'checked' : ''; ?>> Ativo</label>
             <label class="checkbox"><input type="checkbox" name="permite_html" value="1" <?php echo (int) $value('permite_html', 0) === 1 ? 'checked' : ''; ?>> Permitir HTML (desabilitado por segurança)</label>
-            <div class="cta-group"><button type="submit">Salvar</button><a class="button-link button-link--ghost" href="/admin/frontend/modulos">Voltar</a></div>
+            <?php $cancelUrl = '/admin/frontend/modulos'; ?>
+            <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>
 </section>

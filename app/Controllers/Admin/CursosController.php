@@ -35,7 +35,6 @@ class CursosController extends Controller
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
             'action_url' => '/admin/cursos/criar',
-            'submit_label' => 'Salvar curso/evento',
             'form_data' => $this->cursoService->formData(),
         ));
     }
@@ -43,9 +42,21 @@ class CursosController extends Controller
     public function store(Request $request)
     {
         $result = $this->cursoService->salvar($request->all(), isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o curso/evento.'));
+            Session::flash('old', $request->all());
+            return $this->redirect('/admin/cursos/criar');
+        }
+
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Curso/evento salvo com sucesso.');
+            return $this->redirect('/admin/cursos/editar?curso_id=' . (int) $result['id']);
+        }
+
+        if ($action === 'save_new') {
+            Session::flash('success', 'Curso/evento salvo com sucesso. Você já pode criar um novo curso/evento.');
             return $this->redirect('/admin/cursos/criar');
         }
 
@@ -62,7 +73,6 @@ class CursosController extends Controller
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
             'action_url' => '/admin/cursos/editar',
-            'submit_label' => 'Atualizar curso/evento',
             'form_data' => $this->cursoService->formData($cursoId),
         ));
     }
@@ -71,10 +81,22 @@ class CursosController extends Controller
     {
         $result = $this->cursoService->salvar($request->all(), isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $cursoId = (int) $request->input('id', 0);
+        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar o curso/evento.'));
+            Session::flash('old', $request->all());
             return $this->redirect('/admin/cursos/editar?curso_id=' . $cursoId);
+        }
+
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Curso/evento atualizado com sucesso.');
+            return $this->redirect('/admin/cursos/editar?curso_id=' . (int) $result['id']);
+        }
+
+        if ($action === 'save_new') {
+            Session::flash('success', 'Curso/evento atualizado com sucesso. Você já pode criar um novo curso/evento.');
+            return $this->redirect('/admin/cursos/criar');
         }
 
         Session::flash('success', 'Curso/evento atualizado com sucesso.');

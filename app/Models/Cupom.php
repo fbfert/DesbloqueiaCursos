@@ -41,33 +41,64 @@ class Cupom
 
     public function allForBackoffice()
     {
-        $stmt = Database::connection()->query(
-            'SELECT c.*,
-                    COALESCE(uu.total_usos, 0) AS total_usos,
-                    COALESCE(uu.total_descontos, 0) AS total_descontos
-             FROM cupons c
-             LEFT JOIN (
-                 SELECT cupom_id,
-                        COUNT(*) AS total_usos,
-                        COALESCE(SUM(valor_desconto), 0) AS total_descontos
-                 FROM cupons_usos
-                 GROUP BY cupom_id
-             ) uu ON uu.cupom_id = c.id
-             WHERE c.deleted_at IS NULL
-             ORDER BY c.id DESC'
+        try {
+            $stmt = Database::connection()->query(
+                'SELECT c.*,
+                        COALESCE(cc.total_cursos, 0) AS total_cursos,
+                        COALESCE(uu.total_usos, 0) AS total_usos,
+                        COALESCE(uu.total_descontos, 0) AS total_descontos
+                 FROM cupons c
+                 LEFT JOIN (
+                     SELECT cupom_id, COUNT(*) AS total_cursos
+                     FROM cupom_cursos
+                     GROUP BY cupom_id
+                 ) cc ON cc.cupom_id = c.id
+                 LEFT JOIN (
+                     SELECT cupom_id,
+                            COUNT(*) AS total_usos,
+                            COALESCE(SUM(valor_desconto), 0) AS total_descontos
+                     FROM cupons_usos
+                     GROUP BY cupom_id
+                 ) uu ON uu.cupom_id = c.id
+                 WHERE c.deleted_at IS NULL
+                 ORDER BY c.id DESC'
+            );
+
+            if (!$stmt) {
+                return array();
+            }
+
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return is_array($rows) ? $rows : array();
+        } catch (\Throwable $throwable) {
+            return array();
+        }
+    }
+
+    public function updateStatus($cupomId, $status)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE cupons
+             SET status = :status,
+                 updated_at = NOW()
+             WHERE id = :id
+               AND deleted_at IS NULL'
         );
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute(array(
+            'status' => $status,
+            'id' => (int) $cupomId,
+        ));
     }
 
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(
             'INSERT INTO cupons
-             (codigo, nome, descricao, tipo, desconto_tipo, valor_desconto, quantidade_minima_vagas, limite_total_usos,
+             (codigo, nome, descricao, escopo, tipo, desconto_tipo, valor_desconto, quantidade_minima_vagas, limite_total_usos,
               limite_por_usuario, data_inicio, data_fim, status, link_promocional, created_at, updated_at, deleted_at)
              VALUES
-             (:codigo, :nome, :descricao, :tipo, :desconto_tipo, :valor_desconto, :quantidade_minima_vagas, :limite_total_usos,
+             (:codigo, :nome, :descricao, :escopo, :tipo, :desconto_tipo, :valor_desconto, :quantidade_minima_vagas, :limite_total_usos,
               :limite_por_usuario, :data_inicio, :data_fim, :status, :link_promocional, NOW(), NOW(), NULL)'
         );
 
@@ -75,6 +106,7 @@ class Cupom
             'codigo' => $data['codigo'],
             'nome' => $data['nome'],
             'descricao' => isset($data['descricao']) ? $data['descricao'] : null,
+            'escopo' => isset($data['escopo']) ? $data['escopo'] : 'todo_site',
             'tipo' => isset($data['tipo']) ? $data['tipo'] : 'publico',
             'desconto_tipo' => isset($data['desconto_tipo']) ? $data['desconto_tipo'] : 'percentual',
             'valor_desconto' => isset($data['valor_desconto']) ? $data['valor_desconto'] : 0,
@@ -97,6 +129,7 @@ class Cupom
              SET codigo = :codigo,
                  nome = :nome,
                  descricao = :descricao,
+                 escopo = :escopo,
                  tipo = :tipo,
                  desconto_tipo = :desconto_tipo,
                  valor_desconto = :valor_desconto,
@@ -115,6 +148,7 @@ class Cupom
             'codigo' => $data['codigo'],
             'nome' => $data['nome'],
             'descricao' => isset($data['descricao']) ? $data['descricao'] : null,
+            'escopo' => isset($data['escopo']) ? $data['escopo'] : 'todo_site',
             'tipo' => isset($data['tipo']) ? $data['tipo'] : 'publico',
             'desconto_tipo' => isset($data['desconto_tipo']) ? $data['desconto_tipo'] : 'percentual',
             'valor_desconto' => isset($data['valor_desconto']) ? $data['valor_desconto'] : 0,

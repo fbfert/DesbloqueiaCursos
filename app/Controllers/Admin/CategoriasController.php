@@ -35,7 +35,6 @@ class CategoriasController extends Controller
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
             'action_url' => '/admin/categorias/criar',
-            'submit_label' => 'Salvar categoria',
             'form_data' => $this->categoriaService->formData(),
         ));
     }
@@ -43,9 +42,21 @@ class CategoriasController extends Controller
     public function store(Request $request)
     {
         $result = $this->categoriaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar a categoria.'));
+            Session::flash('old', $request->all());
+            return $this->redirect('/admin/categorias/criar');
+        }
+
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Categoria salva com sucesso.');
+            return $this->redirect('/admin/categorias/editar?categoria_id=' . (int) $result['id']);
+        }
+
+        if ($action === 'save_new') {
+            Session::flash('success', 'Categoria salva com sucesso. Você já pode criar uma nova categoria.');
             return $this->redirect('/admin/categorias/criar');
         }
 
@@ -62,7 +73,6 @@ class CategoriasController extends Controller
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
             'action_url' => '/admin/categorias/editar',
-            'submit_label' => 'Atualizar categoria',
             'form_data' => $this->categoriaService->formData($categoriaId),
         ));
     }
@@ -71,10 +81,22 @@ class CategoriasController extends Controller
     {
         $result = $this->categoriaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $categoriaId = (int) $request->input('id', 0);
+        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar a categoria.'));
+            Session::flash('old', $request->all());
             return $this->redirect('/admin/categorias/editar?categoria_id=' . $categoriaId);
+        }
+
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Categoria atualizada com sucesso.');
+            return $this->redirect('/admin/categorias/editar?categoria_id=' . (int) $result['id']);
+        }
+
+        if ($action === 'save_new') {
+            Session::flash('success', 'Categoria atualizada com sucesso. Você já pode criar uma nova categoria.');
+            return $this->redirect('/admin/categorias/criar');
         }
 
         Session::flash('success', 'Categoria atualizada com sucesso.');

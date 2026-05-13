@@ -106,7 +106,7 @@ foreach ($avisos as $avisoResumo) {
                 </label>
             </div>
             <div class="cta-group">
-                <button type="submit">Filtrar</button>
+                <button type="submit" class="button-link button-link--primary">Filtrar</button>
                 <a class="button-link button-link--ghost" href="/admin/avisos">Limpar filtros</a>
             </div>
         </form>
@@ -171,7 +171,7 @@ foreach ($avisos as $avisoResumo) {
                                 <form method="post" action="/admin/avisos/enviar" class="admin-form" style="display:inline;">
                                     <?php echo $csrfField; ?>
                                     <input type="hidden" name="id" value="<?php echo (int) $aviso['id']; ?>">
-                                    <button type="submit" class="button-link" onclick="return confirm('Enviar este aviso agora?');"><?php echo $aviso['status'] === 'enviado' ? 'Reenviar' : 'Enviar'; ?></button>
+                                    <button type="submit" class="button-link button-link--primary" onclick="return confirm('Enviar este aviso agora?');"><?php echo $aviso['status'] === 'enviado' ? 'Reenviar' : 'Enviar'; ?></button>
                                 </form>
                                 <form method="post" action="/admin/avisos/excluir" class="admin-form" style="display:inline;">
                                     <?php echo $csrfField; ?>

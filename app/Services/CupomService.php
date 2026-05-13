@@ -6,9 +6,11 @@ use App\Core\Database;
 use App\Core\Env;
 use App\Core\Logger;
 use App\Models\Cupom;
+use App\Models\CupomCurso;
 use App\Models\CupomHistorico;
 use App\Models\CupomRelacao;
 use App\Models\CupomUso;
+use App\Models\CursoEvento;
 use App\Models\Pedido;
 use App\Models\PedidoCupom;
 use App\Models\PedidoItem;
@@ -17,9 +19,11 @@ use Exception;
 class CupomService
 {
     private $cupomModel;
+    private $cupomCursoModel;
     private $cupomRelacaoModel;
     private $cupomUsoModel;
     private $cupomHistoricoModel;
+    private $cursoModel;
     private $pedidoCupomModel;
     private $pedidoModel;
     private $pedidoItemModel;
@@ -30,9 +34,11 @@ class CupomService
     public function __construct()
     {
         $this->cupomModel = new Cupom();
+        $this->cupomCursoModel = new CupomCurso();
         $this->cupomRelacaoModel = new CupomRelacao();
         $this->cupomUsoModel = new CupomUso();
         $this->cupomHistoricoModel = new CupomHistorico();
+        $this->cursoModel = new CursoEvento();
         $this->pedidoCupomModel = new PedidoCupom();
         $this->pedidoModel = new Pedido();
         $this->pedidoItemModel = new PedidoItem();
@@ -43,14 +49,45 @@ class CupomService
 
     public function listarBackoffice($usuarioId)
     {
-        $canSee = $this->rbacService->userHasPermission($usuarioId, 'cupons.ver')
-            || $this->rbacService->userHasPermission($usuarioId, 'cupons.gerenciar');
+        try {
+            $canSee = $this->rbacService->userHasPermission($usuarioId, 'cupons.ver')
+                || $this->rbacService->userHasPermission($usuarioId, 'cupons.gerenciar');
 
-        if (!$canSee) {
-            return array('cupons' => array());
+            if (!$canSee) {
+                return array(
+                    'cupons' => array(),
+                    'cupons_inativos' => array(),
+                );
+            }
+
+            $todos = $this->cupomModel->allForBackoffice();
+            $cuponsAtivos = array();
+            $cuponsInativos = array();
+
+            foreach ($todos as $cupom) {
+                if (isset($cupom['status']) && $cupom['status'] === 'inativo') {
+                    $cuponsInativos[] = $cupom;
+                    continue;
+                }
+
+                $cuponsAtivos[] = $cupom;
+            }
+
+            return array(
+                'cupons' => $cuponsAtivos,
+                'cupons_inativos' => $cuponsInativos,
+            );
+        } catch (\Throwable $throwable) {
+            Logger::error('cupom.listar_backoffice_falhou', array(
+                'message' => $throwable->getMessage(),
+                'usuario_id' => $usuarioId,
+            ));
+
+            return array(
+                'cupons' => array(),
+                'cupons_inativos' => array(),
+            );
         }
-
-        return array('cupons' => $this->cupomModel->allForBackoffice());
     }
 
     public function formData($cupomId = null)
@@ -58,6 +95,8 @@ class CupomService
         if (!$cupomId) {
             return array(
                 'cupom' => null,
+                'cursos_disponiveis' => $this->loadCursosDisponiveis(),
+                'cupom_cursos' => array(),
                 'relacoes' => array(),
                 'historico' => array(),
                 'usos' => array(),
@@ -69,6 +108,8 @@ class CupomService
         if (!$cupom) {
             return array(
                 'cupom' => null,
+                'cursos_disponiveis' => $this->loadCursosDisponiveis(),
+                'cupom_cursos' => array(),
                 'relacoes' => array(),
                 'historico' => array(),
                 'usos' => array(),
@@ -77,9 +118,12 @@ class CupomService
         }
 
         $resumo = $this->cupomUsoModel->countByCupom($cupomId);
+        $cupom = $this->normalizeCupomPromocionalLink($cupom);
 
         return array(
             'cupom' => $cupom,
+            'cursos_disponiveis' => $this->loadCursosDisponiveis(),
+            'cupom_cursos' => $this->cupomCursoModel->forCupom($cupomId),
             'relacoes' => $this->cupomRelacaoModel->forCupom($cupomId),
             'historico' => $this->cupomHistoricoModel->forCupom($cupomId),
             'usos' => $this->cupomUsoModel->forCupom($cupomId),
@@ -106,10 +150,17 @@ class CupomService
         $dataInicio = $this->nullableDateTime(isset($data['data_inicio']) ? $data['data_inicio'] : null);
         $dataFim = $this->nullableDateTime(isset($data['data_fim']) ? $data['data_fim'] : null);
         $status = isset($data['status']) ? trim((string) $data['status']) : 'rascunho';
+        $escopo = $this->normalizeEscopo(isset($data['escopo']) ? $data['escopo'] : 'todo_site');
         $descricao = isset($data['descricao']) ? trim((string) $data['descricao']) : null;
         $linkPromocional = isset($data['link_promocional']) ? trim((string) $data['link_promocional']) : null;
         if ($linkPromocional === '') {
             $linkPromocional = null;
+        }
+        $cursosSelecionados = $this->normalizeCourseIds(isset($data['cupom_curso_ids']) ? $data['cupom_curso_ids'] : array());
+        $cursosDisponiveis = $this->loadCursosDisponiveis();
+        $cursosDisponiveisMap = array();
+        foreach ($cursosDisponiveis as $curso) {
+            $cursosDisponiveisMap[(int) $curso['id']] = $curso;
         }
 
         $errors = array();
@@ -134,6 +185,22 @@ class CupomService
         if (!in_array($status, array('rascunho', 'ativo', 'inativo', 'expirado'), true)) {
             $errors[] = 'Status do cupom invalido.';
         }
+        if (!in_array($escopo, array('todo_site', 'cursos_especificos'), true)) {
+            $errors[] = 'Validade do cupom invalida.';
+        }
+
+        if ($escopo === 'cursos_especificos') {
+            if (empty($cursosSelecionados)) {
+                $errors[] = 'Selecione ao menos um curso para este cupom.';
+            } else {
+                foreach ($cursosSelecionados as $cursoIdSelecionado) {
+                    if (!isset($cursosDisponiveisMap[$cursoIdSelecionado])) {
+                        $errors[] = 'Um dos cursos selecionados nao esta disponivel para este cupom.';
+                        break;
+                    }
+                }
+            }
+        }
 
         $cupomExistente = $this->cupomModel->findByCodigo($codigo);
         if ($cupomExistente && (!$cupomId || (int) $cupomExistente['id'] !== $cupomId)) {
@@ -153,6 +220,7 @@ class CupomService
             'codigo' => $codigo,
             'nome' => $nome,
             'descricao' => $descricao,
+            'escopo' => $escopo,
             'tipo' => $tipo,
             'desconto_tipo' => $descontoTipo,
             'valor_desconto' => $valorDesconto,
@@ -162,7 +230,7 @@ class CupomService
             'data_inicio' => $dataInicio,
             'data_fim' => $dataFim,
             'status' => $status,
-            'link_promocional' => $linkPromocional ?: $this->generatePromotionalLink($codigo),
+            'link_promocional' => $linkPromocional ?: $this->generatePromotionalLink($codigo, $escopo, $cursosSelecionados),
         );
 
         $pdo = Database::connection();
@@ -178,12 +246,13 @@ class CupomService
             }
 
             $this->cupomRelacaoModel->sync($cupomId, $relacoes);
+            $this->cupomCursoModel->sync($cupomId, $escopo === 'cursos_especificos' ? $cursosSelecionados : array());
 
             $this->cupomHistoricoModel->create(
                 $cupomId,
                 $acao,
                 $acao === 'cupom.criado' ? 'Criacao do cupom' : 'Atualizacao do cupom',
-                array('cupom' => $payload, 'relacoes' => $relacoes),
+                array('cupom' => $payload, 'relacoes' => $relacoes, 'cursos' => $cursosSelecionados),
                 $actorUserId
             );
 
@@ -191,7 +260,7 @@ class CupomService
                 $acao,
                 'cupom',
                 $cupomId,
-                array('cupom' => $payload, 'relacoes' => $relacoes),
+                array('cupom' => $payload, 'relacoes' => $relacoes, 'cursos' => $cursosSelecionados),
                 $actorUserId,
                 $ipAddress,
                 $userAgent
@@ -268,12 +337,91 @@ class CupomService
         }
     }
 
+    public function alterarStatus($cupomId, $status, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $cupom = $this->cupomModel->findById($cupomId);
+        if (!$cupom) {
+            return array('ok' => false, 'message' => 'Cupom nao encontrado.');
+        }
+
+        $status = trim((string) $status);
+        if (!in_array($status, array('ativo', 'inativo'), true)) {
+            return array('ok' => false, 'message' => 'Status invalido.');
+        }
+
+        $statusAnterior = isset($cupom['status']) ? (string) $cupom['status'] : 'rascunho';
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $this->cupomModel->updateStatus($cupomId, $status);
+
+            $acao = $status === 'ativo' ? 'cupom.reativado' : 'cupom.inativado';
+            $observacao = $status === 'ativo'
+                ? 'Cupom reativado no painel administrativo'
+                : 'Cupom inativado no painel administrativo';
+
+            $this->cupomHistoricoModel->create(
+                $cupomId,
+                $acao,
+                $observacao,
+                array(
+                    'status_anterior' => $statusAnterior,
+                    'status_novo' => $status,
+                ),
+                $actorUserId
+            );
+
+            $this->auditService->record(
+                $acao,
+                'cupom',
+                $cupomId,
+                array(
+                    'status_anterior' => $statusAnterior,
+                    'status_novo' => $status,
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info($acao, array(
+                'cupom_id' => $cupomId,
+                'status_anterior' => $statusAnterior,
+                'status_novo' => $status,
+            ));
+
+            $pdo->commit();
+
+            return array('ok' => true, 'status' => $status);
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('cupom.status_falhou', array(
+                'cupom_id' => $cupomId,
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        } catch (\Throwable $throwable) {
+            $pdo->rollBack();
+            Logger::error('cupom.status_falhou', array(
+                'cupom_id' => $cupomId,
+                'message' => $throwable->getMessage(),
+            ));
+
+            throw $throwable;
+        }
+    }
+
     public function resumoUso($cupomId)
     {
         $cupom = $this->cupomModel->findById($cupomId);
         if (!$cupom) {
             return array(
                 'cupom' => null,
+                'cursos_disponiveis' => $this->loadCursosDisponiveis(),
+                'cupom_cursos' => array(),
                 'relacoes' => array(),
                 'historico' => array(),
                 'usos' => array(),
@@ -281,8 +429,12 @@ class CupomService
             );
         }
 
+        $cupom = $this->normalizeCupomPromocionalLink($cupom);
+
         return array(
             'cupom' => $cupom,
+            'cursos_disponiveis' => $this->loadCursosDisponiveis(),
+            'cupom_cursos' => $this->cupomCursoModel->forCupom($cupomId),
             'relacoes' => $this->cupomRelacaoModel->forCupom($cupomId),
             'historico' => $this->cupomHistoricoModel->forCupom($cupomId),
             'usos' => $this->cupomUsoModel->forCupom($cupomId),
@@ -517,16 +669,6 @@ class CupomService
             }
         }
 
-        $relacaoCursos = isset($relacoes['curso_evento']) ? $relacoes['curso_evento'] : array();
-        if ($relacaoCursos) {
-            foreach ($pedido['itens'] as $item) {
-                if (!in_array((string) $item['curso_evento_id'], $relacaoCursos, true)) {
-                    $errors[] = 'Cupom restrito a cursos especificos.';
-                    break;
-                }
-            }
-        }
-
         $relacaoTiposCurso = isset($relacoes['tipo_curso']) ? $relacoes['tipo_curso'] : array();
         if ($relacaoTiposCurso) {
             foreach ($pedido['itens'] as $item) {
@@ -596,6 +738,30 @@ class CupomService
             }
         }
 
+        if (($cupom['escopo'] ?? 'todo_site') === 'cursos_especificos') {
+            $cursosPermitidos = $this->cupomCursoModel->courseIdsForCupom($cupom['id']);
+            if (empty($cursosPermitidos)) {
+                $errors[] = 'Cupom configurado para cursos especificos sem cursos vinculados.';
+            } else {
+                $cursosDoPedido = array();
+                foreach ($pedido['itens'] as $item) {
+                    $cursosDoPedido[] = (int) $item['curso_evento_id'];
+                }
+                $cursosDoPedido = array_values(array_unique($cursosDoPedido));
+                $temIntersecao = false;
+                foreach ($cursosDoPedido as $cursoIdPedido) {
+                    if (in_array($cursoIdPedido, $cursosPermitidos, true)) {
+                        $temIntersecao = true;
+                        break;
+                    }
+                }
+
+                if (!$temIntersecao) {
+                    $errors[] = 'Este cupom nao e valido para o curso selecionado.';
+                }
+            }
+        }
+
         if ($cupom['tipo'] !== 'publico' && empty($relacoes)) {
             $errors[] = 'Cupom privado sem relacoes configuradas.';
         }
@@ -628,9 +794,9 @@ class CupomService
         $relacoes = array();
         $map = array(
             'usuario' => 'relacoes_usuarios',
+            'curso_evento' => 'relacoes_cursos_eventos',
             'empresa' => 'relacoes_empresas',
             'perfil' => 'relacoes_perfis',
-            'curso_evento' => 'relacoes_cursos_eventos',
             'tipo_curso' => 'relacoes_tipos_curso',
             'cidade' => 'relacoes_cidades',
             'estado' => 'relacoes_estados',
@@ -647,6 +813,70 @@ class CupomService
         }
 
         return $relacoes;
+    }
+
+    private function groupRelations(array $rows)
+    {
+        $relacoes = array(
+            'usuario' => array(),
+            'curso_evento' => array(),
+            'empresa' => array(),
+            'perfil' => array(),
+            'tipo_curso' => array(),
+            'cidade' => array(),
+            'estado' => array(),
+        );
+
+        foreach ($rows as $row) {
+            if (!is_array($row) || empty($row['tipo_relacao'])) {
+                continue;
+            }
+
+            $tipo = (string) $row['tipo_relacao'];
+            if (!array_key_exists($tipo, $relacoes)) {
+                continue;
+            }
+
+            $relacoes[$tipo][] = $this->normalizeRelationValue($tipo, isset($row['valor_relacao']) ? $row['valor_relacao'] : '');
+        }
+
+        return $relacoes;
+    }
+
+    private function loadCursosDisponiveis()
+    {
+        return $this->cursoModel->allForSelect(array('ativo', 'rascunho'));
+    }
+
+    private function normalizeEscopo($escopo)
+    {
+        $escopo = trim((string) $escopo);
+        if ($escopo === '') {
+            return 'todo_site';
+        }
+
+        return $escopo;
+    }
+
+    private function normalizeCourseIds($values)
+    {
+        if (!is_array($values)) {
+            $values = array($values);
+        }
+
+        $ids = array();
+        foreach ($values as $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $courseId = (int) $value;
+            if ($courseId > 0) {
+                $ids[] = $courseId;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     private function normalizeCodigo($codigo)
@@ -720,10 +950,55 @@ class CupomService
         return $value === '' ? null : $value;
     }
 
-    private function generatePromotionalLink($codigo)
+    private function generatePromotionalLink($codigo, $escopo = 'todo_site', array $cursosSelecionados = array())
     {
         $base = rtrim((string) Env::get('APP_URL', 'http://localhost'), '/');
-        return $base . '/?cupom=' . urlencode($codigo);
+        $cursoIdPromocional = $this->resolvePromotionalCourseId($escopo, $cursosSelecionados);
+
+        if ($cursoIdPromocional > 0) {
+            return $base . '/cursos/detalhe?curso_id=' . $cursoIdPromocional . '&cupom=' . urlencode($codigo);
+        }
+
+        return $base . '/cupom?codigo=' . urlencode($codigo);
+    }
+
+    private function normalizeCupomPromocionalLink(array $cupom)
+    {
+        if (empty($cupom['codigo'])) {
+            return $cupom;
+        }
+
+        $linkPromocional = isset($cupom['link_promocional']) ? trim((string) $cupom['link_promocional']) : '';
+        if ($linkPromocional === '' || strpos($linkPromocional, '/?cupom=') !== false) {
+            $cursosSelecionados = array();
+            if (($cupom['escopo'] ?? 'todo_site') === 'cursos_especificos' && !empty($cupom['id'])) {
+                $cursosSelecionados = $this->cupomCursoModel->courseIdsForCupom((int) $cupom['id']);
+            }
+
+            $cupom['link_promocional'] = $this->generatePromotionalLink(
+                $cupom['codigo'],
+                isset($cupom['escopo']) ? (string) $cupom['escopo'] : 'todo_site',
+                $cursosSelecionados
+            );
+        }
+
+        return $cupom;
+    }
+
+    private function resolvePromotionalCourseId($escopo, array $cursosSelecionados = array())
+    {
+        if ($escopo !== 'cursos_especificos' || empty($cursosSelecionados)) {
+            return 0;
+        }
+
+        foreach ($cursosSelecionados as $cursoId) {
+            $curso = $this->cursoModel->findPublicById((int) $cursoId);
+            if (!empty($curso['id'])) {
+                return (int) $curso['id'];
+            }
+        }
+
+        return 0;
     }
 
     private function loadUserProfiles($usuarioId)

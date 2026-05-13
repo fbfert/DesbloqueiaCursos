@@ -21,14 +21,10 @@
         <dt>Status</dt><dd><?php echo Helpers::e($rateio['status']); ?></dd>
         <dt>Observações</dt><dd><?php echo nl2br(Helpers::e($rateio['observacoes'] ?? '')); ?></dd>
     </dl>
-</section>
-</div>
-
-<section class="status-card">
-    <div class="split-actions">
-        <a href="/admin/rateios">Voltar</a>
-        <a href="/admin/financeiro/repasses?apuracao_id=<?php echo (int) $rateio['apuracao_id']; ?>">Ver repasses</a>
-        <a href="/admin/rateios/editar?rateio_id=<?php echo (int) $rateio['id']; ?>">Editar</a>
+    <div class="split-actions admin-mt-16">
+        <a class="button-link button-link--ghost" href="/admin/rateios">Voltar</a>
+        <a class="button-link button-link--ghost" href="/admin/financeiro/repasses?apuracao_id=<?php echo (int) $rateio['apuracao_id']; ?>">Ver repasses</a>
+        <a class="button-link button-link--ghost" href="/admin/rateios/editar?rateio_id=<?php echo (int) $rateio['id']; ?>">Editar</a>
     </div>
 </section>
 
@@ -40,7 +36,7 @@
             Justificativa
             <textarea name="justificativa" rows="3" required></textarea>
         </label>
-        <button type="submit">Enviar para a lixeira</button>
+        <button type="submit" class="button-link button-link--primary">Enviar para a lixeira</button>
     </form>
 </section>
 
@@ -78,4 +74,5 @@
         </table>
     </div>
 </section>
+</div>
 

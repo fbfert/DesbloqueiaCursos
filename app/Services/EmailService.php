@@ -13,6 +13,7 @@ class EmailService
 {
     private $configModel;
     private $emailModel;
+    private $modeloService;
     private $globalConfigService;
     private $auditService;
     private $configFallback;
@@ -22,6 +23,7 @@ class EmailService
     {
         $this->configModel = new EmailConfiguracao();
         $this->emailModel = new EmailEnvio();
+        $this->modeloService = new EmailModeloService();
         $this->globalConfigService = new ConfiguracaoGlobalService();
         $this->auditService = new AuditService();
         $this->configFallback = require BASE_PATH . '/config/mail.php';
@@ -130,7 +132,7 @@ class EmailService
             'welcome',
             isset($usuario['email']) ? $usuario['email'] : null,
             isset($usuario['nome']) ? $usuario['nome'] : null,
-            'Bem-vindo ao ' . $this->configuration()['from_name'],
+            'Bem-vindo ao {sistema.nome}',
             array('usuario' => $usuario),
             'usuario',
             isset($usuario['id']) ? $usuario['id'] : null,
@@ -147,7 +149,7 @@ class EmailService
             'password_reset',
             isset($usuario['email']) ? $usuario['email'] : null,
             isset($usuario['nome']) ? $usuario['nome'] : null,
-            'Recuperacao de senha',
+            'Recuperação de senha',
             array(
                 'usuario' => $usuario,
                 'token' => $token,
@@ -168,7 +170,7 @@ class EmailService
             'pedido_criado',
             isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
             isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
-            'Pedido ' . $pedido['codigo'] . ' criado',
+            'Pedido {pedido.codigo} criado',
             array('pedido' => $pedido),
             'pedido',
             isset($pedido['id']) ? $pedido['id'] : null,
@@ -185,7 +187,7 @@ class EmailService
             'comprovante_enviado',
             isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
             isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
-            'Comprovante PIX enviado - ' . $pedido['codigo'],
+            'Comprovante PIX enviado - {pedido.codigo}',
             array('pedido' => $pedido),
             'pedido',
             isset($pedido['id']) ? $pedido['id'] : null,
@@ -202,7 +204,7 @@ class EmailService
             'pendencia',
             isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
             isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
-            'Pedido em pendencia - ' . $pedido['codigo'],
+            'Pedido com pendência - {pedido.codigo}',
             array('pedido' => $pedido, 'observacao' => $observacao),
             'pedido',
             isset($pedido['id']) ? $pedido['id'] : null,
@@ -219,7 +221,7 @@ class EmailService
             'pedido_aprovado',
             isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
             isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
-            'Pedido aprovado - ' . $pedido['codigo'],
+            'Pedido aprovado - {pedido.codigo}',
             array('pedido' => $pedido, 'observacao' => $observacao),
             'pedido',
             isset($pedido['id']) ? $pedido['id'] : null,
@@ -236,7 +238,7 @@ class EmailService
             'curso_proximo',
             isset($inscricao['pagador_email']) ? $inscricao['pagador_email'] : null,
             isset($inscricao['pagador_nome']) ? $inscricao['pagador_nome'] : null,
-            'Seu curso esta proximo',
+            'Seu curso está próximo',
             array('inscricao' => $inscricao),
             'inscricao',
             isset($inscricao['id']) ? $inscricao['id'] : null,
@@ -253,7 +255,7 @@ class EmailService
             'concluido',
             isset($inscricao['pagador_email']) ? $inscricao['pagador_email'] : null,
             isset($inscricao['pagador_nome']) ? $inscricao['pagador_nome'] : null,
-            'Curso concluido',
+            'Curso concluído',
             array('inscricao' => $inscricao),
             'inscricao',
             isset($inscricao['id']) ? $inscricao['id'] : null,
@@ -270,7 +272,7 @@ class EmailService
             'certificado_disponivel',
             isset($inscricao['pagador_email']) ? $inscricao['pagador_email'] : null,
             isset($inscricao['pagador_nome']) ? $inscricao['pagador_nome'] : null,
-            'Certificado disponivel',
+            'Certificado disponível',
             array('inscricao' => $inscricao),
             'inscricao',
             isset($inscricao['id']) ? $inscricao['id'] : null,
@@ -291,13 +293,53 @@ class EmailService
         $entidadeId = null,
         $actorUserId = null,
         $ipAddress = null,
-        $userAgent = null
+        $userAgent = null,
+        $forceSend = false
     ) {
         if (!$destinatarioEmail) {
-            return array('ok' => false, 'message' => 'Destinatario invalido.');
+            return array('ok' => false, 'message' => 'Destinatário inválido.');
         }
 
-        $rendered = View::render($template, $data, false, 'emails');
+        $modelo = $this->modeloService->findByEvento($evento);
+        if ($modelo && !$forceSend && empty($modelo['ativo'])) {
+            if (!empty($modelo['id'])) {
+                $this->auditService->record(
+                    'emails.modelo.desativado',
+                    'email_modelo',
+                    (int) $modelo['id'],
+                    array(
+                        'evento' => $evento,
+                        'template' => $template,
+                    ),
+                    $actorUserId,
+                    $ipAddress,
+                    $userAgent
+                );
+            }
+
+            Logger::info('emails.modelo.desativado', array('evento' => $evento, 'template' => $template));
+            return array('ok' => true, 'skipped' => true, 'message' => 'Envio automatizado desativado para este modelo.');
+        }
+
+        $contextoRenderizacao = $this->modeloService->buildContext($data);
+        $assuntoFinal = $assunto;
+        $rendered = null;
+        if ($modelo) {
+            if (!empty($modelo['assunto'])) {
+                $assuntoFinal = $modelo['assunto'];
+            }
+
+            if (!empty($modelo['corpo_html'])) {
+                $rendered = $modelo['corpo_html'];
+            }
+        }
+
+        $assuntoFinal = $this->modeloService->renderPlaceholders($assuntoFinal, $contextoRenderizacao);
+        if ($rendered !== null && trim((string) $rendered) !== '') {
+            $rendered = $this->modeloService->renderPlaceholders($rendered, $contextoRenderizacao);
+        } else {
+            $rendered = View::render($template, $data, false, 'emails');
+        }
         $config = $this->configuration();
 
         $payload = array(
@@ -308,7 +350,7 @@ class EmailService
             'template' => $template,
             'destinatario_email' => strtolower(trim((string) $destinatarioEmail)),
             'destinatario_nome' => $destinatarioNome,
-            'assunto' => $assunto,
+            'assunto' => $assuntoFinal,
             'contexto_json' => json_encode($data),
             'status' => 'pendente',
         );
@@ -333,7 +375,7 @@ class EmailService
             Logger::info('emails.fila.criada', array('email_id' => $emailId, 'evento' => $evento));
 
         if (empty($config['enabled']) || empty($config['host'])) {
-            $erro = 'Configuracao SMTP indisponivel.';
+            $erro = 'Configuração SMTP indisponível.';
             $this->emailModel->markFailed($emailId, $erro);
             $this->auditService->record(
                 'emails.falhou',
@@ -350,14 +392,13 @@ class EmailService
         }
 
         try {
-            $rendered = View::render($template, $data, false, 'emails');
             $response = $this->sendSmtpMessage($config, array(
                 'from_email' => $config['from_email'],
                 'from_name' => $config['from_name'],
                 'reply_to' => $config['reply_to'],
                 'to_email' => $payload['destinatario_email'],
                 'to_name' => $payload['destinatario_nome'],
-                'subject' => $assunto,
+                'subject' => $assuntoFinal,
                 'html' => $rendered,
             ));
 
@@ -407,7 +448,7 @@ class EmailService
     {
         $email = $this->emailModel->findById($emailId);
         if (!$email) {
-            return array('ok' => false, 'message' => 'Email nao encontrado.');
+            return array('ok' => false, 'message' => 'E-mail não encontrado.');
         }
 
         $contexto = array();
@@ -429,7 +470,8 @@ class EmailService
             $email['entidade_id'],
             $actorUserId,
             $ipAddress,
-            $userAgent
+            $userAgent,
+            true
         );
     }
 
@@ -535,7 +577,7 @@ class EmailService
         if ($encryption === 'tls') {
             $this->smtpCommand($socket, 'STARTTLS', array(220));
             if (!@stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
-                throw new Exception('Não foi possivel iniciar TLS.');
+                throw new Exception('Não foi possível iniciar TLS.');
             }
 
             $this->smtpCommand($socket, 'EHLO ' . $this->hostname(), array(250));

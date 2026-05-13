@@ -44,9 +44,18 @@ class PermissoesController extends Controller
     public function perfilStore(Request $request)
     {
         $result = $this->service->salvarPerfil($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível salvar o papel.'));
             Session::flash('old', $request->all());
+            return $this->redirect('/admin/permissoes/perfil/criar');
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Papel salvo com sucesso.');
+            return $this->redirect('/admin/permissoes/perfil/editar?perfil_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Papel salvo com sucesso. Você já pode criar um novo papel.');
             return $this->redirect('/admin/permissoes/perfil/criar');
         }
         Session::flash('success', 'Papel salvo com sucesso.');
@@ -57,10 +66,19 @@ class PermissoesController extends Controller
     {
         $perfilId = (int) $request->input('id', 0);
         $result = $this->service->salvarPerfil($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível atualizar o papel.'));
             Session::flash('old', $request->all());
             return $this->redirect('/admin/permissoes/perfil/editar?perfil_id=' . $perfilId);
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Papel atualizado com sucesso.');
+            return $this->redirect('/admin/permissoes/perfil/editar?perfil_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Papel atualizado com sucesso. Você já pode criar um novo papel.');
+            return $this->redirect('/admin/permissoes/perfil/criar');
         }
         Session::flash('success', 'Papel atualizado com sucesso.');
         return $this->redirect('/admin/permissoes');
@@ -95,9 +113,18 @@ class PermissoesController extends Controller
     public function permissaoStore(Request $request)
     {
         $result = $this->service->salvarPermissao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível salvar a permissão.'));
             Session::flash('old', $request->all());
+            return $this->redirect('/admin/permissoes/item/criar');
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Permissão salva com sucesso.');
+            return $this->redirect('/admin/permissoes/item/editar?permissao_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Permissão salva com sucesso. Você já pode criar uma nova permissão.');
             return $this->redirect('/admin/permissoes/item/criar');
         }
         Session::flash('success', 'Permissão salva com sucesso.');
@@ -108,10 +135,19 @@ class PermissoesController extends Controller
     {
         $permissaoId = (int) $request->input('id', 0);
         $result = $this->service->salvarPermissao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível atualizar a permissão.'));
             Session::flash('old', $request->all());
             return $this->redirect('/admin/permissoes/item/editar?permissao_id=' . $permissaoId);
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Permissão atualizada com sucesso.');
+            return $this->redirect('/admin/permissoes/item/editar?permissao_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Permissão atualizada com sucesso. Você já pode criar uma nova permissão.');
+            return $this->redirect('/admin/permissoes/item/criar');
         }
         Session::flash('success', 'Permissão atualizada com sucesso.');
         return $this->redirect('/admin/permissoes');

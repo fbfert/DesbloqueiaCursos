@@ -135,7 +135,12 @@ foreach ((array) $permissions as $grupoPermissoes) {
                 </div>
             <?php endforeach; ?>
         </div>
-            <button type="submit">Salvar permissões</button>
+            <?php
+            $cancel_url = '/admin/rbac';
+            $show_save_as_copy = false;
+            $save_label = 'Salvar permissões';
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
     </section>
 
@@ -156,7 +161,12 @@ foreach ((array) $permissions as $grupoPermissoes) {
                 </label>
             <?php endforeach; ?>
         </div>
-        <button type="submit">Salvar perfis</button>
+        <?php
+        $cancel_url = '/admin/rbac';
+        $show_save_as_copy = false;
+        $save_label = 'Salvar perfis';
+        require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+        ?>
         </form>
     </section>
 </div>

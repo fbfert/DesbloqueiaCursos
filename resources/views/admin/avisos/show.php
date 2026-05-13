@@ -24,7 +24,7 @@ $statusOptions = array(
         </div>
         <div class="admin-page__actions">
             <a class="button-link button-link--ghost" href="/admin/avisos">Voltar</a>
-            <a class="button-link" href="/admin/avisos/editar?aviso_id=<?php echo (int) $aviso['id']; ?>">Editar</a>
+            <a class="button-link button-link--primary" href="/admin/avisos/editar?aviso_id=<?php echo (int) $aviso['id']; ?>">Editar</a>
         </div>
     </header>
 
@@ -68,7 +68,7 @@ $statusOptions = array(
             <form method="post" action="/admin/avisos/enviar" class="admin-form" style="display:inline;">
                 <?php echo $csrfField; ?>
                 <input type="hidden" name="id" value="<?php echo (int) $aviso['id']; ?>">
-                <button type="submit" onclick="return confirm('Enviar este aviso agora?');"><?php echo $aviso['status'] === 'enviado' ? 'Reenviar aviso' : 'Enviar aviso'; ?></button>
+                <button type="submit" class="button-link button-link--primary" onclick="return confirm('Enviar este aviso agora?');"><?php echo $aviso['status'] === 'enviado' ? 'Reenviar aviso' : 'Enviar aviso'; ?></button>
             </form>
         </div>
     </section>
@@ -78,7 +78,7 @@ $statusOptions = array(
         <p><?php echo nl2br(Helpers::e($aviso['mensagem'])); ?></p>
         <?php if (!empty($aviso['link_url'])): ?>
             <div class="cta-group" style="margin-top:12px;">
-                <a class="button-link" href="<?php echo Helpers::e($aviso['link_url']); ?>" target="_blank" rel="noopener noreferrer">
+                <a class="button-link button-link--ghost" href="<?php echo Helpers::e($aviso['link_url']); ?>" target="_blank" rel="noopener noreferrer">
                     <?php echo Helpers::e($aviso['link_rotulo'] ?: 'Abrir link'); ?>
                 </a>
             </div>
@@ -99,7 +99,7 @@ $statusOptions = array(
                 Justificativa para lixeira
                 <input type="text" name="justificativa" required>
             </label>
-            <button type="submit">Excluir aviso</button>
+            <button type="submit" class="button-link button-link--primary">Excluir aviso</button>
         </form>
     </section>
 </section>

@@ -42,7 +42,6 @@ class TurmasController extends Controller
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
             'action_url' => '/admin/turmas/criar',
-            'submit_label' => 'Salvar turma',
             'form_data' => $this->turmaService->formData(),
         ));
     }
@@ -50,9 +49,21 @@ class TurmasController extends Controller
     public function store(Request $request)
     {
         $result = $this->turmaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar a turma.'));
+            Session::flash('old', $request->all());
+            return $this->redirect('/admin/turmas/criar');
+        }
+
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Turma salva com sucesso.');
+            return $this->redirect('/admin/turmas/editar?turma_id=' . (int) $result['id']);
+        }
+
+        if ($action === 'save_new') {
+            Session::flash('success', 'Turma salva com sucesso. Você já pode criar uma nova turma.');
             return $this->redirect('/admin/turmas/criar');
         }
 
@@ -69,7 +80,6 @@ class TurmasController extends Controller
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
             'action_url' => '/admin/turmas/editar',
-            'submit_label' => 'Atualizar turma',
             'form_data' => $this->turmaService->formData($turmaId),
         ));
     }
@@ -78,10 +88,22 @@ class TurmasController extends Controller
     {
         $result = $this->turmaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $turmaId = (int) $request->input('id', 0);
+        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar a turma.'));
+            Session::flash('old', $request->all());
             return $this->redirect('/admin/turmas/editar?turma_id=' . $turmaId);
+        }
+
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Turma atualizada com sucesso.');
+            return $this->redirect('/admin/turmas/editar?turma_id=' . (int) $result['id']);
+        }
+
+        if ($action === 'save_new') {
+            Session::flash('success', 'Turma atualizada com sucesso. Você já pode criar uma nova turma.');
+            return $this->redirect('/admin/turmas/criar');
         }
 
         Session::flash('success', 'Turma atualizada com sucesso.');
@@ -128,8 +150,9 @@ class TurmasController extends Controller
     {
         $turmaId = (int) $request->input('id', 0);
         $status = trim((string) $request->input('status', ''));
+        $justificativa = trim((string) $request->input('justificativa', ''));
 
-        $result = $this->turmaService->atualizarStatus($turmaId, $status, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->turmaService->atualizarStatus($turmaId, $status, $justificativa, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['message']) ? $result['message'] : 'Não foi possivel atualizar o status da turma.');

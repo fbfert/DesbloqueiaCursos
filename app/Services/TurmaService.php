@@ -293,7 +293,7 @@ class TurmaService
         return $value;
     }
 
-    public function atualizarStatus($id, $status, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function atualizarStatus($id, $status, $justificativa = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $turma = $this->turmaModel->findById($id);
         if (!$turma) {
@@ -304,6 +304,11 @@ class TurmaService
             return array('ok' => false, 'message' => 'Status invalido para a turma.');
         }
 
+        $justificativa = trim((string) $justificativa);
+        if ($status === 'encerrada' && $justificativa === '') {
+            return array('ok' => false, 'message' => 'Informe o motivo do encerramento da turma.');
+        }
+
         $payload = $turma;
         $payload['status'] = $status;
         $this->turmaModel->update($payload, $id);
@@ -312,7 +317,11 @@ class TurmaService
             'catalogo.turma.status_atualizado',
             'turma',
             $id,
-            array('status_anterior' => $turma['status'], 'status_novo' => $status),
+            array(
+                'status_anterior' => $turma['status'],
+                'status_novo' => $status,
+                'justificativa' => $justificativa !== '' ? $justificativa : null,
+            ),
             $actorUserId,
             $ipAddress,
             $userAgent

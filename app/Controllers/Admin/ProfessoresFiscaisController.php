@@ -51,12 +51,21 @@ class ProfessoresFiscaisController extends Controller
             $request->ip(),
             $request->userAgent()
         );
+        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possivel salvar o perfil fiscal.'));
             return $this->redirect('/admin/professores-fiscais/criar');
         }
 
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Perfil fiscal salvo com sucesso.');
+            return $this->redirect('/admin/professores-fiscais/editar?perfil_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Perfil fiscal salvo com sucesso. Você já pode criar um novo perfil fiscal.');
+            return $this->redirect('/admin/professores-fiscais/criar');
+        }
         Session::flash('success', 'Perfil fiscal salvo com sucesso.');
         return $this->redirect('/admin/professores-fiscais');
     }
@@ -97,6 +106,7 @@ class ProfessoresFiscaisController extends Controller
             $request->ip(),
             $request->userAgent()
         );
+        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             $perfilId = (int) $request->input('id', 0);
@@ -104,6 +114,14 @@ class ProfessoresFiscaisController extends Controller
             return $this->redirect('/admin/professores-fiscais/editar?perfil_id=' . $perfilId);
         }
 
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Perfil fiscal atualizado com sucesso.');
+            return $this->redirect('/admin/professores-fiscais/editar?perfil_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Perfil fiscal atualizado com sucesso. Você já pode criar um novo perfil fiscal.');
+            return $this->redirect('/admin/professores-fiscais/criar');
+        }
         Session::flash('success', 'Perfil fiscal atualizado com sucesso.');
         return $this->redirect('/admin/professores-fiscais');
     }

@@ -66,8 +66,9 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
                     Competência
                     <input type="month" name="competencia" required>
                 </label>
-                <div class="full admin-actions">
-                    <button type="submit">Apurar</button>
+                <div class="full cta-group">
+                    <button type="submit" class="button-link button-link--primary">Apurar</button>
+                    <a class="button-link button-link--ghost" href="/admin/financeiro">Cancelar</a>
                 </div>
             </form>
         </article>
@@ -191,7 +192,12 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
         </label>
 
         <div class="full">
-            <button type="submit">Salvar perfil fiscal</button>
+            <?php
+            $cancel_url = '/admin/financeiro';
+            $show_save_as_copy = false;
+            $save_label = 'Salvar perfil fiscal';
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </div>
         </form>
     </section>

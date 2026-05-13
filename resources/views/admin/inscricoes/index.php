@@ -63,7 +63,10 @@
                                     <option value="certificado_emitido" <?php echo $inscricao['status'] === 'certificado_emitido' ? 'selected' : ''; ?>>Certificado emitido</option>
                                 </select>
                                 <input type="text" name="observacao" placeholder="Observação">
-                                <button type="submit">Salvar</button>
+                                <div class="cta-group">
+                                    <button type="submit" class="button-link button-link--primary">Salvar</button>
+                                    <a class="button-link button-link--ghost" href="/admin/inscricoes">Cancelar</a>
+                                </div>
                             </form>
                         </td>
                     </tr>

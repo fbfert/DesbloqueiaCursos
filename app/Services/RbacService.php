@@ -186,17 +186,45 @@ class RbacService
 
     public function isSuperAdmin($usuarioId)
     {
+        $usuarioId = (int) $usuarioId;
+        if ($usuarioId <= 0) {
+            return false;
+        }
+
         $stmt = Database::connection()->prepare(
             'SELECT COUNT(*) AS total
              FROM usuario_perfis up
              INNER JOIN perfis p ON p.id = up.perfil_id
              WHERE up.usuario_id = :usuario_id
-               AND p.slug = "superadmin"'
+               AND p.slug = "superadmin"
+               AND p.deleted_at IS NULL'
         );
         $stmt->execute(array('usuario_id' => $usuarioId));
 
         $row = $stmt->fetch();
-        return !empty($row) && (int) $row['total'] > 0;
+        if (!empty($row) && (int) $row['total'] > 0) {
+            return true;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(DISTINCT per.slug) AS total_usuario
+             FROM usuario_perfis up
+             INNER JOIN perfil_permissoes pp ON pp.perfil_id = up.perfil_id
+             INNER JOIN permissoes per ON per.id = pp.permissao_id
+             WHERE up.usuario_id = :usuario_id
+               AND per.deleted_at IS NULL'
+        );
+        $stmt->execute(array('usuario_id' => $usuarioId));
+        $row = $stmt->fetch();
+
+        $stmtTotal = Database::connection()->query(
+            'SELECT COUNT(*) AS total
+             FROM permissoes
+             WHERE deleted_at IS NULL'
+        );
+        $rowTotal = $stmtTotal ? $stmtTotal->fetch() : false;
+
+        return !empty($row) && !empty($rowTotal) && (int) $row['total_usuario'] > 0 && (int) $row['total_usuario'] === (int) $rowTotal['total'];
     }
 }
 

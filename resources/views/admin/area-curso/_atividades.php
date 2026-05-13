@@ -145,7 +145,10 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
                 <?php endforeach; ?>
             </select>
         </label>
-        <button type="submit">Filtrar</button>
+        <div class="cta-group">
+            <button type="submit" class="button-link button-link--primary">Filtrar</button>
+            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($areaCursoBaseUrl); ?>?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=atividades">Limpar filtros</a>
+        </div>
     </form>
 
     <div class="admin-area-curso__aula-materiais">
@@ -221,7 +224,11 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
                         <?php endforeach; ?>
                     </select>
                 </label>
-                <button type="submit" class="full"><?php echo !empty($atividadeEditar) ? 'Atualizar atividade' : 'Salvar atividade'; ?></button>
+                <?php
+                $cancel_url = $areaCursoBaseUrl . '?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=atividades';
+                $show_save_as_copy = false;
+                require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+                ?>
             </form>
         <?php endif; ?>
     </div>

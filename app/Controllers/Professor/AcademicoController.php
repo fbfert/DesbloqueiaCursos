@@ -62,7 +62,12 @@ class AcademicoController extends Controller
         }
 
         $resultado = $this->aptidaoService->salvarConfiguracao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/academico'
+        );
     }
 
     public function registrarPresenca(Request $request)
@@ -76,7 +81,12 @@ class AcademicoController extends Controller
         }
 
         $resultado = $this->presencaService->registrar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/academico'
+        );
     }
 
     public function salvarAvaliacao(Request $request)
@@ -86,7 +96,12 @@ class AcademicoController extends Controller
         }
 
         $resultado = $this->avaliacaoService->salvarAvaliacao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/academico'
+        );
     }
 
     public function salvarPergunta(Request $request)
@@ -100,7 +115,12 @@ class AcademicoController extends Controller
         }
 
         $resultado = $this->avaliacaoService->salvarPergunta($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/academico'
+        );
     }
 
     public function registrarNota(Request $request)
@@ -114,7 +134,12 @@ class AcademicoController extends Controller
         }
 
         $resultado = $this->avaliacaoService->registrarNota($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/academico'
+        );
     }
 
     public function recalcularAptidao(Request $request)
@@ -131,10 +156,15 @@ class AcademicoController extends Controller
             (int) $request->input('curso_evento_id', 0),
             (int) $request->input('turma_id', 0) > 0 ? (int) $request->input('turma_id', 0) : null
         );
-        return $this->respondForm($resultado, '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/academico?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/academico'
+        );
     }
 
-    private function respondForm(array $resultado, $redirectTo)
+    private function respondForm(array $resultado, Request $request, $redirectTo, $exitUrl = null)
     {
         if (empty($resultado['ok'])) {
             Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
@@ -142,7 +172,7 @@ class AcademicoController extends Controller
             Session::flash('success', 'Registro salvo com sucesso.');
         }
 
-        return $this->redirect($redirectTo);
+        return $this->redirectAfterFormAction($request, $redirectTo, $exitUrl);
     }
 
     private function contextoAutorizado($cursoId, $turmaId)

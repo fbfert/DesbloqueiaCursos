@@ -101,7 +101,7 @@ foreach ((array) $pedidos as $pedidoResumo) {
                         </td>
                         <td><?php echo htmlspecialchars((string) $pedido['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
-                            <a href="/admin/pedidos/show?pedido_id=<?php echo (int) $pedido['id']; ?>">Abrir</a>
+                            <a class="button-link button-link--ghost" href="/admin/pedidos/show?pedido_id=<?php echo (int) $pedido['id']; ?>">Abrir</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

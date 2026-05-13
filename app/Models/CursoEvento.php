@@ -141,14 +141,28 @@ class CursoEvento
         return $row ?: null;
     }
 
-    public function allForSelect()
+    public function allForSelect(array $statuses = array())
     {
-        $stmt = Database::connection()->query(
-            'SELECT id, nome, slug, tipo, status
-             FROM cursos_eventos
-             WHERE deleted_at IS NULL
-             ORDER BY ordem ASC, nome ASC'
-        );
+        $sql = 'SELECT id, nome, slug, tipo, status
+                FROM cursos_eventos
+                WHERE deleted_at IS NULL';
+        $params = array();
+
+        if (!empty($statuses)) {
+            $placeholders = array();
+            foreach (array_values($statuses) as $index => $status) {
+                $placeholder = ':status_' . $index;
+                $placeholders[] = $placeholder;
+                $params['status_' . $index] = $status;
+            }
+
+            $sql .= ' AND status IN (' . implode(', ', $placeholders) . ')';
+        }
+
+        $sql .= ' ORDER BY ordem ASC, nome ASC';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

@@ -59,7 +59,7 @@
             <input type="checkbox" name="manter_codigo" value="1" checked>
             Manter código atual
         </label>
-        <button type="submit">Reemitir</button>
+        <button type="submit" class="button-link button-link--primary">Reemitir</button>
     </form>
 </section>
 
@@ -76,7 +76,7 @@
             Observação
             <input type="text" name="observacao">
         </label>
-        <button type="submit">Cancelar</button>
+        <button type="submit" class="button-link button-link--primary">Cancelar</button>
     </form>
     <form method="post" action="/admin/certificados/revogar" class="form-grid admin-mt-12">
         <input type="hidden" name="certificado_id" value="<?php echo (int) $certificado['id']; ?>">
@@ -84,7 +84,7 @@
             Observação
             <input type="text" name="observacao">
         </label>
-        <button type="submit">Revogar</button>
+        <button type="submit" class="button-link button-link--primary">Revogar</button>
     </form>
 </section>
 
@@ -108,6 +108,7 @@
             </tbody>
         </table>
     </div>
+</section>
 <section class="panel">
     <div class="panel-header"><div><h2>Validações</h2></div></div>
     <div class="table-wrapper">

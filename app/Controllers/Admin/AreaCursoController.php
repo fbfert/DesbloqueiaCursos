@@ -111,43 +111,78 @@ class AreaCursoController extends Controller
     public function salvarCriteriosConclusao(Request $request)
     {
         $resultado = $this->criterioConclusaoService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, $this->redirectContexto($request, 'configuracoes'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'configuracoes'),
+            $this->redirectContexto($request, 'configuracoes')
+        );
     }
 
     public function salvarInstrução(Request $request)
     {
         $resultado = $this->areaCursoService->salvarInstrução($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, $this->redirectContexto($request, 'visao-geral'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'visao-geral'),
+            $this->redirectContexto($request, 'visao-geral')
+        );
     }
 
     public function salvarModulo(Request $request)
     {
         $resultado = $this->moduloService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, $this->redirectContexto($request, 'modulos-aulas'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'modulos-aulas'),
+            $this->redirectContexto($request, 'modulos-aulas')
+        );
     }
 
     public function salvarAula(Request $request)
     {
         $resultado = $this->aulaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, $this->redirectContexto($request, 'modulos-aulas'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'modulos-aulas'),
+            $this->redirectContexto($request, 'modulos-aulas')
+        );
     }
 
     public function salvarMaterial(Request $request)
     {
         $resultado = $this->materialService->salvar($request->all(), isset($_FILES['arquivo']) ? $_FILES['arquivo'] : null, Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, $this->redirectContexto($request, 'materiais'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'materiais'),
+            $this->redirectContexto($request, 'materiais')
+        );
     }
 
     public function salvarAtividade(Request $request)
     {
         $resultado = $this->atividadeService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, $this->redirectContexto($request, 'atividades'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'atividades'),
+            $this->redirectContexto($request, 'atividades')
+        );
     }
 
     public function alterarStatusAtividade(Request $request)
     {
         $resultado = $this->atividadeService->alterarStatus((int) $request->input('id', 0), (string) $request->input('status', 'publicado'), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, $this->redirectContexto($request, 'atividades'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'atividades'),
+            $this->redirectContexto($request, 'atividades')
+        );
     }
 
     public function corrigirEntrega(Request $request)
@@ -159,13 +194,23 @@ class AreaCursoController extends Controller
     public function devolverEntrega(Request $request)
     {
         $resultado = $this->atividadeService->devolverEntrega($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, $this->redirectContexto($request, 'atividades'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'atividades'),
+            $this->redirectContexto($request, 'atividades')
+        );
     }
 
     public function salvarLink(Request $request)
     {
         $resultado = $this->areaCursoService->salvarLink($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        return $this->respondForm($resultado, $this->redirectContexto($request, 'materiais'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'materiais'),
+            $this->redirectContexto($request, 'materiais')
+        );
     }
 
     public function excluir(Request $request)
@@ -179,7 +224,12 @@ class AreaCursoController extends Controller
             $request->userAgent()
         );
 
-        return $this->respondForm($resultado, $this->redirectContexto($request, (string) $request->input('aba', 'modulos-aulas')));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, (string) $request->input('aba', 'modulos-aulas')),
+            $this->redirectContexto($request, (string) $request->input('aba', 'modulos-aulas'))
+        );
     }
 
     public function participantes(Request $request)
@@ -255,7 +305,7 @@ class AreaCursoController extends Controller
         ));
     }
 
-    private function respondForm(array $resultado, $redirectTo)
+    private function respondForm(array $resultado, Request $request, $redirectTo, $exitUrl = null)
     {
         if (empty($resultado['ok'])) {
             Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
@@ -263,7 +313,7 @@ class AreaCursoController extends Controller
             Session::flash('success', 'Registro salvo com sucesso.');
         }
 
-        return $this->redirect($redirectTo);
+        return $this->redirectAfterFormAction($request, $redirectTo, $exitUrl);
     }
 
     private function redirectContexto(Request $request, $aba = 'visao-geral')

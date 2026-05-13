@@ -34,10 +34,8 @@ $value = function($key,$default='') use ($oldData,$perfil){ if(array_key_exists(
                 <?php endforeach; ?>
             </div>
 
-            <div class="cta-group">
-                <button type="submit">Salvar papel</button>
-                <a class="button-link button-link--ghost" href="/admin/permissoes">Voltar</a>
-            </div>
+            <?php $cancelUrl = '/admin/permissoes'; ?>
+            <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>
 </section>

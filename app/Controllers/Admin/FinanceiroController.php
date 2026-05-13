@@ -93,13 +93,14 @@ class FinanceiroController extends Controller
             $request->userAgent()
         );
 
+        $action = $this->submitAction($request);
         if (empty($result['ok'])) {
             Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel salvar o perfil fiscal.'));
             return $this->redirect('/admin/financeiro');
         }
 
         Session::flash('success', 'Perfil fiscal salvo com sucesso.');
-        return $this->redirect('/admin/financeiro');
+        return $action === 'save_exit' ? $this->redirect('/admin/financeiro') : $this->redirect('/admin/financeiro');
     }
 
     public function registrarDocumento(Request $request)

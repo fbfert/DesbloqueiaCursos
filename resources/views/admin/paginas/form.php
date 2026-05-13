@@ -80,13 +80,9 @@ $value = function ($field, $default = '') use ($old, $pagina) {
                 <textarea name="conteudo_html" rows="14" style="font-family:Consolas, monospace;"><?php echo Helpers::e($value('conteudo_html')); ?></textarea>
             </label>
 
-            <div class="cta-group">
-                <button type="submit" name="submit_action" value="save_exit">Salvar e sair</button>
-                <button type="submit" name="submit_action" value="save_stay">Salvar</button>
-                <button type="submit" name="submit_action" value="save_new">Salvar e criar nova página</button>
-                <button type="submit" name="submit_action" value="save_copy">Salvar cópia</button>
-                <a class="button-link button-link--ghost" href="/admin/paginas">Voltar</a>
-            </div>
+            <?php $cancelUrl = '/admin/paginas'; ?>
+            <?php $showSaveAsCopy = true; ?>
+            <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>
 </section>

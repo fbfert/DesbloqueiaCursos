@@ -10,6 +10,7 @@ use App\Core\View;
 use App\Core\Validator;
 use App\Models\InstrucoesCurso;
 use App\Models\Pedido;
+use App\Models\Cupom;
 use App\Models\Usuario;
 use App\Services\ComprovantePixService;
 use App\Services\InscricaoService;
@@ -25,6 +26,7 @@ class CheckoutController extends Controller
     private $instrucoesCursoModel;
     private $usuarioModel;
     private $pedidoModel;
+    private $cupomModel;
 
     public function __construct()
     {
@@ -35,6 +37,7 @@ class CheckoutController extends Controller
         $this->instrucoesCursoModel = new InstrucoesCurso();
         $this->usuarioModel = new Usuario();
         $this->pedidoModel = new Pedido();
+        $this->cupomModel = new Cupom();
     }
 
     public function inscricao(Request $request)
@@ -167,9 +170,29 @@ class CheckoutController extends Controller
             'loggedIn' => Session::get('usuario_id') !== null,
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
+            'cupomPromocional' => Session::get('cupom_promocional_codigo', ''),
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
         ));
+    }
+
+    public function cupomPromocional(Request $request)
+    {
+        $codigo = trim((string) $request->query('codigo', ''));
+        if ($codigo === '') {
+            return $this->redirect('/cursos');
+        }
+
+        $cupom = $this->cupomModel->findByCodigo($codigo);
+        if (!$cupom || ($cupom['status'] ?? '') !== 'ativo') {
+            Session::flash('errors', array('cupom' => 'Cupom promocional indisponivel.'));
+            return $this->redirect('/cursos');
+        }
+
+        Session::put('cupom_promocional_codigo', $codigo);
+        Session::flash('success', 'Cupom promocional salvo para uso no checkout.');
+
+        return $this->redirect('/cursos');
     }
 
     public function cupom(Request $request)

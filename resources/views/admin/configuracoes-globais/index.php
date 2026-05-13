@@ -65,7 +65,11 @@
             Logo
             <input type="text" name="logo_caminho" value="<?php echo htmlspecialchars((string) (isset($configuracoes['institucional']['logo_caminho']) ? $configuracoes['institucional']['logo_caminho'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
-        <button type="submit">Salvar institucional</button>
+        <?php $cancelUrl = '/admin/configuracoes-globais'; ?>
+        <?php $showSaveAndNew = false; ?>
+        <?php $showSaveAndExit = false; ?>
+        <?php $showSaveAsCopy = false; ?>
+        <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>
 </div>

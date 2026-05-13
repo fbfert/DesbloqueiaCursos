@@ -42,10 +42,14 @@
             <?php endforeach; ?>
         </select>
     </label>
-    <button type="submit">Abrir contexto</button>
+    <div class="cta-group">
+        <button type="submit" class="button-link button-link--primary">Abrir contexto</button>
+        <a class="button-link button-link--ghost" href="/professor/area-curso">Cancelar</a>
+    </div>
 </form>
 
 <?php if (!empty($curso)): ?>
+    <?php $areaCursoCancelUrl = '/professor/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : ''); ?>
     <section class="panel">
         <div class="panel-header"><div><h2>Instruções</h2></div></div>
         <form method="post" action="/professor/area-curso/instrucoes" class="form-grid">
@@ -55,7 +59,11 @@
             <label>Conteudo<textarea name="conteudo" rows="4"></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
             <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
-            <button type="submit">Salvar instrucao</button>
+            <?php
+            $cancel_url = $areaCursoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
     </section>
 
@@ -68,7 +76,11 @@
             <label>Descrição<textarea name="descricao" rows="3"></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
             <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
-            <button type="submit">Salvar modulo</button>
+            <?php
+            $cancel_url = $areaCursoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">
@@ -115,7 +127,11 @@
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
             <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
             <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1"> Obrigatoria</label>
-            <button type="submit">Salvar aula</button>
+            <?php
+            $cancel_url = $areaCursoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">
@@ -173,7 +189,11 @@
             <label>Arquivo<input type="file" name="arquivo"></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
             <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
-            <button type="submit">Salvar material</button>
+            <?php
+            $cancel_url = $areaCursoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">
@@ -228,7 +248,11 @@
             <label>Tipo link<input type="text" name="tipo_link" value="generico"></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
             <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
-            <button type="submit">Salvar link</button>
+            <?php
+            $cancel_url = $areaCursoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">

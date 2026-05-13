@@ -34,9 +34,10 @@
         <?php endif; ?>
         <a href="/admin/turmas">Voltar</a>
         <?php if ($canManage): ?>
-            <form method="post" action="/admin/turmas/status" class="admin-form">
+            <form method="post" action="/admin/turmas/status" class="admin-form js-turma-status-form">
                 <input type="hidden" name="id" value="<?php echo (int) $turma['id']; ?>">
                 <input type="hidden" name="status" value="<?php echo $turma['status'] === 'aberta' ? 'encerrada' : 'aberta'; ?>">
+                <input type="hidden" name="justificativa" value="">
                 <button type="submit"><?php echo $turma['status'] === 'aberta' ? 'Encerrar' : 'Abrir'; ?></button>
             </form>
         <?php endif; ?>
@@ -52,3 +53,37 @@
         </form>
     <?php endif; ?>
 </section>
+
+<script>
+(function () {
+    var forms = document.querySelectorAll('.js-turma-status-form');
+    forms.forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            var statusInput = form.querySelector('input[name="status"]');
+            var justificativaInput = form.querySelector('input[name="justificativa"]');
+
+            if (!statusInput || statusInput.value !== 'encerrada') {
+                return;
+            }
+
+            event.preventDefault();
+            var motivo = window.prompt('Informe o motivo do encerramento da turma:');
+            if (motivo === null) {
+                return;
+            }
+
+            motivo = motivo.trim();
+            if (!motivo) {
+                window.alert('O motivo do encerramento é obrigatório.');
+                return;
+            }
+
+            if (justificativaInput) {
+                justificativaInput.value = motivo;
+            }
+
+            form.submit();
+        });
+    });
+})();
+</script>

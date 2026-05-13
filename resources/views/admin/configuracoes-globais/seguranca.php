@@ -33,7 +33,11 @@
             Tempo de bloqueio (min)
             <input type="number" min="1" name="tempo_bloqueio_login_minutos" value="<?php echo htmlspecialchars((string) (isset($configuracao['tempo_bloqueio_login_minutos']) ? $configuracao['tempo_bloqueio_login_minutos'] : 15), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
-        <button type="submit">Salvar segurança</button>
+        <?php $cancelUrl = '/admin/configuracoes-globais/seguranca'; ?>
+        <?php $showSaveAndNew = false; ?>
+        <?php $showSaveAndExit = false; ?>
+        <?php $showSaveAsCopy = false; ?>
+        <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>
 </div>

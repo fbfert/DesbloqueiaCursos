@@ -104,7 +104,11 @@ $quantidadeMateriaisContexto = !empty($materiais) ? count($materiais) : 0;
             <label>Ordem
                 <input type="number" name="ordem" value="<?php echo Helpers::e((string) ($materialAtual['ordem'] ?? 1)); ?>" min="1">
             </label>
-            <button type="submit" class="full"><?php echo !empty($materialAtual['id']) ? 'Atualizar material' : 'Salvar material'; ?></button>
+            <?php
+            $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=materiais';
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
 
         <div class="table-wrap admin-mt-12">

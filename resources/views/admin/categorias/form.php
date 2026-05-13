@@ -52,7 +52,8 @@
             Descrição
             <textarea name="descricao" rows="4"><?php echo Helpers::e($categoria['descricao'] ?? ''); ?></textarea>
         </label>
-        <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
+        <?php $cancelUrl = '/admin/categorias'; ?>
+        <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>
 </div>

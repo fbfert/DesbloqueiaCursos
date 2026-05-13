@@ -43,11 +43,15 @@
             <?php endforeach; ?>
         </select>
     </label>
-    <button type="submit">Abrir contexto</button>
+    <div class="cta-group">
+        <button type="submit" class="button-link button-link--primary">Abrir contexto</button>
+        <a class="button-link button-link--ghost" href="/admin/academico">Cancelar</a>
+    </div>
 </form>
 
 <?php if (!empty($curso)): ?>
     <?php $configContext = !empty($turma) ? $turma : $curso; ?>
+    <?php $academicoCancelUrl = '/admin/academico?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : ''); ?>
     <section class="panel">
         <div class="panel-header"><div><h2>Configuração</h2></div></div>
         <form method="post" action="/admin/academico/configuracao" class="form-grid">
@@ -64,7 +68,11 @@
                     <option value="modulos" <?php echo !empty($configContext['progresso_base']) && $configContext['progresso_base'] === 'modulos' ? 'selected' : ''; ?>>Módulos</option>
                 </select>
             </label>
-            <button type="submit">Salvar configuração</button>
+            <?php
+            $cancel_url = $academicoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
     </section>
 
@@ -86,7 +94,7 @@
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
                                     <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
                                     <input type="hidden" name="inscricao_id" value="<?php echo (int) $inscricao['id']; ?>">
-                                    <button type="submit">Recalcular</button>
+                                    <button type="submit" class="button-link button-link--ghost">Recalcular</button>
                                 </form>
                             </td>
                         </tr>
@@ -117,7 +125,11 @@
                 </select>
             </label>
             <label>Observação<textarea name="observacao" rows="2"></textarea></label>
-            <button type="submit">Salvar presença</button>
+            <?php
+            $cancel_url = $academicoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
     </section>
 
@@ -133,7 +145,11 @@
             <label>Ordem<input type="number" name="ordem" value="1"></label>
             <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visível</label>
             <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1"> Obrigatória</label>
-            <button type="submit">Salvar avaliação</button>
+            <?php
+            $cancel_url = $academicoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
 
         <div class="table-wrapper admin-mt-12">
@@ -181,7 +197,11 @@
                 </select>
             </label>
             <label>Observação<textarea name="observacao" rows="2"></textarea></label>
-            <button type="submit">Salvar nota</button>
+            <?php
+            $cancel_url = $academicoCancelUrl;
+            $show_save_as_copy = false;
+            require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
+            ?>
         </form>
     </section>
 <?php endif; ?>

@@ -1,3 +1,10 @@
+<?php
+$cupomCursos = isset($cupom_cursos) ? $cupom_cursos : array();
+$escopoCupom = isset($cupom['escopo']) && $cupom['escopo'] === 'cursos_especificos'
+    ? 'Cursos específicos (' . count($cupomCursos) . ')'
+    : 'Todo o site';
+?>
+
 <div class="admin-page">
 <section class="admin-page__header">
     <div>
@@ -13,6 +20,7 @@
     <strong>Resumo</strong>
     <p>
         <strong>Tipo:</strong> <?php echo htmlspecialchars((string) $cupom['tipo'], ENT_QUOTES, 'UTF-8'); ?><br>
+        <strong>Validade:</strong> <?php echo htmlspecialchars($escopoCupom, ENT_QUOTES, 'UTF-8'); ?><br>
         <strong>Desconto:</strong> <?php echo htmlspecialchars((string) $cupom['desconto_tipo'], ENT_QUOTES, 'UTF-8'); ?> - R$ <?php echo number_format((float) $cupom['valor_desconto'], 2, ',', '.'); ?><br>
         <strong>Usos:</strong> <?php echo (int) $resumo['total_usos']; ?><br>
         <strong>Total descontado:</strong> R$ <?php echo number_format((float) $resumo['total_descontos'], 2, ',', '.'); ?><br>
@@ -26,10 +34,19 @@
 <section class="status-card">
     <strong>Restrições</strong>
     <ul>
+        <?php if (!empty($cupomCursos)): ?>
+            <li><strong>Cursos vinculados</strong></li>
+            <?php foreach ($cupomCursos as $cupomCurso): ?>
+                <li>
+                    <?php echo htmlspecialchars((string) $cupomCurso['curso_nome'], ENT_QUOTES, 'UTF-8'); ?>
+                    <small>(#<?php echo (int) $cupomCurso['curso_id']; ?> | <?php echo htmlspecialchars((string) $cupomCurso['curso_status'], ENT_QUOTES, 'UTF-8'); ?>)</small>
+                </li>
+            <?php endforeach; ?>
+        <?php endif; ?>
         <?php foreach ($relacoes as $relacao): ?>
             <li><?php echo htmlspecialchars($relacao['tipo_relacao'] . ': ' . $relacao['valor_relacao'], ENT_QUOTES, 'UTF-8'); ?></li>
         <?php endforeach; ?>
-        <?php if (empty($relacoes)): ?>
+        <?php if (empty($relacoes) && empty($cupomCursos)): ?>
             <li>Nenhuma restrição cadastrada.</li>
         <?php endif; ?>
     </ul>

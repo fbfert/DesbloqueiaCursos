@@ -122,6 +122,7 @@
             </tbody>
         </table>
     </div>
+</section>
 <section class="status-card">
     <strong>Destaques</strong>
     <div class="table-wrap">

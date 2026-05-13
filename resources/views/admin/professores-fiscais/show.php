@@ -18,13 +18,9 @@
         <dt>Exige NF</dt><dd><?php echo !empty($perfil['exige_nota_fiscal']) ? 'Sim' : 'Não'; ?></dd>
         <dt>Status</dt><dd><?php echo Helpers::e($perfil['status']); ?></dd>
     </dl>
-</section>
-</div>
-
-<section class="status-card">
-    <div class="split-actions">
-        <a href="/admin/professores-fiscais/editar?perfil_id=<?php echo (int) $perfil['id']; ?>">Editar</a>
-        <a href="/admin/professores-fiscais">Voltar</a>
+    <div class="split-actions admin-mt-16">
+        <a class="button-link button-link--ghost" href="/admin/professores-fiscais/editar?perfil_id=<?php echo (int) $perfil['id']; ?>">Editar</a>
+        <a class="button-link button-link--ghost" href="/admin/professores-fiscais">Voltar</a>
     </div>
     <form method="post" action="/admin/professores-fiscais/excluir" class="admin-form admin-mt-16">
         <input type="hidden" name="id" value="<?php echo (int) $perfil['id']; ?>">
@@ -32,7 +28,8 @@
             Justificativa para lixeira
             <input type="text" name="justificativa" required>
         </label>
-        <button type="submit">Remover perfil fiscal</button>
+        <button type="submit" class="button-link button-link--primary">Remover perfil fiscal</button>
     </form>
 </section>
+</div>
 

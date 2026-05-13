@@ -23,6 +23,13 @@ class Router
 
     public function dispatch(Request $request)
     {
+        if ($request->method() === 'GET') {
+            $cupom = trim((string) $request->query('cupom', ''));
+            if ($cupom !== '') {
+                return Response::redirect('/cupom?codigo=' . urlencode($cupom));
+            }
+        }
+
         $key = $request->method() . ' ' . $request->path();
 
         if (!isset($this->routes[$key])) {

@@ -23,7 +23,11 @@
             Texto de validação pública
             <textarea name="texto_validacao_publica" rows="5"><?php echo htmlspecialchars((string) (isset($configuracao['texto_validacao_publica']) ? $configuracao['texto_validacao_publica'] : ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
         </label>
-        <button type="submit">Salvar certificados</button>
+        <?php $cancelUrl = '/admin/configuracoes-globais/certificados'; ?>
+        <?php $showSaveAndNew = false; ?>
+        <?php $showSaveAndExit = false; ?>
+        <?php $showSaveAsCopy = false; ?>
+        <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>
 </div>

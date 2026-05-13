@@ -22,35 +22,41 @@
     </section>
 <?php endif; ?>
 
-<form method="post" action="/admin/certificados/emitir" class="form-grid">
-    <label>
-        Inscrição apta
-        <select name="inscricao_id">
-            <?php foreach ($aptos as $apto): ?>
-                <option value="<?php echo (int) $apto['id']; ?>" <?php echo (int) $selectedInscriçãoId === (int) $apto['id'] ? 'selected' : ''; ?>>
-                    <?php echo Helpers::e($apto['curso_nome'] . ' - ' . $apto['participante_nome'] . ' (' . $apto['pedido_codigo'] . ')'); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </label>
+<section class="status-card">
+    <strong>Emissão</strong>
+    <form method="post" action="/admin/certificados/emitir" class="form-grid">
+        <label>
+            Inscrição apta
+            <select name="inscricao_id">
+                <?php foreach ($aptos as $apto): ?>
+                    <option value="<?php echo (int) $apto['id']; ?>" <?php echo (int) $selectedInscriçãoId === (int) $apto['id'] ? 'selected' : ''; ?>>
+                        <?php echo Helpers::e($apto['curso_nome'] . ' - ' . $apto['participante_nome'] . ' (' . $apto['pedido_codigo'] . ')'); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
 
-    <label>
-        Template
-        <select name="template_id">
-            <?php foreach ($templates as $template): ?>
-                <option value="<?php echo (int) $template['id']; ?>" <?php echo !empty($template['padrao']) ? 'selected' : ''; ?>>
-                    <?php echo Helpers::e($template['nome']); ?><?php echo !empty($template['padrao']) ? ' - padrão' : ''; ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </label>
+        <label>
+            Template
+            <select name="template_id">
+                <?php foreach ($templates as $template): ?>
+                    <option value="<?php echo (int) $template['id']; ?>" <?php echo !empty($template['padrao']) ? 'selected' : ''; ?>>
+                        <?php echo Helpers::e($template['nome']); ?><?php echo !empty($template['padrao']) ? ' - padrão' : ''; ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
 
-    <label class="checkbox">
-        <input type="checkbox" name="manter_codigo" value="1" checked>
-        Manter código em reemissão
-    </label>
+        <label class="checkbox">
+            <input type="checkbox" name="manter_codigo" value="1" checked>
+            Manter código em reemissão
+        </label>
 
-    <button type="submit">Emitir</button>
-</form>
+        <div class="full cta-group">
+            <button type="submit" class="button-link button-link--primary">Emitir</button>
+            <a class="button-link button-link--ghost" href="/admin/certificados">Cancelar</a>
+        </div>
+    </form>
+</section>
 </div>
 

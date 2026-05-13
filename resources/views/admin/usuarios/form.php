@@ -67,10 +67,8 @@ $cidadeAtual = (string) $value('cidade');
                 <?php endforeach; ?>
             </div>
 
-            <div class="cta-group">
-                <button type="submit" class="button-link button-link--primary"><?php echo Helpers::e($submit_label); ?></button>
-                <a class="button-link button-link--ghost" href="/admin/usuarios">Voltar</a>
-            </div>
+            <?php $cancelUrl = '/admin/usuarios'; ?>
+            <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>
 </section>

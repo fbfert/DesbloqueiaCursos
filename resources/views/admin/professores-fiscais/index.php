@@ -43,8 +43,8 @@
                         <td><?php echo Helpers::e($perfil['status']); ?></td>
                         <td>
                             <div class="split-actions">
-                                <a href="/admin/professores-fiscais/show?perfil_id=<?php echo (int) $perfil['id']; ?>">Ver</a>
-                                <a href="/admin/professores-fiscais/editar?perfil_id=<?php echo (int) $perfil['id']; ?>">Editar</a>
+                                <a class="button-link button-link--ghost" href="/admin/professores-fiscais/show?perfil_id=<?php echo (int) $perfil['id']; ?>">Ver</a>
+                                <a class="button-link button-link--ghost" href="/admin/professores-fiscais/editar?perfil_id=<?php echo (int) $perfil['id']; ?>">Editar</a>
                             </div>
                         </td>
                     </tr>

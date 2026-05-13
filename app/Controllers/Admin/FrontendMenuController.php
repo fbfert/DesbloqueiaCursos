@@ -43,9 +43,18 @@ class FrontendMenuController extends Controller
     {
         $input = $request->all();
         $result = $this->service->salvarMenu($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o menu.'));
             Session::flash('old', $input);
+            return $this->redirect('/admin/frontend/menus/criar');
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Menu salvo com sucesso.');
+            return $this->redirect('/admin/frontend/menus/editar?menu_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Menu salvo com sucesso. Você já pode criar um novo menu.');
             return $this->redirect('/admin/frontend/menus/criar');
         }
         Session::flash('success', 'Menu salvo com sucesso.');
@@ -69,10 +78,19 @@ class FrontendMenuController extends Controller
         $menuId = (int) $request->input('id', 0);
         $input = $request->all();
         $result = $this->service->salvarMenu($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar o menu.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/frontend/menus/editar?menu_id=' . $menuId);
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Menu atualizado com sucesso.');
+            return $this->redirect('/admin/frontend/menus/editar?menu_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Menu atualizado com sucesso. Você já pode criar um novo menu.');
+            return $this->redirect('/admin/frontend/menus/criar');
         }
         Session::flash('success', 'Menu atualizado com sucesso.');
         return $this->redirect('/admin/frontend/menus');
@@ -123,9 +141,18 @@ class FrontendMenuController extends Controller
         $menuId = (int) $request->input('menu_id', 0);
         $input = $request->all();
         $result = $this->service->salvarItem($menuId, $input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o item.'));
             Session::flash('old', $input);
+            return $this->redirect('/admin/frontend/menus/itens/criar?menu_id=' . $menuId);
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Item salvo com sucesso.');
+            return $this->redirect('/admin/frontend/menus/itens/editar?menu_id=' . $menuId . '&item_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Item salvo com sucesso. Você já pode criar um novo item.');
             return $this->redirect('/admin/frontend/menus/itens/criar?menu_id=' . $menuId);
         }
         Session::flash('success', 'Item salvo com sucesso.');
@@ -153,10 +180,19 @@ class FrontendMenuController extends Controller
         $itemId = (int) $request->input('id', 0);
         $input = $request->all();
         $result = $this->service->salvarItem($menuId, $input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar o item.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/frontend/menus/itens/editar?menu_id=' . $menuId . '&item_id=' . $itemId);
+        }
+        if ($action === 'save_stay') {
+            Session::flash('success', 'Item atualizado com sucesso.');
+            return $this->redirect('/admin/frontend/menus/itens/editar?menu_id=' . $menuId . '&item_id=' . (int) $result['id']);
+        }
+        if ($action === 'save_new') {
+            Session::flash('success', 'Item atualizado com sucesso. Você já pode criar um novo item.');
+            return $this->redirect('/admin/frontend/menus/itens/criar?menu_id=' . $menuId);
         }
         Session::flash('success', 'Item atualizado com sucesso.');
         return $this->redirect('/admin/frontend/menus/itens?menu_id=' . $menuId);

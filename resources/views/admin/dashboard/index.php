@@ -170,7 +170,7 @@ $pendingRepassesValue = isset($pendingRepassesCard['value']) ? $pendingRepassesC
                 </label>
             </div>
             <div class="admin-actions">
-                <button type="submit">Aplicar filtros</button>
+                <button type="submit" class="button-link button-link--primary">Aplicar filtros</button>
                 <a href="/admin/dashboard" class="button-link button-link--ghost">Limpar filtros</a>
             </div>
         </form>

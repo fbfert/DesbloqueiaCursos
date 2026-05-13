@@ -249,7 +249,8 @@ if (empty($modulosExistentes)) {
             <input type="checkbox" name="destaque" value="1" <?php echo !empty($curso['destaque']) ? 'checked' : ''; ?>>
             Destaque
         </label>
-        <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
+        <?php $cancelUrl = '/admin/cursos'; ?>
+        <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>
 </div>

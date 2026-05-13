@@ -78,7 +78,8 @@
             <input type="checkbox" name="exige_nota_fiscal" value="1" <?php echo !empty($perfil['exige_nota_fiscal']) ? 'checked' : ''; ?>>
             Exigir nota fiscal
         </label>
-        <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
+        <?php $cancelUrl = '/admin/professores-fiscais'; ?>
+        <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>
 </div>

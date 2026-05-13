@@ -45,6 +45,7 @@ $menu = array(
         array('label' => 'Usuários', 'href' => '/admin/usuarios', 'icon' => '👤', 'permissions_any' => array('usuarios.ver')),
         array('label' => 'Permissões', 'href' => '/admin/permissoes', 'icon' => '🛡', 'permissions_any' => array('rbac.permissoes.ver')),
         array('label' => 'E-mails', 'href' => '/admin/emails', 'icon' => '✉', 'permissions_any' => array('emails.ver')),
+        array('label' => 'E-mails · Modelos', 'href' => '/admin/emails/modelos', 'icon' => '✎', 'permissions_any' => array('emails.ver')),
         array('label' => 'RBAC', 'href' => '/admin/rbac', 'icon' => '☰', 'permissions_any' => array('rbac.dashboard.ver')),
     )),
 );

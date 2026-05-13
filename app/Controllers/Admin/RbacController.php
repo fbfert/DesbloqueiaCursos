@@ -31,6 +31,7 @@ class RbacController extends Controller
     {
         $perfilId = (int) $request->input('perfil_id');
         $permissaoIds = (array) $request->input('permissao_ids', array());
+        $action = $this->submitAction($request);
 
         $result = $this->rbacService->syncProfilePermissions(
             $perfilId,
@@ -48,13 +49,14 @@ class RbacController extends Controller
         }
 
         Session::flash('success', 'Permissões do perfil atualizadas.');
-        return $this->redirect('/admin/rbac');
+        return $action === 'save_exit' ? $this->redirect('/admin/rbac') : $this->redirect('/admin/rbac');
     }
 
     public function syncUserProfiles(Request $request)
     {
         $usuarioId = (int) $request->input('usuario_id');
         $perfilIds = (array) $request->input('perfil_ids', array());
+        $action = $this->submitAction($request);
 
         $result = $this->rbacService->syncUserProfiles(
             $usuarioId,
@@ -72,7 +74,7 @@ class RbacController extends Controller
         }
 
         Session::flash('success', 'Perfis do usuario atualizados.');
-        return $this->redirect('/admin/rbac');
+        return $action === 'save_exit' ? $this->redirect('/admin/rbac') : $this->redirect('/admin/rbac');
     }
 }
 
