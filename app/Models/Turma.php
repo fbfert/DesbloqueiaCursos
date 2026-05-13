@@ -117,6 +117,7 @@ class Turma
              FROM turmas t
              WHERE t.curso_evento_id = :curso_evento_id
                AND t.deleted_at IS NULL
+               AND t.status <> "excluida"
              ORDER BY t.data_inicio IS NULL, t.data_inicio ASC, t.nome ASC'
         );
 
@@ -180,24 +181,66 @@ class Turma
         return $row ?: null;
     }
 
-    public function allWithCourse()
+    public function allWithCourse(array $filters = array())
     {
-        $stmt = Database::connection()->query(
-            'SELECT t.*,
-                    ce.nome AS curso_nome,
-                    ce.tipo AS curso_tipo,
-                    ce.modalidade AS curso_modalidade,
-                    c.nome AS categoria_nome,
-                    u.nome AS professor_responsavel_nome
-             FROM turmas t
-             INNER JOIN cursos_eventos ce ON ce.id = t.curso_evento_id
-             LEFT JOIN categorias c ON c.id = ce.categoria_id
-             LEFT JOIN usuario_turmas ut ON ut.turma_id = t.id AND ut.tipo_vinculo = "professor" AND ut.deleted_at IS NULL
-             LEFT JOIN usuarios u ON u.id = ut.usuario_id AND u.deleted_at IS NULL
-             WHERE t.deleted_at IS NULL
-               AND ce.deleted_at IS NULL
-             ORDER BY t.data_inicio IS NULL, t.data_inicio ASC, t.nome ASC'
-        );
+        $sql = 'SELECT t.*,
+                       ce.nome AS curso_nome,
+                       ce.tipo AS curso_tipo,
+                       ce.modalidade AS curso_modalidade,
+                       c.nome AS categoria_nome,
+                       u.nome AS professor_responsavel_nome
+                FROM turmas t
+                INNER JOIN cursos_eventos ce ON ce.id = t.curso_evento_id
+                LEFT JOIN categorias c ON c.id = ce.categoria_id
+                LEFT JOIN usuario_turmas ut ON ut.turma_id = t.id AND ut.tipo_vinculo = "professor" AND ut.deleted_at IS NULL
+                LEFT JOIN usuarios u ON u.id = ut.usuario_id AND u.deleted_at IS NULL
+                WHERE ce.deleted_at IS NULL';
+        $params = array();
+
+        if (!empty($filters['excluded_only'])) {
+            $sql .= ' AND (t.deleted_at IS NOT NULL OR t.status = "excluida")';
+        } elseif (!empty($filters['deleted_only'])) {
+            $sql .= ' AND t.deleted_at IS NOT NULL';
+        } else {
+            $sql .= ' AND t.deleted_at IS NULL AND t.status <> "excluida"';
+        }
+
+        if (!empty($filters['statuses']) && is_array($filters['statuses'])) {
+            $statusPlaceholders = array();
+            foreach (array_values($filters['statuses']) as $index => $status) {
+                $placeholder = 'status_' . $index;
+                $statusPlaceholders[] = ':' . $placeholder;
+                $params[$placeholder] = $status;
+            }
+            if ($statusPlaceholders) {
+                $sql .= ' AND t.status IN (' . implode(', ', $statusPlaceholders) . ')';
+            }
+        }
+
+        if (!empty($filters['curso_id'])) {
+            $sql .= ' AND t.curso_evento_id = :curso_id';
+            $params['curso_id'] = (int) $filters['curso_id'];
+        }
+
+        if (!empty($filters['search'])) {
+            $search = trim((string) $filters['search']);
+            if ($search !== '') {
+                $sql .= ' AND (t.nome LIKE :search OR ce.nome LIKE :search OR t.codigo LIKE :search OR t.slug LIKE :search)';
+                $params['search'] = '%' . $search . '%';
+            }
+        }
+
+        $orderMode = isset($filters['order_mode']) ? (string) $filters['order_mode'] : 'padrao';
+        if ($orderMode === 'relevancia') {
+            $sql .= ' ORDER BY FIELD(t.status, "planejada", "aberta") ASC, t.data_inicio IS NULL, t.data_inicio ASC, t.nome ASC';
+        } elseif ($orderMode === 'excluidas') {
+            $sql .= ' ORDER BY t.deleted_at DESC, t.data_inicio IS NULL, t.data_inicio ASC, t.nome ASC';
+        } else {
+            $sql .= ' ORDER BY t.data_inicio IS NULL, t.data_inicio ASC, t.nome ASC';
+        }
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -210,6 +253,7 @@ class Turma
              FROM turmas t
              INNER JOIN cursos_eventos ce ON ce.id = t.curso_evento_id
              WHERE t.deleted_at IS NULL
+               AND t.status <> "excluida"
                AND ce.deleted_at IS NULL
              ORDER BY t.data_inicio IS NULL, t.data_inicio ASC, t.nome ASC'
         );
@@ -288,6 +332,7 @@ class Turma
              WHERE ut.usuario_id = :usuario_id
                AND ut.deleted_at IS NULL
                AND t.deleted_at IS NULL
+               AND t.status <> "excluida"
                AND ce.deleted_at IS NULL
              ORDER BY t.data_inicio IS NULL, t.data_inicio ASC, t.nome ASC'
         );

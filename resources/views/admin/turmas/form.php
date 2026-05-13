@@ -4,6 +4,7 @@
 <?php $cursos = isset($form_data['cursos']) ? $form_data['cursos'] : array(); ?>
 <?php $professores = isset($form_data['professores']) ? $form_data['professores'] : array(); ?>
 <?php $professorResponsavel = isset($form_data['professor_responsavel']) ? $form_data['professor_responsavel'] : null; ?>
+<?php $statusLabels = array('planejada' => 'Planejada', 'aberta' => 'Aberta', 'encerrada' => 'Encerrada', 'excluida' => 'Excluída'); ?>
 
 <div class="admin-page">
 <section class="admin-page__header">
@@ -68,9 +69,9 @@
         <label>
             Status
             <select name="status">
-                <?php foreach (array('planejada', 'aberta', 'encerrada', 'cancelada') as $status): ?>
+                <?php foreach ($statusLabels as $status => $label): ?>
                     <option value="<?php echo Helpers::e($status); ?>" <?php echo (($turma['status'] ?? '') === $status) ? 'selected' : ''; ?>>
-                        <?php echo Helpers::e($status); ?>
+                        <?php echo Helpers::e($label); ?>
                     </option>
                 <?php endforeach; ?>
             </select>

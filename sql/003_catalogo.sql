@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS turmas (
     data_inicio DATE NULL,
     data_fim DATE NULL,
     vagas INT UNSIGNED NULL,
-    status ENUM('planejada', 'aberta', 'encerrada', 'cancelada') NOT NULL DEFAULT 'planejada',
+    status ENUM('planejada', 'aberta', 'encerrada', 'excluida') NOT NULL DEFAULT 'planejada',
     created_at DATETIME NOT NULL,
     updated_at DATETIME NULL,
     deleted_at DATETIME NULL,

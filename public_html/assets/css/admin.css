@@ -225,6 +225,39 @@
     color: var(--admin-muted);
 }
 
+.app-admin .admin-turmas__details > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.app-admin .admin-turmas__details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-admin .admin-turmas__details > summary h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.app-admin .admin-turmas__details > summary h2::after {
+    content: '▸';
+    color: var(--admin-primary);
+    font-size: 14px;
+}
+
+.app-admin .admin-turmas__details[open] > summary h2::after {
+    content: '▾';
+}
+
+.app-admin .admin-turmas__details-body {
+    margin-top: 12px;
+}
+
 .app-admin .admin-page__actions {
     display: flex;
     flex-wrap: wrap;
@@ -854,6 +887,10 @@
     display: grid;
     gap: 6px;
     font-weight: 700;
+}
+
+.app-admin .admin-filters .cta-group {
+    align-items: center;
 }
 
 .app-admin .admin-filters input,

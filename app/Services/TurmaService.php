@@ -28,11 +28,79 @@ class TurmaService
         $this->trashService = new TrashService();
     }
 
-    public function listAdmin()
+    public function listAdmin(array $filters = array())
     {
-        return array(
-            'turmas' => $this->turmaModel->allWithCourse(),
+        $filters = $this->normalizeAdminFilters($filters);
+
+        $baseFilters = array(
+            'search' => $filters['q'],
+            'curso_id' => $filters['curso_id'],
+        );
+
+        $result = array(
+            'filters' => $filters,
             'cursos' => $this->cursoModel->allForSelect(),
+            'turmas' => array(),
+            'turmas_encerradas' => array(),
+            'turmas_excluidas' => array(),
+            'mostrar_secoes' => $filters['status'] === '',
+        );
+
+        if ($filters['status'] === 'ativas') {
+            $result['turmas'] = $this->turmaModel->allWithCourse(array_merge($baseFilters, array(
+                'statuses' => array('planejada', 'aberta', 'encerrada'),
+                'order_mode' => 'relevancia',
+            )));
+
+            return $result;
+        }
+
+        if (in_array($filters['status'], array('planejada', 'aberta', 'encerrada'), true)) {
+            $result['turmas'] = $this->turmaModel->allWithCourse(array_merge($baseFilters, array(
+                'statuses' => array($filters['status']),
+                'order_mode' => 'padrao',
+            )));
+
+            return $result;
+        }
+
+        if ($filters['status'] === 'excluida') {
+            $result['turmas'] = $this->turmaModel->allWithCourse(array_merge($baseFilters, array(
+                'excluded_only' => true,
+                'order_mode' => 'excluidas',
+            )));
+
+            return $result;
+        }
+
+        $result['turmas'] = $this->turmaModel->allWithCourse(array_merge($baseFilters, array(
+            'statuses' => array('planejada', 'aberta'),
+            'order_mode' => 'relevancia',
+        )));
+        $result['turmas_encerradas'] = $this->turmaModel->allWithCourse(array_merge($baseFilters, array(
+            'statuses' => array('encerrada'),
+            'order_mode' => 'padrao',
+        )));
+        $result['turmas_excluidas'] = $this->turmaModel->allWithCourse(array_merge($baseFilters, array(
+            'excluded_only' => true,
+            'order_mode' => 'excluidas',
+        )));
+
+        return $result;
+    }
+
+    private function normalizeAdminFilters(array $filters)
+    {
+        $status = isset($filters['status']) ? trim((string) $filters['status']) : '';
+        $allowedStatus = array('', 'ativas', 'planejada', 'aberta', 'encerrada', 'excluida');
+        if (!in_array($status, $allowedStatus, true)) {
+            $status = '';
+        }
+
+        return array(
+            'q' => isset($filters['q']) ? trim((string) $filters['q']) : '',
+            'curso_id' => isset($filters['curso_id']) ? max(0, (int) $filters['curso_id']) : 0,
+            'status' => $status,
         );
     }
 
@@ -63,7 +131,7 @@ class TurmaService
         $dataInicio = isset($data['data_inicio']) ? trim((string) $data['data_inicio']) : null;
         $dataFim = isset($data['data_fim']) ? trim((string) $data['data_fim']) : null;
         $vagas = isset($data['vagas']) && $data['vagas'] !== '' ? (int) $data['vagas'] : null;
-        $status = isset($data['status']) && in_array($data['status'], array('planejada', 'aberta', 'encerrada', 'cancelada'), true) ? $data['status'] : 'planejada';
+        $status = isset($data['status']) && in_array($data['status'], array('planejada', 'aberta', 'encerrada', 'excluida'), true) ? $data['status'] : 'planejada';
         $professorResponsavelUsuarioId = isset($data['professor_responsavel_usuario_id']) && $data['professor_responsavel_usuario_id'] !== ''
             ? (int) $data['professor_responsavel_usuario_id']
             : null;
@@ -232,7 +300,7 @@ class TurmaService
             return array('ok' => false, 'message' => 'Turma nao encontrada.');
         }
 
-        if (!in_array($status, array('planejada', 'aberta', 'encerrada', 'cancelada'), true)) {
+        if (!in_array($status, array('planejada', 'aberta', 'encerrada', 'excluida'), true)) {
             return array('ok' => false, 'message' => 'Status invalido para a turma.');
         }
 

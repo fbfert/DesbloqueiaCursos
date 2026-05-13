@@ -18,13 +18,20 @@ class TurmasController extends Controller
 
     public function index(Request $request)
     {
+        $filters = array(
+            'q' => trim((string) $request->query('q', '')),
+            'curso_id' => (int) $request->query('curso_id', 0),
+            'status' => trim((string) $request->query('status', '')),
+        );
+
         return $this->view('admin/turmas/index', array_merge(
             array(
                 'title' => 'Turmas',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
+                'filters' => $filters,
             ),
-            $this->turmaService->listAdmin()
+            $this->turmaService->listAdmin($filters)
         ));
     }
 
