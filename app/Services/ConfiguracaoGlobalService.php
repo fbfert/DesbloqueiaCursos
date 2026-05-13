@@ -45,7 +45,7 @@ class ConfiguracaoGlobalService
         $current = $this->globalModel->current();
 
         return $current ?: array(
-            'nome_fantasia' => 'Polo Rainbow',
+            'nome_fantasia' => 'Desbloqueia Cursos',
             'razao_social' => null,
             'cnpj' => null,
             'cidade' => null,
@@ -114,7 +114,7 @@ class ConfiguracaoGlobalService
 
         return array(
             'from_email' => !empty($institucional['email_institucional']) ? $institucional['email_institucional'] : (!empty($institucional['email_suporte']) ? $institucional['email_suporte'] : null),
-            'from_name' => !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : 'Polo Rainbow',
+            'from_name' => !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : 'Desbloqueia Cursos',
             'reply_to' => !empty($institucional['email_suporte']) ? $institucional['email_suporte'] : (!empty($institucional['email_institucional']) ? $institucional['email_institucional'] : null),
         );
     }

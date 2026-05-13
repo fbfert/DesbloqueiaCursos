@@ -8,7 +8,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 INSERT INTO configuracoes_globais
     (nome_fantasia, razao_social, cidade, uf, email_institucional, email_suporte, telefone, created_at, updated_at, deleted_at)
 SELECT
-    'Polo Rainbow',
+    'Desbloqueia Cursos',
     'Polo Rainbow Cursos e Eventos',
     'Sao Paulo',
     'SP',

@@ -80,7 +80,7 @@ if (!empty($title)) {
 <div class="admin-shell" id="admin-shell">
     <aside class="admin-sidebar" id="admin-sidebar">
         <div class="admin-sidebar__brand">
-            <a class="brand" href="/admin">Polo Rainbow</a>
+            <a class="brand" href="/admin"><?php echo Helpers::e($brandName); ?></a>
             <p><?php echo Helpers::e($userName); ?></p>
         </div>
 

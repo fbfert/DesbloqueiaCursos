@@ -23,7 +23,7 @@
     <form method="post" action="/admin/configuracoes-globais" class="form-grid">
         <label>
             Nome fantasia
-            <input type="text" name="nome_fantasia" value="<?php echo htmlspecialchars((string) (isset($configuracoes['institucional']['nome_fantasia']) ? $configuracoes['institucional']['nome_fantasia'] : 'Polo Rainbow'), ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="text" name="nome_fantasia" value="<?php echo htmlspecialchars((string) (isset($configuracoes['institucional']['nome_fantasia']) ? $configuracoes['institucional']['nome_fantasia'] : 'Desbloqueia Cursos'), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
             Razão social

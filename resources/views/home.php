@@ -30,7 +30,7 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 
 <?php if ($loggedIn): ?>
 <section class="home-greeting">
-    <strong><?php echo Helpers::e('Página de' . (!empty($usuarioNome) ? ' ' . $usuarioNome : ' usuário')); ?></strong>
+    <strong><?php echo Helpers::e('Bem-vindo' . (!empty($usuarioNome) ? ' ' . $usuarioNome : ' usuário')); ?></strong>
 </section>
 <?php endif; ?>
 
@@ -49,16 +49,6 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
         <?php if ($textoChamada !== ''): ?>
             <p><?php echo nl2br(Helpers::e($textoChamada)); ?></p>
         <?php endif; ?>
-    </div>
-    <div class="hero__panel">
-        <div class="hero-stat">
-            <strong><?php echo count($cursos); ?></strong>
-            <span>Cursos em destaque agora</span>
-        </div>
-        <div class="hero-stat">
-            <strong>100%</strong>
-            <span>Fluxo público separado do admin e da área do professor</span>
-        </div>
     </div>
 </section>
 <?php endif; ?>

@@ -40,11 +40,11 @@ INSERT INTO frontend_modulos
 SELECT
     'topo_site',
     'Topo do site',
-    'Polo Rainbow',
+    'Desbloqueia Cursos',
     NULL,
     NULL,
     NULL,
-    'Polo Rainbow',
+    'Desbloqueia Cursos',
     'topo_site',
     'identidade_visual',
     1,

@@ -31,9 +31,10 @@ class HomeController extends Controller
         $cursosDestaque = $this->cursoService->listPublicHome($limiteDestaques);
         $topCursos = $this->cursoService->listPublicTopVendas(5);
         $usuarioId = Session::get('usuario_id');
+        $appConfig = require BASE_PATH . '/config/app.php';
 
         return $this->view('home', array(
-            'title' => 'Polo Rainbow',
+            'title' => isset($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos',
             'success' => Session::pullFlash('success'),
             'loggedIn' => $usuarioId !== null,
             'usuarioNome' => Session::get('usuario_nome'),

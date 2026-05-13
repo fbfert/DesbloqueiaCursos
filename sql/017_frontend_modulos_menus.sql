@@ -96,7 +96,7 @@ INSERT INTO frontend_modulos
 SELECT
     'antes_rodape',
     'Antes do Rodapé',
-    'Polo Rainbow',
+    'Desbloqueia Cursos',
     'Portal público para cursos, turmas e inscrições iniciais.',
     NULL,
     'antes_rodape',
@@ -183,7 +183,7 @@ SELECT
     'Rodapé',
     NULL,
     NULL,
-    '{ano} Polo Rainbow.',
+    '{ano} Desbloqueia Cursos.',
     'rodape',
     'rodape',
     1,

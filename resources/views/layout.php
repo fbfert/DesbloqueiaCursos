@@ -6,13 +6,14 @@ use App\Services\FrontendModuloService;
 use App\Services\FrontendMenuService;
 use App\Services\PlaceholderService;
 
-$pageTitle = isset($title) ? $title : 'Polo Rainbow';
+$appConfig = require BASE_PATH . '/config/app.php';
+$pageTitle = isset($title) ? $title : (!empty($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos');
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $requestPath = $requestPath ?: '/';
 $globalConfigService = new ConfiguracaoGlobalService();
 $institucional = $globalConfigService->institucional();
 $frontend = $globalConfigService->frontend();
-$brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : 'Polo Rainbow';
+$brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : (!empty($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos');
 $isAdmin = strpos($requestPath, '/admin') === 0;
 $isProfessor = strpos($requestPath, '/professor') === 0;
 $isAluno = in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true);
@@ -270,5 +271,3 @@ if (!$isAdmin) {
 </script>
 <?php endif; ?>
 </html>
-
-

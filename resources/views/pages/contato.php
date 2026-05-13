@@ -1,12 +1,12 @@
 <section class="page-header">
     <h1>Contato</h1>
-    <p>Canal institucional inicial do portal. A estrutura esta pronta para evoluir depois para formulario, fila ou integraçao externa.</p>
+    <p>Canal institucional inicial do portal. A estrutura está pronta para evoluir depois para formulário, fila ou integração externa.</p>
 </section>
 
 <section class="checkout-grid">
     <article class="checkout-panel">
         <h2>Atendimento</h2>
-        <p>Use os canais oficiais do Polo Rainbow para tirar duvidas sobre cursos, turmas e inscricoes.</p>
+        <p>Use os canais oficiais do Desbloqueia Cursos para tirar dúvidas sobre cursos, turmas e inscrições.</p>
     </article>
     <article class="checkout-panel">
         <h2>Acesso</h2>

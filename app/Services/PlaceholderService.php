@@ -15,7 +15,7 @@ class PlaceholderService
     {
         $texto = (string) $texto;
         $institucional = $this->configuracaoGlobalService->institucional();
-        $nomePortal = !empty($institucional['nome_fantasia']) ? (string) $institucional['nome_fantasia'] : 'Polo Rainbow';
+        $nomePortal = !empty($institucional['nome_fantasia']) ? (string) $institucional['nome_fantasia'] : 'Desbloqueia Cursos';
 
         $siteUrl = rtrim((string) (require BASE_PATH . '/config/app.php')['url'], '/');
         if ($siteUrl === '') {

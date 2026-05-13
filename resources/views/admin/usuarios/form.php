@@ -68,7 +68,7 @@ $cidadeAtual = (string) $value('cidade');
             </div>
 
             <div class="cta-group">
-                <button type="submit"><?php echo Helpers::e($submit_label); ?></button>
+                <button type="submit" class="button-link button-link--primary"><?php echo Helpers::e($submit_label); ?></button>
                 <a class="button-link button-link--ghost" href="/admin/usuarios">Voltar</a>
             </div>
         </form>
