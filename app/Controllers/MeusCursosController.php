@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
 use App\Models\Pedido;
+use App\Services\AvisoService;
 use App\Services\InscricaoService;
 use App\Services\PedidoService;
 
@@ -14,12 +15,14 @@ class MeusCursosController extends Controller
     private $inscricaoService;
     private $pedidoModel;
     private $pedidoService;
+    private $avisoService;
 
     public function __construct()
     {
         $this->inscricaoService = new InscricaoService();
         $this->pedidoModel = new Pedido();
         $this->pedidoService = new PedidoService();
+        $this->avisoService = new AvisoService();
     }
 
     public function index(Request $request)
@@ -38,9 +41,10 @@ class MeusCursosController extends Controller
         }
 
         return $this->view('meus-cursos/index', array(
-            'title' => 'Meus Cursos',
+            'title' => 'Minha Página',
             'usuarioNome' => Session::get('usuario_nome'),
             'success' => Session::pullFlash('success'),
+            'avisos' => $this->avisoService->avisosAtivosParaUsuario((int) $usuarioId),
             'pedidosPendentes' => $pedidosPendentes,
             'cacheBustMeusCursos' => $cacheBust,
             'inscricoes' => $inscricoes,

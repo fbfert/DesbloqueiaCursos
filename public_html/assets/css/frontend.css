@@ -426,6 +426,10 @@ body.frontend-theme {
     margin-bottom: 0;
 }
 
+.frontend-theme .meus-cursos-main {
+    min-width: 0;
+}
+
 .frontend-theme .pill-row {
     display: flex;
     flex-wrap: wrap;
@@ -666,8 +670,17 @@ body.frontend-theme {
     }
 
     .frontend-theme .dashboard-layout {
-        grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+        grid-template-areas: "main side";
         align-items: start;
+    }
+
+    .frontend-theme .meus-cursos-main {
+        grid-area: main;
+    }
+
+    .frontend-theme .meus-cursos-side {
+        grid-area: side;
     }
 
     .frontend-theme .dashboard-card--side {
@@ -694,6 +707,10 @@ body.frontend-theme {
 
     .frontend-theme .dashboard-layout {
         gap: 20px;
+    }
+
+    .frontend-theme .meus-cursos-main .card-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
 }
 
@@ -1008,6 +1025,79 @@ body.frontend-theme {
 
 body.has-post-login-modal {
     overflow: hidden;
+}
+
+/* Avisos do aluno */
+.frontend-theme .avisos-feed {
+    margin: 0 0 16px;
+    padding: 16px;
+}
+
+.frontend-theme .avisos-feed__header h2 {
+    margin: 0 0 6px;
+}
+
+.frontend-theme .avisos-feed__header p {
+    margin: 0;
+    color: #64748B;
+    font-size: 14px;
+}
+
+.frontend-theme .avisos-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.frontend-theme .aviso-card {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.06);
+}
+
+.frontend-theme .aviso-card--destaque {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: linear-gradient(180deg, #FFF7ED 0%, #FFFBEB 100%);
+}
+
+.frontend-theme .aviso-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.frontend-theme .aviso-card__top strong {
+    display: block;
+    font-size: 16px;
+    line-height: 1.35;
+}
+
+.frontend-theme .aviso-card__top small {
+    display: block;
+    margin-top: 4px;
+    color: #64748B;
+}
+
+.frontend-theme .aviso-card__message {
+    margin: 12px 0 0;
+    color: #0F172A;
+    line-height: 1.6;
+}
+
+.frontend-theme .aviso-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    align-items: center;
+}
+
+.frontend-theme .avisos-feed .button-link,
+.frontend-theme .avisos-feed button {
+    min-height: 42px;
 }
 
 @media (min-width: 720px) {

@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
+use App\Services\AvisoService;
 use App\Services\ConfiguracaoGlobalService;
 use App\Services\CursoService;
 use App\Services\FrontendModuloService;
@@ -12,12 +13,14 @@ use App\Services\FrontendModuloService;
 class HomeController extends Controller
 {
     private $cursoService;
+    private $avisoService;
     private $configuracaoGlobalService;
     private $frontendModuloService;
 
     public function __construct()
     {
         $this->cursoService = new CursoService();
+        $this->avisoService = new AvisoService();
         $this->configuracaoGlobalService = new ConfiguracaoGlobalService();
         $this->frontendModuloService = new FrontendModuloService();
     }
@@ -27,13 +30,15 @@ class HomeController extends Controller
         $limiteDestaques = $this->configuracaoGlobalService->homeDestaquesLimite();
         $cursosDestaque = $this->cursoService->listPublicHome($limiteDestaques);
         $topCursos = $this->cursoService->listPublicTopVendas(5);
+        $usuarioId = Session::get('usuario_id');
 
         return $this->view('home', array(
             'title' => 'Polo Rainbow',
             'success' => Session::pullFlash('success'),
-            'loggedIn' => Session::get('usuario_id') !== null,
+            'loggedIn' => $usuarioId !== null,
             'usuarioNome' => Session::get('usuario_nome'),
             'postLoginChoiceModal' => Session::pullFlash('post_login_choice_modal'),
+            'avisos' => $usuarioId ? $this->avisoService->avisosAtivosParaUsuario((int) $usuarioId) : array(),
             'cursos' => $cursosDestaque,
             'topCursos' => $topCursos,
             'topCursosModulo' => $this->moduloCapaOuPadrao('top_5_cursos_capa', array(

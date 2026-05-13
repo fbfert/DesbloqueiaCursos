@@ -73,6 +73,24 @@ class FrontendModulo
         return $row ?: null;
     }
 
+    public function allActiveByPosition($posicao, $limit = null)
+    {
+        $sql = 'SELECT *
+                FROM frontend_modulos
+                WHERE ativo = 1
+                  AND posicao = :posicao
+                  AND deleted_at IS NULL
+                ORDER BY ordem ASC, id ASC';
+        $limit = $limit !== null ? (int) $limit : null;
+        if ($limit !== null && $limit > 0) {
+            $sql .= ' LIMIT ' . min($limit, 50);
+        }
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute(array('posicao' => (string) $posicao));
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(

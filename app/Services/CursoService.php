@@ -63,8 +63,8 @@ class CursoService
         $categorias = $this->categoriaModel->allWithCounts();
 
         foreach ($cursos as &$curso) {
+            $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
             $curso['pessoas_vinculadas'] = $this->cursoPessoaModel->forCourse($curso['id']);
-            $curso['professor_responsavel'] = $this->cursoPessoaModel->findProfessorResponsavel($curso['id']);
         }
         unset($curso);
 
@@ -84,7 +84,9 @@ class CursoService
     public function formData($cursoId = null)
     {
         $curso = $cursoId ? $this->cursoModel->findAdminById($cursoId) : null;
-        $professorResponsavel = $cursoId ? $this->cursoPessoaModel->findProfessorResponsavel($cursoId) : null;
+        if ($curso) {
+            $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
+        }
 
         return array(
             'curso' => $curso,
@@ -92,7 +94,9 @@ class CursoService
             'turmas' => $cursoId ? $this->turmaModel->forCourse($cursoId) : array(),
             'pessoas_vinculadas' => $cursoId ? $this->cursoPessoaModel->forCourse($cursoId) : array(),
             'professores' => $this->usuarioModel->professores(),
-            'professor_responsavel' => $professorResponsavel,
+            'professores_responsaveis' => (!empty($curso) && !empty($curso['professores_responsaveis'])) ? $curso['professores_responsaveis'] : array(),
+            'professores_responsaveis_ids' => (!empty($curso) && !empty($curso['professores_responsaveis_ids'])) ? $curso['professores_responsaveis_ids'] : array(),
+            'professor_responsavel' => (!empty($curso) && !empty($curso['professor_responsavel'])) ? $curso['professor_responsavel'] : null,
             'modalidades' => $this->modalidades,
             'thumbnails_disponiveis' => $this->listarThumbnailsDisponiveis(),
         );
@@ -111,13 +115,23 @@ class CursoService
         $descricaoCurta = isset($data['descricao_curta']) ? trim((string) $data['descricao_curta']) : null;
         $descricaoCompleta = isset($data['descricao_completa']) ? trim((string) $data['descricao_completa']) : null;
         $cargaHoraria = isset($data['carga_horaria']) && $data['carga_horaria'] !== '' ? (int) $data['carga_horaria'] : null;
-        $valor = isset($data['valor']) && $data['valor'] !== '' ? (float) $data['valor'] : 0;
-        $valorPromocional = $this->normalizarDecimalOpcional(isset($data['valor_promocional']) ? $data['valor_promocional'] : null);
+        $valorBruto = isset($data['valor']) ? $data['valor'] : null;
+        $valorFoiInformado = trim((string) $valorBruto) !== '';
+        $valorNormalizado = $this->normalizarDecimalOpcional($valorBruto);
+        $valor = $valorNormalizado !== null ? $valorNormalizado : 0;
+
+        $valorPromocionalBruto = isset($data['valor_promocional']) ? $data['valor_promocional'] : null;
+        $valorPromocionalFoiInformado = trim((string) $valorPromocionalBruto) !== '';
+        $valorPromocional = $this->normalizarDecimalOpcional($valorPromocionalBruto);
         $ordem = isset($data['ordem']) ? (int) $data['ordem'] : 0;
         $status = isset($data['status']) && in_array($data['status'], array('rascunho', 'ativo', 'inativo', 'arquivado'), true) ? $data['status'] : 'rascunho';
-        $professorResponsavelUsuarioId = isset($data['professor_responsavel_usuario_id']) && $data['professor_responsavel_usuario_id'] !== ''
-            ? (int) $data['professor_responsavel_usuario_id']
-            : null;
+
+        $professoresResponsaveisIds = array();
+        if (array_key_exists('professores_responsaveis_usuario_ids', $data)) {
+            $professoresResponsaveisIds = $this->normalizarListaInteirosUnicos($data['professores_responsaveis_usuario_ids']);
+        } elseif (isset($data['professor_responsavel_usuario_id']) && $data['professor_responsavel_usuario_id'] !== '') {
+            $professoresResponsaveisIds = $this->normalizarListaInteirosUnicos(array($data['professor_responsavel_usuario_id']));
+        }
 
         $objetivoGeral = $this->normalizarTextoLongoOpcional(isset($data['objetivo_geral']) ? $data['objetivo_geral'] : null);
         $objetivosEspecificos = $this->normalizarLinhasTexto(isset($data['objetivos_especificos']) ? $data['objetivos_especificos'] : null);
@@ -151,8 +165,14 @@ class CursoService
         if ($slug === '') {
             $errors[] = 'Slug do curso/evento e obrigatorio.';
         }
+        if ($valorFoiInformado && $valorNormalizado === null) {
+            $errors[] = 'Valor invalido.';
+        }
         if ($valor < 0) {
             $errors[] = 'Valor invalido.';
+        }
+        if ($valorPromocionalFoiInformado && $valorPromocional === null) {
+            $errors[] = 'Valor promocional invalido.';
         }
         if ($valorPromocional !== null && $valorPromocional < 0) {
             $errors[] = 'Valor promocional invalido.';
@@ -190,11 +210,11 @@ class CursoService
             }
         }
 
-        $professorResponsavel = null;
-        if ($professorResponsavelUsuarioId !== null) {
-            $professorResponsavel = $this->validarProfessorResponsavel($professorResponsavelUsuarioId);
-            if (!$professorResponsavel) {
-                $errors[] = 'Professor responsavel nao encontrado.';
+        $professoresResponsaveis = array();
+        if (!empty($professoresResponsaveisIds)) {
+            $professoresResponsaveis = $this->validarProfessoresResponsaveis($professoresResponsaveisIds);
+            if (empty($professoresResponsaveis) || count($professoresResponsaveis) !== count($professoresResponsaveisIds)) {
+                $errors[] = 'Um ou mais professores responsáveis não foram encontrados.';
             }
         }
 
@@ -223,6 +243,8 @@ class CursoService
             'carga_horaria' => $cargaHoraria,
             'valor' => $valor,
             'valor_promocional' => $valorPromocional,
+            'professores_responsaveis_ids' => $professoresResponsaveisIds,
+            'professores_responsaveis' => $professoresResponsaveis,
             'objetivo_geral' => $objetivoGeral,
             'objetivos_especificos' => $objetivosEspecificos,
             'publico_alvo' => $publicoAlvo,
@@ -255,17 +277,8 @@ class CursoService
                 $acao = 'catalogo.curso.criado';
             }
 
-            $this->cursoPessoaModel->syncProfessorResponsavel(
-                $id,
-                $professorResponsavel ? (int) $professorResponsavel['id'] : null,
-                $professorResponsavel ? $professorResponsavel['nome'] : '',
-                'ativo'
-            );
-            $this->usuarioCursoModel->syncProfessorForCourse(
-                $id,
-                $professorResponsavel ? (int) $professorResponsavel['id'] : null,
-                'ativo'
-            );
+            $this->cursoPessoaModel->syncProfessoresResponsaveis($id, $professoresResponsaveis, 'ativo');
+            $this->usuarioCursoModel->syncProfessoresForCourse($id, $professoresResponsaveisIds, 'ativo');
 
             $this->auditService->record(
                 $acao,
@@ -471,7 +484,7 @@ class CursoService
         $cursos = $this->cursoModel->allPublic();
 
         foreach ($cursos as &$curso) {
-            $curso['professor_responsavel'] = $this->cursoPessoaModel->findProfessorResponsavel($curso['id']);
+            $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
             $curso['turmas_abertas'] = $this->turmaModel->forPublicCourse($curso['id'], true);
             $curso['total_turmas_abertas'] = count($curso['turmas_abertas']);
             $curso['valor_efetivo'] = $this->calcularValorEfetivoCurso($curso);
@@ -494,6 +507,23 @@ class CursoService
         return array_slice($cursos, 0, $limit);
     }
 
+    public function listPublicTopVendas($limit = 5)
+    {
+        $cursos = $this->cursoModel->topPublicBySales($limit);
+
+        foreach ($cursos as &$curso) {
+            $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
+            $curso['turmas_abertas'] = $this->turmaModel->forPublicCourse($curso['id'], true);
+            $curso['total_turmas_abertas'] = count($curso['turmas_abertas']);
+            $curso['valor_efetivo'] = $this->calcularValorEfetivoCurso($curso);
+            $curso['desconto_promocional'] = $this->calcularDescontoPromocional($curso);
+            $curso['total_vendas'] = isset($curso['total_vendas']) ? (int) $curso['total_vendas'] : 0;
+        }
+        unset($curso);
+
+        return $cursos;
+    }
+
     public function showPublic($cursoId, $turmaId = null)
     {
         $curso = $this->cursoModel->findPublicById($cursoId);
@@ -502,7 +532,7 @@ class CursoService
             return array('curso' => null);
         }
 
-        $curso['professor_responsavel'] = $this->cursoPessoaModel->findProfessorResponsavel($cursoId);
+        $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
         $curso['turmas_abertas'] = $this->turmaModel->forPublicCourse($cursoId, true);
         $curso['turmas'] = $curso['turmas_abertas'];
         $curso['turma_selecionada'] = null;
@@ -747,6 +777,28 @@ class CursoService
             return null;
         }
 
+        $valor = str_replace(array(' ', "\xc2\xa0"), '', $valor);
+        $possuiVirgula = strpos($valor, ',') !== false;
+        $possuiPonto = strpos($valor, '.') !== false;
+
+        if ($possuiVirgula && $possuiPonto) {
+            $ultimaVirgula = strrpos($valor, ',');
+            $ultimoPonto = strrpos($valor, '.');
+            if ($ultimaVirgula > $ultimoPonto) {
+                $valor = str_replace('.', '', $valor);
+                $valor = str_replace(',', '.', $valor);
+            } else {
+                $valor = str_replace(',', '', $valor);
+            }
+        } elseif ($possuiVirgula) {
+            $valor = str_replace('.', '', $valor);
+            $valor = str_replace(',', '.', $valor);
+        }
+
+        if (!is_numeric($valor)) {
+            return null;
+        }
+
         return (float) $valor;
     }
 
@@ -904,15 +956,91 @@ class CursoService
 
     private function validarProfessorResponsavel($usuarioId)
     {
-        foreach ($this->usuarioModel->professores() as $professor) {
-            if ((int) $professor['id'] === (int) $usuarioId) {
-                return $professor;
+        $professores = $this->validarProfessoresResponsaveis(array($usuarioId));
+        return !empty($professores) ? $professores[0] : null;
+    }
+
+    private function anexarProfessoresResponsaveisAoCurso(array $curso)
+    {
+        if (empty($curso['id'])) {
+            $curso['professores_responsaveis'] = array();
+            $curso['professores_responsaveis_ids'] = array();
+            $curso['professor_responsavel'] = null;
+            return $curso;
+        }
+
+        $professoresResponsaveis = $this->cursoPessoaModel->findProfessoresResponsaveis($curso['id']);
+        $professoresResponsaveisIds = array();
+
+        foreach ($professoresResponsaveis as $professorResponsavel) {
+            if (!empty($professorResponsavel['usuario_id'])) {
+                $professoresResponsaveisIds[] = (int) $professorResponsavel['usuario_id'];
             }
         }
 
-        return null;
+        $curso['professores_responsaveis'] = $professoresResponsaveis;
+        $curso['professores_responsaveis_ids'] = $professoresResponsaveisIds;
+        $curso['professor_responsavel'] = !empty($professoresResponsaveis) ? $professoresResponsaveis[0] : null;
+
+        return $curso;
+    }
+
+    private function normalizarListaInteirosUnicos($valor)
+    {
+        if ($valor === null) {
+            return array();
+        }
+
+        if (!is_array($valor)) {
+            $valor = array($valor);
+        }
+
+        $ids = array();
+        foreach ($valor as $item) {
+            if (is_array($item)) {
+                continue;
+            }
+
+            $item = trim((string) $item);
+            if ($item === '' || !is_numeric($item)) {
+                continue;
+            }
+
+            $numero = (int) $item;
+            if ($numero <= 0 || isset($ids[$numero])) {
+                continue;
+            }
+
+            $ids[$numero] = $numero;
+        }
+
+        return array_values($ids);
+    }
+
+    private function validarProfessoresResponsaveis(array $usuarioIds)
+    {
+        $professoresDisponiveis = array();
+        foreach ($this->usuarioModel->professores() as $professor) {
+            $professorId = isset($professor['id']) ? (int) $professor['id'] : 0;
+            if ($professorId > 0) {
+                $professoresDisponiveis[$professorId] = $professor;
+            }
+        }
+
+        $selecionados = array();
+        foreach ($usuarioIds as $usuarioId) {
+            $usuarioId = (int) $usuarioId;
+            if ($usuarioId <= 0 || !isset($professoresDisponiveis[$usuarioId])) {
+                return array();
+            }
+
+            $professor = $professoresDisponiveis[$usuarioId];
+            $selecionados[] = array(
+                'usuario_id' => $usuarioId,
+                'nome' => isset($professor['nome']) ? trim((string) $professor['nome']) : '',
+            );
+        }
+
+        return $selecionados;
     }
 }
-
-
-

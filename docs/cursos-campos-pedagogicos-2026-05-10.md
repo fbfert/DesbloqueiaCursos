@@ -34,6 +34,7 @@ Ampliar o cadastro administrativo de cursos/eventos com campos pedagógicos/come
   - vazio ⇒ `NULL`
   - não pode ser negativo
   - se preenchido, exige `valor > 0` e `valor_promocional < valor`
+  - aceita entrada em `pt-BR` com vírgula decimal e normaliza antes de persistir
 - Cálculo de valor efetivo:
   - usa `valor_promocional` **somente** quando `em_promocao = 1` e o valor promocional é válido
   - caso contrário, usa `valor`
@@ -57,4 +58,3 @@ Ampliar o cadastro administrativo de cursos/eventos com campos pedagógicos/come
 - Admin (CRUD): formulário, listagem e detalhe do curso/evento.
 - Público: listagem e detalhe do curso/evento.
 - Checkout: criação do pedido usa `valor_efetivo` do curso.
-

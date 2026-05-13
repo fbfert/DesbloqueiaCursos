@@ -47,6 +47,11 @@ class FrontendModuloService
         return $this->model->findByCode((string) $codigo);
     }
 
+    public function listarAtivosPorPosicao($posicao, $limit = null)
+    {
+        return $this->model->allActiveByPosition((string) $posicao, $limit);
+    }
+
     public function salvar(array $input, array $files = array(), $usuarioId = null, $ipAddress = null, $userAgent = null)
     {
         $id = isset($input['id']) ? (int) $input['id'] : 0;

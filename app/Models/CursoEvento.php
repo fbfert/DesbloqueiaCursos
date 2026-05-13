@@ -179,6 +179,44 @@ class CursoEvento
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function topPublicBySales($limit = 5)
+    {
+        $limit = (int) $limit;
+        if ($limit < 1 || $limit > 20) {
+            $limit = 5;
+        }
+
+        $sql = 'SELECT ce.*,
+                       c.nome AS categoria_nome,
+                       COALESCE(vendas.total_vendas, 0) AS total_vendas,
+                       COALESCE(vendas.receita_total, 0) AS receita_total
+                FROM cursos_eventos ce
+                LEFT JOIN categorias c ON c.id = ce.categoria_id
+                INNER JOIN (
+                    SELECT pi.curso_evento_id,
+                           SUM(CASE WHEN pi.quantidade > 0 THEN pi.quantidade ELSE 1 END) AS total_vendas,
+                           SUM(pi.valor_total) AS receita_total
+                    FROM pedido_itens pi
+                    INNER JOIN pedidos p
+                        ON p.id = pi.pedido_id
+                       AND p.deleted_at IS NULL
+                    LEFT JOIN comprovantes_pix cp
+                        ON cp.pedido_id = p.id
+                       AND cp.deleted_at IS NULL
+                    WHERE pi.deleted_at IS NULL
+                      AND pi.status = "ativo"
+                      AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
+                    GROUP BY pi.curso_evento_id
+                ) vendas ON vendas.curso_evento_id = ce.id
+                WHERE ce.deleted_at IS NULL
+                  AND ce.status = "ativo"
+                ORDER BY vendas.total_vendas DESC, vendas.receita_total DESC, ce.nome ASC
+                LIMIT ' . $limit;
+
+        $stmt = Database::connection()->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(

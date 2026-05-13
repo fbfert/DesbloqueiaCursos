@@ -30,8 +30,12 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 
 <?php if ($loggedIn): ?>
 <section class="home-greeting">
-    <strong><?php echo Helpers::e('Bem vindo' . (!empty($usuarioNome) ? ', ' . $usuarioNome : '')); ?></strong>
+    <strong><?php echo Helpers::e('Página de' . (!empty($usuarioNome) ? ' ' . $usuarioNome : ' usuário')); ?></strong>
 </section>
+<?php endif; ?>
+
+<?php if ($loggedIn): ?>
+    <?php require BASE_PATH . '/resources/views/partials/public/avisos.php'; ?>
 <?php endif; ?>
 
 <?php if (!empty($chamadaPrincipalCapa)): ?>

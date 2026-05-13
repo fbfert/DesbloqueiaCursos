@@ -13,6 +13,26 @@ foreach ($cursos ?? array() as $cursoItem) {
     }
     $cursosInativos[] = $cursoItem;
 }
+
+if (!function_exists('curso_professores_texto')) {
+    function curso_professores_texto(array $curso)
+    {
+        $nomes = array();
+        $professoresResponsaveis = isset($curso['professores_responsaveis']) && is_array($curso['professores_responsaveis']) ? $curso['professores_responsaveis'] : array();
+
+        foreach ($professoresResponsaveis as $professorResponsavel) {
+            if (!empty($professorResponsavel['nome'])) {
+                $nomes[] = $professorResponsavel['nome'];
+            }
+        }
+
+        if (empty($nomes) && !empty($curso['professor_responsavel']['nome'])) {
+            $nomes[] = $curso['professor_responsavel']['nome'];
+        }
+
+        return !empty($nomes) ? implode(', ', $nomes) : '-';
+    }
+}
 ?>
 
 <div class="admin-page">
@@ -41,7 +61,7 @@ foreach ($cursos ?? array() as $cursoItem) {
                 <tr>
                     <th>Nome</th>
                     <th>Categoria</th>
-                    <th>Professor</th>
+                    <th>Professores responsáveis</th>
                     <th>Tipo</th>
                     <th>Modalidade</th>
                     <th>Valor</th>
@@ -57,7 +77,7 @@ foreach ($cursos ?? array() as $cursoItem) {
                     <tr>
                         <td><?php echo Helpers::e($curso['nome']); ?></td>
                         <td><?php echo Helpers::e($curso['categoria_nome'] ?? ''); ?></td>
-                        <td><?php echo Helpers::e($curso['professor_responsavel']['nome'] ?? '-'); ?></td>
+                        <td><?php echo Helpers::e(curso_professores_texto($curso)); ?></td>
                         <td><?php echo Helpers::e($curso['tipo']); ?></td>
                         <td><?php echo Helpers::e($curso['modalidade']); ?></td>
                         <td>
@@ -106,7 +126,7 @@ foreach ($cursos ?? array() as $cursoItem) {
                     <tr>
                         <th>Nome</th>
                         <th>Categoria</th>
-                        <th>Professor</th>
+                        <th>Professores responsáveis</th>
                         <th>Tipo</th>
                         <th>Modalidade</th>
                         <th>Valor</th>
@@ -122,7 +142,7 @@ foreach ($cursos ?? array() as $cursoItem) {
                         <tr>
                             <td><?php echo Helpers::e($curso['nome']); ?></td>
                             <td><?php echo Helpers::e($curso['categoria_nome'] ?? ''); ?></td>
-                            <td><?php echo Helpers::e($curso['professor_responsavel']['nome'] ?? '-'); ?></td>
+                            <td><?php echo Helpers::e(curso_professores_texto($curso)); ?></td>
                             <td><?php echo Helpers::e($curso['tipo']); ?></td>
                             <td><?php echo Helpers::e($curso['modalidade']); ?></td>
                             <td>

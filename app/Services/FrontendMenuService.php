@@ -79,6 +79,7 @@ class FrontendMenuService
         $fallbackLogado = array(
             array('rotulo' => 'Minha Página', 'url' => '/minha-pagina', 'target' => '_self', 'rel' => null),
             array('rotulo' => 'Meus Cursos', 'url' => '/area-curso', 'target' => '_self', 'rel' => null),
+            array('rotulo' => 'Avisos', 'url' => '/meus-cursos#avisos', 'target' => '_self', 'rel' => null),
             array('rotulo' => 'Certificados', 'url' => '/certificados', 'target' => '_self', 'rel' => null),
             array('rotulo' => 'Cursos', 'url' => '/cursos', 'target' => '_self', 'rel' => null),
             array('rotulo' => 'Sair', 'url' => '/logout', 'target' => '_self', 'rel' => null),
@@ -102,6 +103,9 @@ class FrontendMenuService
             }
 
             $itens = $this->sanitizeItens($this->itemModel->listActiveByMenu((int) $menu['id']));
+            if ($isAuthenticated) {
+                $itens = $this->appendAvisosMenuItem($itens);
+            }
             if (!$itens) {
                 return array(
                     'menu' => $menu,
@@ -127,6 +131,40 @@ class FrontendMenuService
                 'from_fallback' => true,
             );
         }
+    }
+
+    private function appendAvisosMenuItem(array $itens)
+    {
+        foreach ($itens as $item) {
+            $rotulo = function_exists('mb_strtolower') ? mb_strtolower(trim((string) ($item['rotulo'] ?? '')), 'UTF-8') : strtolower(trim((string) ($item['rotulo'] ?? '')));
+            if ($rotulo === 'avisos') {
+                return $itens;
+            }
+        }
+
+        $avisosItem = array(
+            'rotulo' => 'Avisos',
+            'url' => '/meus-cursos#avisos',
+            'target' => '_self',
+            'rel' => null,
+        );
+
+        $resultado = array();
+        $inserido = false;
+        foreach ($itens as $item) {
+            $resultado[] = $item;
+            $rotulo = function_exists('mb_strtolower') ? mb_strtolower(trim((string) ($item['rotulo'] ?? '')), 'UTF-8') : strtolower(trim((string) ($item['rotulo'] ?? '')));
+            if (!$inserido && $rotulo === 'meus cursos') {
+                $resultado[] = $avisosItem;
+                $inserido = true;
+            }
+        }
+
+        if (!$inserido) {
+            $resultado[] = $avisosItem;
+        }
+
+        return $resultado;
     }
 
     public function salvarMenu(array $input, $usuarioId = null, $ipAddress = null, $userAgent = null)

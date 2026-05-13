@@ -1,4 +1,25 @@
 <?php use App\Core\Helpers; ?>
+<?php
+if (!function_exists('curso_professores_publico_texto')) {
+    function curso_professores_publico_texto(array $curso)
+    {
+        $nomes = array();
+        $professoresResponsaveis = isset($curso['professores_responsaveis']) && is_array($curso['professores_responsaveis']) ? $curso['professores_responsaveis'] : array();
+
+        foreach ($professoresResponsaveis as $professorResponsavel) {
+            if (!empty($professorResponsavel['nome'])) {
+                $nomes[] = $professorResponsavel['nome'];
+            }
+        }
+
+        if (empty($nomes) && !empty($curso['professor_responsavel']['nome'])) {
+            $nomes[] = $curso['professor_responsavel']['nome'];
+        }
+
+        return $nomes;
+    }
+}
+?>
 
 <section class="page-header">
     <h1>Cursos e eventos</h1>
@@ -27,8 +48,12 @@
                     <div class="pill-row">
                         <span class="pill"><?php echo Helpers::e($curso['tipo']); ?></span>
                         <span class="pill"><?php echo Helpers::e($curso['modalidade']); ?></span>
-                        <?php if (!empty($curso['professor_responsavel']['nome'])): ?>
-                            <span class="pill">Professor: <?php echo Helpers::e($curso['professor_responsavel']['nome']); ?></span>
+                        <?php $professoresResponsaveisNomes = curso_professores_publico_texto($curso); ?>
+                        <?php if (!empty($professoresResponsaveisNomes)): ?>
+                            <span class="pill">
+                                <?php echo Helpers::e(count($professoresResponsaveisNomes) > 1 ? 'Professores responsáveis: ' : 'Professor responsável: '); ?>
+                                <?php echo Helpers::e(implode(', ', $professoresResponsaveisNomes)); ?>
+                            </span>
                         <?php endif; ?>
                         <?php if (!empty($curso['em_promocao'])): ?>
                             <span class="pill pill--alert">Promoção</span>

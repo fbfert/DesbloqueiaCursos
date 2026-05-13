@@ -1,8 +1,16 @@
 <?php use App\Core\Helpers; ?>
+<?php
+$nomeUsuarioPagina = trim((string) $usuarioNome);
+if ($nomeUsuarioPagina === '') {
+    $nomeUsuarioPagina = 'usuário';
+}
+$pedidosPendentes = isset($pedidosPendentes) && is_array($pedidosPendentes) ? $pedidosPendentes : array();
+$avisos = isset($avisos) && is_array($avisos) ? $avisos : array();
+$totalPedidosPendentes = count($pedidosPendentes);
+?>
 
 <section class="page-header dashboard-header">
-    <h1>Meus Cursos</h1>
-    <p><?php echo Helpers::e($usuarioNome); ?></p>
+    <h1>Página de <?php echo Helpers::e($nomeUsuarioPagina); ?></h1>
 </section>
 
 <?php if (!empty($success)): ?>
@@ -41,10 +49,15 @@ function acaoPedidoPendente(array $pedido)
 <section class="meus-cursos-layout dashboard-layout">
     <aside class="meus-cursos-side dashboard-side">
         <article class="status-card dashboard-card dashboard-card--side">
-            <strong>Pedidos não finalizados</strong>
-            <?php if (empty($pedidosPendentes)): ?>
-                <span>Você não possui pedidos pendentes no momento.</span>
-            <?php else: ?>
+            <header class="avisos-feed__header">
+                <h2>Avisos</h2>
+                <p>Mensagens importantes para sua conta, pedidos e cursos.</p>
+            </header>
+
+            <?php if ($totalPedidosPendentes > 0): ?>
+                <p class="dashboard-course-card__text" style="margin-bottom:12px;">
+                    Você possui <?php echo (int) $totalPedidosPendentes; ?> pedido<?php echo $totalPedidosPendentes === 1 ? '' : 's'; ?> pendente<?php echo $totalPedidosPendentes === 1 ? '' : 's'; ?>.
+                </p>
                 <div class="pedidos-pendentes-lista">
                     <?php foreach ($pedidosPendentes as $pedidoPendente): ?>
                         <?php $acao = acaoPedidoPendente($pedidoPendente); ?>
@@ -52,17 +65,63 @@ function acaoPedidoPendente(array $pedido)
                             <strong><?php echo Helpers::e(isset($pedidoPendente['curso_nome']) && $pedidoPendente['curso_nome'] !== '' ? $pedidoPendente['curso_nome'] : 'Curso não identificado'); ?></strong>
                             <span><?php echo Helpers::e(isset($pedidoPendente['turma_nome']) && $pedidoPendente['turma_nome'] !== '' ? $pedidoPendente['turma_nome'] : 'Turma a definir'); ?></span>
                             <span>Pedido <?php echo Helpers::e($pedidoPendente['codigo']); ?> · <?php echo Helpers::e($pedidoPendente['status']); ?></span>
-                            <span>Total: R$ <?php echo Helpers::e(number_format((float) $pedidoPendente['total'], 2, ',', '.')); ?></span>
-                            <span>Criado em <?php echo Helpers::e(date('d/m/Y H:i', strtotime((string) $pedidoPendente['created_at']))); ?></span>
-                            <p style="margin-top: 8px;">
+                            <div class="cta-group" style="margin-top:8px;flex-wrap:wrap;">
                                 <a class="button-link" href="<?php echo Helpers::e($acao['href']); ?>"><?php echo Helpers::e($acao['label']); ?></a>
                                 <button type="button" class="button-link button-link--ghost js-cancelar-pedido" data-pedido-id="<?php echo (int) $pedidoPendente['id']; ?>">
                                     Cancelar pedido
                                 </button>
-                            </p>
+                            </div>
                         </article>
                     <?php endforeach; ?>
                 </div>
+            <?php endif; ?>
+
+            <?php if (!empty($avisos)): ?>
+                <div class="avisos-list" style="margin-top:12px;">
+                    <?php foreach ($avisos as $aviso): ?>
+                        <article class="aviso-card<?php echo !empty($aviso['destaque']) ? ' aviso-card--destaque' : ''; ?>">
+                            <div class="aviso-card__top">
+                                <div>
+                                    <strong><?php echo Helpers::e(!empty($aviso['titulo']) ? $aviso['titulo'] : 'Aviso'); ?></strong>
+                                    <?php if (!empty($aviso['mostrar_inicio']) || !empty($aviso['mostrar_fim'])): ?>
+                                        <small>
+                                            <?php if (!empty($aviso['mostrar_inicio'])): ?>
+                                                Início <?php echo Helpers::e(date('d/m/Y H:i', strtotime((string) $aviso['mostrar_inicio']))); ?>
+                                            <?php endif; ?>
+                                            <?php if (!empty($aviso['mostrar_fim'])): ?>
+                                                <?php echo !empty($aviso['mostrar_inicio']) ? ' · ' : ''; ?>
+                                                Fim <?php echo Helpers::e(date('d/m/Y H:i', strtotime((string) $aviso['mostrar_fim']))); ?>
+                                            <?php endif; ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (!empty($aviso['destaque'])): ?>
+                                    <span class="pill pill--alert">Destaque</span>
+                                <?php endif; ?>
+                            </div>
+                            <p class="aviso-card__message"><?php echo nl2br(Helpers::e($aviso['mensagem'])); ?></p>
+                            <div class="aviso-card__actions">
+                                <?php if (!empty($aviso['link_url'])): ?>
+                                    <a class="button-link" href="<?php echo Helpers::e($aviso['link_url']); ?>" target="_blank" rel="noopener noreferrer">
+                                        <?php echo Helpers::e(!empty($aviso['link_rotulo']) ? $aviso['link_rotulo'] : 'Abrir aviso'); ?>
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (!empty($aviso['permitir_ocultar'])): ?>
+                                    <form method="post" action="/avisos/ocultar" class="admin-form" style="display:inline;">
+                                        <?php echo $csrfField; ?>
+                                        <input type="hidden" name="aviso_id" value="<?php echo (int) $aviso['id']; ?>">
+                                        <input type="hidden" name="redirect_to" value="/meus-cursos">
+                                        <button type="submit">Ocultar</button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($totalPedidosPendentes <= 0 && empty($avisos)): ?>
+                <span>Nenhum aviso no momento.</span>
             <?php endif; ?>
         </article>
 
@@ -154,6 +213,9 @@ function acaoPedidoPendente(array $pedido)
                 <?php endforeach; ?>
             <?php endif; ?>
         </section>
+        <div class="cta-group" style="margin-top:16px;">
+            <a class="button-link" href="/cursos">Outros Cursos</a>
+        </div>
     </div>
 </section>
 

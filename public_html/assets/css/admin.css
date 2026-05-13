@@ -1722,3 +1722,53 @@
     color: #475569;
     word-break: break-all;
 }
+
+.app-admin .avisos-autocomplete {
+    position: relative;
+    z-index: 20;
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+.app-admin .avisos-autocomplete[hidden] {
+    display: none;
+}
+
+.app-admin .avisos-autocomplete__item,
+.app-admin .avisos-autocomplete__empty {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px 14px;
+    color: #0F172A;
+}
+
+.app-admin .avisos-autocomplete__item strong,
+.app-admin .avisos-autocomplete__empty {
+    display: block;
+    line-height: 1.4;
+}
+
+.app-admin .avisos-autocomplete__item span,
+.app-admin .avisos-autocomplete__item small {
+    display: block;
+    margin-top: 4px;
+    color: #64748B;
+}
+
+.app-admin .avisos-autocomplete__item:hover,
+.app-admin .avisos-autocomplete__item:focus-visible {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    outline: none;
+}
+
+.app-admin #aviso-aluno-resumo {
+    overflow: hidden;
+}

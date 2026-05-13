@@ -6,7 +6,7 @@ Transformar textos fixos da capa em módulos editáveis no backoffice, sem criar
 
 ## Módulos criados
 
-- `chamada_principal_capa`: chamada principal da capa. O campo `titulo` é exibido como H1 e o campo `conteudo` como texto de apoio.
+- `chamada_principal_capa`: chamada principal da capa. O campo `titulo` é exibido como H1 e o campo `conteudo` é exibido como texto de apoio.
 - `catalogo_publico_capa`: card textual da capa.
 - `detalhe_seguro_capa`: card textual da capa.
 - `inscricao_inicial_capa`: card textual da capa.

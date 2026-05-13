@@ -3,7 +3,8 @@
 <?php $curso = isset($form_data['curso']) ? $form_data['curso'] : null; ?>
 <?php $categorias = isset($form_data['categorias']) ? $form_data['categorias'] : array(); ?>
 <?php $professores = isset($form_data['professores']) ? $form_data['professores'] : array(); ?>
-<?php $professorResponsavel = isset($form_data['professor_responsavel']) ? $form_data['professor_responsavel'] : null; ?>
+<?php $professoresResponsaveisIds = isset($form_data['professores_responsaveis_ids']) ? (array) $form_data['professores_responsaveis_ids'] : array(); ?>
+<?php $professoresResponsaveisIdsSelecionados = array_map('intval', $professoresResponsaveisIds); ?>
 <?php $thumbnailsDisponiveis = isset($form_data['thumbnails_disponiveis']) ? $form_data['thumbnails_disponiveis'] : array(); ?>
 <?php
 $conteudoProgramaticoTipo = (string) ($curso['conteudo_programatico_tipo'] ?? 'texto');
@@ -66,15 +67,15 @@ if (empty($modulosExistentes)) {
             </select>
         </label>
         <label>
-            Professor responsável
-            <select name="professor_responsavel_usuario_id">
-                <option value="">Sem professor definido</option>
+            Professores responsáveis
+            <select name="professores_responsaveis_usuario_ids[]" multiple size="6">
                 <?php foreach ($professores as $professor): ?>
-                    <option value="<?php echo (int) $professor['id']; ?>" <?php echo !empty($professorResponsavel['usuario_id']) && (int) $professorResponsavel['usuario_id'] === (int) $professor['id'] ? 'selected' : ''; ?>>
+                    <option value="<?php echo (int) $professor['id']; ?>" <?php echo in_array((int) $professor['id'], $professoresResponsaveisIdsSelecionados, true) ? 'selected' : ''; ?>>
                         <?php echo Helpers::e($professor['nome']); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
+            <small class="muted" style="display:block;margin-top:6px;">Segure Ctrl ou Cmd para selecionar mais de um professor.</small>
         </label>
         <label>
             Tipo

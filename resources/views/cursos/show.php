@@ -1,4 +1,16 @@
 <?php use App\Core\Helpers; ?>
+<?php
+$professoresResponsaveis = isset($curso['professores_responsaveis']) && is_array($curso['professores_responsaveis']) ? $curso['professores_responsaveis'] : array();
+$professoresResponsaveisNomes = array();
+foreach ($professoresResponsaveis as $professorResponsavel) {
+    if (!empty($professorResponsavel['nome'])) {
+        $professoresResponsaveisNomes[] = $professorResponsavel['nome'];
+    }
+}
+if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel']['nome'])) {
+    $professoresResponsaveisNomes[] = $curso['professor_responsavel']['nome'];
+}
+?>
 
 <section class="page-header">
     <h1><?php echo Helpers::e($curso['nome']); ?></h1>
@@ -47,9 +59,9 @@
                     R$ <?php echo number_format((float) ($curso['valor_efetivo'] ?? $curso['valor']), 2, ',', '.'); ?>
                 <?php endif; ?>
             </dd>
-            <?php if (!empty($curso['professor_responsavel']['nome'])): ?>
-                <dt>Professor responsável</dt>
-                <dd><?php echo Helpers::e($curso['professor_responsavel']['nome']); ?></dd>
+            <?php if (!empty($professoresResponsaveisNomes)): ?>
+                <dt><?php echo Helpers::e(count($professoresResponsaveisNomes) > 1 ? 'Professores responsáveis' : 'Professor responsável'); ?></dt>
+                <dd><?php echo Helpers::e(implode(', ', $professoresResponsaveisNomes)); ?></dd>
             <?php endif; ?>
         </dl>
 

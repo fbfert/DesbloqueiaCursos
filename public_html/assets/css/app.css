@@ -978,6 +978,129 @@ body.has-post-login-modal {
     overflow: hidden;
 }
 
+/* Avisos do aluno */
+.avisos-feed {
+    margin: 0 0 16px;
+    padding: 16px;
+}
+
+.avisos-feed__header h2 {
+    margin: 0 0 6px;
+}
+
+.avisos-feed__header p {
+    margin: 0;
+    color: #64748B;
+    font-size: 14px;
+}
+
+.avisos-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.avisos-autocomplete {
+    position: relative;
+    z-index: 20;
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+.avisos-autocomplete[hidden] {
+    display: none;
+}
+
+.avisos-autocomplete__item,
+.avisos-autocomplete__empty {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px 14px;
+    color: #0F172A;
+}
+
+.avisos-autocomplete__item strong,
+.avisos-autocomplete__empty {
+    display: block;
+    line-height: 1.4;
+}
+
+.avisos-autocomplete__item span,
+.avisos-autocomplete__item small {
+    display: block;
+    margin-top: 4px;
+    color: #64748B;
+}
+
+.avisos-autocomplete__item:hover,
+.avisos-autocomplete__item:focus-visible {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    outline: none;
+}
+
+.admin-form .status-card {
+    overflow: hidden;
+}
+
+.aviso-card {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.06);
+}
+
+.aviso-card--destaque {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: linear-gradient(180deg, #FFF7ED 0%, #FFFBEB 100%);
+}
+
+.aviso-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.aviso-card__top strong {
+    display: block;
+    font-size: 16px;
+    line-height: 1.35;
+}
+
+.aviso-card__top small {
+    display: block;
+    margin-top: 4px;
+    color: #64748B;
+}
+
+.aviso-card__message {
+    margin: 12px 0 0;
+    color: #0F172A;
+    line-height: 1.6;
+}
+
+.aviso-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    align-items: center;
+}
+
+.avisos-feed .button-link,
+.avisos-feed button {
+    min-height: 42px;
+}
+
 @media (min-width: 720px) {
     .post-login-modal__dialog {
         margin-top: 12vh;

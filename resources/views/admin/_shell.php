@@ -25,6 +25,7 @@ $menu = array(
         array('label' => 'Pedidos', 'href' => '/admin/pedidos', 'icon' => '⟡', 'permissions_any' => array('pedidos.ver')),
         array('label' => 'Inscrições', 'href' => '/admin/inscricoes', 'icon' => '⟢', 'permissions_any' => array('pedidos.ver')),
         array('label' => 'Comprovantes PIX', 'href' => '/admin/comprovantes-pix', 'icon' => '◉', 'permissions_any' => array('pedidos.ver')),
+        array('label' => 'Avisos', 'href' => '/admin/avisos', 'icon' => '✦', 'permissions_any' => array('avisos.visualizar')),
         array('label' => 'Cupons', 'href' => '/admin/cupons', 'icon' => '⌘', 'permissions_any' => array('cupons.ver')),
         array('label' => 'Certificados', 'href' => '/admin/certificados', 'icon' => '⬚', 'permissions_any' => array('certificados.ver')),
     )),

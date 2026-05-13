@@ -3,6 +3,18 @@
 <?php use App\Services\RbacService; ?>
 
 <?php $canManage = (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar'); ?>
+<?php
+$professoresResponsaveis = isset($curso['professores_responsaveis']) && is_array($curso['professores_responsaveis']) ? $curso['professores_responsaveis'] : array();
+$professoresResponsaveisNomes = array();
+foreach ($professoresResponsaveis as $professorResponsavel) {
+    if (!empty($professorResponsavel['nome'])) {
+        $professoresResponsaveisNomes[] = $professorResponsavel['nome'];
+    }
+}
+if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel']['nome'])) {
+    $professoresResponsaveisNomes[] = $curso['professor_responsavel']['nome'];
+}
+?>
 
 <div class="admin-page">
 <section class="admin-page__header">
@@ -18,7 +30,7 @@
         <dt>Categoria</dt><dd><?php echo Helpers::e($curso['categoria_nome'] ?? ''); ?></dd>
         <dt>Tipo</dt><dd><?php echo Helpers::e($curso['tipo']); ?></dd>
         <dt>Modalidade</dt><dd><?php echo Helpers::e($curso['modalidade']); ?></dd>
-        <dt>Professor responsável</dt><dd><?php echo Helpers::e($professor_responsavel['nome'] ?? '-'); ?></dd>
+        <dt>Professores responsáveis</dt><dd><?php echo Helpers::e(!empty($professoresResponsaveisNomes) ? implode(', ', $professoresResponsaveisNomes) : '-'); ?></dd>
         <dt>Valor</dt><dd>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></dd>
         <?php
         $temPromo = !empty($curso['em_promocao'])
@@ -51,10 +63,10 @@
         <h3 style="margin:0 0 6px;">Descrição curta</h3>
         <p><?php echo nl2br(Helpers::e($curso['descricao_curta'])); ?></p>
     <?php endif; ?>
-    <?php if (!empty($curso['descricao_completa'])): ?>
-        <h3 style="margin:12px 0 6px;">Descritivo do curso</h3>
-        <p><?php echo nl2br(Helpers::e($curso['descricao_completa'])); ?></p>
-    <?php endif; ?>
+        <?php if (!empty($curso['descricao_completa'])): ?>
+            <h3 style="margin:12px 0 6px;">Descritivo do curso</h3>
+            <p><?php echo nl2br(Helpers::e($curso['descricao_completa'])); ?></p>
+        <?php endif; ?>
 
     <?php if (!empty($curso['objetivo_geral'])): ?>
         <h2 style="margin:16px 0 6px;">Objetivo geral</h2>
