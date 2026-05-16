@@ -133,7 +133,7 @@ $modelName = $isEdit ? 'modelo' : 'novo modelo';
             <?php else: ?>
                 <?php
                 $cancel_url = '/admin/emails/modelos';
-                $show_save_as_copy = false;
+                $show_save_as_copy = $isEdit;
                 $save_label = $isEdit ? 'Salvar' : 'Salvar';
                 $save_and_new_label = 'Salvar e novo';
                 $save_and_exit_label = 'Salvar e sair';

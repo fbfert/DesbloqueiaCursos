@@ -53,6 +53,7 @@ $imagemAtual = (string) $value('imagem_caminho', '');
             <label class="checkbox"><input type="checkbox" name="ativo" value="1" <?php echo (int) $value('ativo', 1) === 1 ? 'checked' : ''; ?>> Ativo</label>
             <label class="checkbox"><input type="checkbox" name="permite_html" value="1" <?php echo (int) $value('permite_html', 0) === 1 ? 'checked' : ''; ?>> Permitir HTML (desabilitado por segurança)</label>
             <?php $cancelUrl = '/admin/frontend/modulos'; ?>
+            <?php $showSaveAsCopy = !empty($modulo['id']); ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>

@@ -53,6 +53,7 @@
             <textarea name="descricao" rows="4"><?php echo Helpers::e($categoria['descricao'] ?? ''); ?></textarea>
         </label>
         <?php $cancelUrl = '/admin/categorias'; ?>
+        <?php $showSaveAsCopy = !empty($categoria['id']); ?>
         <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>

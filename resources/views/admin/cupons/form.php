@@ -147,6 +147,7 @@ $relationText = function ($tipo) use ($relationValues) {
         <textarea name="relacoes_estados" rows="2" placeholder="UFs separados por vírgula"><?php echo htmlspecialchars($relationText('estado'), ENT_QUOTES, 'UTF-8'); ?></textarea>
 
         <?php $cancelUrl = '/admin/cupons'; ?>
+        <?php $showSaveAsCopy = !empty($cupom['id']); ?>
         <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>

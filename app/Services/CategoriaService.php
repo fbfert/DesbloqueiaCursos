@@ -111,6 +111,29 @@ class CategoriaService
         }
     }
 
+    public function duplicar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $id = !empty($data['id']) ? (int) $data['id'] : 0;
+        if ($id <= 0) {
+            return array('ok' => false, 'errors' => array('Categoria não encontrada.'));
+        }
+
+        $original = $this->categoriaModel->findById($id);
+        if (!$original) {
+            return array('ok' => false, 'errors' => array('Categoria não encontrada.'));
+        }
+
+        $nomeBase = trim((string) (isset($data['nome']) && trim((string) $data['nome']) !== '' ? $data['nome'] : $original['nome']));
+        $payload = array_merge($data, array(
+            'id' => 0,
+            'nome' => $this->nomeDaCopia($nomeBase),
+            'slug' => $this->slugDaCopia(isset($data['slug']) && trim((string) $data['slug']) !== '' ? $data['slug'] : $nomeBase),
+            'status' => 'inativo',
+        ));
+
+        return $this->salvar($payload, $actorUserId, $ipAddress, $userAgent);
+    }
+
     public function excluir($id, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $categoria = $this->categoriaModel->findById($id);
@@ -154,6 +177,33 @@ class CategoriaService
         $value = trim($value, '-');
 
         return $value;
+    }
+
+    private function nomeDaCopia($nome)
+    {
+        $nome = trim((string) $nome);
+        $nome = preg_replace('/^c[oó]pia de\s+/iu', '', $nome);
+
+        return 'Cópia de ' . $nome;
+    }
+
+    private function slugDaCopia($valor)
+    {
+        $base = $this->slugify($valor);
+        $base = preg_replace('/-copia(?:-\d+)?$/', '', $base);
+        $base = trim((string) $base, '-');
+        if ($base === '') {
+            $base = 'categoria';
+        }
+
+        $slug = $base . '-copia';
+        $sufixo = 2;
+        while ($this->categoriaModel->findBySlug($slug)) {
+            $slug = $base . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $slug;
     }
 }
 

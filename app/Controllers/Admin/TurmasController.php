@@ -48,12 +48,25 @@ class TurmasController extends Controller
 
     public function store(Request $request)
     {
-        $result = $this->turmaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $input = $request->all();
         $action = $this->submitAction($request, 'save_exit');
+        if ($action === 'save_copy') {
+            $result = $this->turmaService->duplicar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível criar a cópia da turma.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/turmas/criar');
+            }
+
+            Session::flash('success', 'Cópia da turma criada com sucesso.');
+            return $this->redirect('/admin/turmas/editar?turma_id=' . (int) $result['id']);
+        }
+
+        $result = $this->turmaService->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar a turma.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/turmas/criar');
         }
 
@@ -86,13 +99,26 @@ class TurmasController extends Controller
 
     public function update(Request $request)
     {
-        $result = $this->turmaService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $input = $request->all();
         $turmaId = (int) $request->input('id', 0);
         $action = $this->submitAction($request, 'save_exit');
+        if ($action === 'save_copy') {
+            $result = $this->turmaService->duplicar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível criar a cópia da turma.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/turmas/editar?turma_id=' . $turmaId);
+            }
+
+            Session::flash('success', 'Cópia da turma criada com sucesso.');
+            return $this->redirect('/admin/turmas/editar?turma_id=' . (int) $result['id']);
+        }
+
+        $result = $this->turmaService->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar a turma.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/turmas/editar?turma_id=' . $turmaId);
         }
 

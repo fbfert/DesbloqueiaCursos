@@ -236,6 +236,43 @@ class TurmaService
         }
     }
 
+    public function duplicar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $id = !empty($data['id']) ? (int) $data['id'] : 0;
+        if ($id <= 0) {
+            return array('ok' => false, 'errors' => array('Turma não encontrada.'));
+        }
+
+        $original = $this->turmaModel->findById($id);
+        if (!$original) {
+            return array('ok' => false, 'errors' => array('Turma não encontrada.'));
+        }
+
+        $payload = array_merge($data, array(
+            'id' => 0,
+            'curso_evento_id' => !empty($data['curso_evento_id']) ? (int) $data['curso_evento_id'] : (int) $original['curso_evento_id'],
+            'nome' => $this->nomeDaCopia(isset($data['nome']) && trim((string) $data['nome']) !== '' ? $data['nome'] : $original['nome']),
+            'slug' => $this->slugDaCopia(isset($data['slug']) && trim((string) $data['slug']) !== '' ? $data['slug'] : $original['slug'], 'turma'),
+            'codigo' => $this->codigoDaCopia(isset($data['codigo']) && trim((string) $data['codigo']) !== '' ? $data['codigo'] : $original['codigo'], 'TURMA'),
+            'status' => 'planejada',
+        ));
+
+        if (!empty($data['data_inicio'])) {
+            $payload['data_inicio'] = $data['data_inicio'];
+        }
+        if (!empty($data['data_fim'])) {
+            $payload['data_fim'] = $data['data_fim'];
+        }
+        if (array_key_exists('vagas', $data)) {
+            $payload['vagas'] = $data['vagas'];
+        }
+        if (array_key_exists('professor_responsavel_usuario_id', $data)) {
+            $payload['professor_responsavel_usuario_id'] = $data['professor_responsavel_usuario_id'];
+        }
+
+        return $this->salvar($payload, $actorUserId, $ipAddress, $userAgent);
+    }
+
     public function excluir($id, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $turma = $this->turmaModel->findById($id);
@@ -291,6 +328,64 @@ class TurmaService
         $value = trim($value, '-');
 
         return $value;
+    }
+
+    private function nomeDaCopia($nome)
+    {
+        $nome = trim((string) $nome);
+        $nome = preg_replace('/^c[oó]pia de\s+/iu', '', $nome);
+
+        return 'Cópia de ' . $nome;
+    }
+
+    private function slugDaCopia($valor, $fallback)
+    {
+        $base = trim((string) $valor);
+        if ($base === '') {
+            $base = $this->slugify($fallback);
+        }
+        $base = preg_replace('/-copia(?:-\d+)?$/i', '', $base);
+        $base = trim($base, '-');
+        if ($base === '') {
+            $base = $this->slugify($fallback);
+        }
+        if ($base === '') {
+            $base = 'copia';
+        }
+
+        $slug = $base . '-copia';
+        $sufixo = 2;
+        while ($this->turmaModel->findBySlug($slug)) {
+            $slug = $base . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $slug;
+    }
+
+    private function codigoDaCopia($valor, $fallback)
+    {
+        $base = strtoupper(trim((string) $valor));
+        if ($base === '') {
+            $base = strtoupper(trim((string) $fallback));
+        }
+        $base = preg_replace('/-COPIA(?:-\d+)?$/i', '', $base);
+        $base = trim($base, '-');
+        if ($base === '') {
+            $base = strtoupper(trim((string) $fallback));
+        }
+        if ($base === '') {
+            $base = 'TURMA';
+        }
+
+        $codigo = $base . '-COPIA';
+        $sufixo = 2;
+        while ($this->turmaModel->findByCodigo($codigo)) {
+            $codigo = $base . '-COPIA-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $codigo;
     }
 
     public function atualizarStatus($id, $status, $justificativa = null, $actorUserId = null, $ipAddress = null, $userAgent = null)

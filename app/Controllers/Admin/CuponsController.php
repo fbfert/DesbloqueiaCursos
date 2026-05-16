@@ -60,17 +60,36 @@ class CuponsController extends Controller
 
     public function store(Request $request)
     {
+        $action = $this->submitAction($request, 'save_exit');
+        $input = $request->all();
+
+        if ($action === 'save_copy') {
+            $result = $this->cupomService->duplicar(
+                $input,
+                Session::get('usuario_id'),
+                $request->ip(),
+                $request->userAgent()
+            );
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o cupom.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/cupons/criar');
+            }
+
+            Session::flash('success', 'Cópia do cupom criada com sucesso.');
+            return $this->redirect('/admin/cupons/editar?cupom_id=' . (int) $result['cupom_id']);
+        }
+
         $result = $this->cupomService->salvar(
-            $request->all(),
+            $input,
             Session::get('usuario_id'),
             $request->ip(),
             $request->userAgent()
         );
-        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o cupom.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/cupons/criar');
         }
 
@@ -103,18 +122,37 @@ class CuponsController extends Controller
 
     public function update(Request $request)
     {
+        $input = $request->all();
+        $action = $this->submitAction($request, 'save_exit');
+        $cupomId = (int) $request->input('id', 0);
+
+        if ($action === 'save_copy') {
+            $result = $this->cupomService->duplicar(
+                $input,
+                Session::get('usuario_id'),
+                $request->ip(),
+                $request->userAgent()
+            );
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel criar a cópia do cupom.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/cupons/editar?cupom_id=' . $cupomId);
+            }
+
+            Session::flash('success', 'Cópia do cupom criada com sucesso.');
+            return $this->redirect('/admin/cupons/editar?cupom_id=' . (int) $result['cupom_id']);
+        }
+
         $result = $this->cupomService->salvar(
-            $request->all(),
+            $input,
             Session::get('usuario_id'),
             $request->ip(),
             $request->userAgent()
         );
-        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
-            $cupomId = (int) $request->input('id', 0);
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar o cupom.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/cupons/editar?cupom_id=' . $cupomId);
         }
 

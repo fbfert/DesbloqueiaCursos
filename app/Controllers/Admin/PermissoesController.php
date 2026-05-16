@@ -43,11 +43,24 @@ class PermissoesController extends Controller
 
     public function perfilStore(Request $request)
     {
-        $result = $this->service->salvarPerfil($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $input = $request->all();
         $action = $this->submitAction($request, 'save_exit');
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicarPerfil($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', $result['errors'] ?? array('Não foi possível criar a cópia do papel.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/permissoes/perfil/criar');
+            }
+
+            Session::flash('success', 'Cópia do papel criada com sucesso.');
+            return $this->redirect('/admin/permissoes/perfil/editar?perfil_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvarPerfil($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível salvar o papel.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/permissoes/perfil/criar');
         }
         if ($action === 'save_stay') {
@@ -64,12 +77,25 @@ class PermissoesController extends Controller
 
     public function perfilUpdate(Request $request)
     {
+        $input = $request->all();
         $perfilId = (int) $request->input('id', 0);
-        $result = $this->service->salvarPerfil($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicarPerfil($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', $result['errors'] ?? array('Não foi possível criar a cópia do papel.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/permissoes/perfil/editar?perfil_id=' . $perfilId);
+            }
+
+            Session::flash('success', 'Cópia do papel criada com sucesso.');
+            return $this->redirect('/admin/permissoes/perfil/editar?perfil_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvarPerfil($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível atualizar o papel.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/permissoes/perfil/editar?perfil_id=' . $perfilId);
         }
         if ($action === 'save_stay') {
@@ -112,11 +138,24 @@ class PermissoesController extends Controller
 
     public function permissaoStore(Request $request)
     {
-        $result = $this->service->salvarPermissao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $input = $request->all();
         $action = $this->submitAction($request, 'save_exit');
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicarPermissao($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', $result['errors'] ?? array('Não foi possível criar a cópia da permissão.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/permissoes/item/criar');
+            }
+
+            Session::flash('success', 'Cópia da permissão criada com sucesso.');
+            return $this->redirect('/admin/permissoes/item/editar?permissao_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvarPermissao($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível salvar a permissão.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/permissoes/item/criar');
         }
         if ($action === 'save_stay') {
@@ -133,12 +172,25 @@ class PermissoesController extends Controller
 
     public function permissaoUpdate(Request $request)
     {
+        $input = $request->all();
         $permissaoId = (int) $request->input('id', 0);
-        $result = $this->service->salvarPermissao($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicarPermissao($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', $result['errors'] ?? array('Não foi possível criar a cópia da permissão.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/permissoes/item/editar?permissao_id=' . $permissaoId);
+            }
+
+            Session::flash('success', 'Cópia da permissão criada com sucesso.');
+            return $this->redirect('/admin/permissoes/item/editar?permissao_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvarPermissao($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível atualizar a permissão.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/permissoes/item/editar?permissao_id=' . $permissaoId);
         }
         if ($action === 'save_stay') {

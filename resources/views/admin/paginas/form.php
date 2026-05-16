@@ -81,7 +81,7 @@ $value = function ($field, $default = '') use ($old, $pagina) {
             </label>
 
             <?php $cancelUrl = '/admin/paginas'; ?>
-            <?php $showSaveAsCopy = true; ?>
+            <?php $showSaveAsCopy = !empty($pagina); ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>

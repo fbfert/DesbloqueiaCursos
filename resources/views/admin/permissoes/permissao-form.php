@@ -3,6 +3,7 @@ use App\Core\Helpers;
 $permissao = $form_data['permissao'] ?? null;
 $oldData = isset($old) && is_array($old) ? $old : array();
 $value = function($key,$default='') use ($oldData,$permissao){ if(array_key_exists($key,$oldData)) return $oldData[$key]; if(is_array($permissao)&&array_key_exists($key,$permissao)) return $permissao[$key]; return $default; };
+$show_save_as_copy = !empty((int) $value('id', 0));
 ?>
 
 <section class="admin-page">

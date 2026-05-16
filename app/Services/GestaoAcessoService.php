@@ -217,6 +217,38 @@ class GestaoAcessoService
         return array('ok' => true, 'id' => $id);
     }
 
+    public function duplicarPerfil(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $id = !empty($data['id']) ? (int) $data['id'] : 0;
+        if ($id <= 0) {
+            return array('ok' => false, 'errors' => array('Papel não encontrado.'));
+        }
+
+        $perfil = $this->perfis->findById($id);
+        if (!$perfil) {
+            return array('ok' => false, 'errors' => array('Papel não encontrado.'));
+        }
+
+        $permissaoIds = isset($data['permissao_ids']) ? array_values(array_unique(array_map('intval', (array) $data['permissao_ids']))) : array();
+        if (!$permissaoIds) {
+            foreach ($this->perfilPermissao->forPerfil($id) as $permissao) {
+                $permissaoIds[] = (int) $permissao['id'];
+            }
+            $permissaoIds = array_values(array_unique($permissaoIds));
+        }
+
+        $payload = array_merge($data, array(
+            'id' => 0,
+            'nome' => $this->nomeDaCopia(isset($data['nome']) && trim((string) $data['nome']) !== '' ? $data['nome'] : $perfil['nome']),
+            'slug' => $this->slugDaCopia(isset($data['slug']) && trim((string) $data['slug']) !== '' ? $data['slug'] : $perfil['slug'], 'perfil'),
+            'status' => 'inativo',
+            'sistema' => 0,
+            'permissao_ids' => $permissaoIds,
+        ));
+
+        return $this->salvarPerfil($payload, $actorUserId, $ipAddress, $userAgent);
+    }
+
     public function excluirPerfil($id, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $perfil = $this->perfis->findById((int) $id);
@@ -271,6 +303,39 @@ class GestaoAcessoService
         return array('ok' => true, 'id' => $id);
     }
 
+    public function duplicarPermissao(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $id = !empty($data['id']) ? (int) $data['id'] : 0;
+        if ($id <= 0) {
+            return array('ok' => false, 'errors' => array('Permissão não encontrada.'));
+        }
+
+        $permissao = $this->permissoes->findById($id);
+        if (!$permissao) {
+            return array('ok' => false, 'errors' => array('Permissão não encontrada.'));
+        }
+
+        $modulo = trim((string) ($data['modulo'] ?? $permissao['modulo']));
+        $acao = trim((string) ($data['acao'] ?? $permissao['acao']));
+        $nome = trim((string) ($data['nome'] ?? $permissao['nome']));
+        $descricao = trim((string) ($data['descricao'] ?? $permissao['descricao']));
+        $slugBase = trim((string) ($data['slug'] ?? $permissao['slug']));
+        if ($slugBase === '') {
+            $slugBase = $modulo !== '' && $acao !== '' ? $this->slugify($modulo) . '.' . $this->slugify($acao) : 'permissao';
+        }
+
+        $payload = array_merge($data, array(
+            'id' => 0,
+            'modulo' => $modulo,
+            'acao' => $acao,
+            'nome' => $this->nomeDaCopia($nome !== '' ? $nome : $permissao['nome']),
+            'slug' => $this->slugDaCopia($slugBase, 'permissao'),
+            'descricao' => $descricao !== '' ? $descricao : null,
+        ));
+
+        return $this->salvarPermissao($payload, $actorUserId, $ipAddress, $userAgent);
+    }
+
     public function excluirPermissao($id, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $permissao = $this->permissoes->findById((int) $id);
@@ -289,6 +354,39 @@ class GestaoAcessoService
         $value = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
         $value = preg_replace('/[^a-z0-9]+/i', '-', $value);
         return trim($value, '-');
+    }
+
+    private function nomeDaCopia($nome)
+    {
+        $nome = trim((string) $nome);
+        $nome = preg_replace('/^c[oó]pia de\s+/iu', '', $nome);
+
+        return 'Cópia de ' . $nome;
+    }
+
+    private function slugDaCopia($valor, $fallback)
+    {
+        $base = trim((string) $valor);
+        if ($base === '') {
+            $base = $this->slugify($fallback);
+        }
+        $base = preg_replace('/-copia(?:-\d+)?$/i', '', $base);
+        $base = trim($base, '-');
+        if ($base === '') {
+            $base = $this->slugify($fallback);
+        }
+        if ($base === '') {
+            $base = 'copia';
+        }
+
+        $slug = $base . '-copia';
+        $sufixo = 2;
+        while ($this->perfis->findBySlug($slug) || $this->permissoes->findBySlug($slug)) {
+            $slug = $base . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $slug;
     }
 
     private function listarLixeiraUsuarios()

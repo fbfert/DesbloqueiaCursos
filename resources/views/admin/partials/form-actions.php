@@ -13,16 +13,16 @@ $cancelLabel = isset($cancel_label) ? (string) $cancel_label : 'Cancelar';
 ?>
 <div class="cta-group full">
     <?php if ($showSave): ?>
-        <button type="submit" name="submit_action" value="save_stay" class="button-link button-link--primary"><?php echo htmlspecialchars($saveLabel, ENT_QUOTES, 'UTF-8'); ?></button>
+        <button type="submit" name="form_action" value="save" class="button-link button-link--primary"><?php echo htmlspecialchars($saveLabel, ENT_QUOTES, 'UTF-8'); ?></button>
     <?php endif; ?>
     <?php if ($showSaveAndNew): ?>
-        <button type="submit" name="submit_action" value="save_new" class="button-link"><?php echo htmlspecialchars($saveAndNewLabel, ENT_QUOTES, 'UTF-8'); ?></button>
+        <button type="submit" name="form_action" value="save_new" class="button-link"><?php echo htmlspecialchars($saveAndNewLabel, ENT_QUOTES, 'UTF-8'); ?></button>
     <?php endif; ?>
     <?php if ($showSaveAndExit): ?>
-        <button type="submit" name="submit_action" value="save_exit" class="button-link button-link--ghost"><?php echo htmlspecialchars($saveAndExitLabel, ENT_QUOTES, 'UTF-8'); ?></button>
+        <button type="submit" name="form_action" value="save_exit" class="button-link button-link--ghost"><?php echo htmlspecialchars($saveAndExitLabel, ENT_QUOTES, 'UTF-8'); ?></button>
     <?php endif; ?>
     <?php if ($showSaveAsCopy): ?>
-        <button type="submit" name="submit_action" value="save_copy" class="button-link"><?php echo htmlspecialchars($saveAsCopyLabel, ENT_QUOTES, 'UTF-8'); ?></button>
+        <button type="submit" name="form_action" value="save_copy" class="button-link"><?php echo htmlspecialchars($saveAsCopyLabel, ENT_QUOTES, 'UTF-8'); ?></button>
     <?php endif; ?>
     <?php if ($showCancel): ?>
         <a class="button-link button-link--ghost" href="<?php echo htmlspecialchars($cancelUrl, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($cancelLabel, ENT_QUOTES, 'UTF-8'); ?></a>

@@ -41,12 +41,26 @@ class CursosController extends Controller
 
     public function store(Request $request)
     {
-        $result = $this->cursoService->salvar($request->all(), isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
+        $input = $request->all();
+
+        if ($action === 'save_copy') {
+            $result = $this->cursoService->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o curso/evento.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/cursos/criar');
+            }
+
+            Session::flash('success', 'Cópia do curso/evento criada com sucesso.');
+            return $this->redirect('/admin/cursos/editar?curso_id=' . (int) $result['id']);
+        }
+
+        $result = $this->cursoService->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o curso/evento.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/cursos/criar');
         }
 
@@ -79,13 +93,27 @@ class CursosController extends Controller
 
     public function update(Request $request)
     {
-        $result = $this->cursoService->salvar($request->all(), isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $input = $request->all();
         $cursoId = (int) $request->input('id', 0);
         $action = $this->submitAction($request, 'save_exit');
 
+        if ($action === 'save_copy') {
+            $result = $this->cursoService->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel criar a cópia do curso/evento.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/cursos/editar?curso_id=' . $cursoId);
+            }
+
+            Session::flash('success', 'Cópia do curso/evento criada com sucesso.');
+            return $this->redirect('/admin/cursos/editar?curso_id=' . (int) $result['id']);
+        }
+
+        $result = $this->cursoService->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar o curso/evento.'));
-            Session::flash('old', $request->all());
+            Session::flash('old', $input);
             return $this->redirect('/admin/cursos/editar?curso_id=' . $cursoId);
         }
 

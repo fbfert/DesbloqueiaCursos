@@ -137,6 +137,31 @@ class FrontendModuloService
         return array('ok' => true, 'id' => $id);
     }
 
+    public function duplicar(array $input, array $files = array(), $usuarioId = null, $ipAddress = null, $userAgent = null)
+    {
+        $id = isset($input['id']) ? (int) $input['id'] : 0;
+        if ($id <= 0) {
+            return array('ok' => false, 'errors' => array('Módulo não encontrado.'));
+        }
+
+        $modulo = $this->model->findById($id);
+        if (!$modulo) {
+            return array('ok' => false, 'errors' => array('Módulo não encontrado.'));
+        }
+
+        $codigoBase = isset($input['codigo']) && trim((string) $input['codigo']) !== '' ? $input['codigo'] : $modulo['codigo'];
+        $posicaoBase = isset($input['posicao']) && trim((string) $input['posicao']) !== '' ? $input['posicao'] : $modulo['posicao'];
+        $payload = $input;
+        $payload['id'] = 0;
+        $payload['codigo'] = $this->codigoDaCopia($codigoBase);
+        $payload['nome_admin'] = $this->nomeDaCopia(isset($input['nome_admin']) && trim((string) $input['nome_admin']) !== '' ? $input['nome_admin'] : $modulo['nome_admin']);
+        $payload['titulo'] = $this->nomeDaCopia(isset($input['titulo']) && trim((string) $input['titulo']) !== '' ? $input['titulo'] : $modulo['titulo']);
+        $payload['posicao'] = $this->posicaoDaCopia($posicaoBase);
+        $payload['ativo'] = 0;
+
+        return $this->salvar($payload, $files, $usuarioId, $ipAddress, $userAgent);
+    }
+
     public function excluir($id, $justificativa, $usuarioId = null, $ipAddress = null, $userAgent = null)
     {
         $modulo = $this->model->findById((int) $id);
@@ -261,6 +286,50 @@ class FrontendModuloService
         $value = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
         $value = preg_replace('/[^a-z0-9_\-]+/', '_', $value);
         return trim((string) $value, '_');
+    }
+
+    private function nomeDaCopia($valor)
+    {
+        $valor = trim((string) $valor);
+        $valor = preg_replace('/^c[oó]pia de\s+/iu', '', $valor);
+        return 'Cópia de ' . $valor;
+    }
+
+    private function codigoDaCopia($valor)
+    {
+        $base = $this->normalizarSlug($valor);
+        $base = preg_replace('/-copia(?:-\d+)?$/', '', $base);
+        $base = trim((string) $base, '_-');
+        if ($base === '') {
+            $base = 'modulo';
+        }
+
+        $codigo = $base . '-copia';
+        $sufixo = 2;
+        while ($this->model->findByCode($codigo)) {
+            $codigo = $base . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $codigo;
+    }
+
+    private function posicaoDaCopia($valor)
+    {
+        $valor = trim((string) $valor);
+        $valor = preg_replace('/-copia(?:-\d+)?$/', '', $valor);
+        if ($valor === '') {
+            $valor = 'modulo';
+        }
+
+        $posicao = $valor . '-copia';
+        $sufixo = 2;
+        while ($this->model->findActiveByPositionOrCode($posicao, null)) {
+            $posicao = $valor . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $posicao;
     }
 
     private function nullableTrim($value)

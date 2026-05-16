@@ -42,8 +42,21 @@ class FrontendMenuController extends Controller
     public function store(Request $request)
     {
         $input = $request->all();
-        $result = $this->service->salvarMenu($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
+
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicarMenu($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o menu.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/frontend/menus/criar');
+            }
+
+            Session::flash('success', 'Cópia do menu criada com sucesso.');
+            return $this->redirect('/admin/frontend/menus/editar?menu_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvarMenu($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o menu.'));
             Session::flash('old', $input);
@@ -77,8 +90,21 @@ class FrontendMenuController extends Controller
     {
         $menuId = (int) $request->input('id', 0);
         $input = $request->all();
-        $result = $this->service->salvarMenu($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
+
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicarMenu($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível criar a cópia do menu.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/frontend/menus/editar?menu_id=' . $menuId);
+            }
+
+            Session::flash('success', 'Cópia do menu criada com sucesso.');
+            return $this->redirect('/admin/frontend/menus/editar?menu_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvarMenu($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar o menu.'));
             Session::flash('old', $input);
@@ -140,8 +166,21 @@ class FrontendMenuController extends Controller
     {
         $menuId = (int) $request->input('menu_id', 0);
         $input = $request->all();
-        $result = $this->service->salvarItem($menuId, $input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
+
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicarItem($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o item.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/frontend/menus/itens/criar?menu_id=' . $menuId);
+            }
+
+            Session::flash('success', 'Cópia do item criada com sucesso.');
+            return $this->redirect('/admin/frontend/menus/itens/editar?menu_id=' . $menuId . '&item_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvarItem($menuId, $input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o item.'));
             Session::flash('old', $input);
@@ -179,8 +218,21 @@ class FrontendMenuController extends Controller
         $menuId = (int) $request->input('menu_id', 0);
         $itemId = (int) $request->input('id', 0);
         $input = $request->all();
-        $result = $this->service->salvarItem($menuId, $input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
+
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicarItem($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível criar a cópia do item.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/frontend/menus/itens/editar?menu_id=' . $menuId . '&item_id=' . $itemId);
+            }
+
+            Session::flash('success', 'Cópia do item criada com sucesso.');
+            return $this->redirect('/admin/frontend/menus/itens/editar?menu_id=' . $menuId . '&item_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvarItem($menuId, $input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar o item.'));
             Session::flash('old', $input);

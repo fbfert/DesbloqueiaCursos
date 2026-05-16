@@ -44,7 +44,7 @@ class AvisoController extends Controller
     public function store(Request $request)
     {
         $input = $request->all();
-        $action = (string) $request->input('submit_action', 'save_exit');
+        $action = $this->submitAction($request, 'save_exit');
         $result = $this->service->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível salvar o aviso.'));
@@ -90,7 +90,7 @@ class AvisoController extends Controller
     {
         $avisoId = (int) $request->input('id', 0);
         $input = $request->all();
-        $action = (string) $request->input('submit_action', 'save_exit');
+        $action = $this->submitAction($request, 'save_exit');
         $result = $this->service->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', $result['errors'] ?? array('Não foi possível atualizar o aviso.'));

@@ -43,7 +43,20 @@ class PaginasController extends Controller
     public function store(Request $request)
     {
         $input = $request->all();
-        $action = (string) $request->input('submit_action', 'save_exit');
+        $action = $this->submitAction($request, 'save_exit');
+
+        if ($action === 'save_copy') {
+            $copia = $this->paginaService->duplicar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($copia['ok'])) {
+                Session::flash('errors', isset($copia['errors']) ? $copia['errors'] : array('Não foi possível criar a cópia da página.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/paginas/criar');
+            }
+
+            Session::flash('success', 'Cópia da página criada com sucesso.');
+            return $this->redirect('/admin/paginas/editar?pagina_id=' . (int) $copia['id']);
+        }
+
         $result = $this->paginaService->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
@@ -59,24 +72,6 @@ class PaginasController extends Controller
 
         if ($action === 'save_new') {
             Session::flash('success', 'Página salva com sucesso. Você já pode criar uma nova página.');
-            return $this->redirect('/admin/paginas/criar');
-        }
-
-        if ($action === 'save_copy') {
-            $pagina = $this->paginaService->formData((int) $result['id']);
-            $original = isset($pagina['pagina']) ? $pagina['pagina'] : null;
-            if ($original) {
-                Session::flash('old', array(
-                    'titulo' => $original['titulo'] . ' (cópia)',
-                    'slug' => $original['slug'] . '-copia',
-                    'rota' => $original['rota'] . '-copia',
-                    'resumo' => $original['resumo'],
-                    'conteudo_html' => $original['conteudo_html'],
-                    'status' => 'rascunho',
-                    'ordem' => $original['ordem'],
-                ));
-            }
-            Session::flash('success', 'Página salva. Ajuste os dados para salvar uma cópia.');
             return $this->redirect('/admin/paginas/criar');
         }
 
@@ -102,7 +97,20 @@ class PaginasController extends Controller
     {
         $paginaId = (int) $request->input('id', 0);
         $input = $request->all();
-        $action = (string) $request->input('submit_action', 'save_exit');
+        $action = $this->submitAction($request, 'save_exit');
+
+        if ($action === 'save_copy') {
+            $copia = $this->paginaService->duplicar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($copia['ok'])) {
+                Session::flash('errors', isset($copia['errors']) ? $copia['errors'] : array('Não foi possível criar a cópia da página.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/paginas/editar?pagina_id=' . $paginaId);
+            }
+
+            Session::flash('success', 'Cópia da página criada com sucesso.');
+            return $this->redirect('/admin/paginas/editar?pagina_id=' . (int) $copia['id']);
+        }
+
         $result = $this->paginaService->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
@@ -118,24 +126,6 @@ class PaginasController extends Controller
 
         if ($action === 'save_new') {
             Session::flash('success', 'Página atualizada com sucesso. Você já pode criar uma nova página.');
-            return $this->redirect('/admin/paginas/criar');
-        }
-
-        if ($action === 'save_copy') {
-            $pagina = $this->paginaService->formData((int) $result['id']);
-            $original = isset($pagina['pagina']) ? $pagina['pagina'] : null;
-            if ($original) {
-                Session::flash('old', array(
-                    'titulo' => $original['titulo'] . ' (cópia)',
-                    'slug' => $original['slug'] . '-copia',
-                    'rota' => $original['rota'] . '-copia',
-                    'resumo' => $original['resumo'],
-                    'conteudo_html' => $original['conteudo_html'],
-                    'status' => 'rascunho',
-                    'ordem' => $original['ordem'],
-                ));
-            }
-            Session::flash('success', 'Página atualizada. Ajuste os dados para salvar uma cópia.');
             return $this->redirect('/admin/paginas/criar');
         }
 

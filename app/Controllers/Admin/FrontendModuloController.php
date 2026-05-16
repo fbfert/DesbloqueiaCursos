@@ -42,8 +42,21 @@ class FrontendModuloController extends Controller
     public function store(Request $request)
     {
         $input = $request->all();
-        $result = $this->service->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
+
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o módulo.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/frontend/modulos/criar');
+            }
+
+            Session::flash('success', 'Cópia do módulo criada com sucesso.');
+            return $this->redirect('/admin/frontend/modulos/editar?modulo_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o módulo.'));
             Session::flash('old', $input);
@@ -77,8 +90,21 @@ class FrontendModuloController extends Controller
     {
         $moduloId = (int) $request->input('id', 0);
         $input = $request->all();
-        $result = $this->service->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
+
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível criar a cópia do módulo.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/frontend/modulos/editar?modulo_id=' . $moduloId);
+            }
+
+            Session::flash('success', 'Cópia do módulo criada com sucesso.');
+            return $this->redirect('/admin/frontend/modulos/editar?modulo_id=' . (int) $result['id']);
+        }
+
+        $result = $this->service->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar o módulo.'));
             Session::flash('old', $input);

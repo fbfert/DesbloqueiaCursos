@@ -45,16 +45,35 @@ class ProfessoresFiscaisController extends Controller
 
     public function store(Request $request)
     {
+        $input = $request->all();
+        $action = $this->submitAction($request, 'save_exit');
+        if ($action === 'save_copy') {
+            $result = $this->financeiroService->duplicarProfessorFiscal(
+                $input,
+                Session::get('usuario_id'),
+                $request->ip(),
+                $request->userAgent()
+            );
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possível criar a cópia do perfil fiscal.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/professores-fiscais/criar');
+            }
+
+            Session::flash('success', 'Cópia do perfil fiscal criada com sucesso.');
+            return $this->redirect('/admin/professores-fiscais/editar?perfil_id=' . (int) $result['id']);
+        }
+
         $result = $this->financeiroService->salvarProfessorFiscal(
-            $request->all(),
+            $input,
             Session::get('usuario_id'),
             $request->ip(),
             $request->userAgent()
         );
-        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possivel salvar o perfil fiscal.'));
+            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possível salvar o perfil fiscal.'));
+            Session::flash('old', $input);
             return $this->redirect('/admin/professores-fiscais/criar');
         }
 
@@ -100,17 +119,36 @@ class ProfessoresFiscaisController extends Controller
 
     public function update(Request $request)
     {
+        $input = $request->all();
+        $action = $this->submitAction($request, 'save_exit');
+        if ($action === 'save_copy') {
+            $result = $this->financeiroService->duplicarProfessorFiscal(
+                $input,
+                Session::get('usuario_id'),
+                $request->ip(),
+                $request->userAgent()
+            );
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possível criar a cópia do perfil fiscal.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/professores-fiscais/editar?perfil_id=' . (int) $request->input('id', 0));
+            }
+
+            Session::flash('success', 'Cópia do perfil fiscal criada com sucesso.');
+            return $this->redirect('/admin/professores-fiscais/editar?perfil_id=' . (int) $result['id']);
+        }
+
         $result = $this->financeiroService->salvarProfessorFiscal(
-            $request->all(),
+            $input,
             Session::get('usuario_id'),
             $request->ip(),
             $request->userAgent()
         );
-        $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
             $perfilId = (int) $request->input('id', 0);
-            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possivel atualizar o perfil fiscal.'));
+            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possível atualizar o perfil fiscal.'));
+            Session::flash('old', $input);
             return $this->redirect('/admin/professores-fiscais/editar?perfil_id=' . $perfilId);
         }
 

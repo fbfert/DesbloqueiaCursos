@@ -53,6 +53,19 @@ class EmailModelosController extends Controller
     {
         $input = $request->all();
         $action = $this->submitAction($request, 'save_exit');
+
+        if ($action === 'save_copy') {
+            $result = $this->service->duplicar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o modelo de e-mail.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/emails/modelos/criar');
+            }
+
+            Session::flash('success', 'Cópia do modelo de e-mail criada com sucesso.');
+            return $this->redirect('/admin/emails/modelos/editar?modelo_id=' . (int) $result['id']);
+        }
+
         $result = $this->service->save($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
@@ -106,6 +119,23 @@ class EmailModelosController extends Controller
         $input = $request->all();
         $action = $this->submitAction($request, 'save_exit');
         $stored = $modeloId > 0 ? $this->service->formData($modeloId) : $this->service->formData(null, isset($input['evento']) ? $input['evento'] : '');
+
+        if ($action === 'save_copy') {
+            if (!empty($stored['is_default_event']) && !$this->isSuperAdmin()) {
+                Session::flash('errors', array('Somente o superadministrador pode alterar os modelos padrão de e-mail.'));
+                return $this->redirect('/admin/emails/modelos/editar?modelo_id=' . $modeloId);
+            }
+
+            $result = $this->service->duplicar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($result['ok'])) {
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível criar a cópia do modelo de e-mail.'));
+                Session::flash('old', $input);
+                return $this->redirect('/admin/emails/modelos/editar?modelo_id=' . $modeloId);
+            }
+
+            Session::flash('success', 'Cópia do modelo de e-mail criada com sucesso.');
+            return $this->redirect('/admin/emails/modelos/editar?modelo_id=' . (int) $result['id']);
+        }
 
         if (!empty($stored['is_default_event']) && !$this->isSuperAdmin()) {
             Session::flash('errors', array('Somente o superadministrador pode alterar os modelos padrão de e-mail.'));

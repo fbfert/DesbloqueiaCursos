@@ -916,6 +916,56 @@ class CursoService
         return $value;
     }
 
+    private function nomeDaCopia($nome)
+    {
+        $nome = trim((string) $nome);
+        $nome = preg_replace('/^c[oó]pia de\s+/iu', '', $nome);
+
+        return 'Cópia de ' . $nome;
+    }
+
+    private function slugDaCopia($valor)
+    {
+        $base = $this->slugify($valor);
+        $base = preg_replace('/-copia(?:-\d+)?$/', '', $base);
+        $base = trim((string) $base, '-');
+        if ($base === '') {
+            $base = 'curso';
+        }
+
+        $slug = $base . '-copia';
+        $sufixo = 2;
+        while ($this->cursoModel->findBySlug($slug)) {
+            $slug = $base . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $slug;
+    }
+
+    public function duplicar(array $data, array $files = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $id = !empty($data['id']) ? (int) $data['id'] : 0;
+        if ($id <= 0) {
+            return array('ok' => false, 'errors' => array('Curso/evento não encontrado.'));
+        }
+
+        $original = $this->cursoModel->findAdminById($id);
+        if (!$original) {
+            return array('ok' => false, 'errors' => array('Curso/evento não encontrado.'));
+        }
+
+        $nomeBase = trim((string) (isset($data['nome']) && trim((string) $data['nome']) !== '' ? $data['nome'] : $original['nome']));
+        $slugBase = isset($data['slug']) && trim((string) $data['slug']) !== '' ? $data['slug'] : $nomeBase;
+        $payload = $data;
+        $payload['id'] = 0;
+        $payload['nome'] = $this->nomeDaCopia($nomeBase);
+        $payload['slug'] = $this->slugDaCopia($slugBase);
+        $payload['status'] = 'rascunho';
+
+        return $this->salvar($payload, $files, $actorUserId, $ipAddress, $userAgent);
+    }
+
     public function atualizarStatus($id, $status, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $curso = $this->cursoModel->findById($id);

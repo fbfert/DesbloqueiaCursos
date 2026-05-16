@@ -286,6 +286,29 @@ class CupomService
         }
     }
 
+    public function duplicar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $id = !empty($data['id']) ? (int) $data['id'] : 0;
+        if ($id <= 0) {
+            return array('ok' => false, 'errors' => array('Cupom não encontrado.'));
+        }
+
+        $original = $this->cupomModel->findById($id);
+        if (!$original) {
+            return array('ok' => false, 'errors' => array('Cupom não encontrado.'));
+        }
+
+        $codigoBase = isset($data['codigo']) && trim((string) $data['codigo']) !== '' ? $data['codigo'] : $original['codigo'];
+        $payload = $data;
+        $payload['id'] = 0;
+        $payload['codigo'] = $this->codigoDaCopia($codigoBase);
+        $payload['nome'] = $this->nomeDaCopia(isset($data['nome']) && trim((string) $data['nome']) !== '' ? $data['nome'] : $original['nome']);
+        $payload['status'] = 'rascunho';
+        $payload['link_promocional'] = null;
+
+        return $this->salvar($payload, $actorUserId, $ipAddress, $userAgent);
+    }
+
     public function excluir($cupomId, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $cupom = $this->cupomModel->findById($cupomId);
@@ -885,6 +908,32 @@ class CupomService
         $codigo = preg_replace('/\s+/', '', $codigo);
 
         return $codigo;
+    }
+
+    private function codigoDaCopia($codigo)
+    {
+        $codigo = $this->normalizeCodigo($codigo);
+        $codigo = preg_replace('/-COPIA(?:-\d+)?$/', '', $codigo);
+        if ($codigo === '') {
+            $codigo = 'COPIA';
+        }
+
+        $copia = $codigo . '-COPIA';
+        $sufixo = 2;
+        while ($this->cupomModel->findByCodigo($copia)) {
+            $copia = $codigo . '-COPIA-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $copia;
+    }
+
+    private function nomeDaCopia($nome)
+    {
+        $nome = trim((string) $nome);
+        $nome = preg_replace('/^c[oó]pia de\s+/iu', '', $nome);
+
+        return 'Cópia de ' . $nome;
     }
 
     private function normalizeToken($value)

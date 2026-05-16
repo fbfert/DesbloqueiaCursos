@@ -250,6 +250,7 @@ if (empty($modulosExistentes)) {
             Destaque
         </label>
         <?php $cancelUrl = '/admin/cursos'; ?>
+        <?php $showSaveAsCopy = !empty($curso['id']); ?>
         <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>

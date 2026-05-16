@@ -6,6 +6,7 @@ $permissoes = $form_data['permissoes'] ?? array();
 $oldData = isset($old) && is_array($old) ? $old : array();
 $permissaoIdsOld = isset($oldData['permissao_ids']) ? array_map('intval', (array) $oldData['permissao_ids']) : $permissaoIds;
 $value = function($key,$default='') use ($oldData,$perfil){ if(array_key_exists($key,$oldData)) return $oldData[$key]; if(is_array($perfil)&&array_key_exists($key,$perfil)) return $perfil[$key]; return $default; };
+$show_save_as_copy = !empty((int) $value('id', 0));
 ?>
 
 <section class="admin-page">

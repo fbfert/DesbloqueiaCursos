@@ -22,9 +22,17 @@ class Controller
 
     protected function submitAction(Request $request, $default = 'save_exit')
     {
-        $action = trim((string) $request->input('submit_action', $default));
+        $action = trim((string) $request->input('form_action', $request->input('submit_action', $default)));
 
-        return $action !== '' ? $action : $default;
+        if ($action === '') {
+            $action = $default;
+        }
+
+        if ($action === 'save') {
+            return 'save_stay';
+        }
+
+        return $action;
     }
 
     protected function redirectAfterCrudSave(Request $request, array $result, array $options = array())

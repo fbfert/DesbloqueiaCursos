@@ -130,6 +130,30 @@ class PaginaService
         }
     }
 
+    public function duplicar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $id = !empty($data['id']) ? (int) $data['id'] : 0;
+        $original = $id > 0 ? $this->paginaModel->findById($id) : null;
+
+        if ($id > 0 && !$original) {
+            return array('ok' => false, 'errors' => array('Página não encontrada.'));
+        }
+
+        $tituloBase = trim((string) (isset($data['titulo']) ? $data['titulo'] : ($original['titulo'] ?? '')));
+        if ($tituloBase === '') {
+            return array('ok' => false, 'errors' => array('Informe o título da página.'));
+        }
+
+        $copyData = $data;
+        unset($copyData['id'], $copyData['publicada_em']);
+        $copyData['titulo'] = $this->tituloDaCopia($tituloBase);
+        $copyData['slug'] = $this->slugDaCopia(isset($data['slug']) && trim((string) $data['slug']) !== '' ? $data['slug'] : ($original['slug'] ?? $tituloBase));
+        $copyData['rota'] = $this->rotaDaCopia(isset($data['rota']) && trim((string) $data['rota']) !== '' ? $data['rota'] : ($original['rota'] ?? $copyData['slug']));
+        $copyData['status'] = 'rascunho';
+
+        return $this->salvar($copyData, $actorUserId, $ipAddress, $userAgent);
+    }
+
     public function excluir($id, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $pagina = $this->paginaModel->findById((int) $id);
@@ -182,6 +206,53 @@ class PaginaService
         $value = trim($value, '-');
 
         return $value;
+    }
+
+    private function tituloDaCopia($titulo)
+    {
+        $titulo = trim((string) $titulo);
+        $titulo = preg_replace('/^c[oó]pia de\s+/iu', '', $titulo);
+
+        return 'Cópia de ' . $titulo;
+    }
+
+    private function slugDaCopia($valor)
+    {
+        $base = $this->slugify($valor);
+        $base = preg_replace('/-copia(?:-\d+)?$/', '', $base);
+        $base = trim((string) $base, '-');
+        if ($base === '') {
+            $base = 'pagina';
+        }
+
+        $slug = $base . '-copia';
+        $sufixo = 2;
+        while ($this->paginaModel->findBySlug($slug)) {
+            $slug = $base . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $slug;
+    }
+
+    private function rotaDaCopia($valor)
+    {
+        $rota = $this->normalizarRota($valor);
+        $rota = preg_replace('/-copia(?:-\d+)?$/', '', $rota);
+        $rota = trim((string) $rota);
+
+        if ($rota === '' || $rota === '/') {
+            $rota = '/pagina';
+        }
+
+        $copia = $rota === '/' ? '/copia' : $rota . '-copia';
+        $sufixo = 2;
+        while ($this->paginaModel->findByRota($copia)) {
+            $copia = $rota === '/' ? '/copia-' . $sufixo : $rota . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $copia;
     }
 
     private function normalizarRota($value)

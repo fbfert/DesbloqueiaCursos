@@ -237,6 +237,45 @@ class EmailModeloService
         }
     }
 
+    public function duplicar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        try {
+            $id = !empty($data['id']) ? (int) $data['id'] : 0;
+            if ($id <= 0) {
+                return array('ok' => false, 'errors' => array('Modelo de e-mail não encontrado.'));
+            }
+
+            $stored = $this->modeloModel->findById($id);
+            if (!$stored) {
+                return array('ok' => false, 'errors' => array('Modelo de e-mail não encontrado.'));
+            }
+
+            $eventoBase = trim((string) ($data['evento'] ?? $stored['evento']));
+            $templateBase = trim((string) ($data['template'] ?? $stored['template']));
+            $payload = array(
+                'evento' => $this->suffixUnique($eventoBase, 'evento'),
+                'template' => $this->suffixUnique($templateBase, 'template'),
+                'nome' => $this->nomeDaCopia((string) ($data['nome'] ?? $stored['nome'])),
+                'assunto' => trim((string) ($data['assunto'] ?? $stored['assunto'])),
+                'corpo_html' => trim((string) ($data['corpo_html'] ?? $stored['corpo_html'])),
+                'gatilho_descricao' => trim((string) ($data['gatilho_descricao'] ?? ($stored['gatilho_descricao'] ?? ''))),
+                'variaveis_json' => $this->normalizeVariablesJson(isset($data['variaveis_disponiveis']) ? $data['variaveis_disponiveis'] : (isset($stored['variaveis_json']) ? $stored['variaveis_json'] : '')),
+                'ativo' => 0,
+                'editavel' => 1,
+            );
+
+            return $this->save($payload, $actorUserId, $ipAddress, $userAgent);
+        } catch (\Throwable $exception) {
+            Logger::error('emails.modelo.copiar.erro', array(
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ));
+
+            return array('ok' => false, 'errors' => array('Não foi possível criar a cópia do modelo de e-mail.'));
+        }
+    }
+
     public function alternarAtivo($id, $ativo, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         try {
@@ -725,6 +764,49 @@ HTML,
         }
 
         return $modelo;
+    }
+
+    private function nomeDaCopia($valor)
+    {
+        $valor = trim((string) $valor);
+        $valor = preg_replace('/^c[oó]pia de\s+/iu', '', $valor);
+        return 'Cópia de ' . $valor;
+    }
+
+    private function suffixUnique($valor, $field)
+    {
+        $base = trim((string) $valor);
+        $base = preg_replace('/-copia(?:-\d+)?$/i', '', $base);
+        if ($base === '') {
+            $base = $field === 'template' ? 'modelo' : 'evento';
+        }
+
+        $candidate = $base . '-copia';
+        $index = 2;
+        while ($this->existsUniqueValue($field, $candidate)) {
+            $candidate = $base . '-copia-' . $index;
+            $index++;
+        }
+
+        return $candidate;
+    }
+
+    private function existsUniqueValue($field, $value)
+    {
+        if ($field === 'evento') {
+            return (bool) $this->modeloModel->findByEvento($value);
+        }
+
+        $stmt = \App\Core\Database::connection()->prepare(
+            'SELECT id
+             FROM emails_modelos
+             WHERE template = :template
+               AND deleted_at IS NULL
+             LIMIT 1'
+        );
+        $stmt->execute(array('template' => (string) $value));
+
+        return (bool) $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
     private function decodeVariables($json)

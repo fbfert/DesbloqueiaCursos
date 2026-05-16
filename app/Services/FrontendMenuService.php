@@ -242,6 +242,142 @@ class FrontendMenuService
         return array('ok' => true);
     }
 
+    public function duplicarMenu(array $input, $usuarioId = null, $ipAddress = null, $userAgent = null)
+    {
+        $id = isset($input['id']) ? (int) $input['id'] : 0;
+        if ($id <= 0) {
+            return array('ok' => false, 'errors' => array('Menu não encontrado.'));
+        }
+
+        $menu = $this->menuModel->findById($id);
+        if (!$menu) {
+            return array('ok' => false, 'errors' => array('Menu não encontrado.'));
+        }
+
+        $novoCodigo = $this->codigoDaCopia(isset($input['codigo']) && trim((string) $input['codigo']) !== '' ? $input['codigo'] : $menu['codigo']);
+        $novoNome = $this->nomeDaCopia(isset($input['nome_admin']) && trim((string) $input['nome_admin']) !== '' ? $input['nome_admin'] : $menu['nome_admin']);
+        $novoPosicao = $this->posicaoDaCopia(isset($input['posicao']) && trim((string) $input['posicao']) !== '' ? $input['posicao'] : $menu['posicao']);
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $menuId = $this->menuModel->create(array(
+                'codigo' => $novoCodigo,
+                'nome_admin' => $novoNome,
+                'posicao' => $novoPosicao,
+                'ativo' => 0,
+                'ordem' => isset($input['ordem']) ? (int) $input['ordem'] : (int) $menu['ordem'],
+                'observacoes_admin' => $this->nullableTrim(isset($input['observacoes_admin']) ? $input['observacoes_admin'] : $menu['observacoes_admin']),
+                'criado_por' => $usuarioId ? (int) $usuarioId : null,
+                'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
+            ));
+
+            $itensCopiados = 0;
+            foreach ($this->itemModel->allByMenu($id) as $item) {
+                $this->itemModel->create(array(
+                    'menu_id' => $menuId,
+                    'rotulo' => $this->nomeDaCopia(isset($item['rotulo']) ? $item['rotulo'] : ''),
+                    'url' => isset($item['url']) ? $item['url'] : '',
+                    'target' => isset($item['target']) ? $item['target'] : '_self',
+                    'rel' => isset($item['rel']) ? $item['rel'] : null,
+                    'ativo' => 0,
+                    'ordem' => isset($item['ordem']) ? (int) $item['ordem'] : 0,
+                    'criado_por' => $usuarioId ? (int) $usuarioId : null,
+                    'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
+                ));
+                $itensCopiados++;
+            }
+
+            $this->auditService->record(
+                'frontend_menu.copiado',
+                'frontend_menu',
+                $menuId,
+                array('origem_id' => $id, 'itens_copiados' => $itensCopiados),
+                $usuarioId,
+                $ipAddress,
+                $userAgent
+            );
+
+            $pdo->commit();
+
+            return array('ok' => true, 'id' => $menuId);
+        } catch (\Throwable $throwable) {
+            $pdo->rollBack();
+            Logger::error('frontend_menu.copiar_falhou', array(
+                'menu_id' => $id,
+                'message' => $throwable->getMessage(),
+            ));
+
+            return array('ok' => false, 'errors' => array('Não foi possível criar a cópia do menu.'));
+        }
+    }
+
+    public function duplicarItem(array $input, $usuarioId = null, $ipAddress = null, $userAgent = null)
+    {
+        $menuId = isset($input['menu_id']) ? (int) $input['menu_id'] : 0;
+        $id = isset($input['id']) ? (int) $input['id'] : 0;
+
+        $menu = $this->menuModel->findById($menuId);
+        if (!$menu) {
+            return array('ok' => false, 'errors' => array('Menu não encontrado.'));
+        }
+
+        if ($id <= 0) {
+            return array('ok' => false, 'errors' => array('Item não encontrado.'));
+        }
+
+        $item = $this->itemModel->findById($id);
+        if (!$item || (int) $item['menu_id'] !== $menuId) {
+            return array('ok' => false, 'errors' => array('Item não encontrado.'));
+        }
+
+        $payload = array(
+            'menu_id' => $menuId,
+            'rotulo' => $this->nomeDaCopia(isset($input['rotulo']) && trim((string) $input['rotulo']) !== '' ? $input['rotulo'] : $item['rotulo']),
+            'url' => isset($input['url']) && trim((string) $input['url']) !== '' ? trim((string) $input['url']) : $item['url'],
+            'target' => isset($input['target']) && in_array($input['target'], array('_self', '_blank'), true) ? $input['target'] : $item['target'],
+            'rel' => $this->nullableTrim(isset($input['rel']) ? $input['rel'] : $item['rel']),
+            'ativo' => 0,
+            'ordem' => isset($input['ordem']) ? (int) $input['ordem'] : (int) $item['ordem'],
+            'criado_por' => $usuarioId ? (int) $usuarioId : null,
+            'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
+        );
+
+        if ($payload['target'] === '_blank' && ($payload['rel'] === null || trim((string) $payload['rel']) === '')) {
+            $payload['rel'] = 'noopener noreferrer';
+        }
+
+        $errors = $this->validarItem($payload);
+        if ($errors) {
+            return array('ok' => false, 'errors' => $errors);
+        }
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+        try {
+            $novoId = $this->itemModel->create($payload);
+            $this->auditService->record(
+                'frontend_menu_item.copiado',
+                'frontend_menu_item',
+                $novoId,
+                array('origem_id' => $id, 'menu_id' => $menuId),
+                $usuarioId,
+                $ipAddress,
+                $userAgent
+            );
+            $pdo->commit();
+            return array('ok' => true, 'id' => $novoId);
+        } catch (\Throwable $throwable) {
+            $pdo->rollBack();
+            Logger::error('frontend_menu_item.copiar_falhou', array(
+                'item_id' => $id,
+                'message' => $throwable->getMessage(),
+            ));
+            return array('ok' => false, 'errors' => array('Não foi possível criar a cópia do item.'));
+        }
+    }
+
     public function salvarItem($menuId, array $input, $usuarioId = null, $ipAddress = null, $userAgent = null)
     {
         $menu = $this->menuModel->findById((int) $menuId);
@@ -394,6 +530,49 @@ class FrontendMenuService
         $value = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
         $value = preg_replace('/[^a-z0-9_\-]+/', '_', $value);
         return trim((string) $value, '_');
+    }
+
+    private function nomeDaCopia($valor)
+    {
+        $valor = trim((string) $valor);
+        $valor = preg_replace('/^c[oó]pia de\s+/iu', '', $valor);
+        return 'Cópia de ' . $valor;
+    }
+
+    private function codigoDaCopia($valor)
+    {
+        $base = $this->normalizarSlug($valor);
+        $base = preg_replace('/-copia(?:-\d+)?$/', '', $base);
+        $base = trim((string) $base, '_-');
+        if ($base === '') {
+            $base = 'menu';
+        }
+        $codigo = $base . '-copia';
+        $sufixo = 2;
+        while ($this->menuModel->findByCode($codigo)) {
+            $codigo = $base . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+        return $codigo;
+    }
+
+    private function posicaoDaCopia($valor)
+    {
+        $valor = trim((string) $valor);
+        $valor = preg_replace('/-copia(?:-\d+)?$/', '', $valor);
+        $valor = trim($valor);
+        if ($valor === '') {
+            $valor = 'menu';
+        }
+
+        $posicao = $valor . '-copia';
+        $sufixo = 2;
+        while ($this->menuModel->findActiveByPositionOrCode($posicao, null)) {
+            $posicao = $valor . '-copia-' . $sufixo;
+            $sufixo++;
+        }
+
+        return $posicao;
     }
 
     private function nullableTrim($value)

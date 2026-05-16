@@ -148,6 +148,52 @@ class FinanceiroService
         return $this->repasseService->salvarProfessorFiscal($data, $actorUserId, $ipAddress, $userAgent);
     }
 
+    public function duplicarProfessorFiscal(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        if (!$this->podeGerirFinanceiro($actorUserId)) {
+            $this->registrarAcessoNegado('financeiro.professor_fiscal.copia_negada', isset($data['id']) ? $data['id'] : null, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
+        $id = !empty($data['id']) ? (int) $data['id'] : 0;
+        if ($id <= 0) {
+            return array('ok' => false, 'message' => 'Perfil fiscal não encontrado.');
+        }
+
+        $original = $this->professorFiscalModel->findById($id);
+        if (!$original) {
+            return array('ok' => false, 'message' => 'Perfil fiscal não encontrado.');
+        }
+
+        $usuarioId = !empty($data['usuario_id']) ? (int) $data['usuario_id'] : 0;
+        if ($usuarioId <= 0) {
+            return array('ok' => false, 'message' => 'Selecione o professor para criar a cópia.');
+        }
+        if ((int) $original['usuario_id'] === $usuarioId) {
+            return array('ok' => false, 'message' => 'Selecione outro professor para criar a cópia.');
+        }
+        if ($this->professorFiscalModel->findByUsuarioId($usuarioId)) {
+            return array('ok' => false, 'message' => 'O professor selecionado já possui perfil fiscal.');
+        }
+
+        $payload = array(
+            'usuario_id' => $usuarioId,
+            'tipo_pessoa' => isset($data['tipo_pessoa']) && in_array($data['tipo_pessoa'], array('pf', 'pj'), true) ? $data['tipo_pessoa'] : $original['tipo_pessoa'],
+            'cpf' => isset($data['cpf']) ? $data['cpf'] : $original['cpf'],
+            'cnpj' => isset($data['cnpj']) ? $data['cnpj'] : $original['cnpj'],
+            'razao_social' => isset($data['razao_social']) ? $data['razao_social'] : $original['razao_social'],
+            'nome_fantasia' => isset($data['nome_fantasia']) ? $data['nome_fantasia'] : $original['nome_fantasia'],
+            'inscricao_municipal' => isset($data['inscricao_municipal']) ? $data['inscricao_municipal'] : $original['inscricao_municipal'],
+            'aliquota_retencao' => isset($data['aliquota_retencao']) ? $data['aliquota_retencao'] : $original['aliquota_retencao'],
+            'exige_nota_fiscal' => !empty($data['exige_nota_fiscal']) ? 1 : (!empty($original['exige_nota_fiscal']) ? 1 : 0),
+            'email_financeiro' => isset($data['email_financeiro']) ? $data['email_financeiro'] : $original['email_financeiro'],
+            'observacao' => isset($data['observacao']) ? $data['observacao'] : $original['observacao'],
+            'status' => 'inativo',
+        );
+
+        return $this->repasseService->salvarProfessorFiscal($payload, $actorUserId, $ipAddress, $userAgent);
+    }
+
     public function removerProfessorFiscal($perfilId, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         if (!$this->podeGerirFinanceiro($actorUserId)) {
