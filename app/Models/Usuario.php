@@ -60,7 +60,14 @@ class Usuario
     public function findById($id)
     {
         $stmt = Database::connection()->prepare(
-            'SELECT * FROM usuarios WHERE deleted_at IS NULL AND id = :id LIMIT 1'
+            'SELECT u.*,
+                    COALESCE(GROUP_CONCAT(DISTINCT p.nome ORDER BY p.nome SEPARATOR ", "), "") AS perfis
+             FROM usuarios u
+             LEFT JOIN usuario_perfis up ON up.usuario_id = u.id
+             LEFT JOIN perfis p ON p.id = up.perfil_id AND p.deleted_at IS NULL
+             WHERE u.deleted_at IS NULL AND u.id = :id
+             GROUP BY u.id
+             LIMIT 1'
         );
         $stmt->execute(array('id' => (int) $id));
 
@@ -378,5 +385,165 @@ class Usuario
         );
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function contarParaPresente(array $filters = array())
+    {
+        $params = array();
+        $where = $this->buildPresenteWhere($filters, $params);
+
+        $sql = 'SELECT COUNT(DISTINCT u.id) AS total
+                FROM usuarios u
+                WHERE ' . $where;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? (int) $row['total'] : 0;
+    }
+
+    public function listarParaPresente(array $filters = array(), $limit = 25, $offset = 0)
+    {
+        $limit = max(1, (int) $limit);
+        $offset = max(0, (int) $offset);
+        $params = array();
+        $where = $this->buildPresenteWhere($filters, $params);
+        $hasCidadeEstado = $this->supportsCidadeEstadoColumns();
+
+        $cidadeSql = $hasCidadeEstado ? 'u.cidade AS cidade,' : 'NULL AS cidade,';
+        $estadoSql = $hasCidadeEstado ? 'u.estado AS estado,' : 'NULL AS estado,';
+
+        $sql = 'SELECT u.id,
+                       u.nome,
+                       u.email,
+                       u.cpf,
+                       ' . $cidadeSql . '
+                       ' . $estadoSql . '
+                       u.status,
+                       u.created_at,
+                       COALESCE(GROUP_CONCAT(DISTINCT p.nome ORDER BY p.nome SEPARATOR ", "), "") AS perfis,
+                       COALESCE(GROUP_CONCAT(DISTINCT ce.nome ORDER BY ce.nome SEPARATOR ", "), "") AS cursos_comprados,
+                       COUNT(DISTINCT CASE WHEN ped.id IS NOT NULL THEN ce.id END) AS total_cursos_comprados,
+                       COUNT(DISTINCT ped.id) AS total_pedidos_comprados
+                FROM usuarios u
+                LEFT JOIN usuario_perfis up ON up.usuario_id = u.id
+                LEFT JOIN perfis p ON p.id = up.perfil_id AND p.deleted_at IS NULL
+                LEFT JOIN pedidos ped
+                    ON (ped.comprador_usuario_id = u.id OR ped.pagador_usuario_id = u.id)
+                   AND ped.deleted_at IS NULL
+                   AND ped.status IN ("aprovado", "pago")
+                   AND COALESCE(ped.is_presente, 0) = 0
+                LEFT JOIN pedido_itens pi
+                    ON pi.pedido_id = ped.id
+                   AND pi.deleted_at IS NULL
+                LEFT JOIN cursos_eventos ce
+                    ON ce.id = pi.curso_evento_id
+                   AND ce.deleted_at IS NULL
+                WHERE ' . $where . '
+                GROUP BY u.id
+                ORDER BY u.nome ASC, u.id ASC
+                LIMIT ' . $limit . ' OFFSET ' . $offset;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function idsParaPresente(array $filters = array())
+    {
+        $params = array();
+        $where = $this->buildPresenteWhere($filters, $params);
+
+        $sql = 'SELECT DISTINCT u.id
+                FROM usuarios u
+                WHERE ' . $where . '
+                ORDER BY u.id ASC';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return array_map('intval', array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id'));
+    }
+
+    private function buildPresenteWhere(array $filters, array &$params)
+    {
+        $where = array('u.deleted_at IS NULL', 'u.status = "ativo"');
+
+        $nome = isset($filters['nome']) ? trim((string) $filters['nome']) : '';
+        if ($nome !== '') {
+            $where[] = '(u.nome LIKE :nome OR u.email LIKE :nome OR u.cpf LIKE :nome)';
+            $params['nome'] = '%' . $nome . '%';
+        }
+
+        $cidade = isset($filters['cidade']) ? trim((string) $filters['cidade']) : '';
+        if ($cidade !== '' && $this->supportsCidadeEstadoColumns()) {
+            $where[] = 'u.cidade LIKE :cidade';
+            $params['cidade'] = '%' . $cidade . '%';
+        }
+
+        $perfil = isset($filters['perfil']) ? trim((string) $filters['perfil']) : '';
+        if ($perfil !== '') {
+            $where[] = 'EXISTS (
+                SELECT 1
+                FROM usuario_perfis upx
+                INNER JOIN perfis px ON px.id = upx.perfil_id AND px.deleted_at IS NULL
+                WHERE upx.usuario_id = u.id
+                  AND px.slug = :perfil
+            )';
+            $params['perfil'] = $perfil;
+        }
+
+        $dataInicio = isset($filters['data_inicio']) ? trim((string) $filters['data_inicio']) : '';
+        if ($dataInicio !== '') {
+            $where[] = 'DATE(u.created_at) >= :data_inicio';
+            $params['data_inicio'] = $dataInicio;
+        }
+
+        $dataFim = isset($filters['data_fim']) ? trim((string) $filters['data_fim']) : '';
+        if ($dataFim !== '') {
+            $where[] = 'DATE(u.created_at) <= :data_fim';
+            $params['data_fim'] = $dataFim;
+        }
+
+        $cursoEventoId = isset($filters['curso_evento_id']) ? (int) $filters['curso_evento_id'] : 0;
+        $comprasTipo = isset($filters['compras_tipo']) ? trim((string) $filters['compras_tipo']) : '';
+
+        if ($comprasTipo === 'nenhuma') {
+            $where[] = 'NOT EXISTS (
+                SELECT 1
+                FROM pedidos ped_n
+                INNER JOIN pedido_itens pi_n ON pi_n.pedido_id = ped_n.id AND pi_n.deleted_at IS NULL
+                WHERE ped_n.deleted_at IS NULL
+                  AND (ped_n.comprador_usuario_id = u.id OR ped_n.pagador_usuario_id = u.id)
+                  AND ped_n.status IN ("aprovado", "pago")
+                  AND COALESCE(ped_n.is_presente, 0) = 0
+            )';
+        } elseif ($cursoEventoId > 0) {
+            $where[] = 'EXISTS (
+                SELECT 1
+                FROM pedidos ped_c
+                INNER JOIN pedido_itens pi_c ON pi_c.pedido_id = ped_c.id AND pi_c.deleted_at IS NULL
+                WHERE ped_c.deleted_at IS NULL
+                  AND (ped_c.comprador_usuario_id = u.id OR ped_c.pagador_usuario_id = u.id)
+                  AND ped_c.status IN ("aprovado", "pago")
+                  AND COALESCE(ped_c.is_presente, 0) = 0
+                  AND pi_c.curso_evento_id = :curso_evento_id
+            )';
+            $params['curso_evento_id'] = $cursoEventoId;
+        } elseif ($comprasTipo === 'qualquer') {
+            $where[] = 'EXISTS (
+                SELECT 1
+                FROM pedidos ped_q
+                INNER JOIN pedido_itens pi_q ON pi_q.pedido_id = ped_q.id AND pi_q.deleted_at IS NULL
+                WHERE ped_q.deleted_at IS NULL
+                  AND (ped_q.comprador_usuario_id = u.id OR ped_q.pagador_usuario_id = u.id)
+                  AND ped_q.status IN ("aprovado", "pago")
+                  AND COALESCE(ped_q.is_presente, 0) = 0
+            )';
+        }
+
+        return implode(' AND ', $where);
     }
 }

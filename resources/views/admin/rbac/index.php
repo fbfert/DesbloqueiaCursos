@@ -11,28 +11,27 @@ foreach ((array) $permissions as $grupoPermissoes) {
 ?>
 
 <div class="admin-page">
-    <section class="hero admin-dashboard-hero">
-        <div class="hero__content">
-            <h1>RBAC</h1>
-            <p>Perfis, permissões e controle de acesso.</p>
+    <section class="admin-page__header admin-page__header--with-metrics">
+        <div class="admin-page__header-content">
+            <h1 class="admin-page__title">RBAC</h1>
+            <p class="admin-page__subtitle">Perfis, permissões e controle de acesso.</p>
         </div>
-        <div class="hero__panel admin-dashboard-hero__panel">
-            <strong>Resumo rápido</strong>
-            <div class="admin-dashboard-highlight">
-                <span>Perfis ativos</span>
-                <strong><?php echo (int) $totalPerfis; ?></strong>
-                <small>grupos de acesso cadastrados</small>
-            </div>
-            <div class="admin-dashboard-highlight">
-                <span>Permissões</span>
-                <strong><?php echo (int) $totalPermissoes; ?></strong>
-                <small>regras disponíveis</small>
-            </div>
-            <div class="admin-dashboard-highlight">
-                <span>Módulos</span>
-                <strong><?php echo (int) $totalModulos; ?></strong>
-                <small>agrupamentos de permissão</small>
-            </div>
+        <div class="admin-page__metrics">
+            <article class="admin-page__metric">
+                <span class="admin-page__metric-label">Perfis ativos</span>
+                <strong class="admin-page__metric-value"><?php echo (int) $totalPerfis; ?></strong>
+                <small class="admin-page__metric-help">grupos de acesso cadastrados</small>
+            </article>
+            <article class="admin-page__metric">
+                <span class="admin-page__metric-label">Permissões</span>
+                <strong class="admin-page__metric-value"><?php echo (int) $totalPermissoes; ?></strong>
+                <small class="admin-page__metric-help">regras disponíveis</small>
+            </article>
+            <article class="admin-page__metric">
+                <span class="admin-page__metric-label">Módulos</span>
+                <strong class="admin-page__metric-value"><?php echo (int) $totalModulos; ?></strong>
+                <small class="admin-page__metric-help">agrupamentos de permissão</small>
+            </article>
         </div>
     </section>
 

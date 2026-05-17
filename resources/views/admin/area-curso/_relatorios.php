@@ -81,11 +81,10 @@ $exportBase = $queryBase;
 $exportBase['export'] = 'csv';
 ?>
 
-<section class="status-card admin-area-curso__section" id="area-curso-relatorios">
+<section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'relatorios' ? ' is-active' : ''; ?>" data-area-curso-tab="relatorios" id="area-curso-relatorios">
     <div class="panel-header">
         <div>
-            <h2>Relatórios</h2>
-            <p class="muted">Indicadores pedagógicos e operacionais do curso/turma.</p>
+            <?php echo areaCursoHeadingWithTooltip('Relatórios', 'Indicadores pedagógicos e operacionais do curso/turma.'); ?>
         </div>
         <?php if ($relatoriosOk): ?>
             <div class="admin-area-curso__actions">
@@ -99,7 +98,6 @@ $exportBase['export'] = 'csv';
     <?php if (!$relatoriosOk): ?>
         <p class="muted"><?php echo Helpers::e($relatorios['message'] ?? 'Relatório indisponível.'); ?></p>
     <?php else: ?>
-        <p class="muted"><strong>Resumo geral do curso/turma.</strong> As tabelas abaixo exibem os resultados filtrados.</p>
         <form method="get" action="<?php echo Helpers::e($areaCursoBaseUrl); ?>" class="form-grid admin-area-curso__form">
             <input type="hidden" name="curso_id" value="<?php echo !empty($curso['id']) ? (int) $curso['id'] : 0; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
@@ -205,8 +203,7 @@ $exportBase['export'] = 'csv';
         <section class="status-card admin-area-curso__section">
             <div class="panel-header">
                 <div>
-                    <h2>Progresso por aluno</h2>
-                    <p class="muted">Resumo individual por inscrição válida do contexto selecionado.</p>
+                    <?php echo areaCursoHeadingWithTooltip('Progresso por aluno', 'Resumo individual por inscrição válida do contexto selecionado.'); ?>
                 </div>
                 <span class="badge badge--soft"><?php echo count($alunos); ?> registros</span>
             </div>
@@ -256,11 +253,10 @@ $exportBase['export'] = 'csv';
         </section>
 
         <div class="admin-area-curso__report-lists">
-            <section class="status-card admin-area-curso__section" id="area-curso-aptos-certificado">
+            <section class="status-card admin-area-curso__section" id="area-curso-relatorios-aptos-certificado">
                 <div class="panel-header">
                     <div>
-                        <h2>Aptos para certificado</h2>
-                        <p class="muted"><?php echo Helpers::e($painelAptosAviso); ?></p>
+                        <?php echo areaCursoHeadingWithTooltip('Aptos para certificado', $painelAptosAviso); ?>
                     </div>
                     <span class="badge badge--soft"><?php echo count($painelAptosAlunos); ?> alunos</span>
                 </div>
@@ -339,8 +335,7 @@ $exportBase['export'] = 'csv';
             <section class="status-card admin-area-curso__section">
                 <div class="panel-header">
                     <div>
-                        <h2>Situações de atenção</h2>
-                        <p class="muted">Itens operacionais que merecem acompanhamento, sem confundir certificado com pendência pedagógica.</p>
+                        <?php echo areaCursoHeadingWithTooltip('Situações de atenção', 'Itens operacionais que merecem acompanhamento, sem confundir certificado com pendência pedagógica.'); ?>
                     </div>
                 </div>
 
@@ -365,8 +360,7 @@ $exportBase['export'] = 'csv';
             <section class="status-card admin-area-curso__section">
                 <div class="panel-header">
                     <div>
-                        <h2>Atividades</h2>
-                        <p class="muted">Resumo por atividade publicada do contexto atual.</p>
+                        <?php echo areaCursoHeadingWithTooltip('Atividades', 'Resumo por atividade publicada do contexto atual.'); ?>
                     </div>
                     <span class="badge badge--soft"><?php echo count($atividades); ?> atividades</span>
                 </div>

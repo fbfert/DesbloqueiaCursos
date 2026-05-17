@@ -62,6 +62,11 @@ class Request
         return $this->body;
     }
 
+    public function queryAll()
+    {
+        return $this->query;
+    }
+
     public function ip()
     {
         if (!empty($this->server['HTTP_X_FORWARDED_FOR'])) {

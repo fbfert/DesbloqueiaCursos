@@ -29,11 +29,10 @@ $tiposMateriais = array(
 $quantidadeMateriaisContexto = !empty($materiais) ? count($materiais) : 0;
 ?>
 
-<section class="status-card admin-area-curso__section admin-area-curso__materials" id="area-curso-materiais">
+<section class="status-card admin-area-curso__section admin-area-curso__materials area-curso-tab-panel<?php echo $selectedTab === 'materiais' ? ' is-active' : ''; ?>" data-area-curso-tab="materiais" id="area-curso-materiais">
     <div class="panel-header">
         <div>
-            <h2>Materiais</h2>
-            <p class="muted">Gestão dos materiais protegidos vinculados às aulas do curso.</p>
+            <?php echo areaCursoHeadingWithTooltip('Materiais', 'Gestão dos materiais protegidos vinculados às aulas do curso.'); ?>
         </div>
         <div class="split-actions">
             <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=materiais">Novo material</a>

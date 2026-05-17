@@ -76,6 +76,45 @@ class ComprovantePix
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function pendentesForBackoffice()
+    {
+        $statusPendentes = array('pendente', 'em_analise');
+        $placeholders = array();
+        $params = array();
+
+        foreach ($statusPendentes as $indice => $status) {
+            $chave = 'status_' . $indice;
+            $placeholders[] = ':' . $chave;
+            $params[$chave] = $status;
+        }
+
+        $sql = 'SELECT cp.*,
+                       p.codigo AS pedido_codigo,
+                       p.pagador_nome,
+                       p.pagador_email,
+                       p.total AS pedido_total,
+                       p.status AS pedido_status,
+                       p.created_at AS pedido_created_at,
+                       GROUP_CONCAT(DISTINCT ce.nome ORDER BY ce.nome SEPARATOR ", ") AS cursos_nome,
+                       GROUP_CONCAT(DISTINCT t.nome ORDER BY t.nome SEPARATOR ", ") AS turmas_nome,
+                       COUNT(DISTINCT pi.id) AS total_itens
+                FROM comprovantes_pix cp
+                INNER JOIN pedidos p ON p.id = cp.pedido_id
+                LEFT JOIN pedido_itens pi ON pi.pedido_id = p.id AND pi.deleted_at IS NULL
+                LEFT JOIN cursos_eventos ce ON ce.id = pi.curso_evento_id AND ce.deleted_at IS NULL
+                LEFT JOIN turmas t ON t.id = pi.turma_id AND t.deleted_at IS NULL
+                WHERE cp.deleted_at IS NULL
+                  AND cp.is_atual = 1
+                  AND cp.status IN (' . implode(', ', $placeholders) . ')
+                GROUP BY cp.id
+                ORDER BY cp.enviado_em DESC, cp.id DESC';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function create(array $data)
     {
         $versao = isset($data['versao']) ? (int) $data['versao'] : 1;

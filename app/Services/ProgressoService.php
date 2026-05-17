@@ -420,6 +420,11 @@ class ProgressoService
 
         $pedidoStatus = isset($inscricao['pedido_status']) ? (string) $inscricao['pedido_status'] : '';
         $comprovanteStatus = isset($inscricao['comprovante_status']) ? (string) $inscricao['comprovante_status'] : '';
+        $acessoExpiraEm = isset($inscricao['acesso_expira_em']) ? (string) $inscricao['acesso_expira_em'] : '';
+
+        if ($acessoExpiraEm !== '' && strtotime($acessoExpiraEm) !== false && strtotime($acessoExpiraEm) < time()) {
+            return false;
+        }
 
         if (in_array($pedidoStatus, array('aprovado', 'pago'), true)) {
             return true;

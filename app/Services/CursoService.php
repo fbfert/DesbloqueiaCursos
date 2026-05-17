@@ -61,16 +61,34 @@ class CursoService
     {
         $cursos = $this->cursoModel->allWithCategoryAndCounts();
         $categorias = $this->categoriaModel->allWithCounts();
+        $cursosAtivos = array();
+        $cursosRascunho = array();
+        $cursosInativos = array();
 
         foreach ($cursos as &$curso) {
             $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
             $curso['pessoas_vinculadas'] = $this->cursoPessoaModel->forCourse($curso['id']);
+
+            $status = isset($curso['status']) ? (string) $curso['status'] : '';
+            if ($status === 'ativo') {
+                $cursosAtivos[] = $curso;
+                continue;
+            }
+
+            if ($status === 'rascunho') {
+                $cursosRascunho[] = $curso;
+                continue;
+            }
+
+            $cursosInativos[] = $curso;
         }
         unset($curso);
 
         return array(
             'categorias' => $categorias,
-            'cursos' => $cursos,
+            'cursos' => $cursosAtivos,
+            'cursos_rascunho' => $cursosRascunho,
+            'cursos_inativos' => $cursosInativos,
         );
     }
 

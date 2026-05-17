@@ -29,6 +29,9 @@ $menu = array(
         array('label' => 'Cupons', 'href' => '/admin/cupons', 'icon' => '⌘', 'permissions_any' => array('cupons.ver')),
         array('label' => 'Certificados', 'href' => '/admin/certificados', 'icon' => '⬚', 'permissions_any' => array('certificados.ver')),
     )),
+    array('group' => 'Promocionais', 'items' => array(
+        array('label' => 'Presentes', 'href' => '/admin/promocionais/presentes', 'icon' => '🎁', 'permissions_any' => array('promocionais.presentes.ver')),
+    )),
     array('group' => 'Acadêmico', 'items' => array(
         array('label' => 'Acadêmico', 'href' => '/admin/academico', 'icon' => '✦', 'permissions_any' => array('academico.ver')),
     )),

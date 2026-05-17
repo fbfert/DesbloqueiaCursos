@@ -214,6 +214,7 @@ class CursoEvento
                     INNER JOIN pedidos p
                         ON p.id = pi.pedido_id
                        AND p.deleted_at IS NULL
+                       AND COALESCE(p.is_presente, 0) = 0
                     LEFT JOIN comprovantes_pix cp
                         ON cp.pedido_id = p.id
                        AND cp.deleted_at IS NULL

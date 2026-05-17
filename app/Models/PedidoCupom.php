@@ -14,6 +14,7 @@ class PedidoCupom
              FROM pedidos_cupons pc
              LEFT JOIN cupons c ON c.id = pc.cupom_id
              WHERE pc.pedido_id = :pedido_id
+               AND pc.status IN ("aplicado", "revalidado")
              LIMIT 1'
         );
 

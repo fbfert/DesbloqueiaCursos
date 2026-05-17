@@ -129,10 +129,12 @@ class Pedido
     public function findById($id)
     {
         $stmt = Database::connection()->prepare(
-            'SELECT *
+            'SELECT pedidos.*,
+                    pc.titulo AS presente_campanha_titulo
              FROM pedidos
-             WHERE id = :id
-               AND deleted_at IS NULL
+             LEFT JOIN presentes_campanhas pc ON pc.id = pedidos.presente_campanha_id
+             WHERE pedidos.id = :id
+               AND pedidos.deleted_at IS NULL
              LIMIT 1'
         );
 
@@ -145,11 +147,100 @@ class Pedido
     public function allForBackoffice()
     {
         $stmt = Database::connection()->query(
-            'SELECT p.*
+            'SELECT p.*,
+                    pc.titulo AS presente_campanha_titulo
              FROM pedidos p
+             LEFT JOIN presentes_campanhas pc ON pc.id = p.presente_campanha_id
              WHERE p.deleted_at IS NULL
              ORDER BY p.id DESC'
         );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function allDeletedForBackoffice(array $filters = array())
+    {
+        $sql = 'SELECT p.*,
+                       GROUP_CONCAT(DISTINCT ce.nome ORDER BY ce.nome SEPARATOR ", ") AS cursos_nome,
+                       COUNT(DISTINCT pi.id) AS total_itens,
+                       lx.id AS lixeira_id,
+                       lx.justificativa AS justificativa_exclusao,
+                       lx.snapshot_dados AS snapshot_dados,
+                       lx.created_at AS excluido_em,
+                       u.nome AS excluido_por_nome
+                FROM pedidos p
+                LEFT JOIN pedido_itens pi
+                    ON pi.pedido_id = p.id
+                   AND pi.deleted_at IS NULL
+                LEFT JOIN cursos_eventos ce
+                    ON ce.id = pi.curso_evento_id
+                   AND ce.deleted_at IS NULL
+                LEFT JOIN lixeira lx
+                    ON lx.entidade_tipo = "pedido"
+                   AND lx.entidade_id = p.id
+                LEFT JOIN usuarios u
+                    ON u.id = lx.excluido_por_usuario_id
+                WHERE p.deleted_at IS NOT NULL';
+
+        $params = array();
+
+        $q = isset($filters['q']) ? trim((string) $filters['q']) : '';
+        if ($q !== '') {
+            $sql .= ' AND (
+                        p.codigo LIKE :q
+                        OR p.pagador_nome LIKE :q
+                        OR p.pagador_email LIKE :q
+                        OR p.pagador_cpf LIKE :q
+                        OR EXISTS (
+                            SELECT 1
+                            FROM pedido_itens pi_q
+                            INNER JOIN cursos_eventos ce_q ON ce_q.id = pi_q.curso_evento_id
+                            WHERE pi_q.pedido_id = p.id
+                              AND pi_q.deleted_at IS NULL
+                              AND ce_q.deleted_at IS NULL
+                              AND ce_q.nome LIKE :q
+                        )
+                    )';
+            $params['q'] = '%' . $q . '%';
+        }
+
+        $status = isset($filters['status']) ? trim((string) $filters['status']) : '';
+        if ($status !== '') {
+            $sql .= ' AND p.status = :status';
+            $params['status'] = $status;
+        }
+
+        $curso = isset($filters['curso']) ? trim((string) $filters['curso']) : '';
+        if ($curso !== '') {
+            $sql .= ' AND EXISTS (
+                        SELECT 1
+                        FROM pedido_itens pi_f
+                        INNER JOIN cursos_eventos ce_f ON ce_f.id = pi_f.curso_evento_id
+                        WHERE pi_f.pedido_id = p.id
+                          AND pi_f.deleted_at IS NULL
+                          AND ce_f.deleted_at IS NULL
+                          AND ce_f.nome LIKE :curso
+                    )';
+            $params['curso'] = '%' . $curso . '%';
+        }
+
+        $dataInicio = isset($filters['de']) ? trim((string) $filters['de']) : '';
+        if ($dataInicio !== '') {
+            $sql .= ' AND DATE(p.deleted_at) >= :data_inicio';
+            $params['data_inicio'] = $dataInicio;
+        }
+
+        $dataFim = isset($filters['ate']) ? trim((string) $filters['ate']) : '';
+        if ($dataFim !== '') {
+            $sql .= ' AND DATE(p.deleted_at) <= :data_fim';
+            $params['data_fim'] = $dataFim;
+        }
+
+        $sql .= ' GROUP BY p.id
+                  ORDER BY p.deleted_at DESC, p.id DESC';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -174,11 +265,13 @@ class Pedido
             'INSERT INTO pedidos
              (codigo, comprador_usuario_id, pagador_usuario_id, pagador_nome, pagador_cpf, pagador_email, pagador_telefone,
               tipo_pedido, status, subtotal, desconto_total, acrescimo_total, total,
-              observacoes_internas, observacoes_publicas, canal_origem, created_at, updated_at, deleted_at)
+              observacoes_internas, observacoes_publicas, canal_origem, is_presente, presente_campanha_id, presente_titulo,
+              presente_justificativa, presente_concedido_em, aprovado_por_usuario_id, aprovado_em, created_at, updated_at, deleted_at)
              VALUES
              (:codigo, :comprador_usuario_id, :pagador_usuario_id, :pagador_nome, :pagador_cpf, :pagador_email, :pagador_telefone,
               :tipo_pedido, :status, :subtotal, :desconto_total, :acrescimo_total, :total,
-              :observacoes_internas, :observacoes_publicas, :canal_origem, NOW(), NOW(), NULL)'
+              :observacoes_internas, :observacoes_publicas, :canal_origem, :is_presente, :presente_campanha_id, :presente_titulo,
+              :presente_justificativa, :presente_concedido_em, :aprovado_por_usuario_id, :aprovado_em, NOW(), NOW(), NULL)'
         );
 
         $stmt->execute(array(
@@ -198,6 +291,13 @@ class Pedido
             'observacoes_internas' => isset($data['observacoes_internas']) ? $data['observacoes_internas'] : null,
             'observacoes_publicas' => isset($data['observacoes_publicas']) ? $data['observacoes_publicas'] : null,
             'canal_origem' => isset($data['canal_origem']) ? $data['canal_origem'] : null,
+            'is_presente' => !empty($data['is_presente']) ? 1 : 0,
+            'presente_campanha_id' => isset($data['presente_campanha_id']) ? $data['presente_campanha_id'] : null,
+            'presente_titulo' => isset($data['presente_titulo']) ? $data['presente_titulo'] : null,
+            'presente_justificativa' => isset($data['presente_justificativa']) ? $data['presente_justificativa'] : null,
+            'presente_concedido_em' => isset($data['presente_concedido_em']) ? $data['presente_concedido_em'] : null,
+            'aprovado_por_usuario_id' => isset($data['aprovado_por_usuario_id']) ? $data['aprovado_por_usuario_id'] : null,
+            'aprovado_em' => isset($data['aprovado_em']) ? $data['aprovado_em'] : null,
         ));
 
         return (int) Database::connection()->lastInsertId();

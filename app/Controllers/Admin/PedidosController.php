@@ -30,6 +30,26 @@ class PedidosController extends Controller
         ));
     }
 
+    public function excluidos(Request $request)
+    {
+        $filters = array(
+            'q' => $request->query('q', ''),
+            'status' => $request->query('status', ''),
+            'curso' => $request->query('curso', ''),
+            'de' => $request->query('de', ''),
+            'ate' => $request->query('ate', ''),
+        );
+
+        return $this->view('admin/pedidos/excluidos', array_merge(
+            array(
+                'title' => 'Pedidos excluídos',
+                'success' => Session::pullFlash('success'),
+                'errors' => Session::pullFlash('errors', array()),
+            ),
+            $this->pedidoService->listarExcluidosBackoffice(Session::get('usuario_id'), $filters)
+        ));
+    }
+
     public function show(Request $request)
     {
         $pedidoId = (int) $request->query('pedido_id', 0);
@@ -48,6 +68,108 @@ class PedidosController extends Controller
             ),
             $detalhe
         ));
+    }
+
+    public function excluir(Request $request)
+    {
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        $justificativa = trim((string) $request->input('justificativa', ''));
+
+        if ($pedidoId <= 0) {
+            Session::flash('errors', array('Pedido inválido.'));
+            return $this->redirect('/admin/pedidos');
+        }
+
+        $result = $this->pedidoService->excluir(
+            $pedidoId,
+            $justificativa !== '' ? $justificativa : 'Exclusão administrativa do pedido.',
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', array($result['message']));
+            return $this->redirect('/admin/pedidos');
+        }
+
+        Session::flash('success', 'Pedido excluído com sucesso.');
+        return $this->redirect('/admin/pedidos');
+    }
+
+    public function excluirEmLote(Request $request)
+    {
+        $dias = (int) $request->input('dias', 30);
+        $result = $this->pedidoService->excluirPedidosAntigosNaoConfirmados(
+            $dias > 0 ? $dias : 30,
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', array($result['message'] ?? 'Não foi possível excluir os pedidos em lote.'));
+            return $this->redirect('/admin/pedidos');
+        }
+
+        $mensagem = $result['message'] ?? 'Operação concluída.';
+        if (!empty($result['ignorados'])) {
+            $mensagem .= ' ' . $result['ignorados'] . ' pedidos foram ignorados por possuírem vínculos protegidos.';
+        }
+
+        Session::flash('success', $mensagem);
+        return $this->redirect('/admin/pedidos');
+    }
+
+    public function cupomManual(Request $request)
+    {
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        $acao = trim((string) $request->input('acao', 'aplicar'));
+        $justificativa = trim((string) $request->input('justificativa', ''));
+
+        if ($pedidoId <= 0) {
+            Session::flash('errors', array('Pedido inválido.'));
+            return $this->redirect('/admin/pedidos');
+        }
+
+        if ($acao === 'remover') {
+            $result = $this->pedidoService->removerCupomManualDoPedido(
+                $pedidoId,
+                $justificativa,
+                Session::get('usuario_id'),
+                $request->ip(),
+                $request->userAgent()
+            );
+        } else {
+            $cupomCodigo = trim((string) $request->input('cupom_codigo', ''));
+            if ($cupomCodigo === '') {
+                Session::flash('errors', array('Informe o código do cupom.'));
+                return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#cupom-manual');
+            }
+
+            $result = $this->pedidoService->aplicarCupomManualAoPedido(
+                $pedidoId,
+                $cupomCodigo,
+                $justificativa,
+                Session::get('usuario_id'),
+                $request->ip(),
+                $request->userAgent()
+            );
+        }
+
+        if (empty($result['ok'])) {
+            $mensagens = isset($result['errors']) && is_array($result['errors']) ? $result['errors'] : array(isset($result['message']) ? $result['message'] : 'Não foi possível aplicar o cupom manualmente.');
+            Session::flash('errors', $mensagens);
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#cupom-manual');
+        }
+
+        if ($acao === 'remover') {
+            Session::flash('success', 'Cupom removido manualmente do pedido.');
+        } else {
+            Session::flash('success', 'Cupom aplicado manualmente ao pedido. Revise o comprovante antes de aprovar o pagamento.');
+        }
+
+        return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#cupom-manual');
     }
 
     public function aprovar(Request $request)

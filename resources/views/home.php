@@ -82,7 +82,7 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
         <h2>Destaques</h2>
     </header>
 
-    <div class="card-grid card-grid--inside">
+    <div class="destaques-grid home-destaques-grid">
         <?php if (empty($cursos)): ?>
             <article class="status-card">
                 <strong>Sem cursos públicos</strong>
@@ -90,7 +90,7 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
             </article>
         <?php else: ?>
             <?php foreach ($cursos as $curso): ?>
-                <article class="course-card">
+                <article class="course-card home-destaques-grid__card">
                     <?php if (!empty($curso['thumbnail'])): ?>
                         <div class="course-card__image">
                             <a href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>">
@@ -126,7 +126,7 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
     </div>
 </section>
 
-<?php if (!empty($topCursosModulo)): ?>
+    <?php if (!empty($topCursosModulo)): ?>
 <section class="status-card home-extra-card home-top-cursos-card">
     <header class="home-extra-card__header">
         <div>
@@ -134,20 +134,16 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
             <?php if (!empty($topCursosModulo['titulo'])): ?>
                 <h2><?php echo Helpers::e($topCursosModulo['titulo']); ?></h2>
             <?php endif; ?>
-            <?php $textoTopCursos = $textoModulo($topCursosModulo); ?>
-            <?php if ($textoTopCursos !== ''): ?>
-                <p><?php echo nl2br(Helpers::e($textoTopCursos)); ?></p>
-            <?php endif; ?>
         </div>
     </header>
 
     <?php if (empty($topCursos)): ?>
         <article class="home-empty-state">
-            <strong>Aguardando vendas aprovadas</strong>
-            <span>Quando houver pedidos aprovados ou pagos, os cinco cursos com mais vendas aparecerão aqui automaticamente.</span>
+            <strong>Aguardando cursos em destaque</strong>
+            <span>Quando houver cursos publicados com turmas abertas, os cinco destaques aparecerão aqui automaticamente.</span>
         </article>
     <?php else: ?>
-        <ol class="home-ranking-list" aria-label="Cursos com mais vendas">
+        <ol class="home-ranking-list" aria-label="Top 5 cursos em destaque">
             <?php foreach ($topCursos as $indice => $cursoTop): ?>
                 <li class="home-ranking-item">
                     <span class="home-ranking-item__position">#<?php echo (int) ($indice + 1); ?></span>
@@ -161,7 +157,10 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
                     <div class="home-ranking-item__content">
                         <strong><?php echo Helpers::e($cursoTop['nome']); ?></strong>
                         <span><?php echo Helpers::e($cursoTop['categoria_nome'] ?: 'Sem categoria'); ?></span>
-                        <small><?php echo (int) $cursoTop['total_vendas']; ?> venda(s) confirmada(s)</small>
+                        <div class="pill-row">
+                            <span class="pill"><?php echo Helpers::e('Modalidade: ' . (ucfirst(trim((string) ($cursoTop['modalidade'] ?? ''))) !== '' ? ucfirst(trim((string) ($cursoTop['modalidade'] ?? ''))) : '-')); ?></span>
+                            <span class="pill"><?php echo (int) ($cursoTop['total_turmas_abertas'] ?? 0) > 0 ? ((int) $cursoTop['total_turmas_abertas'] . ' turma(s) aberta(s)') : 'Nenhuma turma aberta no momento'; ?></span>
+                        </div>
                     </div>
                     <a class="button-link button-link--ghost" href="/cursos/detalhe?curso_id=<?php echo (int) $cursoTop['id']; ?>">Ver curso</a>
                 </li>

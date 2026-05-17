@@ -398,10 +398,12 @@ class PedidoService
         $pedido['cupom'] = $this->pedidoCupomModel->findByPedido($pedidoId);
         $pedido['comprovante_atual'] = $this->comprovanteModel->findByPedido($pedidoId);
         $pedido['comprovantes'] = $this->comprovanteModel->versionsForPedido($pedidoId);
+        $pedido['comprovante_aguardando_aprovacao'] = $this->pedidoTemComprovanteAguardandoAprovacao($pedido);
 
         if (!$canSeePix) {
             $pedido['comprovante_atual'] = null;
             $pedido['comprovantes'] = array();
+            $pedido['comprovante_aguardando_aprovacao'] = false;
         }
 
         return array(
@@ -590,12 +592,19 @@ class PedidoService
 
         try {
             $existente = $this->comprovanteModel->findByPedido($pedidoId);
+            $motivoReenvio = trim((string) (isset($dados['motivo_reenvio']) ? $dados['motivo_reenvio'] : ''));
 
             if ($existente) {
-                $dados['motivo_reenvio'] = isset($dados['motivo_reenvio']) ? $dados['motivo_reenvio'] : 'Reenvio do comprovante PIX';
+                if ($motivoReenvio === '') {
+                    $pdo->rollBack();
+                    return array('ok' => false, 'message' => 'Informe o motivo do reenvio.');
+                }
+
+                $dados['motivo_reenvio'] = $motivoReenvio;
                 $comprovanteId = $this->comprovanteModel->createVersion($pedidoId, $dados);
                 $acao = 'comprovante_pix.atualizado';
             } else {
+                $dados['motivo_reenvio'] = null;
                 $comprovanteId = $this->comprovanteModel->create($dados);
                 $acao = 'comprovante_pix.criado';
             }
@@ -640,9 +649,43 @@ class PedidoService
             return array('ok' => false, 'message' => 'Pedido nao encontrado.');
         }
 
+        if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
+            $this->registrarAcessoNegado('pedido.excluir_sem_permissao', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Você nao tem permissao para excluir este pedido.');
+        }
+
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.excluir_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
             return array('ok' => false, 'message' => 'Você nao tem permissao para excluir este pedido.');
+        }
+
+        $notificacaoEmail = $this->montarNotificacaoExclusaoPedido($pedidoId, $pedido);
+        $avaliacao = $this->avaliarExclusaoPedido($pedidoId, $pedido);
+        if (empty($avaliacao['ok'])) {
+            $motivo = !empty($avaliacao['motivos'])
+                ? $this->formatarMotivoBloqueioExclusao($avaliacao['motivos'])
+                : 'Este pedido nao pode ser excluido.';
+
+            $this->auditService->record(
+                'pedido.exclusao_bloqueada',
+                'pedido',
+                $pedidoId,
+                array(
+                    'motivos' => isset($avaliacao['motivos']) ? $avaliacao['motivos'] : array(),
+                    'status' => $pedido['status'],
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('pedido.exclusao_bloqueada', array(
+                'pedido_id' => $pedidoId,
+                'motivos' => isset($avaliacao['motivos']) ? $avaliacao['motivos'] : array(),
+                'usuario_id' => $actorUserId,
+            ));
+
+            return array('ok' => false, 'message' => $motivo);
         }
 
         $pdo = Database::connection();
@@ -669,12 +712,167 @@ class PedidoService
 
             $pdo->commit();
 
+            $this->enviarEmailExclusaoPedido($notificacaoEmail, $actorUserId, $ipAddress, $userAgent);
+
             return array('ok' => true);
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('pedido.excluir_falhou', array(
                 'pedido_id' => $pedidoId,
                 'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
+    }
+
+    public function excluirPedidosAntigosNaoConfirmados($dias = 30, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $dias = max(1, (int) $dias);
+        $dataLimite = date('Y-m-d H:i:s', strtotime('-' . $dias . ' days'));
+        $statusProtegidos = $this->pedidoStatusProtegidoParaExclusao();
+        $placeholdersStatus = array();
+        $params = array('data_limite' => $dataLimite);
+
+        if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
+            return array(
+                'ok' => false,
+                'message' => 'Você nao tem permissao para excluir pedidos.',
+            );
+        }
+
+        foreach ($statusProtegidos as $indice => $status) {
+            $chave = 'status_protegido_' . $indice;
+            $placeholdersStatus[] = ':' . $chave;
+            $params[$chave] = $status;
+        }
+
+        $sql = 'SELECT p.*
+                FROM pedidos p
+                WHERE p.deleted_at IS NULL
+                  AND p.created_at < :data_limite';
+
+        if (!empty($placeholdersStatus)) {
+            $sql .= ' AND p.status NOT IN (' . implode(', ', $placeholdersStatus) . ')';
+        }
+
+        $sql .= ' ORDER BY p.id ASC';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $candidatos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (empty($candidatos)) {
+            return array(
+                'ok' => true,
+                'excluidos' => 0,
+                'ignorados' => 0,
+                'candidatos' => 0,
+                'message' => 'Nenhum pedido antigo sem pagamento confirmado foi encontrado.',
+            );
+        }
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        $excluidos = 0;
+        $ignorados = 0;
+        $bloqueios = array();
+        $notificacoesEmail = array();
+
+        try {
+            foreach ($candidatos as $pedido) {
+                $notificacaoEmail = $this->montarNotificacaoExclusaoPedido((int) $pedido['id'], $pedido);
+                $avaliacao = $this->avaliarExclusaoPedido((int) $pedido['id'], $pedido);
+
+                if (empty($avaliacao['ok'])) {
+                    $ignorados++;
+                    $bloqueios[] = array(
+                        'pedido_id' => (int) $pedido['id'],
+                        'codigo' => $pedido['codigo'],
+                        'motivos' => isset($avaliacao['motivos']) ? $avaliacao['motivos'] : array(),
+                    );
+                    continue;
+                }
+
+                $justificativa = 'Exclusao em lote de pedido antigo sem pagamento confirmado.';
+                $this->trashService->record('pedido', (int) $pedido['id'], $justificativa, $pedido, $actorUserId, $ipAddress, $userAgent);
+                $this->pedidoModel->softDelete((int) $pedido['id']);
+
+                $this->auditService->record(
+                    'pedido.excluido_em_lote',
+                    'pedido',
+                    (int) $pedido['id'],
+                    array(
+                        'justificativa' => $justificativa,
+                        'data_limite' => $dataLimite,
+                    ),
+                    $actorUserId,
+                    $ipAddress,
+                    $userAgent
+                );
+
+                Logger::info('pedido.excluido_em_lote', array(
+                    'pedido_id' => (int) $pedido['id'],
+                    'codigo' => $pedido['codigo'],
+                    'usuario_id' => $actorUserId,
+                ));
+
+                $notificacoesEmail[] = $notificacaoEmail;
+                $excluidos++;
+            }
+
+            $this->auditService->record(
+                'pedido.exclusao_em_lote_processada',
+                'pedido',
+                null,
+                array(
+                    'data_limite' => $dataLimite,
+                    'candidatos' => count($candidatos),
+                    'excluidos' => $excluidos,
+                    'ignorados' => $ignorados,
+                    'bloqueios' => $bloqueios,
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('pedido.exclusao_em_lote_processada', array(
+                'candidatos' => count($candidatos),
+                'excluidos' => $excluidos,
+                'ignorados' => $ignorados,
+                'usuario_id' => $actorUserId,
+            ));
+
+            $pdo->commit();
+
+            foreach ($notificacoesEmail as $notificacaoEmail) {
+                $this->enviarEmailExclusaoPedido($notificacaoEmail, $actorUserId, $ipAddress, $userAgent);
+            }
+
+            if ($excluidos === 0) {
+                return array(
+                    'ok' => true,
+                    'excluidos' => 0,
+                    'ignorados' => $ignorados,
+                    'candidatos' => count($candidatos),
+                    'message' => 'Nenhum pedido antigo sem pagamento confirmado foi encontrado.',
+                );
+            }
+
+            return array(
+                'ok' => true,
+                'excluidos' => $excluidos,
+                'ignorados' => $ignorados,
+                'candidatos' => count($candidatos),
+                'message' => 'Foram excluídos ' . $excluidos . ' pedidos antigos sem pagamento confirmado.',
+            );
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('pedido.exclusao_em_lote_falhou', array(
+                'message' => $exception->getMessage(),
+                'usuario_id' => $actorUserId,
             ));
 
             throw $exception;
@@ -804,6 +1002,44 @@ class PedidoService
         return $this->cupomService->aplicarAoPedido($pedidoId, $cupomCodigo, $actorUserId, $ipAddress, $userAgent);
     }
 
+    public function aplicarCupomManualAoPedido($pedidoId, $cupomCodigo, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
+            $this->registrarAcessoNegado('pedido.cupom.manual_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Você nao tem permissao para aplicar cupom manualmente neste pedido.');
+        }
+
+        if ($this->pedidoStatusBloqueadoParaCupom($pedido)) {
+            return array('ok' => false, 'message' => 'Não é possível aplicar cupom em pedido já confirmado.');
+        }
+
+        return $this->cupomService->aplicarAoPedidoManual($pedidoId, $cupomCodigo, $justificativa, $actorUserId, $ipAddress, $userAgent);
+    }
+
+    public function removerCupomManualDoPedido($pedidoId, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
+            $this->registrarAcessoNegado('pedido.cupom.remocao_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Você nao tem permissao para remover cupom deste pedido.');
+        }
+
+        if ($this->pedidoStatusBloqueadoParaCupom($pedido)) {
+            return array('ok' => false, 'message' => 'Não é possível remover cupom em pedido já confirmado.');
+        }
+
+        return $this->cupomService->removerCupomManualDoPedido($pedidoId, $justificativa, $actorUserId, $ipAddress, $userAgent);
+    }
+
     public function revalidarCupomAoFecharPedido($pedidoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
@@ -829,6 +1065,7 @@ class PedidoService
 
         $canSeePix = $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
             || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver');
+        $canManagePedidos = $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar');
 
         $pedido['itens'] = $this->pedidoItemModel->forPedido($pedidoId);
         $pedido['participantes'] = $this->participanteModel->forPedido($pedidoId);
@@ -836,10 +1073,13 @@ class PedidoService
         $pedido['historico'] = $this->pedidoModel->historyForPedido($pedidoId);
         $pedido['comprovante_atual'] = $canSeePix ? $this->comprovanteModel->findByPedido($pedidoId) : null;
         $pedido['comprovantes'] = $canSeePix ? $this->comprovanteModel->versionsForPedido($pedidoId) : array();
+        $pedido['exclusao'] = $this->avaliarExclusaoPedido($pedidoId, $pedido);
+        $pedido['cupom_manual'] = $this->avaliarCupomManualPedido($pedido);
 
         return array(
             'pedido' => $pedido,
             'can_see_pix' => $canSeePix,
+            'can_manage_pedidos' => $canManagePedidos,
         );
     }
 
@@ -851,12 +1091,15 @@ class PedidoService
             || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver');
         $canSeePix = $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
             || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver');
+        $canManagePedidos = $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar');
 
         if (!$canSeePedidos) {
             return array('pedidos' => array());
         }
 
         foreach ($pedidos as &$pedido) {
+            $pedido['cupom_manual'] = $this->avaliarCupomManualPedido($pedido);
+
             if (!$canSeePix) {
                 $pedido['comprovante_pix'] = null;
                 continue;
@@ -876,10 +1119,280 @@ class PedidoService
             $stmt->execute(array('pedido_id' => $pedido['id']));
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             $pedido['quantidade_participantes'] = $row ? (int) $row['total'] : 0;
+            $pedido['exclusao'] = $this->avaliarExclusaoPedido((int) $pedido['id'], $pedido);
         }
         unset($pedido);
 
-        return array('pedidos' => $pedidos);
+        return array(
+            'pedidos' => $pedidos,
+            'can_manage_pedidos' => $canManagePedidos,
+        );
+    }
+
+    public function listarExcluidosBackoffice($usuarioId, array $filters = array())
+    {
+        $canManagePedidos = $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar');
+        $filters = $this->normalizarFiltrosExclusao($filters);
+
+        if (!$canManagePedidos) {
+            return array(
+                'pedidos_excluidos' => array(),
+                'filters' => $filters,
+                'can_manage_pedidos' => false,
+            );
+        }
+
+        return array(
+            'pedidos_excluidos' => $this->pedidoModel->allDeletedForBackoffice($filters),
+            'filters' => $filters,
+            'can_manage_pedidos' => true,
+        );
+    }
+
+    public function avaliarExclusaoPedido($pedidoId, ?array $pedido = null)
+    {
+        if ($pedido === null) {
+            $pedido = $this->pedidoModel->findById($pedidoId);
+        }
+
+        if (!$pedido) {
+            return array(
+                'ok' => false,
+                'motivos' => array('pedido_nao_encontrado'),
+            );
+        }
+
+        $motivos = array();
+        $status = isset($pedido['status']) ? (string) $pedido['status'] : '';
+
+        if (in_array($status, $this->pedidoStatusProtegidoParaExclusao(), true)) {
+            $motivos[] = 'pagamento_confirmado';
+        }
+
+        if ($this->pedidoPossuiComprovanteAprovado($pedidoId)) {
+            $motivos[] = 'comprovante_aprovado';
+        }
+
+        if ($this->pedidoPossuiInscricaoSensivel($pedidoId)) {
+            $motivos[] = 'inscricao_sensivel';
+        }
+
+        if ($this->pedidoPossuiCertificado($pedidoId)) {
+            $motivos[] = 'certificado_emitido';
+        }
+
+        return array(
+            'ok' => empty($motivos),
+            'motivos' => array_values(array_unique($motivos)),
+            'motivos_texto' => empty($motivos) ? null : $this->formatarMotivoBloqueioExclusao($motivos),
+            'pedido' => $pedido,
+        );
+    }
+
+    private function pedidoPossuiComprovanteAprovado($pedidoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS total
+             FROM comprovantes_pix
+             WHERE pedido_id = :pedido_id
+               AND deleted_at IS NULL
+               AND status = "aprovado"'
+        );
+        $stmt->execute(array('pedido_id' => (int) $pedidoId));
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return !empty($row) && (int) $row['total'] > 0;
+    }
+
+    private function pedidoPossuiInscricaoSensivel($pedidoId)
+    {
+        $statusSensiveis = array('ativa', 'em_andamento', 'concluida', 'concluida_sem_certificado', 'certificado_emitido');
+        $placeholders = array();
+        $params = array('pedido_id' => (int) $pedidoId);
+
+        foreach ($statusSensiveis as $indice => $status) {
+            $chave = 'status_' . $indice;
+            $placeholders[] = ':' . $chave;
+            $params[$chave] = $status;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS total
+             FROM inscricoes
+             WHERE pedido_id = :pedido_id
+               AND deleted_at IS NULL
+               AND status IN (' . implode(', ', $placeholders) . ')'
+        );
+        $stmt->execute($params);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return !empty($row) && (int) $row['total'] > 0;
+    }
+
+    private function pedidoPossuiCertificado($pedidoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS total
+             FROM certificados
+             WHERE pedido_id = :pedido_id
+               AND deleted_at IS NULL'
+        );
+        $stmt->execute(array('pedido_id' => (int) $pedidoId));
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return !empty($row) && (int) $row['total'] > 0;
+    }
+
+    private function pedidoStatusProtegidoParaExclusao()
+    {
+        return array(
+            'aprovado',
+            'pago',
+            'reembolsado',
+        );
+    }
+
+    private function pedidoStatusBloqueadoParaCupom(array $pedido)
+    {
+        $status = isset($pedido['status']) ? (string) $pedido['status'] : '';
+
+        return in_array($status, array(
+            'cancelado',
+            'reembolsado',
+            'expirado',
+            'pago',
+            'aprovado',
+            'confirmado',
+            'concluido',
+            'concluida',
+        ), true);
+    }
+
+    private function avaliarCupomManualPedido(array $pedido)
+    {
+        if (empty($pedido)) {
+            return array(
+                'ok' => false,
+                'motivos' => array('Pedido nao encontrado.'),
+                'motivos_texto' => 'Pedido nao encontrado.',
+            );
+        }
+
+        if (!$this->pedidoStatusBloqueadoParaCupom($pedido)) {
+            return array(
+                'ok' => true,
+                'motivos' => array(),
+                'motivos_texto' => '',
+            );
+        }
+
+        $status = isset($pedido['status']) ? (string) $pedido['status'] : '';
+        $statusConfirmado = array('aprovado', 'pago', 'confirmado', 'concluido', 'concluida');
+        $mensagem = in_array($status, $statusConfirmado, true)
+            ? 'Não é possível aplicar ou remover cupom em pedido já confirmado.'
+            : 'Não é possível aplicar ou remover cupom neste pedido.';
+
+        return array(
+            'ok' => false,
+            'motivos' => array('pedido_confirmado'),
+            'motivos_texto' => $mensagem,
+        );
+    }
+
+    private function usuarioPodeGerenciarPedidos($usuarioId)
+    {
+        return $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar');
+    }
+
+    private function formatarMotivoBloqueioExclusao(array $motivos)
+    {
+        $mapa = array(
+            'pagamento_confirmado' => 'Este pedido não pode ser excluído porque possui pagamento confirmado.',
+            'comprovante_aprovado' => 'Este pedido não pode ser excluído porque possui comprovante aprovado.',
+            'inscricao_sensivel' => 'Este pedido não pode ser excluído porque possui inscrições ativas ou concluídas.',
+            'certificado_emitido' => 'Este pedido não pode ser excluído porque possui certificado emitido.',
+            'pedido_nao_encontrado' => 'Pedido não encontrado.',
+        );
+
+        $mensagens = array();
+        foreach ($motivos as $motivo) {
+            if (isset($mapa[$motivo]) && !in_array($mapa[$motivo], $mensagens, true)) {
+                $mensagens[] = $mapa[$motivo];
+            }
+        }
+
+        if (empty($mensagens)) {
+            return 'Este pedido não pode ser excluído.';
+        }
+
+        return implode(' ', $mensagens);
+    }
+
+    private function montarNotificacaoExclusaoPedido($pedidoId, array $pedido)
+    {
+        $itens = $this->pedidoItemModel->forPedido($pedidoId);
+        $cursos = array();
+
+        foreach ($itens as $item) {
+            if (!empty($item['curso_nome'])) {
+                $cursos[] = $item['curso_nome'];
+            }
+        }
+
+        $cursos = array_values(array_unique($cursos));
+
+        return array(
+            'pedido' => $pedido,
+            'cursos' => $cursos,
+        );
+    }
+
+    private function enviarEmailExclusaoPedido(array $notificacaoEmail, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        if (empty($notificacaoEmail['pedido']) || empty($notificacaoEmail['pedido']['pagador_email'])) {
+            return;
+        }
+
+        try {
+            $this->emailService->pedidoExcluidoInatividade(
+                $notificacaoEmail['pedido'],
+                isset($notificacaoEmail['cursos']) && is_array($notificacaoEmail['cursos']) ? $notificacaoEmail['cursos'] : array(),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+        } catch (Exception $exception) {
+            Logger::error('pedido.email_exclusao_falhou', array(
+                'pedido_id' => isset($notificacaoEmail['pedido']['id']) ? (int) $notificacaoEmail['pedido']['id'] : null,
+                'message' => $exception->getMessage(),
+            ));
+        }
+    }
+
+    private function normalizarFiltrosExclusao(array $filters)
+    {
+        return array(
+            'q' => isset($filters['q']) ? trim((string) $filters['q']) : '',
+            'status' => isset($filters['status']) ? trim((string) $filters['status']) : '',
+            'curso' => isset($filters['curso']) ? trim((string) $filters['curso']) : '',
+            'de' => $this->normalizarDataFiltro(isset($filters['de']) ? $filters['de'] : ''),
+            'ate' => $this->normalizarDataFiltro(isset($filters['ate']) ? $filters['ate'] : ''),
+        );
+    }
+
+    private function normalizarDataFiltro($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return '';
+        }
+
+        $data = \DateTime::createFromFormat('Y-m-d', $valor);
+        if ($data && $data->format('Y-m-d') === $valor) {
+            return $valor;
+        }
+
+        return '';
     }
 
     private function pedidoPodeSerAcessadoPor(array $pedido, $usuarioId)
@@ -911,6 +1424,26 @@ class PedidoService
     private function pedidoPodeReceberComprovante(array $pedido)
     {
         return in_array($pedido['status'], array('aguardando_pagamento', 'comprovante_enviado', 'pendencia', 'aguardando_reenvio'), true);
+    }
+
+    private function pedidoTemComprovanteAguardandoAprovacao(array $pedido)
+    {
+        $comprovanteAtual = isset($pedido['comprovante_atual']) && is_array($pedido['comprovante_atual'])
+            ? $pedido['comprovante_atual']
+            : null;
+
+        if (empty($comprovanteAtual)) {
+            return false;
+        }
+
+        $pedidoStatus = isset($pedido['status']) ? (string) $pedido['status'] : '';
+        if (in_array($pedidoStatus, array('aprovado', 'pago'), true)) {
+            return false;
+        }
+
+        $comprovanteStatus = isset($comprovanteAtual['status']) ? (string) $comprovanteAtual['status'] : '';
+
+        return $comprovanteStatus !== '' && !in_array($comprovanteStatus, array('aprovado', 'reprovado'), true);
     }
 
     private function isCompraPropriaPedido($tipoPedido)

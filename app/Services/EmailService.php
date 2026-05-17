@@ -231,6 +231,26 @@ class EmailService
         );
     }
 
+    public function pedidoExcluidoInatividade(array $pedido, array $cursos = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.pedido_excluido_inatividade',
+            'pedido_excluido_inatividade',
+            isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
+            isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
+            'Pedido excluído por inatividade - {pedido.codigo}',
+            array(
+                'pedido' => $pedido,
+                'cursos' => $cursos,
+            ),
+            'pedido',
+            isset($pedido['id']) ? $pedido['id'] : null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
     public function cursoProximo(array $inscricao, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         return $this->sendTemplate(
@@ -373,6 +393,133 @@ class EmailService
         );
 
             Logger::info('emails.fila.criada', array('email_id' => $emailId, 'evento' => $evento));
+
+        if (empty($config['enabled']) || empty($config['host'])) {
+            $erro = 'Configuração SMTP indisponível.';
+            $this->emailModel->markFailed($emailId, $erro);
+            $this->auditService->record(
+                'emails.falhou',
+                'email',
+                $emailId,
+                array('erro' => $erro),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::error('emails.falhou', array('email_id' => $emailId, 'erro' => $erro));
+            return array('ok' => false, 'message' => $erro, 'email_id' => $emailId);
+        }
+
+        try {
+            $response = $this->sendSmtpMessage($config, array(
+                'from_email' => $config['from_email'],
+                'from_name' => $config['from_name'],
+                'reply_to' => $config['reply_to'],
+                'to_email' => $payload['destinatario_email'],
+                'to_name' => $payload['destinatario_nome'],
+                'subject' => $assuntoFinal,
+                'html' => $rendered,
+            ));
+
+            $this->emailModel->markSent($emailId, $response);
+
+            $this->auditService->record(
+                'emails.enviado',
+                'email',
+                $emailId,
+                array(
+                    'evento' => $evento,
+                    'template' => $template,
+                    'resposta' => $response,
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('emails.enviado', array('email_id' => $emailId, 'evento' => $evento));
+
+            return array('ok' => true, 'email_id' => $emailId, 'response' => $response);
+        } catch (Exception $exception) {
+            $this->emailModel->markFailed($emailId, $exception->getMessage());
+
+            $this->auditService->record(
+                'emails.falhou',
+                'email',
+                $emailId,
+                array('erro' => $exception->getMessage()),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::error('emails.falhou', array(
+                'email_id' => $emailId,
+                'evento' => $evento,
+                'erro' => $exception->getMessage(),
+            ));
+
+            return array('ok' => false, 'message' => $exception->getMessage(), 'email_id' => $emailId);
+        }
+    }
+
+    public function sendCustomHtml(
+        $evento,
+        $template,
+        $destinatarioEmail,
+        $destinatarioNome,
+        $assunto,
+        $html,
+        array $data = array(),
+        $entidadeTipo = null,
+        $entidadeId = null,
+        $actorUserId = null,
+        $ipAddress = null,
+        $userAgent = null
+    ) {
+        if (!$destinatarioEmail) {
+            return array('ok' => false, 'message' => 'Destinatário inválido.');
+        }
+
+        $contextoRenderizacao = $this->modeloService->buildContext($data);
+        $assuntoFinal = $this->modeloService->renderPlaceholders($assunto, $contextoRenderizacao);
+        $rendered = trim((string) $html) !== ''
+            ? $this->modeloService->renderPlaceholders($html, $contextoRenderizacao)
+            : View::render($template, $data, false, 'emails');
+
+        $config = $this->configuration();
+        $payload = array(
+            'usuario_id' => $actorUserId,
+            'entidade_tipo' => $entidadeTipo,
+            'entidade_id' => $entidadeId,
+            'evento' => $evento,
+            'template' => $template,
+            'destinatario_email' => strtolower(trim((string) $destinatarioEmail)),
+            'destinatario_nome' => $destinatarioNome,
+            'assunto' => $assuntoFinal,
+            'contexto_json' => json_encode($data),
+            'status' => 'pendente',
+        );
+
+        $emailId = $this->emailModel->create($payload);
+        $this->logRuntimeDiagnostics($config);
+
+        $this->auditService->record(
+            'emails.fila.criada',
+            'email',
+            $emailId,
+            array(
+                'evento' => $evento,
+                'template' => $template,
+                'destinatario_email' => $payload['destinatario_email'],
+            ),
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::info('emails.fila.criada', array('email_id' => $emailId, 'evento' => $evento));
 
         if (empty($config['enabled']) || empty($config['host'])) {
             $erro = 'Configuração SMTP indisponível.';

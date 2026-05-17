@@ -127,7 +127,10 @@ class AreaCursoService
     {
         $cursos = $this->cursoModel->findAccessibleByUser($usuarioId);
         $turmas = $this->turmaModel->findAccessibleByUser($usuarioId);
-        $curso = $cursoId ? $this->cursoModel->findById($cursoId) : null;
+        $curso = $cursoId ? $this->cursoModel->findAdminById($cursoId) : null;
+        if ($curso) {
+            $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
+        }
         $turma = $turmaId ? $this->turmaModel->findById($turmaId) : null;
 
         if ($cursoId && !$this->contextoProfessorAutorizado($usuarioId, $cursoId, $turmaId)) {
@@ -652,6 +655,7 @@ class AreaCursoService
     {
         $modulos = $this->moduloService->listarPorContexto($cursoId, $turmaId);
         $atividades = $this->atividadeService->listarPorContexto($cursoId, $turmaId);
+        $materiais = $this->materialService->listarPorContexto($cursoId, $turmaId, null, null);
         $aulas = 0;
         foreach ($modulos as $modulo) {
             $aulas += !empty($modulo['aulas']) ? count($modulo['aulas']) : 0;
@@ -660,6 +664,7 @@ class AreaCursoService
         return array(
             'modulos' => count($modulos),
             'aulas' => $aulas,
+            'materiais' => count($materiais),
             'atividades' => count($atividades),
             'participantes' => $cursoId ? count($this->listarParticipantes($cursoId, $turmaId)) : 0,
             'certificados' => $this->contarCertificadosEmitidos($cursoId, $turmaId),
@@ -672,6 +677,7 @@ class AreaCursoService
         return array(
             'modulos' => 0,
             'aulas' => 0,
+            'materiais' => 0,
             'atividades' => 0,
             'participantes' => 0,
             'certificados' => 0,
@@ -769,6 +775,11 @@ class AreaCursoService
     {
         $pedidoStatus = isset($inscricao['pedido_status']) ? (string) $inscricao['pedido_status'] : '';
         $comprovanteStatus = isset($inscricao['comprovante_status']) ? (string) $inscricao['comprovante_status'] : '';
+        $acessoExpiraEm = isset($inscricao['acesso_expira_em']) ? (string) $inscricao['acesso_expira_em'] : '';
+
+        if ($acessoExpiraEm !== '' && strtotime($acessoExpiraEm) !== false && strtotime($acessoExpiraEm) < time()) {
+            return false;
+        }
 
         if (in_array($pedidoStatus, array('aprovado', 'pago'), true)) {
             return true;

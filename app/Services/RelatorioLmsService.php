@@ -254,7 +254,12 @@ class RelatorioLmsService
                        AND ' . $clauseAtividades . ') AS atividades_publicadas,
                     (SELECT COUNT(*)
                      FROM certificados c
+                     INNER JOIN inscricoes i ON i.id = c.inscricao_id
+                     INNER JOIN pedidos p ON p.id = i.pedido_id
                      WHERE c.deleted_at IS NULL
+                       AND i.deleted_at IS NULL
+                       AND p.deleted_at IS NULL
+                       AND COALESCE(p.is_presente, 0) = 0
                        AND c.status = "emitido"
                        AND ' . $clauseCertificados . ') AS certificados_emitidos';
 
@@ -301,6 +306,7 @@ class RelatorioLmsService
                 LEFT JOIN certificados c ON c.inscricao_id = i.id AND c.deleted_at IS NULL AND c.status = "emitido"
                 WHERE i.deleted_at IS NULL
                   AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+                  AND COALESCE(p.is_presente, 0) = 0
                   AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
                   AND ' . $clause;
 
@@ -338,6 +344,7 @@ class RelatorioLmsService
                 WHERE pa.concluido = 1
                   AND i.deleted_at IS NULL
                   AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+                  AND COALESCE(p.is_presente, 0) = 0
                   AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
                   AND ' . $clauseInscricao . '
                   AND ' . $clauseAula . '
@@ -407,6 +414,7 @@ class RelatorioLmsService
                 WHERE pa.concluido = 1
                   AND i.deleted_at IS NULL
                   AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+                  AND COALESCE(p.is_presente, 0) = 0
                   AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
                   AND ' . $clauseInscricao . '
                   AND ' . $clauseAula . '
@@ -454,6 +462,7 @@ class RelatorioLmsService
                 WHERE ae.deleted_at IS NULL
                   AND i.deleted_at IS NULL
                   AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+                  AND COALESCE(p.is_presente, 0) = 0
                   AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
                   AND ' . $clauseInscricao . '
                   AND ' . $clauseAtividade . '
@@ -573,6 +582,7 @@ class RelatorioLmsService
                     WHERE ae.deleted_at IS NULL
                       AND i.deleted_at IS NULL
                       AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+                      AND COALESCE(p.is_presente, 0) = 0
                       AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
                       AND ' . $this->buildContextClause('atv2', $cursoId, $turmaId, $params, 'rel_sub_atv_') . '
                       AND ' . $this->buildContextClause('a2', $cursoId, $turmaId, $params, 'rel_sub_a_') . '

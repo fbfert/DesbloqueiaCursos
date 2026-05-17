@@ -101,4 +101,14 @@ class CupomUso
 
         return (int) Database::connection()->lastInsertId();
     }
+
+    public function deleteByPedido($pedidoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'DELETE FROM cupons_usos
+             WHERE pedido_id = :pedido_id'
+        );
+
+        $stmt->execute(array('pedido_id' => (int) $pedidoId));
+    }
 }

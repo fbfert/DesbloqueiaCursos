@@ -14,6 +14,13 @@
     <?php endif; ?>
 </section>
 
+<?php if (!empty($comprovanteAguardandoAprovacao)): ?>
+    <section class="checkout-status-alert checkout-status-alert--warning">
+        <strong class="checkout-status-alert__title">Comprovante enviado</strong>
+        <p class="checkout-status-alert__text">Aguardando aprovação do comprovante. Um funcionário irá confirmar o pagamento e liberar o curso em breve.</p>
+    </section>
+<?php endif; ?>
+
 <section class="checkout-panel">
     <h2>Próxima ação</h2>
     <?php if (!empty($proximas_acoes)): ?>

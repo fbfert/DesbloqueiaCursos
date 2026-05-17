@@ -8,16 +8,45 @@
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+<?php
+$cupomAtual = !empty($pedido['cupom']) && is_array($pedido['cupom']) ? $pedido['cupom'] : null;
+$cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual']) ? $pedido['cupom_manual'] : array('ok' => false, 'motivos_texto' => 'Não é possível aplicar cupom neste pedido.');
+?>
 
 <section class="admin-pedido-show__top">
     <article class="status-card admin-pedido-comprovante-card">
         <strong>Resumo do pedido</strong>
         <p>
+            <?php if (!empty($pedido['is_presente'])): ?>
+                <span class="badge badge--status badge--status-pendente" style="margin-bottom: 8px;">Presente</span><br>
+                <strong>Campanha:</strong>
+                <?php if (!empty($pedido['presente_campanha_id'])): ?>
+                    <a href="/admin/promocionais/presentes/show?campanha_id=<?php echo (int) $pedido['presente_campanha_id']; ?>">
+                        <?php echo htmlspecialchars((string) ($pedido['presente_campanha_titulo'] ?? $pedido['presente_titulo'] ?? 'Presente promocional'), ENT_QUOTES, 'UTF-8'); ?>
+                    </a><br>
+                <?php else: ?>
+                    <?php echo htmlspecialchars((string) ($pedido['presente_campanha_titulo'] ?? $pedido['presente_titulo'] ?? 'Presente promocional'), ENT_QUOTES, 'UTF-8'); ?><br>
+                <?php endif; ?>
+                <strong>Justificativa:</strong> <?php echo htmlspecialchars((string) ($pedido['presente_justificativa'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?><br>
+            <?php endif; ?>
             <strong>Pagador:</strong> <?php echo htmlspecialchars((string) $pedido['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
             <strong>E-mail:</strong> <?php echo htmlspecialchars((string) $pedido['pagador_email'], ENT_QUOTES, 'UTF-8'); ?><br>
             <strong>CPF:</strong> <?php echo htmlspecialchars((string) $pedido['pagador_cpf'], ENT_QUOTES, 'UTF-8'); ?><br>
-            <strong>Total:</strong> R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?>
+            <strong>Total:</strong> R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?><br>
+            <strong>Status do pagamento:</strong> <?php echo htmlspecialchars((string) $pedido['status'], ENT_QUOTES, 'UTF-8'); ?>
         </p>
+        <?php if (!empty($pedido['is_presente'])): ?>
+            <p class="alert-info">Este pedido foi concedido como presente e não gera financeiro, rateio ou comissão.</p>
+        <?php endif; ?>
+        <?php if ($cupomAtual): ?>
+            <p>
+                <strong>Cupom atual:</strong> <?php echo htmlspecialchars((string) $cupomAtual['cupom_codigo'], ENT_QUOTES, 'UTF-8'); ?><br>
+                <strong>Desconto:</strong> R$ <?php echo number_format((float) $pedido['desconto_total'], 2, ',', '.'); ?><br>
+                <strong>Total ajustado:</strong> R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?>
+            </p>
+        <?php else: ?>
+            <p><strong>Cupom atual:</strong> Nenhum cupom aplicado.</p>
+        <?php endif; ?>
         <?php if (!empty($can_see_pix) && !empty($pedido['comprovante_atual'])): ?>
             <p>
                 <strong>Comprovante atual:</strong>
@@ -62,6 +91,70 @@
     </article>
 </section>
 
+<section class="status-card admin-pedido-cupom-card" id="cupom-manual">
+    <strong>Cupom do pedido</strong>
+    <?php if (!empty($can_manage_pedidos)): ?>
+        <?php if (!empty($cupomManual['ok'])): ?>
+            <?php if (!empty($pedido['comprovante_atual']) && !in_array((string) $pedido['comprovante_atual']['status'], array('aprovado', 'reprovado'), true)): ?>
+                <div class="alert-warning admin-pedido-cupom-card__warning">
+                    Há um comprovante PIX enviado para este pedido. Após o ajuste do cupom, confira se o valor pago corresponde ao novo total antes de aprovar.
+                </div>
+            <?php endif; ?>
+
+            <details class="admin-pedidos__actions-details admin-pedido-cupom-card__details">
+                <summary>Aplicar cupom manualmente</summary>
+                <div class="admin-pedidos__actions-body">
+                    <?php if ($cupomAtual): ?>
+                        <div class="alert-info admin-pedido-cupom-card__current">
+                            <strong>Cupom aplicado atualmente:</strong> <?php echo htmlspecialchars((string) $cupomAtual['cupom_codigo'], ENT_QUOTES, 'UTF-8'); ?><br>
+                            <strong>Valor original:</strong> R$ <?php echo number_format((float) $pedido['subtotal'], 2, ',', '.'); ?><br>
+                            <strong>Desconto atual:</strong> R$ <?php echo number_format((float) $pedido['desconto_total'], 2, ',', '.'); ?><br>
+                            <strong>Total atual:</strong> R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <form method="post" action="/admin/pedidos/cupom-manual" class="admin-form admin-pedido-cupom-card__form">
+                        <?php echo $csrfField; ?>
+                        <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+                        <input type="hidden" name="acao" value="aplicar">
+
+                        <label for="cupom_codigo_manual">Código do cupom</label>
+                        <input id="cupom_codigo_manual" type="text" name="cupom_codigo" placeholder="Informe o código do cupom">
+
+                        <label for="cupom_justificativa_manual">Justificativa</label>
+                        <textarea id="cupom_justificativa_manual" name="justificativa" rows="3" required placeholder="Cliente não conseguiu aplicar o cupom no checkout e enviou comprovante com valor descontado."></textarea>
+
+                        <div class="admin-pedido-cupom-card__help">
+                            Se já existir um cupom ativo, ele será substituído pelo código informado após a validação.
+                        </div>
+
+                        <button type="submit" class="button-link button-link--primary" onclick="return confirm('Tem certeza de que deseja aplicar este cupom manualmente?');">Aplicar cupom manualmente</button>
+                    </form>
+
+                    <?php if ($cupomAtual): ?>
+                        <form method="post" action="/admin/pedidos/cupom-manual" class="admin-form admin-pedido-cupom-card__form admin-pedido-cupom-card__remove-form">
+                            <?php echo $csrfField; ?>
+                            <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+                            <input type="hidden" name="acao" value="remover">
+
+                            <label for="cupom_justificativa_remover">Justificativa para remoção</label>
+                            <textarea id="cupom_justificativa_remover" name="justificativa" rows="3" required placeholder="Informe a justificativa para remover o cupom aplicado."></textarea>
+
+                            <button type="submit" class="button-link button-link--danger" onclick="return confirm('Tem certeza de que deseja remover o cupom aplicado deste pedido?');">Remover cupom aplicado</button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            </details>
+        <?php else: ?>
+            <div class="alert-danger admin-pedido-cupom-card__blocked">
+                <?php echo htmlspecialchars((string) $cupomManual['motivos_texto'], ENT_QUOTES, 'UTF-8'); ?>
+            </div>
+        <?php endif; ?>
+    <?php else: ?>
+        <p>Você não tem permissão para alterar cupom neste pedido.</p>
+    <?php endif; ?>
+</section>
+
 <section class="status-card">
     <strong>Ações do pedido</strong>
     <div class="grid-forms">
@@ -85,6 +178,20 @@
             <textarea name="observacao" rows="3"></textarea>
             <button type="submit" class="button-link button-link--primary">Solicitar reenvio PIX</button>
         </form>
+
+        <?php if (!empty($can_manage_pedidos)): ?>
+            <form method="post" action="/admin/pedidos/excluir" class="admin-form admin-pedidos__delete-form">
+                <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+                <label>Justificativa da lixeira</label>
+                <textarea name="justificativa" rows="3" required placeholder="Informe a justificativa da exclusão."></textarea>
+                <?php if (!empty($pedido['exclusao']) && empty($pedido['exclusao']['ok'])): ?>
+                    <div class="alert-danger">
+                        <?php echo htmlspecialchars($pedido['exclusao']['motivos_texto'] ?? 'Este pedido não pode ser excluído.', ENT_QUOTES, 'UTF-8'); ?>
+                    </div>
+                <?php endif; ?>
+                <button type="submit" class="button-link button-link--danger" <?php echo (!empty($pedido['exclusao']) && empty($pedido['exclusao']['ok'])) ? 'disabled' : ''; ?> onclick="return confirm('Tem certeza de que deseja excluir este pedido?');">🗑 Excluir pedido</button>
+            </form>
+        <?php endif; ?>
     </div>
 </section>
 

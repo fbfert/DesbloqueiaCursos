@@ -45,6 +45,10 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->query('curso_id', 0);
         $turmaId = (int) $request->query('turma_id', 0);
         $aba = (string) $request->query('aba', 'visao-geral');
+        $abasPermitidas = array('visao-geral', 'turmas', 'modulos-aulas', 'materiais', 'atividades', 'participantes', 'presenca', 'avaliacoes-notas', 'certificados', 'relatorios', 'configuracoes', 'aptos-certificado');
+        if (!in_array($aba, $abasPermitidas, true)) {
+            $aba = 'visao-geral';
+        }
         $relatoriosFiltros = array(
             'busca' => trim((string) $request->query('busca', '')),
             'status_inscricao' => (string) $request->query('status_inscricao', ''),

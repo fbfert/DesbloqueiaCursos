@@ -62,11 +62,11 @@ $cuponsInativos = isset($cupons_inativos) && is_array($cupons_inativos) ? $cupon
                             <span aria-hidden="true"> | </span>
                             <a href="/admin/cupons/editar?cupom_id=<?php echo (int) $cupom['id']; ?>">Editar</a>
                             <span aria-hidden="true"> | </span>
-                            <form method="post" action="/admin/cupons/status" style="display:inline-block;">
+                            <form method="post" action="/admin/cupons/status" class="admin-cupons__action-form">
                                 <?php echo $csrfField; ?>
                                 <input type="hidden" name="id" value="<?php echo (int) $cupom['id']; ?>">
                                 <input type="hidden" name="status" value="inativo">
-                                <button type="submit" class="button-link">Inativar</button>
+                                <button type="submit" class="admin-action-link admin-action-link--danger">Inativar</button>
                             </form>
                             <span aria-hidden="true"> | </span>
                             <a href="#" onclick="return excluirCupom(<?php echo (int) $cupom['id']; ?>);">Lixeira</a>
@@ -125,14 +125,14 @@ $cuponsInativos = isset($cupons_inativos) && is_array($cupons_inativos) ? $cupon
                                 <span aria-hidden="true"> | </span>
                                 <a href="/admin/cupons/editar?cupom_id=<?php echo (int) $cupom['id']; ?>">Editar</a>
                                 <span aria-hidden="true"> | </span>
-                                <form method="post" action="/admin/cupons/status" style="display:inline-block;">
-                                    <?php echo $csrfField; ?>
-                                    <input type="hidden" name="id" value="<?php echo (int) $cupom['id']; ?>">
-                                    <input type="hidden" name="status" value="ativo">
-                                    <button type="submit" class="button-link">Reativar</button>
-                                </form>
+                            <form method="post" action="/admin/cupons/status" class="admin-cupons__action-form">
+                                <?php echo $csrfField; ?>
+                                <input type="hidden" name="id" value="<?php echo (int) $cupom['id']; ?>">
+                                <input type="hidden" name="status" value="ativo">
+                                <button type="submit" class="admin-action-link">Reativar</button>
+                            </form>
                                 <span aria-hidden="true"> | </span>
-                                <a href="#" onclick="return excluirCupom(<?php echo (int) $cupom['id']; ?>);">Lixeira</a>
+                                <a class="admin-action-link admin-action-link--danger" href="#" onclick="return excluirCupom(<?php echo (int) $cupom['id']; ?>);">Lixeira</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

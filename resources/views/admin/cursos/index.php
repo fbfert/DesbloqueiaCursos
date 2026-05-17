@@ -4,15 +4,9 @@
 
 <?php $canManage = (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar'); ?>
 <?php
-$cursosAtivos = array();
-$cursosInativos = array();
-foreach ($cursos ?? array() as $cursoItem) {
-    if (($cursoItem['status'] ?? '') === 'ativo') {
-        $cursosAtivos[] = $cursoItem;
-        continue;
-    }
-    $cursosInativos[] = $cursoItem;
-}
+$cursosAtivos = isset($cursos) && is_array($cursos) ? $cursos : array();
+$cursosRascunho = isset($cursos_rascunho) && is_array($cursos_rascunho) ? $cursos_rascunho : array();
+$cursosInativos = isset($cursos_inativos) && is_array($cursos_inativos) ? $cursos_inativos : array();
 
 if (!function_exists('curso_professores_texto')) {
     function curso_professores_texto(array $curso)
@@ -96,7 +90,7 @@ if (!function_exists('curso_professores_texto')) {
                                 R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?>
                             <?php endif; ?>
                         </td>
-                        <td><?php echo Helpers::e($curso['status']); ?></td>
+                        <td><span class="badge badge--success"><?php echo Helpers::e(ucfirst((string) $curso['status'])); ?></span></td>
                         <td>
                             <div class="split-actions">
                                 <a href="/admin/cursos/show?curso_id=<?php echo (int) $curso['id']; ?>">Ver</a>
@@ -106,6 +100,72 @@ if (!function_exists('curso_professores_texto')) {
                                         <input type="hidden" name="id" value="<?php echo (int) $curso['id']; ?>">
                                         <input type="hidden" name="status" value="<?php echo $curso['status'] === 'ativo' ? 'inativo' : 'ativo'; ?>">
                                         <button type="submit"><?php echo $curso['status'] === 'ativo' ? 'Inativar' : 'Ativar'; ?></button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-section" style="margin-top:16px;">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Cursos e eventos em rascunho</h2>
+        </div>
+        <div class="table-wrap">
+            <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Categoria</th>
+                    <th>Professores responsáveis</th>
+                    <th>Tipo</th>
+                    <th>Modalidade</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($cursosRascunho)): ?>
+                    <tr><td colspan="8">Nenhum curso ou evento em rascunho no momento.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($cursosRascunho as $curso): ?>
+                    <tr>
+                        <td><?php echo Helpers::e($curso['nome']); ?></td>
+                        <td><?php echo Helpers::e($curso['categoria_nome'] ?? ''); ?></td>
+                        <td><?php echo Helpers::e(curso_professores_texto($curso)); ?></td>
+                        <td><?php echo Helpers::e($curso['tipo']); ?></td>
+                        <td><?php echo Helpers::e($curso['modalidade']); ?></td>
+                        <td>
+                            <?php
+                            $temPromo = !empty($curso['em_promocao'])
+                                && isset($curso['valor_promocional'])
+                                && $curso['valor_promocional'] !== null
+                                && $curso['valor_promocional'] !== ''
+                                && (float) $curso['valor_promocional'] >= 0
+                                && (float) $curso['valor_promocional'] < (float) $curso['valor'];
+                            ?>
+                            <?php if ($temPromo): ?>
+                                <div><strong>R$ <?php echo number_format((float) $curso['valor_promocional'], 2, ',', '.'); ?></strong></div>
+                                <div class="muted" style="font-size:12px;">De R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
+                            <?php else: ?>
+                                R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?>
+                            <?php endif; ?>
+                        </td>
+                        <td><span class="badge badge--warn">Rascunho</span></td>
+                        <td>
+                            <div class="split-actions">
+                                <a href="/admin/cursos/show?curso_id=<?php echo (int) $curso['id']; ?>">Ver</a>
+                                <?php if ($canManage): ?>
+                                    <a href="/admin/cursos/editar?curso_id=<?php echo (int) $curso['id']; ?>">Editar</a>
+                                    <form method="post" action="/admin/cursos/status" class="admin-form">
+                                        <input type="hidden" name="id" value="<?php echo (int) $curso['id']; ?>">
+                                        <input type="hidden" name="status" value="ativo">
+                                        <button type="submit">Publicar</button>
                                     </form>
                                 <?php endif; ?>
                             </div>

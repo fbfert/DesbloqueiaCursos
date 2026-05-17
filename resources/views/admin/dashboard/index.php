@@ -43,41 +43,22 @@ $pendingRepassesValue = isset($pendingRepassesCard['value']) ? $pendingRepassesC
 ?>
 
 <div class="admin-page">
-    <section class="hero admin-dashboard-hero">
-        <div class="hero__content">
-            <span class="eyebrow">Painel administrativo</span>
-            <h1>Dashboard executivo</h1>
-            <p>Consolidado comercial, acadêmico, operacional e financeiro do portal.</p>
+    <section class="admin-section admin-quick-summary">
+        <div class="admin-quick-summary__header">
+            <h2 class="admin-quick-summary__title">Resumo rápido</h2>
+            <span class="badge badge--status badge--status-aprovado admin-quick-summary__badge">Atualizado</span>
         </div>
-        <div class="hero__panel admin-dashboard-hero__panel">
-            <strong>Resumo rápido</strong>
-            <?php if (empty($highlights)): ?>
-                <p class="muted">Sem indicadores para exibir no momento.</p>
-            <?php endif; ?>
+        <?php if (empty($highlights)): ?>
+            <p class="muted">Sem indicadores para exibir no momento.</p>
+        <?php endif; ?>
+        <div class="admin-dashboard-metrics">
             <?php foreach ($highlights as $item): ?>
-                <div class="admin-dashboard-highlight">
-                    <span><?php echo Helpers::e($item['label']); ?></span>
-                    <strong><?php echo Helpers::e($item['value']); ?></strong>
-                    <small><?php echo Helpers::e($item['subvalue']); ?></small>
-                </div>
+                <article class="admin-dashboard-metric-card">
+                    <span class="admin-dashboard-metric-label"><?php echo Helpers::e($item['label']); ?></span>
+                    <strong class="admin-dashboard-metric-value"><?php echo Helpers::e($item['value']); ?></strong>
+                    <small class="admin-dashboard-metric-help"><?php echo Helpers::e($item['subvalue']); ?></small>
+                </article>
             <?php endforeach; ?>
-        </div>
-    </section>
-
-    <section class="admin-section">
-        <div class="admin-section__header">
-            <h2 class="admin-section__title">Atalhos administrativos</h2>
-        </div>
-        <div class="quick-actions quick-actions--dashboard">
-            <a class="card-link admin-shortcut" href="/admin/pedidos"><span>Pedidos</span><small>Análise, aprovação e pendências</small></a>
-            <a class="card-link admin-shortcut" href="/admin/comprovantes-pix"><span>Comprovantes PIX</span><small>Validação manual de pagamentos</small></a>
-            <a class="card-link admin-shortcut" href="/admin/inscricoes"><span>Inscrições</span><small>Status e acompanhamento</small></a>
-            <a class="card-link admin-shortcut" href="/admin/cursos"><span>Cursos</span><small>Catálogo e publicação</small></a>
-            <a class="card-link admin-shortcut" href="/admin/turmas"><span>Turmas</span><small>Edições e vagas</small></a>
-            <a class="card-link admin-shortcut" href="/admin/cupons"><span>Cupons</span><small>Campanhas e descontos</small></a>
-            <a class="card-link admin-shortcut" href="/admin/financeiro"><span>Financeiro</span><small>Apurações e repasses</small></a>
-            <a class="card-link admin-shortcut" href="/admin/configuracoes-globais"><span>Configurações</span><small>Parâmetros globais do portal</small></a>
-            <a class="card-link admin-shortcut" href="/admin/rbac"><span>Acessos (RBAC)</span><small>Perfis e permissões</small></a>
         </div>
     </section>
 
@@ -92,12 +73,26 @@ $pendingRepassesValue = isset($pendingRepassesCard['value']) ? $pendingRepassesC
             </a>
             <a class="card-link admin-shortcut admin-shortcut--alert" href="/admin/comprovantes-pix">
                 <span>Comprovantes em análise</span>
-                <small><?php echo Helpers::e((string) $pixInAnalysisValue); ?> itens para revisar</small>
+                <small><span class="badge badge--status badge--status-pendente"><?php echo Helpers::e((string) $pixInAnalysisValue); ?></span> itens para revisar</small>
             </a>
             <a class="card-link admin-shortcut" href="/admin/financeiro/repasses">
                 <span>Repasses pendentes</span>
                 <small><?php echo Helpers::e((string) $pendingRepassesValue); ?> em aberto</small>
             </a>
+        </div>
+    </section>
+
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Atalhos administrativos</h2>
+        </div>
+        <div class="quick-actions quick-actions--dashboard">
+            <a class="card-link admin-shortcut" href="/admin/pedidos"><span>Pedidos</span><small>Análise, aprovação e pendências</small></a>
+            <a class="card-link admin-shortcut" href="/admin/comprovantes-pix"><span>Comprovantes PIX</span><small>Validação manual de pagamentos</small></a>
+            <a class="card-link admin-shortcut" href="/admin/inscricoes"><span>Inscrições</span><small>Status e acompanhamento</small></a>
+            <a class="card-link admin-shortcut" href="/admin/cursos"><span>Cursos</span><small>Catálogo e publicação</small></a>
+            <a class="card-link admin-shortcut" href="/admin/turmas"><span>Turmas</span><small>Edições e vagas</small></a>
+            <a class="card-link admin-shortcut" href="/admin/financeiro"><span>Financeiro</span><small>Apurações e repasses</small></a>
         </div>
     </section>
 

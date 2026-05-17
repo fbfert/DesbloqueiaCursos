@@ -89,6 +89,7 @@ class Inscricao
                AND i.status NOT IN ("pendente", "cancelada", "reprovada")
                AND i.usuario_id = :usuario_id
                AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
+               AND (i.acesso_expira_em IS NULL OR i.acesso_expira_em >= NOW())
              ORDER BY i.id DESC'
         );
 
@@ -131,6 +132,7 @@ class Inscricao
                AND i.status NOT IN ("pendente", "cancelada", "reprovada")
                AND i.usuario_id = :usuario_id
                AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
+               AND (i.acesso_expira_em IS NULL OR i.acesso_expira_em >= NOW())
              ORDER BY i.id DESC'
         );
 
@@ -260,9 +262,11 @@ class Inscricao
     {
         $stmt = Database::connection()->prepare(
             'INSERT INTO inscricoes
-             (pedido_id, pedido_item_id, participante_pedido_id, usuario_id, curso_evento_id, turma_id, status, confirmado_em, created_at, updated_at, deleted_at)
+             (pedido_id, pedido_item_id, participante_pedido_id, usuario_id, curso_evento_id, turma_id, status, confirmado_em,
+              is_presente, presente_campanha_id, acesso_expira_em, created_at, updated_at, deleted_at)
              VALUES
-             (:pedido_id, :pedido_item_id, :participante_pedido_id, :usuario_id, :curso_evento_id, :turma_id, :status, :confirmado_em, NOW(), NOW(), NULL)'
+             (:pedido_id, :pedido_item_id, :participante_pedido_id, :usuario_id, :curso_evento_id, :turma_id, :status, :confirmado_em,
+              :is_presente, :presente_campanha_id, :acesso_expira_em, NOW(), NOW(), NULL)'
         );
 
         $stmt->execute(array(
@@ -274,6 +278,9 @@ class Inscricao
             'turma_id' => isset($data['turma_id']) ? $data['turma_id'] : null,
             'status' => isset($data['status']) ? $data['status'] : 'pendente',
             'confirmado_em' => isset($data['confirmado_em']) ? $data['confirmado_em'] : null,
+            'is_presente' => !empty($data['is_presente']) ? 1 : 0,
+            'presente_campanha_id' => isset($data['presente_campanha_id']) ? $data['presente_campanha_id'] : null,
+            'acesso_expira_em' => isset($data['acesso_expira_em']) ? $data['acesso_expira_em'] : null,
         ));
 
         return (int) Database::connection()->lastInsertId();
@@ -324,5 +331,33 @@ class Inscricao
             'observacao' => $observacao,
             'alterado_por_usuario_id' => $alteradoPorUsuarioId,
         ));
+    }
+
+    public function findAcessoAtivoPorUsuarioCurso($usuarioId, $cursoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT i.*,
+                    p.status AS pedido_status,
+                    cp.status AS comprovante_status
+             FROM inscricoes i
+             INNER JOIN pedidos p ON p.id = i.pedido_id
+             LEFT JOIN comprovantes_pix cp ON cp.pedido_id = i.pedido_id AND cp.is_atual = 1 AND cp.deleted_at IS NULL
+             WHERE i.deleted_at IS NULL
+               AND i.usuario_id = :usuario_id
+               AND i.curso_evento_id = :curso_evento_id
+               AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+               AND (i.acesso_expira_em IS NULL OR i.acesso_expira_em >= NOW())
+               AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
+             ORDER BY i.id DESC
+             LIMIT 1'
+        );
+
+        $stmt->execute(array(
+            'usuario_id' => (int) $usuarioId,
+            'curso_evento_id' => (int) $cursoId,
+        ));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 }

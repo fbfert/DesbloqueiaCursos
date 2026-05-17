@@ -80,17 +80,16 @@ $entregaStatusFiltro = isset($entrega_status) ? (string) $entrega_status : '';
 $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade) ? $entregas_atividade : array();
 ?>
 
-<section class="status-card admin-area-curso__section" id="area-curso-atividades">
+<section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'atividades' ? ' is-active' : ''; ?>" data-area-curso-tab="atividades" id="area-curso-atividades">
     <div class="panel-header">
         <div>
-            <h2>Atividades</h2>
-            <p class="muted">Cadastro, publicação, correção manual e entregas dos alunos.</p>
+            <?php echo areaCursoHeadingWithTooltip('Atividades', 'Cadastro, publicação, correção manual e entregas dos alunos.'); ?>
         </div>
         <span class="badge"><?php echo (int) $atividadesCount; ?> atividades</span>
     </div>
 
     <div class="admin-area-curso__actions">
-        <a href="#area-curso-atividades-form">Nova atividade</a>
+        <a href="#area-curso-atividades-formulario">Nova atividade</a>
         <?php if (!empty($atividadeEditar)): ?>
             <a href="#area-curso-atividades-entregas">Ver entregas</a>
         <?php endif; ?>
@@ -153,7 +152,7 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
 
     <div class="admin-area-curso__aula-materiais">
         <div class="admin-area-curso__aula-materiais-head">
-            <strong id="area-curso-atividades-form"><?php echo !empty($atividadeEditar) ? 'Editar atividade' : 'Nova atividade'; ?></strong>
+            <strong id="area-curso-atividades-formulario"><?php echo !empty($atividadeEditar) ? 'Editar atividade' : 'Nova atividade'; ?></strong>
         </div>
 
         <?php if (!$temAulasDisponiveis): ?>
@@ -234,11 +233,10 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
     </div>
 </section>
 
-<section class="status-card admin-area-curso__section">
+<section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'atividades' ? ' is-active' : ''; ?>" data-area-curso-tab="atividades" id="area-curso-atividades-lista">
     <div class="panel-header">
         <div>
-            <h2>Lista de atividades</h2>
-            <p class="muted">Exibe a estrutura cadastrada com contagem de entregas.</p>
+            <?php echo areaCursoHeadingWithTooltip('Lista de atividades', 'Exibe a estrutura cadastrada com contagem de entregas.'); ?>
         </div>
     </div>
 
@@ -324,14 +322,15 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
 </section>
 
     <?php if (!empty($atividadeEditar)): ?>
-    <section class="status-card admin-area-curso__section" id="area-curso-atividades-entregas">
+    <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'atividades' ? ' is-active' : ''; ?>" data-area-curso-tab="atividades" id="area-curso-atividades-entregas">
         <div class="panel-header">
             <div>
-                <h2>Entregas da atividade</h2>
-                <p class="muted"><?php echo Helpers::e($atividadeEditar['titulo']); ?></p>
+                <?php echo areaCursoHeadingWithTooltip('Entregas da atividade', 'Respostas enviadas pelos alunos para a atividade selecionada.'); ?>
             </div>
             <span class="badge"><?php echo (int) count($entregasAtividade); ?> entregas</span>
         </div>
+
+        <p class="muted"><?php echo Helpers::e($atividadeEditar['titulo']); ?></p>
 
         <?php if (empty($entregasAtividade)): ?>
             <p class="muted">Nenhuma entrega encontrada para esta atividade.</p>
@@ -429,7 +428,7 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
                                             <button type="submit" class="full">Salvar correção</button>
                                         </form>
                                         <div class="admin-area-curso__material-actions" style="margin-top: 10px;">
-                                            <a href="<?php echo Helpers::e($areaCursoBaseUrl . '?' . http_build_query(array_merge($atividadeQueryBase, array('atividade_id' => $atividadeIdAtual, 'entrega_id' => (int) $entregaItem['id'], 'entrega_status' => $entregaStatusFiltro)))); ?>#area-curso-entrega-detalhe">Ver detalhes</a>
+                                            <a href="<?php echo Helpers::e($areaCursoBaseUrl . '?' . http_build_query(array_merge($atividadeQueryBase, array('atividade_id' => $atividadeIdAtual, 'entrega_id' => (int) $entregaItem['id'], 'entrega_status' => $entregaStatusFiltro)))); ?>#area-curso-atividades-detalhe">Ver detalhes</a>
                                         </div>
                                     <?php else: ?>
                                         <span class="badge badge--soft">Aguardando envio</span>
@@ -462,18 +461,19 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
             );
         }
         ?>
-        <section class="status-card admin-area-curso__section admin-area-curso__delivery-detail" id="area-curso-entrega-detalhe">
+        <section class="status-card admin-area-curso__section admin-area-curso__delivery-detail" id="area-curso-atividades-detalhe">
             <div class="panel-header">
                 <div>
-                    <h2>Detalhes da entrega</h2>
-                    <p class="muted">
-                        <?php echo Helpers::e($entregaSelecionada['usuario_nome'] ?? 'Aluno'); ?>
-                        ·
-                        <?php echo Helpers::e($entregaSelecionada['atividade_titulo'] ?? ($atividadeEditar['titulo'] ?? 'Atividade')); ?>
-                    </p>
+                    <?php echo areaCursoHeadingWithTooltip('Detalhes da entrega', 'Resumo da resposta enviada pelo aluno, com dados da atividade e histórico de correção.'); ?>
                 </div>
                 <span class="badge"><?php echo Helpers::e(ucfirst((string) ($entregaSelecionadaDados['status'] ?? ''))); ?></span>
             </div>
+
+            <p class="muted">
+                <?php echo Helpers::e($entregaSelecionada['usuario_nome'] ?? 'Aluno'); ?>
+                ·
+                <?php echo Helpers::e($entregaSelecionada['atividade_titulo'] ?? ($atividadeEditar['titulo'] ?? 'Atividade')); ?>
+            </p>
 
             <div class="admin-area-curso__delivery-grid">
                 <div class="admin-area-curso__delivery-meta">

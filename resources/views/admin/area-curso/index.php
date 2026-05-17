@@ -35,6 +35,34 @@ $quantidadeLinks = !empty($links) ? count($links) : 0;
 $quantidadeAtividades = !empty($atividades) ? count($atividades) : 0;
 $quantidadeParticipantes = !empty($participantes) ? count($participantes) : 0;
 $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 'aulas' => 0, 'atividades' => 0, 'participantes' => 0, 'certificados' => 0, 'turmas' => 0);
+
+if (!function_exists('areaCursoHeadingWithTooltip')) {
+    function areaCursoHeadingWithTooltip($titulo, $ajuda = '', $nivel = 'h2')
+    {
+        static $contadorTooltip = 0;
+        $contadorTooltip++;
+
+        $nivel = in_array($nivel, array('h1', 'h2', 'h3', 'h4', 'h5', 'h6'), true) ? $nivel : 'h2';
+        $tituloSeguro = \App\Core\Helpers::e((string) $titulo);
+
+        if ($ajuda === '' || $ajuda === null) {
+            return '<' . $nivel . ' class="area-curso-heading__title">' . $tituloSeguro . '</' . $nivel . '>';
+        }
+
+        $tooltipId = 'area-curso-tooltip-' . $contadorTooltip;
+
+        return '<' . $nivel . ' class="area-curso-heading">'
+            . '<span class="area-curso-heading__text">' . $tituloSeguro . '</span>'
+            . '<span class="area-curso-tooltip">'
+            . '<button type="button" class="area-curso-tooltip__button" aria-describedby="' . $tooltipId . '" aria-label="Mais informações sobre ' . $tituloSeguro . '">'
+            . '<span class="u-sr-only">Mais informações</span>'
+            . 'i'
+            . '</button>'
+            . '<span id="' . $tooltipId . '" class="area-curso-tooltip__bubble" role="tooltip">' . \App\Core\Helpers::e((string) $ajuda) . '</span>'
+            . '</span>'
+            . '</' . $nivel . '>';
+    }
+}
 ?>
 
 <div class="admin-page admin-area-curso">
@@ -48,62 +76,30 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
-<section class="status-card admin-area-curso__selector">
-    <div class="panel-header">
-        <h2>Cursos para edição</h2>
-    </div>
-    <?php
-    $cursosAtivos = array();
-    $cursosInativos = array();
-    if (!empty($cursos)) {
-        foreach ($cursos as $c) {
-            if (!empty($c['status']) && $c['status'] === 'ativo') {
-                $cursosAtivos[] = $c;
-            } else {
-                $cursosInativos[] = $c;
+<?php if (empty($curso)): ?>
+    <section class="status-card admin-area-curso__selector">
+        <div class="panel-header">
+            <h2>Escolha um curso para trabalhar</h2>
+        </div>
+        <?php
+        $cursosAtivos = array();
+        $cursosRascunho = array();
+        $cursosInativos = array();
+        if (!empty($cursos)) {
+            foreach ($cursos as $c) {
+                if (!empty($c['status']) && $c['status'] === 'ativo') {
+                    $cursosAtivos[] = $c;
+                } elseif (!empty($c['status']) && $c['status'] === 'rascunho') {
+                    $cursosRascunho[] = $c;
+                } else {
+                    $cursosInativos[] = $c;
+                }
             }
         }
-    }
-    ?>
-    <?php if (!empty($cursosAtivos)): ?>
-        <div class="table-wrap">
-            <table class="admin-table admin-table--area-cursos">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nome</th>
-                        <th>Tipo</th>
-                        <th>Modalidade</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($cursosAtivos as $item): ?>
-                        <?php $isAtual = !empty($curso) && (int) $curso['id'] === (int) $item['id']; ?>
-                        <tr class="<?php echo $isAtual ? 'is-active' : ''; ?>">
-                            <td><span class="muted">#<?php echo (int) $item['id']; ?></span></td>
-                            <td><a href="/admin/area-curso?curso_id=<?php echo (int) $item['id']; ?>"><?php echo Helpers::e($item['nome']); ?><?php if ($isAtual): ?><strong> · Em edição</strong><?php endif; ?></a></td>
-                            <td><span class="badge"><?php echo Helpers::e($item['tipo']); ?></span></td>
-                            <td><span class="badge"><?php echo Helpers::e($item['modalidade']); ?></span></td>
-                            <td><span class="badge badge--success">Ativo</span></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    <?php else: ?>
-        <p class="muted">Nenhum curso ativo disponível para edição no momento.</p>
-    <?php endif; ?>
-    <?php if (!empty($cursosInativos)): ?>
-        <details class="admin-area-curso__inativos-details admin-mt-12">
-            <summary class="panel-header">
-                <div>
-                    <h2>Cursos inativos</h2>
-                    <span class="badge"><?php echo count($cursosInativos); ?> itens</span>
-                </div>
-            </summary>
-            <div class="table-wrap admin-mt-8">
-                <table class="admin-table admin-table--area-cursos admin-table--muted">
+        ?>
+        <?php if (!empty($cursosAtivos)): ?>
+            <div class="table-wrap">
+                <table class="admin-table admin-table--area-cursos">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -114,48 +110,133 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($cursosInativos as $item): ?>
-                            <?php $isAtual = !empty($curso) && (int) $curso['id'] === (int) $item['id']; ?>
-                            <tr class="<?php echo $isAtual ? 'is-active' : ''; ?>">
+                        <?php foreach ($cursosAtivos as $item): ?>
+                            <tr>
                                 <td><span class="muted">#<?php echo (int) $item['id']; ?></span></td>
-                                <td><a href="/admin/area-curso?curso_id=<?php echo (int) $item['id']; ?>"><?php echo Helpers::e($item['nome']); ?><?php if ($isAtual): ?><strong> · Em edição</strong><?php endif; ?></a></td>
+                                <td><a href="/admin/area-curso?curso_id=<?php echo (int) $item['id']; ?>"><?php echo Helpers::e($item['nome']); ?></a></td>
                                 <td><span class="badge"><?php echo Helpers::e($item['tipo']); ?></span></td>
                                 <td><span class="badge"><?php echo Helpers::e($item['modalidade']); ?></span></td>
-                                <td><span class="badge badge--warn"><?php echo Helpers::e(ucfirst(str_replace('_', ' ', $item['status'] ?? 'rascunho'))); ?></span></td>
+                                <td><span class="badge badge--success">Ativo</span></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
-        </details>
-    <?php endif; ?>
-    <p class="muted admin-mt-8">A turma é refinada dentro do próprio curso, quando necessário.</p>
-</section>
+        <?php else: ?>
+            <p class="muted">Nenhum curso ativo disponível para edição no momento.</p>
+        <?php endif; ?>
+        <?php if (!empty($cursosRascunho)): ?>
+            <section class="admin-area-curso__drafts">
+                <div class="panel-header">
+                    <h2>Cursos e eventos em rascunho</h2>
+                    <span class="badge badge--warn"><?php echo count($cursosRascunho); ?> itens</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="admin-table admin-table--area-cursos admin-table--muted">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Tipo</th>
+                                <th>Modalidade</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($cursosRascunho as $item): ?>
+                                <tr>
+                                    <td><span class="muted">#<?php echo (int) $item['id']; ?></span></td>
+                                    <td><a href="/admin/area-curso?curso_id=<?php echo (int) $item['id']; ?>"><?php echo Helpers::e($item['nome']); ?></a></td>
+                                    <td><span class="badge"><?php echo Helpers::e($item['tipo']); ?></span></td>
+                                    <td><span class="badge"><?php echo Helpers::e($item['modalidade']); ?></span></td>
+                                    <td><span class="badge badge--warn">Rascunho</span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        <?php else: ?>
+            <p class="muted admin-mt-12">Nenhum curso ou evento em rascunho no momento.</p>
+        <?php endif; ?>
+        <?php if (!empty($cursosInativos)): ?>
+            <details class="admin-area-curso__inativos-details admin-mt-12">
+                <summary class="panel-header">
+                    <div>
+                        <h2>Cursos inativos</h2>
+                        <span class="badge"><?php echo count($cursosInativos); ?> itens</span>
+                    </div>
+                </summary>
+                <div class="table-wrap admin-mt-8">
+                    <table class="admin-table admin-table--area-cursos admin-table--muted">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Tipo</th>
+                                <th>Modalidade</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($cursosInativos as $item): ?>
+                                <tr>
+                                    <td><span class="muted">#<?php echo (int) $item['id']; ?></span></td>
+                                    <td><a href="/admin/area-curso?curso_id=<?php echo (int) $item['id']; ?>"><?php echo Helpers::e($item['nome']); ?></a></td>
+                                    <td><span class="badge"><?php echo Helpers::e($item['tipo']); ?></span></td>
+                                    <td><span class="badge"><?php echo Helpers::e($item['modalidade']); ?></span></td>
+                                    <td><span class="badge badge--warn"><?php echo Helpers::e(ucfirst(str_replace('_', ' ', $item['status'] ?? 'rascunho'))); ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        <?php endif; ?>
+    </section>
+<?php else: ?>
+    <section class="status-card area-curso-workspace__header">
+        <div class="area-curso-header">
+            <div class="area-curso-header__content">
+                <p class="area-curso-header__eyebrow">Área interna do curso</p>
+                <h1 class="area-curso-header__title"><?php echo Helpers::e($curso['nome'] ?? 'Curso'); ?></h1>
+                <div class="area-curso-header__meta">
+                    <span class="badge">#<?php echo (int) $curso['id']; ?></span>
+                    <span class="badge badge--success"><?php echo Helpers::e(ucfirst((string) ($curso['status'] ?? ''))); ?></span>
+                    <span class="badge"><?php echo Helpers::e((string) ($curso['tipo'] ?? '')); ?></span>
+                    <span class="badge"><?php echo Helpers::e((string) ($curso['modalidade'] ?? '')); ?></span>
+                    <?php if (!empty($curso['categoria_nome'])): ?><span class="badge"><?php echo Helpers::e($curso['categoria_nome']); ?></span><?php endif; ?>
+                    <?php if (!empty($curso['professor_responsavel']['nome'])): ?><span class="badge"><?php echo Helpers::e($curso['professor_responsavel']['nome']); ?></span><?php endif; ?>
+                </div>
+            </div>
+            <div class="area-curso-header__actions">
+                <a class="button-link button-link--ghost" href="/admin/area-curso">Trocar curso</a>
+            </div>
+        </div>
+    </section>
 
-<?php if (!empty($curso)): ?>
-    <section class="status-card admin-area-curso__tabs">
-        <div class="admin-area-curso__tablinks">
+    <section class="status-card area-curso-workspace__tabs">
+        <div class="area-curso-tabs__mobile">
+            <button type="button" class="button-link button-link--ghost area-curso-tabs__toggle" aria-expanded="false" aria-controls="area-curso-tabs-list" data-area-curso-tabs-toggle>
+                Menu do curso
+            </button>
+        </div>
+        <div class="area-curso-tabs" id="area-curso-tabs-list" data-area-curso-tabs-list hidden>
             <?php foreach ($abasLms as $aba): ?>
-                <a class="admin-area-curso__tablink<?php echo $selectedTab === $aba['slug'] ? ' is-active' : ''; ?>" href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=<?php echo urlencode($aba['slug']); ?>#<?php echo Helpers::e('area-curso-' . $aba['slug']); ?>">
+                <a class="area-curso-tabs__link<?php echo $selectedTab === $aba['slug'] ? ' is-active' : ''; ?>" href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=<?php echo urlencode($aba['slug']); ?>">
                     <?php echo Helpers::e($aba['label']); ?>
                 </a>
             <?php endforeach; ?>
         </div>
     </section>
 
-    <div class="admin-area-curso__layout">
-        <div class="admin-area-curso__main">
-            <section class="status-card admin-area-curso__section admin-area-curso__overview" id="area-curso-visao-geral">
-                <div class="panel-header">
-                    <div>
-                        <h2>Visão geral</h2>
-                        <p class="muted">Resumo rápido do contexto pedagógico deste curso.</p>
-                    </div>
-                    <div class="split-actions">
-                        <a href="#area-curso-modulos-aulas">Módulos e aulas</a>
-                        <a href="#area-curso-legado">Blocos legados</a>
-                    </div>
+    <div class="area-curso-workspace">
+        <section class="status-card admin-area-curso__section admin-area-curso__overview area-curso-tab-panel<?php echo $selectedTab === 'visao-geral' ? ' is-active' : ''; ?>" data-area-curso-tab="visao-geral" id="area-curso-visao-geral">
+            <div class="panel-header">
+                <div>
+                    <?php echo areaCursoHeadingWithTooltip('Visão geral', 'Resumo rápido do contexto pedagógico deste curso.'); ?>
                 </div>
+            </div>
 
                 <div class="admin-area-curso__stats">
                     <div>
@@ -167,6 +248,10 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                         <strong><?php echo !empty($turma['nome']) ? Helpers::e($turma['nome']) : 'Curso inteiro'; ?></strong>
                     </div>
                     <div>
+                        <small>Turmas</small>
+                        <strong><?php echo (int) $resumo['turmas']; ?></strong>
+                    </div>
+                    <div>
                         <small>Módulos</small>
                         <strong><?php echo (int) $resumo['modulos']; ?></strong>
                     </div>
@@ -175,11 +260,15 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                         <strong><?php echo (int) $resumo['aulas']; ?></strong>
                     </div>
                     <div>
+                        <small>Materiais</small>
+                        <strong><?php echo (int) $resumo['materiais']; ?></strong>
+                    </div>
+                    <div>
                         <small>Atividades</small>
                         <strong><?php echo (int) $resumo['atividades']; ?></strong>
                     </div>
                     <div>
-                        <small>Participantes</small>
+                        <small>Alunos inscritos</small>
                         <strong><?php echo (int) $resumo['participantes']; ?></strong>
                     </div>
                     <div>
@@ -189,7 +278,7 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                 </div>
             </section>
 
-            <section class="status-card admin-area-curso__section admin-area-curso__placeholder" id="area-curso-turmas">
+            <section class="status-card admin-area-curso__section admin-area-curso__placeholder area-curso-tab-panel<?php echo $selectedTab === 'turmas' ? ' is-active' : ''; ?>" data-area-curso-tab="turmas" id="area-curso-turmas">
                 <div class="panel-header">
                     <div>
                         <h2>Turmas</h2>
@@ -202,7 +291,7 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
 
             <?php $areaCursoBaseUrl = '/admin/area-curso'; require BASE_PATH . '/resources/views/admin/area-curso/_atividades.php'; ?>
 
-            <section class="status-card admin-area-curso__section admin-area-curso__placeholder" id="area-curso-participantes">
+            <section class="status-card admin-area-curso__section admin-area-curso__placeholder area-curso-tab-panel<?php echo $selectedTab === 'participantes' ? ' is-active' : ''; ?>" data-area-curso-tab="participantes" id="area-curso-participantes">
                 <div class="panel-header">
                     <div>
                         <h2>Participantes</h2>
@@ -211,7 +300,7 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                 <p class="muted">Esta área será implementada em etapa posterior.</p>
             </section>
 
-            <section class="status-card admin-area-curso__section admin-area-curso__placeholder" id="area-curso-presenca">
+            <section class="status-card admin-area-curso__section admin-area-curso__placeholder area-curso-tab-panel<?php echo $selectedTab === 'presenca' ? ' is-active' : ''; ?>" data-area-curso-tab="presenca" id="area-curso-presenca">
                 <div class="panel-header">
                     <div>
                         <h2>Presença</h2>
@@ -220,7 +309,7 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                 <p class="muted">Esta área será implementada em etapa posterior.</p>
             </section>
 
-            <section class="status-card admin-area-curso__section admin-area-curso__placeholder" id="area-curso-avaliacoes-notas">
+            <section class="status-card admin-area-curso__section admin-area-curso__placeholder area-curso-tab-panel<?php echo $selectedTab === 'avaliacoes-notas' ? ' is-active' : ''; ?>" data-area-curso-tab="avaliacoes-notas" id="area-curso-avaliacoes-notas">
                 <div class="panel-header">
                     <div>
                         <h2>Avaliações / Notas</h2>
@@ -229,7 +318,7 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                 <p class="muted">Esta área será implementada em etapa posterior.</p>
             </section>
 
-            <section class="status-card admin-area-curso__section admin-area-curso__placeholder" id="area-curso-certificados">
+            <section class="status-card admin-area-curso__section admin-area-curso__placeholder area-curso-tab-panel<?php echo $selectedTab === 'certificados' ? ' is-active' : ''; ?>" data-area-curso-tab="certificados" id="area-curso-certificados">
                 <div class="panel-header">
                     <div>
                         <h2>Certificados</h2>
@@ -240,11 +329,10 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
 
             <?php require BASE_PATH . '/resources/views/admin/area-curso/_relatorios.php'; ?>
 
-            <section class="status-card admin-area-curso__section" id="area-curso-configuracoes">
+            <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'configuracoes' ? ' is-active' : ''; ?>" data-area-curso-tab="configuracoes" id="area-curso-configuracoes">
                 <div class="panel-header">
                     <div>
-                        <h2>Critérios de conclusão</h2>
-                        <p class="muted">Esta configuração calcula a elegibilidade e não emite certificado automaticamente.</p>
+                        <?php echo areaCursoHeadingWithTooltip('Critérios de conclusão', 'Esta configuração calcula a elegibilidade e não emite certificado automaticamente.'); ?>
                     </div>
                 </div>
                 <?php $criterios = isset($criterios_conclusao) && is_array($criterios_conclusao) ? $criterios_conclusao : array(); ?>
@@ -293,46 +381,25 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                 </form>
             </section>
 
-            <section class="status-card admin-area-curso__section" id="area-curso-modulos-aulas">
+            <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'modulos-aulas' ? ' is-active' : ''; ?>" data-area-curso-tab="modulos-aulas" id="area-curso-modulos-aulas">
                 <div class="panel-header">
                     <div>
-                        <h2>Módulos e aulas</h2>
-                        <p class="muted">Administração da estrutura pedagógica principal do curso.</p>
+                        <?php echo areaCursoHeadingWithTooltip('Módulos e aulas', 'Administração da estrutura pedagógica principal do curso.'); ?>
                     </div>
                 </div>
 
                 <div class="admin-area-curso__actions">
-                    <a href="#area-curso-legado-modulos">Novo módulo</a>
-                    <a href="#area-curso-legado-aulas">Nova aula</a>
-                    <a href="#area-curso-materiais">Materiais</a>
-                    <a href="#area-curso-legado">Ver blocos legados</a>
+                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=modulos-aulas">Novo módulo</a>
+                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=modulos-aulas">Nova aula</a>
+                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=materiais">Materiais</a>
                 </div>
 
             </section>
 
-            <section class="status-card admin-area-curso__section admin-area-curso__legacy" id="area-curso-legado">
-                <details class="admin-area-curso__legacy-details">
-                    <summary class="panel-header">
-                        <div>
-                            <h2>Blocos legados reaproveitados</h2>
-                            <p class="muted">Os formulários abaixo foram mantidos para compatibilidade com o fluxo anterior.</p>
-                        </div>
-                    </summary>
-
-                    <div class="admin-actions admin-area-curso__anchors admin-area-curso__anchors--secondary">
-                        <a href="#area-curso-legado-instrucoes">Próxima ação</a>
-                        <a href="#area-curso-legado-modulos">Módulos</a>
-                        <a href="#area-curso-legado-aulas">Aulas</a>
-                        <a href="#area-curso-materiais">Materiais</a>
-                        <a href="#area-curso-legado-links">Links externos</a>
-                        <a href="#area-curso-legado-participantes">Participantes</a>
-                    </div>
-
-            <section class="status-card admin-area-curso__section" id="area-curso-legado-instrucoes">
+            <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'modulos-aulas' ? ' is-active' : ''; ?>" data-area-curso-tab="modulos-aulas" id="area-curso-modulos-aulas-instrucoes">
                 <div class="panel-header">
                     <div>
-                        <h2>Próxima ação do checkout</h2>
-                        <p class="muted">Este conteúdo pode ser exibido na página de sucesso do pedido.</p>
+                        <?php echo areaCursoHeadingWithTooltip('Próxima ação do checkout', 'Este conteúdo pode ser exibido na página de sucesso do pedido.'); ?>
                     </div>
                 </div>
                 <form method="post" action="/admin/area-curso/instrucoes" class="form-grid admin-area-curso__form">
@@ -340,20 +407,20 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                     <input type="hidden" name="id" value="<?php echo !empty($instrucaoEditar['id']) ? (int) $instrucaoEditar['id'] : 0; ?>">
                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
                     <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-                    <input type="hidden" name="aba" value="visao-geral">
+                    <input type="hidden" name="aba" value="modulos-aulas">
                     <label class="full">Título<input type="text" name="titulo" value="<?php echo Helpers::e($instrucaoEditar['titulo'] ?? ''); ?>"></label>
                     <label class="full">Conteúdo<textarea name="conteudo" rows="4"><?php echo Helpers::e($instrucaoEditar['conteudo'] ?? ''); ?></textarea></label>
                     <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($instrucaoEditar['ordem'] ?? 1)); ?>" min="1"></label>
                     <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($instrucaoEditar) ? (!empty($instrucaoEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visível</label>
                     <?php
-                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=visao-geral';
+                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=modulos-aulas';
                     $show_save_as_copy = false;
                     require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
                     ?>
                 </form>
             </section>
 
-            <section class="status-card admin-area-curso__section" id="area-curso-legado-modulos">
+            <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'modulos-aulas' ? ' is-active' : ''; ?>" data-area-curso-tab="modulos-aulas" id="area-curso-modulos-aulas-modulos">
                 <div class="panel-header">
                     <h2>Módulos</h2>
                     <span class="badge"><?php echo (int) $quantidadeModulos; ?> itens</span>
@@ -416,7 +483,7 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                 </div>
             </section>
 
-            <section class="status-card admin-area-curso__section" id="area-curso-legado-aulas">
+            <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'modulos-aulas' ? ' is-active' : ''; ?>" data-area-curso-tab="modulos-aulas" id="area-curso-modulos-aulas-aulas">
                 <div class="panel-header">
                     <h2>Aulas</h2>
                     <span class="badge"><?php echo (int) $quantidadeAulas; ?> itens</span>
@@ -512,7 +579,7 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                 </div>
             </section>
 
-            <section class="status-card admin-area-curso__section" id="area-curso-legado-links">
+            <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'modulos-aulas' ? ' is-active' : ''; ?>" data-area-curso-tab="modulos-aulas" id="area-curso-modulos-aulas-links">
                 <div class="panel-header">
                     <h2>Links externos</h2>
                     <span class="badge"><?php echo (int) $quantidadeLinks; ?> itens</span>
@@ -586,7 +653,7 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                 </div>
             </section>
 
-            <section class="status-card admin-area-curso__section" id="area-curso-legado-participantes">
+            <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'modulos-aulas' ? ' is-active' : ''; ?>" data-area-curso-tab="modulos-aulas" id="area-curso-modulos-aulas-participantes">
                 <div class="panel-header">
                     <h2>Participantes</h2>
                     <span class="badge"><?php echo (int) $quantidadeParticipantes; ?> itens</span>
@@ -606,91 +673,129 @@ $resumo = isset($resumo) && is_array($resumo) ? $resumo : array('modulos' => 0, 
                     </table>
                 </div>
             </section>
-                </details>
-            </section>
         </div>
 
-        <aside class="admin-area-curso__aside">
-            <section class="status-card admin-area-curso__summary">
-                <div class="panel-header">
-                    <h2>Resumo</h2>
-                </div>
-                <dl class="detail-list">
-                    <div>
-                        <dt>Curso</dt>
-                        <dd><?php echo Helpers::e($curso['nome'] ?? ''); ?></dd>
-                    </div>
-                    <div>
-                        <dt>ID</dt>
-                        <dd><?php echo (int) $curso['id']; ?></dd>
-                    </div>
-                    <div>
-                        <dt>Módulos</dt>
-                        <dd><?php echo (int) $quantidadeModulos; ?></dd>
-                    </div>
-                    <div>
-                        <dt>Aulas</dt>
-                        <dd><?php echo (int) $quantidadeAulas; ?></dd>
-                    </div>
-                    <div>
-                        <dt>Materiais</dt>
-                        <dd><?php echo (int) $quantidadeMateriais; ?></dd>
-                    </div>
-                    <div>
-                        <dt>Links</dt>
-                        <dd><?php echo (int) $quantidadeLinks; ?></dd>
-                    </div>
-                    <div>
-                        <dt>Participantes</dt>
-                        <dd><?php echo (int) $quantidadeParticipantes; ?></dd>
-                    </div>
-                </dl>
-            </section>
-
-    <section class="status-card admin-area-curso__nav">
-        <div class="panel-header">
-            <h2>Navegação</h2>
-        </div>
-        <div class="admin-actions admin-area-curso__anchors">
-                    <a href="#area-curso-visao-geral">Visão geral</a>
-                    <a href="#area-curso-modulos-aulas">Módulos e aulas</a>
-                    <a href="#area-curso-turmas">Turmas</a>
-                    <a href="#area-curso-materiais">Materiais</a>
-                    <a href="#area-curso-atividades">Atividades</a>
-                    <a href="#area-curso-participantes">Participantes</a>
-                    <a href="#area-curso-presenca">Presença</a>
-                    <a href="#area-curso-avaliacoes-notas">Avaliações / Notas</a>
-                    <a href="#area-curso-certificados">Certificados</a>
-                    <a href="#area-curso-relatorios">Relatórios</a>
-                    <a href="#area-curso-aptos-certificado">Aptos para certificado</a>
-                    <a href="#area-curso-configuracoes">Configurações</a>
-            <a href="#area-curso-legado">Blocos legados</a>
-        </div>
-    </section>
-
-    <section class="status-card admin-area-curso__summary">
-        <div class="panel-header">
-            <h2>Refinar turma</h2>
-        </div>
-        <form method="get" action="/admin/area-curso" class="form-grid admin-area-curso__selector-form">
-            <input type="hidden" name="curso_id" value="<?php echo (int) $curso['id']; ?>">
-            <label>
-                Turma
-                <select name="turma_id">
-                    <option value="">Curso inteiro</option>
-                    <?php foreach ($turmas as $item): ?>
-                        <option value="<?php echo (int) $item['id']; ?>" <?php echo !empty($turma) && (int) $turma['id'] === (int) $item['id'] ? 'selected' : ''; ?>>
-                            <?php echo Helpers::e($item['nome']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <button type="submit" class="button-link button-link--primary">Aplicar turma</button>
-        </form>
-        <p class="muted">Use este refinamento apenas quando a operação depender de uma turma específica.</p>
-    </section>
-</aside>
-</div>
 <?php endif; ?>
 </div>
+<script>
+(function () {
+    var tabsList = document.querySelector('[data-area-curso-tabs-list]');
+    var tabsToggle = document.querySelector('[data-area-curso-tabs-toggle]');
+    var workspace = document.querySelector('.area-curso-workspace');
+    var courseSwitchLink = document.querySelector('.area-curso-header__actions a[href="/admin/area-curso"]');
+    var dirty = false;
+    var submittedForms = new WeakSet();
+
+    function hasSelectedCourse() {
+        return !!workspace;
+    }
+
+    function updateTabsVisibility() {
+        if (!tabsList || !tabsToggle) {
+            return;
+        }
+
+        if (window.innerWidth > 880) {
+            tabsList.hidden = false;
+            tabsList.classList.remove('is-open');
+            tabsToggle.setAttribute('aria-expanded', 'true');
+            return;
+        }
+
+        tabsList.hidden = true;
+        tabsList.classList.remove('is-open');
+        tabsToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function setDirty(value) {
+        dirty = value;
+    }
+
+    function askLeave() {
+        if (!dirty) {
+            return true;
+        }
+        return window.confirm('Há alterações não salvas nesta aba. Deseja sair sem salvar?');
+    }
+
+    if (hasSelectedCourse() && !window.location.search.match(/[?&]aba=/) && window.location.hash) {
+        var hashMap = {
+            '#area-curso-visao-geral': 'visao-geral',
+            '#area-curso-turmas': 'turmas',
+            '#area-curso-modulos-aulas': 'modulos-aulas',
+            '#area-curso-materiais': 'materiais',
+            '#area-curso-atividades': 'atividades',
+            '#area-curso-participantes': 'participantes',
+            '#area-curso-presenca': 'presenca',
+            '#area-curso-avaliacoes-notas': 'avaliacoes-notas',
+            '#area-curso-certificados': 'certificados',
+            '#area-curso-relatorios': 'relatorios',
+            '#area-curso-configuracoes': 'configuracoes',
+            '#area-curso-aptos-certificado': 'aptos-certificado'
+        };
+        var abaHash = hashMap[window.location.hash] || 'visao-geral';
+        var currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('aba', abaHash);
+        currentUrl.hash = '';
+        window.location.replace(currentUrl.toString());
+        return;
+    }
+
+    if (tabsToggle && tabsList) {
+        tabsToggle.addEventListener('click', function () {
+            var open = tabsList.classList.contains('is-open');
+            tabsList.classList.toggle('is-open', !open);
+            tabsList.hidden = open;
+            tabsToggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+        });
+        updateTabsVisibility();
+        window.addEventListener('resize', updateTabsVisibility);
+    }
+
+    document.querySelectorAll('.area-curso-tab-panel form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            submittedForms.add(form);
+            setDirty(false);
+        });
+
+        form.querySelectorAll('input, select, textarea').forEach(function (field) {
+            field.addEventListener('change', function () {
+                if (!submittedForms.has(form)) {
+                    setDirty(true);
+                }
+            });
+            field.addEventListener('input', function () {
+                if (!submittedForms.has(form)) {
+                    setDirty(true);
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.area-curso-tabs__link').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            if (!askLeave()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+    });
+
+    if (courseSwitchLink) {
+        courseSwitchLink.addEventListener('click', function (event) {
+            if (!askLeave()) {
+                event.preventDefault();
+            }
+        });
+    }
+
+    window.addEventListener('beforeunload', function (event) {
+        if (!dirty) {
+            return;
+        }
+        event.preventDefault();
+        event.returnValue = '';
+    });
+})();
+</script>
 

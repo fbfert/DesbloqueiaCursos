@@ -597,6 +597,7 @@ class RateioService
                 INNER JOIN pedido_itens pi ON pi.pedido_id = p.id AND pi.deleted_at IS NULL
                 WHERE p.deleted_at IS NULL
                   AND p.status = "aprovado"
+                  AND COALESCE(p.is_presente, 0) = 0
                   AND DATE(COALESCE(p.aprovado_em, p.created_at)) BETWEEN :data_inicio AND :data_fim
                 ORDER BY p.id ASC, pi.id ASC';
 

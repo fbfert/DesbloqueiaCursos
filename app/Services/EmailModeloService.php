@@ -579,6 +579,38 @@ HTML,
                 'ativo' => 1,
                 'editavel' => 1,
             ),
+            'email.presente_concedido' => array(
+                'evento' => 'email.presente_concedido',
+                'template' => 'presente_concedido',
+                'nome' => 'Curso recebido como presente',
+                'assunto' => 'Você ganhou acesso a um curso na Desbloqueia Cursos',
+                'corpo_html' => <<<'HTML'
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curso recebido como presente</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <div style="max-width:640px;margin:0 auto;padding:24px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;">
+            <h1 style="margin:0 0 16px;">Você ganhou acesso a um curso</h1>
+            <p>Olá, {nome_usuario}!</p>
+            <p>Você recebeu como presente o acesso ao curso <strong>{nome_curso}</strong>.</p>
+            <p>{nome_turma}</p>
+            <p>Prazo de acesso: <strong>{prazo_acesso}</strong></p>
+            <p><a href="{link_meus_cursos}">Acessar meus cursos</a></p>
+        </div>
+    </div>
+</body>
+</html>
+HTML,
+                'gatilho_descricao' => 'Enviado quando um presente promocional é concedido a um usuário.',
+                'variaveis_json' => json_encode(array('{nome_usuario}', '{nome_curso}', '{nome_turma}', '{prazo_acesso}', '{link_meus_cursos}', '{nome_plataforma}'), JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
             'email.pendencia' => array(
                 'evento' => 'email.pendencia',
                 'template' => 'pendencia',

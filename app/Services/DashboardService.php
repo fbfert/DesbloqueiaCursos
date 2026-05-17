@@ -367,6 +367,7 @@ class DashboardService
         $where = array(
             'p.deleted_at IS NULL',
             'p.status IN ("aprovado", "pago")',
+            'COALESCE(p.is_presente, 0) = 0',
             'COALESCE(p.aprovado_em, p.created_at) BETWEEN :inicio AND :fim',
         );
 
@@ -439,6 +440,7 @@ class DashboardService
             'academico.ver',
             'area_curso.gerenciar',
             'cupons.ver',
+            'promocionais.presentes.ver',
         );
 
         foreach ($permissions as $permission) {
@@ -538,9 +540,12 @@ class DashboardService
     {
         $placeholders = implode(',', array_fill(0, count($statuses), '?'));
         $sql = 'SELECT COUNT(*) AS total
-                FROM inscricoes
-                WHERE deleted_at IS NULL
-                  AND status IN (' . $placeholders . ')';
+                FROM inscricoes i
+                INNER JOIN pedidos p ON p.id = i.pedido_id
+                WHERE i.deleted_at IS NULL
+                  AND p.deleted_at IS NULL
+                  AND COALESCE(p.is_presente, 0) = 0
+                  AND i.status IN (' . $placeholders . ')';
 
         return (int) $this->queryValue($sql, $statuses);
     }
@@ -549,9 +554,14 @@ class DashboardService
     {
         return (int) $this->queryValue(
             'SELECT COUNT(*) AS total
-             FROM certificados
-             WHERE deleted_at IS NULL
-               AND status = "emitido"'
+             FROM certificados c
+             INNER JOIN inscricoes i ON i.id = c.inscricao_id
+             INNER JOIN pedidos p ON p.id = i.pedido_id
+             WHERE c.deleted_at IS NULL
+               AND i.deleted_at IS NULL
+               AND p.deleted_at IS NULL
+               AND COALESCE(p.is_presente, 0) = 0
+               AND c.status = "emitido"'
         );
     }
 
@@ -598,6 +608,7 @@ class DashboardService
              FROM pedidos p
              WHERE p.deleted_at IS NULL
                AND p.status IN ("aprovado", "pago")
+               AND COALESCE(p.is_presente, 0) = 0
                AND COALESCE(p.aprovado_em, p.created_at) BETWEEN :inicio AND :fim',
             array(
                 'inicio' => $ranges[$rangeKey]['inicio'],
@@ -641,7 +652,10 @@ class DashboardService
         $placeholders = implode(',', array_fill(0, count($statuses), '?'));
         $sql = 'SELECT COUNT(*) AS total
                 FROM inscricoes i
+                INNER JOIN pedidos p ON p.id = i.pedido_id
                 WHERE i.deleted_at IS NULL
+                  AND p.deleted_at IS NULL
+                  AND COALESCE(p.is_presente, 0) = 0
                   AND i.status IN (' . $placeholders . ')
                   AND COALESCE(i.updated_at, i.created_at) BETWEEN ? AND ?
                   AND (' . $this->buildProfessorScopeClause($ids, $turmas) . ')';
@@ -669,7 +683,12 @@ class DashboardService
 
         $sql = 'SELECT COUNT(*) AS total
                 FROM certificados c
+                INNER JOIN inscricoes i ON i.id = c.inscricao_id
+                INNER JOIN pedidos p ON p.id = i.pedido_id
                 WHERE c.deleted_at IS NULL
+                  AND i.deleted_at IS NULL
+                  AND p.deleted_at IS NULL
+                  AND COALESCE(p.is_presente, 0) = 0
                   AND c.status = "emitido"
                   AND c.emitido_em BETWEEN ? AND ?
                   AND (' . $this->buildProfessorScopeClause($ids, $turmas, 'c') . ')';

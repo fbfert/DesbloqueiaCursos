@@ -88,6 +88,19 @@ class ComprovantePixService
 
         try {
             $existente = $this->comprovanteModel->findCurrentByPedido($pedidoId);
+            $motivoReenvio = trim((string) (isset($dados['motivo_reenvio']) ? $dados['motivo_reenvio'] : ''));
+
+            if ($existente && $motivoReenvio === '') {
+                $pdo->rollBack();
+                return array('ok' => false, 'message' => 'Informe o motivo do reenvio.');
+            }
+
+            if (!$existente) {
+                $motivoReenvio = null;
+            }
+
+            $payload['motivo_reenvio'] = $motivoReenvio;
+
             if ($existente) {
                 $comprovanteId = $this->comprovanteModel->createVersion($pedidoId, $payload);
             } else {
@@ -139,10 +152,16 @@ class ComprovantePixService
             || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver');
 
         if (!$canSeePix) {
-            return array('comprovantes_pix' => array());
+            return array(
+                'comprovantes_pix' => array(),
+                'comprovantes_pendentes' => array(),
+            );
         }
 
-        return array('comprovantes_pix' => $this->comprovanteModel->allForBackoffice());
+        return array(
+            'comprovantes_pix' => $this->comprovanteModel->allForBackoffice(),
+            'comprovantes_pendentes' => $this->comprovanteModel->pendentesForBackoffice(),
+        );
     }
 
     public function aprovar($comprovanteId, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)

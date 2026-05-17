@@ -11,28 +11,27 @@ foreach ((array) $apuracoes as $apuracaoResumo) {
 ?>
 
 <div class="admin-page">
-    <section class="hero admin-dashboard-hero">
-        <div class="hero__content">
-            <h1>Financeiro</h1>
-            <p>Apurações mensais, repasses, perfil fiscal dos professores e parâmetros do rateio.</p>
+    <section class="admin-page__header admin-page__header--with-metrics">
+        <div class="admin-page__header-content">
+            <h1 class="admin-page__title">Financeiro</h1>
+            <p class="admin-page__subtitle">Apurações mensais, repasses, perfil fiscal dos professores e parâmetros do rateio.</p>
         </div>
-        <div class="hero__panel admin-dashboard-hero__panel">
-            <strong>Resumo rápido</strong>
-            <div class="admin-dashboard-highlight">
-                <span>Apurações registradas</span>
-                <strong><?php echo (int) $totalApuracoes; ?></strong>
-                <small>histórico consolidado</small>
-            </div>
-            <div class="admin-dashboard-highlight">
-                <span>Apurações em aberto</span>
-                <strong><?php echo (int) $apuracoesAbertas; ?></strong>
-                <small>pendentes de fechamento</small>
-            </div>
-            <div class="admin-dashboard-highlight">
-                <span>Perfis fiscais</span>
-                <strong><?php echo (int) $totalPerfisFiscais; ?></strong>
-                <small>professores cadastrados</small>
-            </div>
+        <div class="admin-page__metrics">
+            <article class="admin-page__metric">
+                <span class="admin-page__metric-label">Apurações registradas</span>
+                <strong class="admin-page__metric-value"><?php echo (int) $totalApuracoes; ?></strong>
+                <small class="admin-page__metric-help">histórico consolidado</small>
+            </article>
+            <article class="admin-page__metric">
+                <span class="admin-page__metric-label">Apurações em aberto</span>
+                <strong class="admin-page__metric-value"><?php echo (int) $apuracoesAbertas; ?></strong>
+                <small class="admin-page__metric-help">pendentes de fechamento</small>
+            </article>
+            <article class="admin-page__metric">
+                <span class="admin-page__metric-label">Perfis fiscais</span>
+                <strong class="admin-page__metric-value"><?php echo (int) $totalPerfisFiscais; ?></strong>
+                <small class="admin-page__metric-help">professores cadastrados</small>
+            </article>
         </div>
     </section>
 

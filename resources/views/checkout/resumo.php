@@ -36,78 +36,75 @@
         </dl>
     </article>
 
-    <article class="checkout-panel">
-        <h2>Itens</h2>
-        <?php foreach ($pedido['itens'] as $item): ?>
-            <div class="status-card">
-                <strong><?php echo Helpers::e($item['curso_nome']); ?></strong>
-                <span><?php echo Helpers::e($item['turma_nome']); ?></span>
-                <span><?php echo (int) $item['quantidade']; ?> vaga(s)</span>
-                <span><?php echo Helpers::e($item['valor_total']); ?></span>
-            </div>
-        <?php endforeach; ?>
-    </article>
+    <?php if (empty($pedidoPagoOuAprovado)): ?>
+        <article class="checkout-panel">
+            <h2>Itens e participantes</h2>
+            <?php foreach ($pedido['itens'] as $item): ?>
+                <div class="status-card">
+                    <strong><?php echo Helpers::e($item['curso_nome']); ?></strong>
+                    <span><?php echo Helpers::e($item['turma_nome']); ?></span>
+                    <span><?php echo (int) $item['quantidade']; ?> vaga(s)</span>
+                    <span><?php echo Helpers::e($item['valor_total']); ?></span>
+                </div>
+            <?php endforeach; ?>
+            <?php foreach ($pedido['participantes'] as $participante): ?>
+                <div class="status-card">
+                    <strong><?php echo Helpers::e($participante['nome']); ?></strong>
+                    <span><?php echo Helpers::e($participante['email']); ?></span>
+                    <span><?php echo Helpers::e($participante['status']); ?></span>
+                </div>
+            <?php endforeach; ?>
+        </article>
+    <?php endif; ?>
 </section>
 
 <section class="checkout-grid">
-    <article class="checkout-panel">
-        <h2>Participantes</h2>
-        <?php foreach ($pedido['participantes'] as $participante): ?>
-            <div class="status-card">
-                <strong><?php echo Helpers::e($participante['nome']); ?></strong>
-                <span><?php echo Helpers::e($participante['email']); ?></span>
-                <span><?php echo Helpers::e($participante['status']); ?></span>
-            </div>
-        <?php endforeach; ?>
-    </article>
-
-    <article class="checkout-panel">
-        <h2>Cupom</h2>
-        <?php if (!empty($pedido['cupom'])): ?>
-            <p class="muted">Cupom aplicado: <?php echo Helpers::e($pedido['cupom']['cupom_codigo']); ?></p>
-        <?php else: ?>
-            <p class="muted">Nenhum cupom aplicado.</p>
-        <?php endif; ?>
-
-        <?php if (!empty($loggedIn)): ?>
-            <form class="admin-form" method="post" action="/checkout/cupom">
-                <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
-                <label>
-                    Codigo do cupom
-                    <input type="text" name="cupom_codigo" placeholder="Codigo do cupom" value="<?php echo Helpers::e((string) ($cupomPromocional ?? '')); ?>">
-                </label>
-                <button type="submit">Aplicar cupom</button>
-            </form>
-        <?php else: ?>
-            <p class="muted">Entre na sua conta para aplicar um cupom.</p>
-        <?php endif; ?>
-    </article>
-</section>
-
-<section class="checkout-grid">
-    <article class="checkout-panel">
-        <h2>Comprovante PIX</h2>
-        <div class="status-card" style="margin-bottom:12px;">
-            <strong>Chave Pix</strong>
-            <span>cpeducacursos@gmail.com</span>
-        </div>
-        <?php if ($canSeePix): ?>
-            <?php if (!empty($pedido['comprovante_atual'])): ?>
-                <p class="muted">Status atual: <?php echo Helpers::e($pedido['comprovante_atual']['status']); ?></p>
+    <?php if (empty($comprovanteAguardandoAprovacao) && empty($pedidoPagoOuAprovado)): ?>
+        <article class="checkout-panel">
+            <h2>Cupom</h2>
+            <?php if (!empty($pedido['cupom'])): ?>
+                <p class="muted">Cupom aplicado: <?php echo Helpers::e($pedido['cupom']['cupom_codigo']); ?></p>
+            <?php else: ?>
+                <p class="muted">Nenhum cupom aplicado.</p>
             <?php endif; ?>
-            <div class="cta-group">
-                <a class="button-link" href="/checkout/comprovante?pedido_id=<?php echo (int) $pedido['id']; ?>">Enviar comprovante</a>
+
+            <?php if (!empty($loggedIn)): ?>
+                <form class="admin-form" method="post" action="/checkout/cupom">
+                    <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+                    <label>
+                        Codigo do cupom
+                        <input type="text" name="cupom_codigo" placeholder="Codigo do cupom" value="<?php echo Helpers::e((string) ($cupomPromocional ?? '')); ?>">
+                    </label>
+                    <button type="submit">Aplicar cupom</button>
+                </form>
+            <?php else: ?>
+                <p class="muted">Entre na sua conta para aplicar um cupom.</p>
+            <?php endif; ?>
+        </article>
+    <?php endif; ?>
+
+    <article class="checkout-panel checkout-next-step-card">
+        <h2>Próxima etapa</h2>
+        <?php if (!empty($comprovanteAguardandoAprovacao)): ?>
+            <div class="checkout-status-alert checkout-status-alert--warning">
+                <strong class="checkout-status-alert__title">Comprovante enviado</strong>
+                <p class="checkout-status-alert__text">Aguardando aprovação do comprovante. Um funcionário irá confirmar o pagamento e liberar o curso em breve.</p>
+            </div>
+        <?php elseif (!empty($pedidoPagoOuAprovado)): ?>
+            <div class="checkout-status-alert checkout-status-alert--success">
+                <strong class="checkout-status-alert__title">Pagamento confirmado</strong>
+                <p class="checkout-status-alert__text">Seu pedido já foi confirmado. O curso será liberado em breve na área do aluno.</p>
             </div>
         <?php else: ?>
-            <p class="muted">Comprovante ainda não disponivel para este acesso.</p>
+            <p class="muted checkout-next-step-card__text">Após concluir o pagamento, siga para o envio do comprovante PIX.</p>
         <?php endif; ?>
-    </article>
-
-    <article class="checkout-panel">
-        <h2>Proxima etapa</h2>
-        <?php if (!empty($loggedIn)): ?>
+        <?php if (!empty($loggedIn) && empty($comprovanteAguardandoAprovacao) && empty($pedidoPagoOuAprovado)): ?>
             <div class="cta-group">
-                <a class="button-link" href="/checkout/comprovante?pedido_id=<?php echo (int) $pedido['id']; ?>">Enviar comprovante</a>
+                <a class="button-link button-link--primary" href="/checkout/comprovante?pedido_id=<?php echo (int) $pedido['id']; ?>">Prosseguir para pagamento</a>
+                <a class="button-link button-link--ghost" href="/meus-cursos">Ir para Meus Cursos</a>
+            </div>
+        <?php elseif (!empty($loggedIn)): ?>
+            <div class="cta-group">
                 <a class="button-link button-link--ghost" href="/meus-cursos">Ir para Meus Cursos</a>
             </div>
         <?php else: ?>
