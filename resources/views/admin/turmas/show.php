@@ -3,6 +3,8 @@
 <?php use App\Services\RbacService; ?>
 
 <?php $canManage = (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar'); ?>
+<?php $returnTo = isset($return_to) ? (string) $return_to : ''; ?>
+<?php $voltarUrl = $returnTo !== '' ? $returnTo : '/admin/turmas'; ?>
 
 <div class="admin-page">
 <section class="admin-page__header">
@@ -30,14 +32,16 @@
 <section class="status-card">
     <div class="split-actions">
         <?php if ($canManage): ?>
-            <a href="/admin/turmas/editar?turma_id=<?php echo (int) $turma['id']; ?>">Editar</a>
+            <a href="/admin/turmas/editar?turma_id=<?php echo (int) $turma['id']; ?><?php echo !empty($turma['curso_evento_id']) ? '&curso_id=' . (int) $turma['curso_evento_id'] : ''; ?><?php echo $returnTo !== '' ? '&return_to=' . urlencode($returnTo) : ''; ?>">Editar</a>
         <?php endif; ?>
-        <a href="/admin/turmas">Voltar</a>
+        <a href="<?php echo Helpers::e($voltarUrl); ?>">Voltar</a>
         <?php if ($canManage): ?>
             <form method="post" action="/admin/turmas/status" class="admin-form js-turma-status-form">
                 <input type="hidden" name="id" value="<?php echo (int) $turma['id']; ?>">
+                <input type="hidden" name="curso_id" value="<?php echo !empty($turma['curso_evento_id']) ? (int) $turma['curso_evento_id'] : 0; ?>">
                 <input type="hidden" name="status" value="<?php echo $turma['status'] === 'aberta' ? 'encerrada' : 'aberta'; ?>">
                 <input type="hidden" name="justificativa" value="">
+                <input type="hidden" name="return_to" value="<?php echo Helpers::e($returnTo); ?>">
                 <button type="submit"><?php echo $turma['status'] === 'aberta' ? 'Encerrar' : 'Abrir'; ?></button>
             </form>
         <?php endif; ?>
@@ -45,6 +49,8 @@
     <?php if ($canManage): ?>
         <form method="post" action="/admin/turmas/excluir" class="admin-form admin-mt-16">
             <input type="hidden" name="id" value="<?php echo (int) $turma['id']; ?>">
+            <input type="hidden" name="curso_id" value="<?php echo !empty($turma['curso_evento_id']) ? (int) $turma['curso_evento_id'] : 0; ?>">
+            <input type="hidden" name="return_to" value="<?php echo Helpers::e($returnTo); ?>">
             <label>
                 Justificativa para lixeira
                 <input type="text" name="justificativa" required>

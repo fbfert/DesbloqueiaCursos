@@ -1162,39 +1162,13 @@
     scroll-margin-top: 110px;
 }
 
-.app-admin .admin-area-curso__overview .admin-area-curso__stats {
+.app-admin .area-curso-overview-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
 }
 
-.app-admin .admin-area-curso__overview .admin-area-curso__stats div {
-    padding: 12px;
-    border: 1px solid var(--admin-border);
-    border-radius: 10px;
-    background: var(--admin-panel-muted);
-}
-
-.app-admin .admin-area-curso__overview .admin-area-curso__stats small {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--admin-muted);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.app-admin .admin-area-curso__overview .admin-area-curso__stats strong {
-    font-size: 17px;
-}
-
-.app-admin .admin-area-curso__stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.app-admin .admin-area-curso__stats div {
+.app-admin .area-curso-overview-card {
     display: grid;
     gap: 4px;
     padding: 12px;
@@ -1203,7 +1177,7 @@
     background: var(--admin-panel-muted);
 }
 
-.app-admin .admin-area-curso__stats small {
+.app-admin .area-curso-overview-card small {
     display: block;
     color: var(--admin-muted);
     font-size: 12px;
@@ -1212,8 +1186,98 @@
     letter-spacing: 0.04em;
 }
 
-.app-admin .admin-area-curso__stats strong {
+.app-admin .area-curso-overview-card strong {
     font-size: 17px;
+}
+
+.app-admin .area-curso-section-heading {
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.app-admin .area-curso-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.app-admin .area-curso-course-lock {
+    display: grid;
+    gap: 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .area-curso-course-lock__label {
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .area-curso-course-lock__name {
+    font-size: 16px;
+    color: var(--admin-text);
+}
+
+.app-admin .area-curso-course-lock__help {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 13px;
+}
+
+.app-admin .area-curso-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .area-curso-summary-card {
+    display: grid;
+    gap: 4px;
+    padding: 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .area-curso-summary-card small {
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .area-curso-summary-card strong {
+    font-size: 18px;
+    color: var(--admin-text);
+}
+
+.app-admin .area-curso-summary-card span {
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.app-admin .area-curso-table-card {
+    overflow: hidden;
+}
+
+.app-admin .area-curso-empty-state {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+    padding: 16px;
+    border: 1px dashed var(--admin-border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.75);
 }
 
 .app-admin .admin-area-curso__report-lists {
@@ -1257,6 +1321,28 @@
     border: 1px solid rgba(12, 91, 79, 0.12);
     border-radius: 14px;
     background: #fff;
+}
+
+@media (max-width: 1080px) {
+    .app-admin .area-curso-summary-grid,
+    .app-admin .area-curso-overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .app-admin .area-curso-section-heading {
+        align-items: stretch;
+    }
+
+    .app-admin .area-curso-actions {
+        justify-content: flex-start;
+    }
+
+    .app-admin .area-curso-summary-grid,
+    .app-admin .area-curso-overview-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 .app-admin .history-list {

@@ -96,3 +96,56 @@ Os identificadores internos foram uniformizados para reduzir ambiguidade:
 - `area-curso-atividades-entregas`
 - `area-curso-atividades-detalhe`
 - `area-curso-relatorios-aptos-certificado`
+
+## Etapa seguinte — aba Turmas
+
+### Implementação
+
+- A aba `Turmas` deixou de ser placeholder e passou a renderizar a gestão de turmas do curso selecionado.
+- O conteúdo agora aparece no painel exclusivo da aba `turmas`, sem misturar visão geral ou outras seções.
+- Foi adicionada uma seção própria com:
+  - cabeçalho com tooltip explicativo
+  - resumo operacional das turmas
+  - tabela de turmas do curso
+  - estado vazio com ação de criação da primeira turma
+
+### Integração com o CRUD existente
+
+- O fluxo reaproveita o CRUD administrativo de turmas já existente.
+- A criação e a edição agora preservam o retorno para `/admin/area-curso?curso_id={ID}&aba=turmas`.
+- As ações de `ver`, `editar`, `atualizar status` e `enviar para lixeira` retornam para a aba `Turmas` quando acionadas a partir do workspace.
+
+### Dados usados
+
+- O resumo da aba `Turmas` considera:
+  - total de turmas
+  - turmas abertas
+  - turmas planejadas
+  - turmas encerradas
+  - vagas totais
+  - inscritos ativos por turma
+- Os inscritos são contados a partir das inscrições ativas vinculadas às turmas do curso.
+
+### Arquivos desta etapa
+
+- `app/Controllers/Admin/TurmasController.php`
+- `app/Services/TurmaService.php`
+- `app/Services/AreaCursoService.php`
+- `app/Models/Inscricao.php`
+- `resources/views/admin/area-curso/_turmas.php`
+- `resources/views/admin/area-curso/index.php`
+- `resources/views/admin/turmas/form.php`
+- `resources/views/admin/turmas/show.php`
+- `public_html/assets/css/admin.css`
+
+### Estabilização da coluna `Ações`
+
+- A coluna `Ações` da tabela da aba `Turmas` foi simplificada para evitar qualquer navegação acidental para telas completas dentro do workspace.
+- O link de resumo foi removido da grade interna da aba.
+- A ação inline de status/lixeira também foi retirada temporariamente da aba para manter a interface estável.
+- A coluna passou a exibir apenas `Editar` quando o usuário tem permissão, ou `Sem ações disponíveis` quando não há permissão.
+
+### Verificação adicional
+
+- Foi conferido o arquivo publicado por FTP para garantir que a versão em produção contém a redução da coluna `Ações`.
+- Não restou referência a `/admin/turmas/show` dentro da partial da aba `Turmas`.

@@ -111,13 +111,14 @@ class TurmaService
         );
     }
 
-    public function formData($turmaId = null)
+    public function formData($turmaId = null, $cursoId = null)
     {
         return array(
             'turma' => $turmaId ? $this->turmaModel->findAdminById($turmaId) : null,
             'cursos' => $this->cursoModel->allForSelect(),
             'professores' => $this->usuarioModel->professores(),
             'professor_responsavel' => $turmaId ? $this->usuarioTurmaModel->findProfessorForTurma($turmaId) : null,
+            'curso_id' => $cursoId ? (int) $cursoId : 0,
         );
     }
 

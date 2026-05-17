@@ -16,6 +16,7 @@ use App\Services\ModuloService;
 use App\Services\LmsCriterioConclusaoService;
 use App\Services\RelatorioLmsService;
 use App\Services\ProgressoService;
+use App\Services\RbacService;
 
 class AreaCursoController extends Controller
 {
@@ -87,23 +88,32 @@ class AreaCursoController extends Controller
         );
 
         if (!empty($dados['curso'])) {
-            $dados['criterios_conclusao'] = $this->criterioConclusaoService->resolver($cursoId, $turmaId > 0 ? $turmaId : null);
-            $relatorios = $this->relatorioService->carregarAdmin($cursoId, $turmaId > 0 ? $turmaId : null, $relatoriosFiltros);
+            $dados['can_manage_turmas'] = $aba === 'turmas'
+                ? (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar')
+                : false;
 
-            if (!empty($relatorios['ok'])) {
-                $dados['relatorios'] = $relatorios;
+            if ($aba === 'configuracoes') {
+                $dados['criterios_conclusao'] = $this->criterioConclusaoService->resolver($cursoId, $turmaId > 0 ? $turmaId : null);
+            }
 
-                if ((string) $request->query('export', '') === 'csv') {
-                    $tipoExportacao = (string) $request->query('relatorio', 'progresso');
-                    $arquivoCsv = $this->relatorioService->exportarCsv($tipoExportacao, $relatorios);
+            if (in_array($aba, array('relatorios', 'aptos-certificado'), true)) {
+                $relatorios = $this->relatorioService->carregarAdmin($cursoId, $turmaId > 0 ? $turmaId : null, $relatoriosFiltros);
 
-                    return new Response($arquivoCsv['content'], 200, array(
-                        'Content-Type' => $arquivoCsv['content_type'],
-                        'Content-Disposition' => 'attachment; filename="' . $arquivoCsv['filename'] . '"',
-                    ));
+                if (!empty($relatorios['ok'])) {
+                    $dados['relatorios'] = $relatorios;
+
+                    if ((string) $request->query('export', '') === 'csv') {
+                        $tipoExportacao = (string) $request->query('relatorio', 'progresso');
+                        $arquivoCsv = $this->relatorioService->exportarCsv($tipoExportacao, $relatorios);
+
+                        return new Response($arquivoCsv['content'], 200, array(
+                            'Content-Type' => $arquivoCsv['content_type'],
+                            'Content-Disposition' => 'attachment; filename="' . $arquivoCsv['filename'] . '"',
+                        ));
+                    }
+                } else {
+                    $dados['relatorios'] = array('ok' => false, 'message' => $relatorios['message'] ?? 'Relatório indisponível.');
                 }
-            } else {
-                $dados['relatorios'] = array('ok' => false, 'message' => $relatorios['message'] ?? 'Relatório indisponível.');
             }
         }
 

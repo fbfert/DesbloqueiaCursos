@@ -194,6 +194,7 @@ class AreaCursoService
             'curso' => $curso,
             'turma' => $turma,
             'turmas' => $turmas,
+            'turmas_inscritos' => $cursoId ? $this->inscricaoModel->countAtivasPorCurso($cursoId) : array(),
             'selected_tab' => $aba,
             'tabs' => $this->abasLms(),
             'resumo' => $cursoId ? $this->resumoContexto($cursoId, $turmaId) : $this->resumoVazio(),

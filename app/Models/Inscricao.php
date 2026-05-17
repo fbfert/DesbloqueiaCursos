@@ -172,6 +172,28 @@ class Inscricao
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function countAtivasPorCurso($cursoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT i.turma_id, COUNT(*) AS total
+             FROM inscricoes i
+             WHERE i.deleted_at IS NULL
+               AND i.curso_evento_id = :curso_evento_id
+               AND i.turma_id IS NOT NULL
+               AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+             GROUP BY i.turma_id'
+        );
+
+        $stmt->execute(array('curso_evento_id' => (int) $cursoId));
+
+        $mapa = array();
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $mapa[(int) $row['turma_id']] = (int) $row['total'];
+        }
+
+        return $mapa;
+    }
+
     public function findByPedidoItemAndParticipante($pedidoItemId, $participantePedidoId)
     {
         $stmt = Database::connection()->prepare(

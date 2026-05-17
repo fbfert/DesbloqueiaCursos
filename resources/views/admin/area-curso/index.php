@@ -238,54 +238,47 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                 </div>
             </div>
 
-                <div class="admin-area-curso__stats">
-                    <div>
+                <div class="area-curso-overview-grid">
+                    <div class="area-curso-overview-card">
                         <small>Curso</small>
                         <strong><?php echo Helpers::e($curso['nome'] ?? ''); ?></strong>
                     </div>
-                    <div>
+                    <div class="area-curso-overview-card">
                         <small>Turma</small>
                         <strong><?php echo !empty($turma['nome']) ? Helpers::e($turma['nome']) : 'Curso inteiro'; ?></strong>
                     </div>
-                    <div>
+                    <div class="area-curso-overview-card">
                         <small>Turmas</small>
                         <strong><?php echo (int) $resumo['turmas']; ?></strong>
                     </div>
-                    <div>
+                    <div class="area-curso-overview-card">
                         <small>Módulos</small>
                         <strong><?php echo (int) $resumo['modulos']; ?></strong>
                     </div>
-                    <div>
+                    <div class="area-curso-overview-card">
                         <small>Aulas</small>
                         <strong><?php echo (int) $resumo['aulas']; ?></strong>
                     </div>
-                    <div>
+                    <div class="area-curso-overview-card">
                         <small>Materiais</small>
                         <strong><?php echo (int) $resumo['materiais']; ?></strong>
                     </div>
-                    <div>
+                    <div class="area-curso-overview-card">
                         <small>Atividades</small>
                         <strong><?php echo (int) $resumo['atividades']; ?></strong>
                     </div>
-                    <div>
+                    <div class="area-curso-overview-card">
                         <small>Alunos inscritos</small>
                         <strong><?php echo (int) $resumo['participantes']; ?></strong>
                     </div>
-                    <div>
+                    <div class="area-curso-overview-card">
                         <small>Certificados</small>
                         <strong><?php echo (int) $resumo['certificados']; ?></strong>
                     </div>
                 </div>
             </section>
 
-            <section class="status-card admin-area-curso__section admin-area-curso__placeholder area-curso-tab-panel<?php echo $selectedTab === 'turmas' ? ' is-active' : ''; ?>" data-area-curso-tab="turmas" id="area-curso-turmas">
-                <div class="panel-header">
-                    <div>
-                        <h2>Turmas</h2>
-                    </div>
-                </div>
-                <p class="muted">Esta área será implementada em etapa posterior.</p>
-            </section>
+            <?php require BASE_PATH . '/resources/views/admin/area-curso/_turmas.php'; ?>
 
             <?php require BASE_PATH . '/resources/views/admin/area-curso/_materiais.php'; ?>
 
