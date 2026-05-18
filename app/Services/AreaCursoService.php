@@ -7,6 +7,7 @@ use App\Core\Helpers;
 use App\Core\Logger;
 use App\Models\Aula;
 use App\Models\Atividade;
+use App\Models\Certificado;
 use App\Models\CursoEvento;
 use App\Models\InstrucoesCurso;
 use App\Models\Inscricao;
@@ -15,6 +16,7 @@ use App\Models\Material;
 use App\Models\Modulo;
 use App\Models\ParticipantePedido;
 use App\Models\Turma;
+use App\Support\HtmlSanitizer;
 use Exception;
 
 class AreaCursoService
@@ -27,12 +29,15 @@ class AreaCursoService
     private $aulaModel;
     private $materialModel;
     private $atividadeModel;
+    private $certificadoModel;
     private $linkModel;
     private $participanteModel;
     private $moduloService;
     private $aulaService;
     private $materialService;
     private $atividadeService;
+    private $aptidaoService;
+    private $avaliacaoService;
     private $progressoService;
     private $elegibilidadeService;
     private $rbacService;
@@ -49,12 +54,15 @@ class AreaCursoService
         $this->aulaModel = new Aula();
         $this->materialModel = new Material();
         $this->atividadeModel = new Atividade();
+        $this->certificadoModel = new Certificado();
         $this->linkModel = new LinkExterno();
         $this->participanteModel = new ParticipantePedido();
         $this->moduloService = new ModuloService();
         $this->aulaService = new AulaService();
         $this->materialService = new MaterialService();
         $this->atividadeService = new AtividadeService();
+        $this->aptidaoService = new AptidaoCertificadoService();
+        $this->avaliacaoService = new AvaliacaoService();
         $this->progressoService = new ProgressoService();
         $this->elegibilidadeService = new LmsElegibilidadeService();
         $this->rbacService = new RbacService();
@@ -144,6 +152,9 @@ class AreaCursoService
             'links' => array(),
             'atividades' => array(),
         );
+        $participantesFiltros = !empty($selecionados['participantes_filtros']) && is_array($selecionados['participantes_filtros'])
+            ? $selecionados['participantes_filtros']
+            : array();
         $atividadeId = !empty($selecionados['atividade_id']) ? (int) $selecionados['atividade_id'] : 0;
         $atividadeSelecionada = $atividadeId > 0 ? $this->selecionarAtividade($contexto['atividades'], $atividadeId) : null;
         $entregaId = !empty($selecionados['entrega_id']) ? (int) $selecionados['entrega_id'] : 0;
@@ -155,7 +166,8 @@ class AreaCursoService
             'turmas' => $turmas,
             'curso' => $curso,
             'turma' => $turma,
-            'participantes' => $cursoId ? $this->listarParticipantes($cursoId, $turmaId) : array(),
+            'participantes' => $cursoId ? $this->listarParticipantes($cursoId, $turmaId, $participantesFiltros) : array(),
+            'participantes_filtros' => $participantesFiltros,
             'resumo' => $cursoId ? $this->resumoContexto($cursoId, $turmaId) : $this->resumoVazio(),
             'selected_tab' => !empty($selecionados['aba']) ? (string) $selecionados['aba'] : 'visao-geral',
             'atividade_modulo_id' => !empty($selecionados['atividade_modulo_id']) ? (int) $selecionados['atividade_modulo_id'] : 0,
@@ -182,6 +194,12 @@ class AreaCursoService
             'atividades' => array(),
         );
         $aba = !empty($selecionados['aba']) ? (string) $selecionados['aba'] : 'visao-geral';
+        $participantesFiltros = !empty($selecionados['participantes_filtros']) && is_array($selecionados['participantes_filtros'])
+            ? $selecionados['participantes_filtros']
+            : array();
+        $presencasFiltros = !empty($selecionados['presencas_filtros']) && is_array($selecionados['presencas_filtros'])
+            ? $selecionados['presencas_filtros']
+            : array();
         $atividadeId = !empty($selecionados['atividade_id']) ? (int) $selecionados['atividade_id'] : 0;
         $atividadeSelecionada = $atividadeId > 0 ? $this->selecionarAtividade($contexto['atividades'], $atividadeId) : null;
         $entregaId = !empty($selecionados['entrega_id']) ? (int) $selecionados['entrega_id'] : 0;
@@ -198,7 +216,9 @@ class AreaCursoService
             'selected_tab' => $aba,
             'tabs' => $this->abasLms(),
             'resumo' => $cursoId ? $this->resumoContexto($cursoId, $turmaId) : $this->resumoVazio(),
-            'participantes' => $cursoId ? $this->listarParticipantes($cursoId, $turmaId) : array(),
+            'participantes' => $cursoId ? $this->listarParticipantes($cursoId, $turmaId, $participantesFiltros) : array(),
+            'participantes_filtros' => $participantesFiltros,
+            'presencas_filtros' => $presencasFiltros,
             'atividade_modulo_id' => !empty($selecionados['atividade_modulo_id']) ? (int) $selecionados['atividade_modulo_id'] : 0,
             'atividade_aula_id' => !empty($selecionados['atividade_aula_id']) ? (int) $selecionados['atividade_aula_id'] : 0,
             'atividade_status' => !empty($selecionados['atividade_status']) ? (string) $selecionados['atividade_status'] : '',
@@ -241,7 +261,7 @@ class AreaCursoService
             'curso_evento_id' => (int) $data['curso_evento_id'],
             'turma_id' => !empty($data['turma_id']) ? (int) $data['turma_id'] : null,
             'titulo' => trim((string) $data['titulo']),
-            'conteudo' => isset($data['conteudo']) ? trim((string) $data['conteudo']) : null,
+            'conteudo' => isset($data['conteudo']) ? HtmlSanitizer::clean((string) $data['conteudo'], 'full') : null,
             'visivel' => !empty($data['visivel']) ? 1 : 0,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 1,
         );
@@ -399,9 +419,402 @@ class AreaCursoService
         }
     }
 
-    public function listarParticipantes($cursoId, $turmaId = null)
+    public function listarParticipantes($cursoId, $turmaId = null, array $filtros = array())
     {
-        return $this->participanteModel->forCursoTurma($cursoId, $turmaId);
+        return $this->participanteModel->forCursoTurma($cursoId, $turmaId, $filtros);
+    }
+
+    public function carregarAvaliacoesNotas($cursoId, $turmaId = null, array $filtros = array())
+    {
+        $cursoId = (int) $cursoId;
+        $turmaId = $turmaId !== null && $turmaId !== '' ? (int) $turmaId : null;
+
+        if ($cursoId <= 0) {
+            return array('ok' => false, 'message' => 'Curso invalido para a area de avaliacoes.');
+        }
+
+        $contexto = $this->aptidaoService->contexto($cursoId, $turmaId);
+        $avaliacoesContexto = $this->avaliacaoService->listarContexto($cursoId, $turmaId);
+        if (!empty($avaliacoesContexto['avaliacoes'])) {
+            $contexto['avaliacoes'] = $avaliacoesContexto['avaliacoes'];
+        }
+
+        $filtros = $this->normalizarFiltrosAvaliacoesNotas($filtros);
+        $inscricoes = !empty($contexto['inscricoes']) && is_array($contexto['inscricoes']) ? $contexto['inscricoes'] : array();
+        $atividades = $this->atividadeService->listarPorContexto($cursoId, $turmaId);
+        $inscricoesFiltradas = $this->aplicarFiltrosAvaliacoesNotas($inscricoes, $filtros);
+        $resumo = $this->resumoAvaliacoesNotas($inscricoesFiltradas);
+
+        return array(
+            'ok' => true,
+            'curso' => !empty($contexto['curso']) ? $contexto['curso'] : $this->cursoModel->findById($cursoId),
+            'turma' => !empty($contexto['turma']) ? $contexto['turma'] : null,
+            'inscricoes' => $inscricoesFiltradas,
+            'inscricoes_base' => $inscricoes,
+            'avaliacoes' => !empty($contexto['avaliacoes']) && is_array($contexto['avaliacoes']) ? $contexto['avaliacoes'] : array(),
+            'presencas' => !empty($contexto['presencas']) && is_array($contexto['presencas']) ? $contexto['presencas'] : array(),
+            'atividades' => $atividades,
+            'filtros' => $filtros,
+            'resumo' => $resumo,
+        );
+    }
+
+    public function carregarCertificados($cursoId, $turmaId = null, array $filtros = array())
+    {
+        $cursoId = (int) $cursoId;
+        $turmaId = $turmaId !== null && $turmaId !== '' ? (int) $turmaId : null;
+
+        if ($cursoId <= 0) {
+            return array('ok' => false, 'message' => 'Curso invalido para a area de certificados.');
+        }
+
+        $contexto = $this->aptidaoService->contexto($cursoId, $turmaId);
+        $inscricoes = !empty($contexto['inscricoes']) && is_array($contexto['inscricoes']) ? $contexto['inscricoes'] : array();
+        $certificados = $this->certificadoModel->listForContext($cursoId, $turmaId, $this->normalizarFiltrosCertificados($filtros));
+        $filtros = $this->normalizarFiltrosCertificados($filtros);
+
+        $certificados = $this->aplicarFiltrosCertificados($certificados, $filtros);
+        $aptosParaEmissao = array();
+        $pendentes = array();
+
+        foreach ($inscricoes as $inscricao) {
+            $temCertificado = !empty($inscricao['certificado_id']) || (isset($inscricao['certificado_status']) && (string) $inscricao['certificado_status'] === 'emitido');
+            if ($temCertificado) {
+                continue;
+            }
+
+            if (!empty($inscricao['apto_certificado'])) {
+                if ($this->inscricaoCombinaBuscaCertificado($inscricao, $filtros['busca'])) {
+                    $aptosParaEmissao[] = $inscricao;
+                }
+                continue;
+            }
+
+            if ($this->inscricaoCombinaBuscaCertificado($inscricao, $filtros['busca'])) {
+                $pendentes[] = $inscricao;
+            }
+        }
+
+        return array(
+            'ok' => true,
+            'curso' => $contexto['curso'],
+            'turma' => $contexto['turma'],
+            'inscricoes' => $inscricoes,
+            'certificados' => $certificados,
+            'aptos_para_emissao' => $aptosParaEmissao,
+            'pendentes' => $pendentes,
+            'resumo' => $this->resumoCertificados($certificados, $aptosParaEmissao, $pendentes),
+            'filtros' => $filtros,
+        );
+    }
+
+    public function exportarCsvCertificados(array $certificados, $arquivoNome = 'certificados.csv')
+    {
+        $linhas = array(
+            array('Código', 'Participante', 'CPF', 'Turma', 'Status', 'Emitido em', 'Pedido'),
+        );
+
+        foreach ($certificados as $certificado) {
+            $linhas[] = array(
+                (string) ($certificado['codigo'] ?? ''),
+                (string) ($certificado['participante_nome'] ?? ''),
+                (string) ($certificado['cpf_participante'] ?? ''),
+                (string) ($certificado['turma_nome'] ?? ''),
+                (string) ($certificado['status'] ?? ''),
+                (string) ($certificado['emitido_em'] ?? ''),
+                (string) ($certificado['pedido_codigo'] ?? ''),
+            );
+        }
+
+        $arquivo = fopen('php://temp', 'r+');
+        fwrite($arquivo, "\xEF\xBB\xBF");
+        foreach ($linhas as $linha) {
+            fputcsv($arquivo, $linha, ';');
+        }
+        rewind($arquivo);
+        $content = stream_get_contents($arquivo);
+        fclose($arquivo);
+
+        return array(
+            'content' => $content,
+            'content_type' => 'text/csv; charset=UTF-8',
+            'filename' => $arquivoNome,
+        );
+    }
+
+    public function exportarCsvAvaliacoesNotas(array $inscricoes, $arquivoNome = 'avaliacoes-notas.csv')
+    {
+        $linhas = array(
+            array('Aluno', 'E-mail', 'CPF', 'Turma', 'Status da inscrição', 'Progresso', 'Presença', 'Nota final', 'Apto para certificado', 'Certificado'),
+        );
+
+        foreach ($inscricoes as $inscricao) {
+            $linhas[] = array(
+                (string) ($inscricao['aluno_nome'] ?? $inscricao['participante_nome'] ?? ''),
+                (string) ($inscricao['aluno_email'] ?? $inscricao['participante_email'] ?? ''),
+                (string) ($inscricao['aluno_cpf'] ?? $inscricao['participante_cpf'] ?? ''),
+                (string) ($inscricao['turma_nome'] ?? ''),
+                (string) ($inscricao['status'] ?? $inscricao['inscricao_status'] ?? ''),
+                isset($inscricao['percentual_progresso']) && $inscricao['percentual_progresso'] !== null ? number_format((float) $inscricao['percentual_progresso'], 2, ',', '.') . '%' : '',
+                isset($inscricao['presenca_percentual']) && $inscricao['presenca_percentual'] !== null ? number_format((float) $inscricao['presenca_percentual'], 2, ',', '.') . '%' : '',
+                isset($inscricao['nota_final']) && $inscricao['nota_final'] !== null ? number_format((float) $inscricao['nota_final'], 2, ',', '.') : '',
+                !empty($inscricao['apto_certificado']) ? 'Sim' : 'Não',
+                !empty($inscricao['certificado_id']) || (isset($inscricao['certificado_status']) && (string) $inscricao['certificado_status'] === 'emitido') ? 'Emitido' : 'Não emitido',
+            );
+        }
+
+        $arquivo = fopen('php://temp', 'r+');
+        fwrite($arquivo, "\xEF\xBB\xBF");
+        foreach ($linhas as $linha) {
+            fputcsv($arquivo, $linha, ';');
+        }
+        rewind($arquivo);
+        $content = stream_get_contents($arquivo);
+        fclose($arquivo);
+
+        return array(
+            'filename' => $arquivoNome,
+            'content' => $content,
+            'content_type' => 'text/csv; charset=UTF-8',
+        );
+    }
+
+    private function normalizarFiltrosAvaliacoesNotas(array $filtros)
+    {
+        return array(
+            'busca' => isset($filtros['busca']) ? trim((string) $filtros['busca']) : '',
+            'status_inscricao' => isset($filtros['status_inscricao']) ? trim((string) $filtros['status_inscricao']) : '',
+            'nota_status' => isset($filtros['nota_status']) ? trim((string) $filtros['nota_status']) : '',
+            'certificado' => isset($filtros['certificado']) ? trim((string) $filtros['certificado']) : '',
+            'avaliacao_id' => isset($filtros['avaliacao_id']) ? (int) $filtros['avaliacao_id'] : 0,
+        );
+    }
+
+    private function aplicarFiltrosAvaliacoesNotas(array $inscricoes, array $filtros)
+    {
+        $resultado = array();
+
+        foreach ($inscricoes as $inscricao) {
+            if (!empty($filtros['busca'])) {
+                $busca = mb_strtolower((string) $filtros['busca']);
+                $camposBusca = array(
+                    mb_strtolower((string) ($inscricao['aluno_nome'] ?? $inscricao['participante_nome'] ?? '')),
+                    mb_strtolower((string) ($inscricao['aluno_email'] ?? $inscricao['participante_email'] ?? '')),
+                    mb_strtolower((string) ($inscricao['aluno_cpf'] ?? $inscricao['participante_cpf'] ?? '')),
+                    mb_strtolower((string) ($inscricao['turma_nome'] ?? '')),
+                );
+                $encontrado = false;
+                foreach ($camposBusca as $campo) {
+                    if ($campo !== '' && mb_strpos($campo, $busca) !== false) {
+                        $encontrado = true;
+                        break;
+                    }
+                }
+                if (!$encontrado) {
+                    continue;
+                }
+            }
+
+            if (!empty($filtros['status_inscricao']) && (string) ($inscricao['status'] ?? $inscricao['inscricao_status'] ?? '') !== (string) $filtros['status_inscricao']) {
+                continue;
+            }
+
+            if (!empty($filtros['nota_status'])) {
+                $notaFinal = isset($inscricao['nota_final']) && $inscricao['nota_final'] !== null ? (float) $inscricao['nota_final'] : null;
+                $aptoCertificado = !empty($inscricao['apto_certificado']);
+                $statusNota = 'pendente';
+
+                if ($notaFinal !== null) {
+                    $statusNota = $aptoCertificado ? 'aprovada' : 'reprovada';
+                } elseif (!empty($inscricao['status']) && in_array((string) $inscricao['status'], array('ativa', 'em_andamento'), true)) {
+                    $statusNota = 'sem_nota';
+                }
+
+                if ($statusNota !== (string) $filtros['nota_status']) {
+                    continue;
+                }
+            }
+
+            if (!empty($filtros['certificado'])) {
+                $temCertificado = !empty($inscricao['certificado_id']) || (isset($inscricao['certificado_status']) && (string) $inscricao['certificado_status'] === 'emitido');
+                if ($filtros['certificado'] === 'com_certificado' && !$temCertificado) {
+                    continue;
+                }
+                if ($filtros['certificado'] === 'sem_certificado' && $temCertificado) {
+                    continue;
+                }
+            }
+
+            $resultado[] = $inscricao;
+        }
+
+        return $resultado;
+    }
+
+    private function resumoAvaliacoesNotas(array $inscricoes)
+    {
+        $total = count($inscricoes);
+        $comNota = 0;
+        $semNota = 0;
+        $aptos = 0;
+        $naoAptos = 0;
+        $certificadosEmitidos = 0;
+        $somaProgresso = 0;
+        $somaPresenca = 0;
+        $comProgresso = 0;
+        $comPresenca = 0;
+
+        foreach ($inscricoes as $inscricao) {
+            $notaFinal = isset($inscricao['nota_final']) && $inscricao['nota_final'] !== null ? (float) $inscricao['nota_final'] : null;
+            $progresso = isset($inscricao['percentual_progresso']) && $inscricao['percentual_progresso'] !== null ? (float) $inscricao['percentual_progresso'] : null;
+            $presenca = isset($inscricao['presenca_percentual']) && $inscricao['presenca_percentual'] !== null ? (float) $inscricao['presenca_percentual'] : null;
+
+            if ($notaFinal !== null) {
+                $comNota++;
+            } else {
+                $semNota++;
+            }
+
+            if ($progresso !== null) {
+                $somaProgresso += $progresso;
+                $comProgresso++;
+            }
+
+            if ($presenca !== null) {
+                $somaPresenca += $presenca;
+                $comPresenca++;
+            }
+
+            if (!empty($inscricao['apto_certificado'])) {
+                $aptos++;
+            } else {
+                $naoAptos++;
+            }
+
+            if (!empty($inscricao['certificado_id']) || (isset($inscricao['certificado_status']) && (string) $inscricao['certificado_status'] === 'emitido')) {
+                $certificadosEmitidos++;
+            }
+        }
+
+        return array(
+            'total_inscricoes' => $total,
+            'com_nota' => $comNota,
+            'sem_nota' => $semNota,
+            'aptos' => $aptos,
+            'nao_aptos' => $naoAptos,
+            'certificados_emitidos' => $certificadosEmitidos,
+            'progresso_medio' => $comProgresso > 0 ? round($somaProgresso / $comProgresso, 2) : 0,
+            'presenca_media' => $comPresenca > 0 ? round($somaPresenca / $comPresenca, 2) : 0,
+        );
+    }
+
+    private function normalizarFiltrosCertificados(array $filtros)
+    {
+        return array(
+            'busca' => isset($filtros['busca']) ? trim((string) $filtros['busca']) : '',
+            'status' => isset($filtros['status']) ? trim((string) $filtros['status']) : '',
+        );
+    }
+
+    private function aplicarFiltrosCertificados(array $certificados, array $filtros)
+    {
+        $resultado = array();
+
+        foreach ($certificados as $certificado) {
+            if (!empty($filtros['busca']) && !$this->registroCombinaBuscaCertificado($certificado, $filtros['busca'])) {
+                continue;
+            }
+
+            if (!empty($filtros['status']) && (string) $certificado['status'] !== (string) $filtros['status']) {
+                continue;
+            }
+
+            $resultado[] = $certificado;
+        }
+
+        return $resultado;
+    }
+
+    private function inscricaoCombinaBuscaCertificado(array $inscricao, $busca)
+    {
+        $busca = trim((string) $busca);
+        if ($busca === '') {
+            return true;
+        }
+
+        $termo = mb_strtolower($busca);
+        $campos = array(
+            isset($inscricao['participante_nome']) ? $inscricao['participante_nome'] : '',
+            isset($inscricao['participante_cpf']) ? $inscricao['participante_cpf'] : '',
+            isset($inscricao['curso_nome']) ? $inscricao['curso_nome'] : '',
+            isset($inscricao['turma_nome']) ? $inscricao['turma_nome'] : '',
+            isset($inscricao['pedido_codigo']) ? $inscricao['pedido_codigo'] : '',
+            isset($inscricao['status']) ? $inscricao['status'] : '',
+        );
+
+        foreach ($campos as $campo) {
+            if ($campo !== '' && mb_strpos(mb_strtolower((string) $campo), $termo) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function registroCombinaBuscaCertificado(array $certificado, $busca)
+    {
+        $busca = trim((string) $busca);
+        if ($busca === '') {
+            return true;
+        }
+
+        $termo = mb_strtolower($busca);
+        $campos = array(
+            isset($certificado['codigo']) ? $certificado['codigo'] : '',
+            isset($certificado['participante_nome']) ? $certificado['participante_nome'] : '',
+            isset($certificado['cpf_participante']) ? $certificado['cpf_participante'] : '',
+            isset($certificado['turma_nome']) ? $certificado['turma_nome'] : '',
+            isset($certificado['pedido_codigo']) ? $certificado['pedido_codigo'] : '',
+            isset($certificado['status']) ? $certificado['status'] : '',
+        );
+
+        foreach ($campos as $campo) {
+            if ($campo !== '' && mb_strpos(mb_strtolower((string) $campo), $termo) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function resumoCertificados(array $certificados, array $aptosParaEmissao, array $pendentes)
+    {
+        $emitidos = 0;
+        $cancelados = 0;
+        $revogados = 0;
+        $substituidos = 0;
+
+        foreach ($certificados as $certificado) {
+            $status = isset($certificado['status']) ? (string) $certificado['status'] : '';
+            if ($status === 'emitido') {
+                $emitidos++;
+            } elseif ($status === 'cancelado') {
+                $cancelados++;
+            } elseif ($status === 'revogado') {
+                $revogados++;
+            } elseif ($status === 'substituido') {
+                $substituidos++;
+            }
+        }
+
+        return array(
+            'emitidos' => $emitidos,
+            'aptos' => count($aptosParaEmissao),
+            'pendentes' => count($pendentes),
+            'cancelados' => $cancelados,
+            'revogados' => $revogados,
+            'substituidos' => $substituidos,
+        );
     }
 
     public function materialAutorizado($usuarioId, $materialId, $contexto = 'aluno')

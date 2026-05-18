@@ -11,6 +11,7 @@ use App\Models\CursoEvento;
 use App\Models\Inscricao;
 use App\Models\Modulo;
 use App\Models\Turma;
+use App\Support\HtmlSanitizer;
 use Exception;
 
 class AtividadeService
@@ -189,7 +190,7 @@ class AtividadeService
         if (!in_array($status, self::STATUS_VALIDOS, true)) {
             $status = 'publicado';
         }
-        $descricao = isset($data['descricao']) ? trim((string) $data['descricao']) : null;
+        $descricao = isset($data['descricao']) ? HtmlSanitizer::clean((string) $data['descricao'], 'full') : null;
         $prazo = $this->normalizarPrazo(isset($data['prazo']) ? $data['prazo'] : null, $atividadeExistente);
         $notaMaxima = $this->normalizarNotaMaxima(isset($data['nota_maxima']) ? $data['nota_maxima'] : ($atividadeExistente['nota_maxima'] ?? 10));
         $payload = array(

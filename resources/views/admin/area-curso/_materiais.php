@@ -27,6 +27,23 @@ $tiposMateriais = array(
 );
 
 $quantidadeMateriaisContexto = !empty($materiais) ? count($materiais) : 0;
+
+if (!function_exists('areaCursoMaterialExcerpt')) {
+    function areaCursoMaterialExcerpt($text, $limit = 120, $ellipsis = '...')
+    {
+        $text = trim(strip_tags((string) $text));
+
+        if ($text === '') {
+            return '';
+        }
+
+        if (function_exists('mb_strimwidth')) {
+            return mb_strimwidth($text, 0, (int) $limit, $ellipsis);
+        }
+
+        return strlen($text) > (int) $limit ? substr($text, 0, (int) $limit) . $ellipsis : $text;
+    }
+}
 ?>
 
 <section class="status-card admin-area-curso__section admin-area-curso__materials area-curso-tab-panel<?php echo $selectedTab === 'materiais' ? ' is-active' : ''; ?>" data-area-curso-tab="materiais" id="area-curso-materiais">
@@ -91,7 +108,7 @@ $quantidadeMateriaisContexto = !empty($materiais) ? count($materiais) : 0;
                 <input type="text" name="titulo" value="<?php echo Helpers::e($materialAtual['titulo'] ?? ''); ?>" required>
             </label>
             <label class="full">Descrição
-                <textarea name="descricao" rows="3"><?php echo Helpers::e($materialAtual['descricao'] ?? ''); ?></textarea>
+                <textarea name="descricao" class="js-wysiwyg" data-wysiwyg="basic" rows="3"><?php echo Helpers::e($materialAtual['descricao'] ?? ''); ?></textarea>
             </label>
             <label class="full">URL do material
                 <input type="url" name="url" value="<?php echo Helpers::e($materialAtual['url'] ?? ''); ?>" placeholder="Obrigatória para link, vídeo externo e embed controlado">
@@ -133,7 +150,7 @@ $quantidadeMateriaisContexto = !empty($materiais) ? count($materiais) : 0;
                             <td>
                                 <strong><?php echo Helpers::e($material['titulo']); ?></strong>
                                 <?php if (!empty($material['descricao'])): ?>
-                                    <div class="muted"><?php echo Helpers::e($material['descricao']); ?></div>
+                                    <div class="muted"><?php echo Helpers::e(areaCursoMaterialExcerpt($material['descricao'], 120, '...')); ?></div>
                                 <?php endif; ?>
                             </td>
                             <td><?php echo Helpers::e($material['modulo_titulo'] ?? '—'); ?></td>

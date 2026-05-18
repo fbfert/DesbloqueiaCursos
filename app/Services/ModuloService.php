@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Modulo;
+use App\Support\HtmlSanitizer;
 use Exception;
 
 class ModuloService
@@ -35,7 +36,7 @@ class ModuloService
             'curso_evento_id' => (int) $data['curso_evento_id'],
             'turma_id' => !empty($data['turma_id']) ? (int) $data['turma_id'] : null,
             'titulo' => trim((string) $data['titulo']),
-            'descricao' => isset($data['descricao']) ? trim((string) $data['descricao']) : null,
+            'descricao' => isset($data['descricao']) ? HtmlSanitizer::clean((string) $data['descricao'], 'basic') : null,
             'status' => $status,
             'visivel' => !empty($data['visivel']) ? 1 : 0,
             'criado_por' => $id > 0 ? null : ($actorUserId ? (int) $actorUserId : (isset($data['criado_por']) ? (int) $data['criado_por'] : null)),

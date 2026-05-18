@@ -7,6 +7,7 @@ use App\Core\Logger;
 use App\Models\Aula;
 use App\Models\Material;
 use App\Models\Modulo;
+use App\Support\HtmlSanitizer;
 use Exception;
 
 class MaterialService
@@ -133,7 +134,7 @@ class MaterialService
             return array('ok' => false, 'message' => 'Informe o titulo do material.');
         }
 
-        $descricao = isset($data['descricao']) ? trim((string) $data['descricao']) : null;
+        $descricao = isset($data['descricao']) ? HtmlSanitizer::clean((string) $data['descricao'], 'basic') : null;
         $url = isset($data['url']) ? trim((string) $data['url']) : '';
         $arquivoAtual = $materialExistente;
         $requerArquivo = $this->tipoMaterialEhArquivo($tipoMaterial);

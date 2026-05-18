@@ -6,6 +6,7 @@ use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Aula;
 use App\Models\Modulo;
+use App\Support\HtmlSanitizer;
 use Exception;
 
 class AulaService
@@ -39,7 +40,7 @@ class AulaService
             'curso_evento_id' => (int) $data['curso_evento_id'],
             'turma_id' => !empty($data['turma_id']) ? (int) $data['turma_id'] : null,
             'titulo' => trim((string) $data['titulo']),
-            'conteudo' => isset($data['conteudo']) ? trim((string) $data['conteudo']) : null,
+            'conteudo' => isset($data['conteudo']) ? HtmlSanitizer::clean((string) $data['conteudo'], 'full') : null,
             'tipo' => isset($data['tipo']) ? trim((string) $data['tipo']) : 'texto',
             'url_video' => isset($data['url_video']) ? trim((string) $data['url_video']) : null,
             'duracao_minutos' => isset($data['duracao_minutos']) && $data['duracao_minutos'] !== '' ? (int) $data['duracao_minutos'] : null,

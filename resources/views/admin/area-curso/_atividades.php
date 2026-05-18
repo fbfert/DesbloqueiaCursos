@@ -2,7 +2,7 @@
 
 <?php
 $truncateText = static function ($text, $limit = 120, $ellipsis = '...') {
-    $text = (string) $text;
+    $text = trim(strip_tags((string) $text));
 
     if (function_exists('mb_strimwidth')) {
         return mb_strimwidth($text, 0, (int) $limit, $ellipsis);
@@ -190,7 +190,7 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
                     </select>
                 </label>
                 <label class="full">Título<input type="text" name="titulo" value="<?php echo Helpers::e($atividadeEditar['titulo'] ?? ''); ?>"></label>
-                <label class="full">Descrição<textarea name="descricao" rows="4"><?php echo Helpers::e($atividadeEditar['descricao'] ?? ''); ?></textarea></label>
+                <label class="full">Descrição<textarea name="descricao" class="js-wysiwyg" data-wysiwyg="full" rows="4"><?php echo Helpers::e($atividadeEditar['descricao'] ?? ''); ?></textarea></label>
                 <label>
                     Tipo de entrega
                     <select name="tipo_entrega">
