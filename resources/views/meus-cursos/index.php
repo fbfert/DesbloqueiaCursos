@@ -13,7 +13,23 @@ $totalPedidosPendentes = count($pedidosPendentes);
     <h1>Página de <?php echo Helpers::e($nomeUsuarioPagina); ?></h1>
 </section>
 
-<?php if (!empty($success)): ?>
+<?php
+$pedidoCanceladoFeedback = isset($pedidoCanceladoFeedback) && is_array($pedidoCanceladoFeedback) ? $pedidoCanceladoFeedback : null;
+$pedidoCanceladoTitle = $pedidoCanceladoFeedback && !empty($pedidoCanceladoFeedback['title']) ? (string) $pedidoCanceladoFeedback['title'] : '';
+$pedidoCanceladoDesc = $pedidoCanceladoFeedback && !empty($pedidoCanceladoFeedback['description']) ? (string) $pedidoCanceladoFeedback['description'] : '';
+?>
+
+<?php if ($pedidoCanceladoTitle !== ''): ?>
+    <div class="student-feedback-card student-feedback-card--success" role="status" aria-live="polite">
+        <div class="student-feedback-card__icon" aria-hidden="true">✓</div>
+        <div class="student-feedback-card__content">
+            <strong><?php echo Helpers::e($pedidoCanceladoTitle); ?></strong>
+            <?php if ($pedidoCanceladoDesc !== ''): ?>
+                <p><?php echo Helpers::e($pedidoCanceladoDesc); ?></p>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php elseif (!empty($success)): ?>
     <section class="auth-message auth-message-success">
         <p><?php echo Helpers::e($success); ?></p>
     </section>

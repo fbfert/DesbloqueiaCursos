@@ -28,6 +28,7 @@ $menu = array(
         array('label' => 'Avisos', 'href' => '/admin/avisos', 'icon' => '✦', 'permissions_any' => array('avisos.visualizar')),
         array('label' => 'Cupons', 'href' => '/admin/cupons', 'icon' => '⌘', 'permissions_any' => array('cupons.ver')),
         array('label' => 'Certificados', 'href' => '/admin/certificados', 'icon' => '⬚', 'permissions_any' => array('certificados.ver')),
+        array('label' => 'Templates de certificados', 'href' => '/admin/certificados/templates', 'icon' => '✎', 'permissions_any' => array('certificados.ver')),
     )),
     array('group' => 'Promocionais', 'items' => array(
         array('label' => 'Presentes', 'href' => '/admin/promocionais/presentes', 'icon' => '🎁', 'permissions_any' => array('promocionais.presentes.ver')),

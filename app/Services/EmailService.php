@@ -125,6 +125,119 @@ class EmailService
         return $this->emailModel->listForAdmin();
     }
 
+    public function resendExisting($emailEnvioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $emailEnvioId = (int) $emailEnvioId;
+        if ($emailEnvioId <= 0) {
+            return array('ok' => false, 'message' => 'E-mail inválido.');
+        }
+
+        $stored = $this->emailModel->findById($emailEnvioId);
+        if (!$stored) {
+            return array('ok' => false, 'message' => 'E-mail não encontrado.');
+        }
+
+        $status = isset($stored['status']) ? (string) $stored['status'] : '';
+        if (!in_array($status, array('pendente', 'falhou'), true)) {
+            return array('ok' => false, 'message' => 'Este e-mail não pode ser reenviado.');
+        }
+
+        $data = array();
+        if (!empty($stored['contexto_json'])) {
+            $decoded = json_decode((string) $stored['contexto_json'], true);
+            if (is_array($decoded)) {
+                $data = $decoded;
+            }
+        }
+
+        $evento = isset($stored['evento']) ? (string) $stored['evento'] : '';
+        $template = isset($stored['template']) ? (string) $stored['template'] : '';
+
+        $contextoRenderizacao = $this->modeloService->buildContext($data);
+
+        $assuntoBase = isset($stored['assunto']) ? (string) $stored['assunto'] : '';
+        $htmlBase = null;
+
+        $modelo = $this->modeloService->findByEvento($evento);
+        if ($modelo && empty($modelo['ativo'])) {
+            Logger::info('emails.reenvio.modelo_desativado', array('email_id' => $emailEnvioId, 'evento' => $evento));
+            return array('ok' => false, 'message' => 'Envio automatizado desativado para este modelo.');
+        }
+
+        if ($modelo) {
+            if (!empty($modelo['assunto'])) {
+                $assuntoBase = (string) $modelo['assunto'];
+            }
+
+            if (!empty($modelo['corpo_html'])) {
+                $htmlBase = (string) $modelo['corpo_html'];
+            }
+        }
+
+        $assuntoFinal = $this->modeloService->renderPlaceholders($assuntoBase, $contextoRenderizacao);
+
+        if ($htmlBase !== null && trim($htmlBase) !== '') {
+            $rendered = $this->modeloService->renderPlaceholders($htmlBase, $contextoRenderizacao);
+        } else {
+            $rendered = View::render($template, $data, false, 'emails');
+        }
+
+        $config = $this->configuration();
+        $this->logRuntimeDiagnostics($config);
+
+        if (empty($config['enabled']) || empty($config['host'])) {
+            $erro = 'Configuração SMTP indisponível.';
+            $this->emailModel->markFailed($emailEnvioId, $erro);
+            Logger::error('emails.reenvio.falhou', array('email_id' => $emailEnvioId, 'erro' => $erro));
+            return array('ok' => false, 'message' => $erro);
+        }
+
+        try {
+            $response = $this->sendSmtpMessage($config, array(
+                'from_email' => $config['from_email'],
+                'from_name' => $config['from_name'],
+                'reply_to' => $config['reply_to'],
+                'to_email' => isset($stored['destinatario_email']) ? $stored['destinatario_email'] : null,
+                'to_name' => isset($stored['destinatario_nome']) ? $stored['destinatario_nome'] : null,
+                'subject' => $assuntoFinal,
+                'html' => $rendered,
+            ));
+
+            $this->emailModel->markSent($emailEnvioId, $response);
+            $this->auditService->record(
+                'emails.reenviado',
+                'email',
+                $emailEnvioId,
+                array('evento' => $evento, 'template' => $template),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('emails.reenviado', array('email_id' => $emailEnvioId, 'evento' => $evento));
+            return array('ok' => true, 'email_id' => $emailEnvioId, 'response' => $response);
+        } catch (Exception $exception) {
+            $this->emailModel->markFailed($emailEnvioId, $exception->getMessage());
+            $this->auditService->record(
+                'emails.reenvio_falhou',
+                'email',
+                $emailEnvioId,
+                array('erro' => $exception->getMessage()),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::error('emails.reenvio_falhou', array(
+                'email_id' => $emailEnvioId,
+                'evento' => $evento,
+                'erro' => $exception->getMessage(),
+            ));
+
+            return array('ok' => false, 'message' => $exception->getMessage(), 'email_id' => $emailEnvioId);
+        }
+    }
+
     public function welcome(array $usuario, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         return $this->sendTemplate(

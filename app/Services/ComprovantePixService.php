@@ -8,6 +8,7 @@ use App\Models\ComprovantePix;
 use App\Models\Inscricao;
 use App\Models\Pedido;
 use App\Services\FileStorageService;
+use App\Services\ComprovantePixNotificationService;
 use Exception;
 
 class ComprovantePixService
@@ -17,6 +18,7 @@ class ComprovantePixService
     private $inscricaoModel;
     private $fileStorage;
     private $emailService;
+    private $notificationService;
     private $auditService;
     private $rbacService;
 
@@ -27,6 +29,7 @@ class ComprovantePixService
         $this->inscricaoModel = new Inscricao();
         $this->fileStorage = new FileStorageService();
         $this->emailService = new EmailService();
+        $this->notificationService = new ComprovantePixNotificationService();
         $this->auditService = new AuditService();
         $this->rbacService = new RbacService();
     }
@@ -133,6 +136,9 @@ class ComprovantePixService
             $pdo->commit();
 
             $this->emailService->comprovanteEnviado($this->pedidoModel->findById($pedidoId), $actorUserId, $ipAddress, $userAgent);
+
+            // Notifica o financeiro sem bloquear o fluxo do aluno.
+            $this->notificationService->notificarNovoComprovantePix($comprovanteId, $actorUserId, $ipAddress, $userAgent);
 
             return array('ok' => true, 'comprovante_pix_id' => $comprovanteId);
         } catch (Exception $exception) {

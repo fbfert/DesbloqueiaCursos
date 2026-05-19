@@ -6,14 +6,20 @@ use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
 use App\Services\ConfiguracaoGlobalService;
+use App\Services\CertificadoPlaceholderService;
+use App\Services\CertificadoTemplateService;
 
 class ConfiguracoesGlobaisController extends Controller
 {
     private $service;
+    private $templateService;
+    private $placeholderService;
 
     public function __construct()
     {
         $this->service = new ConfiguracaoGlobalService();
+        $this->templateService = new CertificadoTemplateService();
+        $this->placeholderService = new CertificadoPlaceholderService();
     }
 
     public function index(Request $request)
@@ -31,6 +37,8 @@ class ConfiguracoesGlobaisController extends Controller
         return $this->view('admin/configuracoes-globais/certificados', array(
             'title' => 'Configurações de certificados',
             'configuracao' => $this->service->certificados(),
+            'templates' => $this->templateService->listAdmin(),
+            'placeholders' => $this->placeholderService->catalogo(),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
         ));

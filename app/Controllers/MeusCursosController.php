@@ -44,6 +44,7 @@ class MeusCursosController extends Controller
             'title' => 'Minha Página',
             'usuarioNome' => Session::get('usuario_nome'),
             'success' => Session::pullFlash('success'),
+            'pedidoCanceladoFeedback' => Session::pullFlash('pedido_cancelado_feedback'),
             'avisos' => $this->avisoService->avisosAtivosParaUsuario((int) $usuarioId),
             'pedidosPendentes' => $pedidosPendentes,
             'cacheBustMeusCursos' => $cacheBust,
@@ -102,6 +103,10 @@ class MeusCursosController extends Controller
             return $this->redirect('/aluno/meus-cursos');
         }
 
+        Session::flash('pedido_cancelado_feedback', array(
+            'title' => 'Pedido cancelado com sucesso',
+            'description' => 'O pedido foi cancelado e não seguirá para pagamento ou confirmação.',
+        ));
         Session::flash('success', 'Pedido cancelado com sucesso.');
         return $this->redirect('/aluno/meus-cursos');
     }

@@ -100,7 +100,11 @@ class CertificadoService
             return array('ok' => false, 'message' => 'A inscricao ainda nao esta apta para certificado.');
         }
 
-        $template = $this->resolveTemplate(isset($opcoes['template_id']) ? (int) $opcoes['template_id'] : null);
+        $template = $this->resolveTemplate(
+            isset($opcoes['template_id']) ? (int) $opcoes['template_id'] : null,
+            (int) $inscricao['curso_evento_id'],
+            !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null
+        );
         $existente = $this->certificadoModel->findByInscricao($inscricaoId);
         $manterCodigo = !empty($opcoes['manter_codigo']);
 
@@ -411,13 +415,40 @@ class CertificadoService
         }
     }
 
-    private function resolveTemplate($templateId = null)
+    private function resolveTemplate($templateId = null, $cursoId = null, $turmaId = null)
     {
         if ($templateId) {
             $template = $this->templateModel->findById($templateId);
             if ($template) {
                 return $template;
             }
+        }
+
+        if ($turmaId) {
+            $template = $this->templateModel->findForTurma((int) $turmaId);
+            if ($template) {
+                return $template;
+            }
+        }
+
+        if ($cursoId) {
+            $template = $this->templateModel->findForCurso((int) $cursoId);
+            if ($template) {
+                return $template;
+            }
+        }
+
+        $config = $this->globalConfigService->certificados();
+        if (!empty($config['certificados_template_padrao_id'])) {
+            $template = $this->templateModel->findById((int) $config['certificados_template_padrao_id']);
+            if ($template && (int) ($template['ativo'] ?? 0) === 1) {
+                return $template;
+            }
+        }
+
+        $template = $this->templateModel->findGlobalActive();
+        if ($template) {
+            return $template;
         }
 
         return $this->templateModel->defaultTemplate();
@@ -514,7 +545,11 @@ class CertificadoService
 
     private function pdfContentForCertificate(array $certificado)
     {
-        $template = $this->resolveTemplate(isset($certificado['template_id']) ? (int) $certificado['template_id'] : null);
+        $template = $this->resolveTemplate(
+            isset($certificado['template_id']) ? (int) $certificado['template_id'] : null,
+            (int) $certificado['curso_evento_id'],
+            !empty($certificado['turma_id']) ? (int) $certificado['turma_id'] : null
+        );
         $assinantes = $this->assinantesDoCurso((int) $certificado['curso_evento_id'], isset($template['id']) ? (int) $template['id'] : null);
         $curso = $this->findCurso((int) $certificado['curso_evento_id']);
         $turma = !empty($certificado['turma_id']) ? $this->turmaModel->findPublicById((int) $certificado['turma_id']) : array();

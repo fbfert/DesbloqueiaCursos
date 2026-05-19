@@ -2,10 +2,15 @@
     <section class="admin-page__header">
         <div>
             <h1 class="admin-page__title">E-mails</h1>
-            <p class="admin-page__subtitle">Configuração SMTP básica e histórico de envios.</p>
+            <p class="admin-page__subtitle">Acompanhe a fila, falhas e envios recentes do sistema.</p>
         </div>
         <div class="admin-page__actions">
             <a class="button-link button-link--ghost" href="/admin/emails/modelos">Modelos de e-mail</a>
+            <a class="button-link button-link--ghost" href="/admin/emails/fila">Fila e Histórico</a>
+            <form method="post" action="/admin/emails/reenviar-pendentes" style="display:inline;">
+                <?php echo $csrfField; ?>
+                <button type="submit" class="button-link" onclick="return window.confirm('Reenviar todos os e-mails pendentes e falhos?');">Reenviar pendentes</button>
+            </form>
         </div>
     </section>
 
@@ -92,40 +97,49 @@
         </form>
     </section>
 
-    <section class="admin-section">
-        <div class="admin-section__header">
-            <h2 class="admin-section__title">Fila e histórico</h2>
-        </div>
-        <div class="table-wrapper">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Evento</th>
-                        <th>Destinatário</th>
-                        <th>Assunto</th>
-                        <th>Status</th>
-                        <th>Tentativas</th>
-                        <th>Data</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($emails)): ?>
-                        <tr>
-                            <td colspan="6">Nenhum envio encontrado.</td>
-                        </tr>
-                    <?php endif; ?>
-                    <?php foreach ($emails as $email): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars((string) $email['evento'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars((string) $email['destinatario_email'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars((string) $email['assunto'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><span class="badge badge-<?php echo htmlspecialchars((string) $email['status'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $email['status'], ENT_QUOTES, 'UTF-8'); ?></span></td>
-                            <td><?php echo (int) $email['tentativas']; ?></td>
-                            <td><?php echo htmlspecialchars((string) $email['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+    <section class="card-grid" style="margin-top:16px;">
+        <?php $resumo = isset($resumo) && is_array($resumo) ? $resumo : array(); ?>
+        <article class="status-card">
+            <strong>Pendentes de envio</strong>
+            <span style="font-size:24px;font-weight:800;"><?php echo (int) ($resumo['pendentes'] ?? 0); ?></span>
+            <small class="muted">E-mails pendentes ou com falha aguardando reenvio.</small>
+            <a href="/admin/emails/fila?status=pendente">Ver pendentes</a>
+        </article>
+        <article class="status-card">
+            <strong>Falhas hoje</strong>
+            <span style="font-size:24px;font-weight:800;"><?php echo (int) ($resumo['falhas_hoje'] ?? 0); ?></span>
+            <small class="muted">Ocorrências registradas hoje.</small>
+            <a href="/admin/emails/fila?status=falhou">Ver falhas</a>
+        </article>
+        <article class="status-card">
+            <strong>Falhas esta semana</strong>
+            <span style="font-size:24px;font-weight:800;"><?php echo (int) ($resumo['falhas_semana'] ?? 0); ?></span>
+            <small class="muted">Falhas desde segunda-feira.</small>
+            <a href="/admin/emails/fila?status=falhou">Ver falhas</a>
+        </article>
+        <article class="status-card">
+            <strong>Falhas este mês</strong>
+            <span style="font-size:24px;font-weight:800;"><?php echo (int) ($resumo['falhas_mes'] ?? 0); ?></span>
+            <small class="muted">Falhas desde o início do mês.</small>
+            <a href="/admin/emails/fila?status=falhou">Ver falhas</a>
+        </article>
+        <article class="status-card">
+            <strong>Enviados hoje</strong>
+            <span style="font-size:24px;font-weight:800;"><?php echo (int) ($resumo['enviados_hoje'] ?? 0); ?></span>
+            <small class="muted">Mensagens enviadas com sucesso hoje.</small>
+            <a href="/admin/emails/fila?status=enviado">Ver enviados</a>
+        </article>
+        <article class="status-card">
+            <strong>Enviados esta semana</strong>
+            <span style="font-size:24px;font-weight:800;"><?php echo (int) ($resumo['enviados_semana'] ?? 0); ?></span>
+            <small class="muted">Envios desde segunda-feira.</small>
+            <a href="/admin/emails/fila?status=enviado">Ver enviados</a>
+        </article>
+        <article class="status-card">
+            <strong>Enviados este mês</strong>
+            <span style="font-size:24px;font-weight:800;"><?php echo (int) ($resumo['enviados_mes'] ?? 0); ?></span>
+            <small class="muted">Envios desde o início do mês.</small>
+            <a href="/admin/emails/fila?status=enviado">Ver enviados</a>
+        </article>
     </section>
 </div>

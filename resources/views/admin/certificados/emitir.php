@@ -29,8 +29,27 @@
             Inscrição apta
             <select name="inscricao_id">
                 <?php foreach ($aptos as $apto): ?>
-                    <option value="<?php echo (int) $apto['id']; ?>" <?php echo (int) $selectedInscriçãoId === (int) $apto['id'] ? 'selected' : ''; ?>>
-                        <?php echo Helpers::e($apto['curso_nome'] . ' - ' . $apto['participante_nome'] . ' (' . $apto['pedido_codigo'] . ')'); ?>
+                    <?php
+                    $alunoNome = !empty($apto['aluno_nome']) ? (string) $apto['aluno_nome'] : (!empty($apto['participante_nome']) ? (string) $apto['participante_nome'] : 'Aluno não identificado');
+                    $alunoEmail = !empty($apto['aluno_email']) ? (string) $apto['aluno_email'] : '';
+                    $cursoNome = !empty($apto['curso_nome']) ? (string) $apto['curso_nome'] : '';
+                    $turmaNome = !empty($apto['turma_nome']) ? (string) $apto['turma_nome'] : '';
+                    $pedidoCodigo = !empty($apto['pedido_codigo']) ? (string) $apto['pedido_codigo'] : '';
+
+                    $label = $alunoNome;
+                    if ($alunoEmail !== '') {
+                        $label .= ' <' . $alunoEmail . '>';
+                    }
+                    $label .= ' — ' . $cursoNome;
+                    if ($turmaNome !== '') {
+                        $label .= ' — ' . $turmaNome;
+                    }
+                    if ($pedidoCodigo !== '') {
+                        $label .= ' (' . $pedidoCodigo . ')';
+                    }
+                    ?>
+                    <option value="<?php echo (int) $apto['id']; ?>" <?php echo !empty($selectedInscricaoId) && (int) $selectedInscricaoId === (int) $apto['id'] ? 'selected' : ''; ?>>
+                        <?php echo Helpers::e($label); ?>
                     </option>
                 <?php endforeach; ?>
             </select>

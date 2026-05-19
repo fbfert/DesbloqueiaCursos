@@ -112,6 +112,8 @@ class Certificado
                     ce.nome AS curso_nome,
                     ce.slug AS curso_slug,
                     t.nome AS turma_nome,
+                    u.nome AS aluno_nome,
+                    u.email AS aluno_email,
                     pp.nome AS participante_nome,
                     pp.cpf AS participante_cpf
              FROM inscricoes i
@@ -119,6 +121,7 @@ class Certificado
              INNER JOIN participantes_pedido pp ON pp.id = i.participante_pedido_id
              INNER JOIN cursos_eventos ce ON ce.id = i.curso_evento_id
              LEFT JOIN turmas t ON t.id = i.turma_id
+             LEFT JOIN usuarios u ON u.id = i.usuario_id
              LEFT JOIN certificados c ON c.inscricao_id = i.id AND c.deleted_at IS NULL AND c.status = "emitido"
              WHERE i.deleted_at IS NULL
                AND i.apto_certificado = 1

@@ -33,15 +33,24 @@ class AuthController extends Controller
             return $this->redirect('/cadastro');
         }
 
-        Session::flash('success', 'Cadastro realizado com sucesso. Você ja pode acessar sua conta.');
+        Session::flash('account_created', array(
+            'nome' => (string) $request->input('nome'),
+            'email' => (string) $request->input('email'),
+        ));
+
+        Session::flash('success', 'Conta criada com sucesso. Agora você já pode acessar sua conta.');
         return $this->redirect('/login');
     }
 
     public function showLogin(Request $request)
     {
-        return $this->view('auth/login', $this->flashData(array(
+        $data = $this->flashData(array(
             'title' => 'Login',
-        )));
+        ));
+
+        $data['accountCreated'] = Session::pullFlash('account_created');
+
+        return $this->view('auth/login', $data);
     }
 
     public function login(Request $request)

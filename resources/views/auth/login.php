@@ -1,7 +1,24 @@
 <section class="auth-shell">
     <h1>Login</h1>
     <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
-    <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+
+    <?php if (!empty($accountCreated) && is_array($accountCreated)): ?>
+        <div class="login-success-card">
+            <div class="login-success-card__icon">✓</div>
+            <div class="login-success-card__content">
+                <strong>Conta criada com sucesso</strong>
+                <p>
+                    A conta de
+                    <?php echo htmlspecialchars(isset($accountCreated['nome']) ? (string) $accountCreated['nome'] : '', ENT_QUOTES, 'UTF-8'); ?>
+                    foi criada com o e-mail
+                    <?php echo htmlspecialchars(isset($accountCreated['email']) ? (string) $accountCreated['email'] : '', ENT_QUOTES, 'UTF-8'); ?>.
+                </p>
+                <p>Agora acesse com seus dados para começar.</p>
+            </div>
+        </div>
+    <?php else: ?>
+        <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+    <?php endif; ?>
 
     <form method="post" action="/login" class="auth-form">
         <label>
