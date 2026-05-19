@@ -11,11 +11,13 @@ use App\Core\View;
 use App\Services\AreaCursoService;
 use App\Services\AtividadeService;
 use App\Services\AulaService;
+use App\Services\ConteudoCursoService;
 use App\Services\MaterialService;
 use App\Services\ModuloService;
 use App\Services\LmsCriterioConclusaoService;
 use App\Services\RelatorioLmsService;
 use App\Services\ProgressoService;
+use App\Support\HtmlSanitizer;
 
 class AreaCursoController extends Controller
 {
@@ -27,6 +29,7 @@ class AreaCursoController extends Controller
     private $progressoService;
     private $relatorioService;
     private $criterioConclusaoService;
+    private $conteudoService;
 
     public function __construct()
     {
@@ -38,6 +41,7 @@ class AreaCursoController extends Controller
         $this->progressoService = new ProgressoService();
         $this->relatorioService = new RelatorioLmsService();
         $this->criterioConclusaoService = new LmsCriterioConclusaoService();
+        $this->conteudoService = new ConteudoCursoService();
     }
 
     public function index(Request $request)
@@ -84,6 +88,33 @@ class AreaCursoController extends Controller
         }
 
         if (!empty($dados['curso'])) {
+            if ($aba === 'conteudo') {
+                $listar = $this->conteudoService->listarModulosComItens($cursoId);
+                if (!empty($listar['ok'])) {
+                    $dados['conteudo_modulos'] = $listar['modulos'];
+                } else {
+                    Session::flash('errors', array($listar['message'] ?? 'NÃ£o foi possÃ­vel carregar o conteÃºdo do curso.'));
+                    $dados['conteudo_modulos'] = array();
+                }
+
+                $conteudoModuloId = (int) $request->query('conteudo_modulo_id', 0);
+                if ($conteudoModuloId > 0) {
+                    $detalheModulo = $this->conteudoService->detalharModulo($conteudoModuloId, $cursoId);
+                    if (!empty($detalheModulo['ok'])) {
+                        $dados['conteudo_modulo_editar'] = $detalheModulo['modulo'];
+                    }
+                }
+
+                $conteudoItemId = (int) $request->query('conteudo_item_id', 0);
+                if ($conteudoItemId > 0) {
+                    $detalheItem = $this->conteudoService->detalharItem($conteudoItemId, $cursoId);
+                    if (!empty($detalheItem['ok'])) {
+                        $dados['conteudo_item_editar'] = $detalheItem['item'];
+                        $dados['conteudo_item_detalhe'] = $detalheItem['detalhe'];
+                    }
+                }
+            }
+
             $dados['criterios_conclusao'] = $this->criterioConclusaoService->resolver($cursoId, $turmaId > 0 ? $turmaId : null);
             $relatorios = $this->relatorioService->carregarProfessor($usuarioId, $cursoId, $turmaId > 0 ? $turmaId : null, $relatoriosFiltros);
 
@@ -237,6 +268,271 @@ class AreaCursoController extends Controller
             $resultado,
             $request,
             '/professor/area-curso?curso_id=' . (int) $request->input('curso_evento_id', 0) . '&turma_id=' . (int) $request->input('turma_id', 0),
+            '/professor/area-curso'
+        );
+    }
+
+    public function salvarConteudoModulo(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            return $this->redirect('/professor/area-curso');
+        }
+
+        $usuarioId = (int) Session::get('usuario_id');
+        $id = (int) $request->input('id', 0);
+
+        $payload = $request->all();
+        $payload['descricao'] = isset($payload['descricao']) ? HtmlSanitizer::clean((string) $payload['descricao'], 'basic') : null;
+        $payload['atualizado_por'] = $usuarioId;
+        if ($id <= 0) {
+            $payload['criado_por'] = $usuarioId;
+        }
+
+        $resultado = $id > 0
+            ? $this->conteudoService->atualizarModulo($id, $payload)
+            : $this->conteudoService->criarModulo($payload);
+
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo',
+            '/professor/area-curso'
+        );
+    }
+
+    public function arquivarConteudoModulo(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            return $this->redirect('/professor/area-curso');
+        }
+
+        $resultado = $this->conteudoService->arquivarModulo((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo',
+            '/professor/area-curso'
+        );
+    }
+
+    public function duplicarConteudoModulo(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            return $this->redirect('/professor/area-curso');
+        }
+
+        $resultado = $this->conteudoService->duplicarModulo((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo',
+            '/professor/area-curso'
+        );
+    }
+
+    public function ordenarConteudoModulos(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            return $this->redirect('/professor/area-curso');
+        }
+
+        $moduloId = (int) $request->input('modulo_id', 0);
+        $direcao = (string) $request->input('direcao', '');
+
+        $listar = $this->conteudoService->listarModulosComItens($cursoId);
+        if (empty($listar['ok'])) {
+            return $this->respondForm($listar, $request, '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo', '/professor/area-curso');
+        }
+
+        $modulos = $listar['modulos'];
+        $idx = -1;
+        foreach ($modulos as $i => $m) {
+            if ((int) $m['id'] === $moduloId) {
+                $idx = (int) $i;
+                break;
+            }
+        }
+
+        if ($idx >= 0) {
+            if ($direcao === 'subir' && $idx > 0) {
+                $tmp = $modulos[$idx - 1];
+                $modulos[$idx - 1] = $modulos[$idx];
+                $modulos[$idx] = $tmp;
+            }
+            if ($direcao === 'descer' && $idx < (count($modulos) - 1)) {
+                $tmp = $modulos[$idx + 1];
+                $modulos[$idx + 1] = $modulos[$idx];
+                $modulos[$idx] = $tmp;
+            }
+        }
+
+        $ordens = array();
+        $ordem = 1;
+        foreach ($modulos as $m) {
+            $ordens[(int) $m['id']] = $ordem++;
+        }
+
+        $resultado = $this->conteudoService->reordenarModulos($cursoId, $ordens);
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo',
+            '/professor/area-curso'
+        );
+    }
+
+    public function salvarConteudoItem(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            return $this->redirect('/professor/area-curso');
+        }
+
+        $usuarioId = (int) Session::get('usuario_id');
+        $arquivo = isset($_FILES['arquivo']) ? $_FILES['arquivo'] : null;
+
+        $payload = $request->all();
+        $payload['atualizado_por'] = $usuarioId;
+        if (empty($payload['id'])) {
+            $payload['criado_por'] = $usuarioId;
+        }
+
+        $resultado = $this->conteudoService->salvarItemComDetalhes($payload, $arquivo, $usuarioId);
+
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo',
+            '/professor/area-curso'
+        );
+    }
+
+    public function arquivarConteudoItem(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            return $this->redirect('/professor/area-curso');
+        }
+
+        $resultado = $this->conteudoService->arquivarItem((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo',
+            '/professor/area-curso'
+        );
+    }
+
+    public function duplicarConteudoItem(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            return $this->redirect('/professor/area-curso');
+        }
+
+        $resultado = $this->conteudoService->duplicarItem((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo',
+            '/professor/area-curso'
+        );
+    }
+
+    public function moverConteudoItem(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            return $this->redirect('/professor/area-curso');
+        }
+
+        $resultado = $this->conteudoService->moverItemParaModulo((int) $request->input('item_id', 0), (int) $request->input('novo_modulo_id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo',
+            '/professor/area-curso'
+        );
+    }
+
+    public function ordenarConteudoItens(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', 0);
+        $turmaId = (int) $request->input('turma_id', 0);
+        if (!$this->contextoAutorizado($cursoId, $turmaId)) {
+            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            return $this->redirect('/professor/area-curso');
+        }
+
+        $moduloId = (int) $request->input('modulo_id', 0);
+        $itemId = (int) $request->input('item_id', 0);
+        $direcao = (string) $request->input('direcao', '');
+
+        $listar = $this->conteudoService->listarModulosComItens($cursoId);
+        if (empty($listar['ok'])) {
+            return $this->respondForm($listar, $request, '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo', '/professor/area-curso');
+        }
+
+        $listaItens = array();
+        foreach ($listar['modulos'] as $m) {
+            if ((int) $m['id'] === $moduloId) {
+                $listaItens = isset($m['itens']) && is_array($m['itens']) ? $m['itens'] : array();
+                break;
+            }
+        }
+
+        $idx = -1;
+        foreach ($listaItens as $i => $it) {
+            if ((int) $it['id'] === $itemId) {
+                $idx = (int) $i;
+                break;
+            }
+        }
+
+        if ($idx >= 0) {
+            if ($direcao === 'subir' && $idx > 0) {
+                $tmp = $listaItens[$idx - 1];
+                $listaItens[$idx - 1] = $listaItens[$idx];
+                $listaItens[$idx] = $tmp;
+            }
+            if ($direcao === 'descer' && $idx < (count($listaItens) - 1)) {
+                $tmp = $listaItens[$idx + 1];
+                $listaItens[$idx + 1] = $listaItens[$idx];
+                $listaItens[$idx] = $tmp;
+            }
+        }
+
+        $ordens = array();
+        $ordem = 1;
+        foreach ($listaItens as $it) {
+            $ordens[(int) $it['id']] = $ordem++;
+        }
+
+        $resultado = $this->conteudoService->reordenarItens($moduloId, $ordens);
+        return $this->respondForm(
+            $resultado,
+            $request,
+            '/professor/area-curso?curso_id=' . $cursoId . '&turma_id=' . $turmaId . '&aba=conteudo',
             '/professor/area-curso'
         );
     }

@@ -244,6 +244,7 @@ class AreaCursoService
             array('slug' => 'modulos-aulas', 'label' => 'Módulos e aulas'),
             array('slug' => 'materiais', 'label' => 'Materiais'),
             array('slug' => 'atividades', 'label' => 'Atividades'),
+            array('slug' => 'conteudo', 'label' => 'Conteúdo'),
             array('slug' => 'participantes', 'label' => 'Participantes'),
             array('slug' => 'presenca', 'label' => 'Presença'),
             array('slug' => 'avaliacoes-notas', 'label' => 'Avaliações / Notas'),

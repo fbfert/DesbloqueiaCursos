@@ -17,3 +17,5 @@ conversas.txt
 /storage/trash/*
 /storage/uploads/*
 !/storage/**/.gitkeep
+
+/deploy/_backup_local/*

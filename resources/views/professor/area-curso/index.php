@@ -50,6 +50,16 @@
 
 <?php if (!empty($curso)): ?>
     <?php $areaCursoCancelUrl = '/professor/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : ''); ?>
+    <?php $selectedTab = isset($selected_tab) && $selected_tab !== '' ? (string) $selected_tab : ''; ?>
+
+    <nav class="area-curso-tabs" style="margin-top:12px;">
+        <a class="area-curso-tabs__link<?php echo $selectedTab === '' ? ' is-active' : ''; ?>" href="/professor/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>">Visão geral</a>
+        <a class="area-curso-tabs__link<?php echo $selectedTab === 'conteudo' ? ' is-active' : ''; ?>" href="/professor/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=conteudo">Conteúdo</a>
+    </nav>
+
+    <?php if ($selectedTab === 'conteudo'): ?>
+        <?php $areaCursoBaseUrl = '/professor/area-curso'; require BASE_PATH . '/resources/views/professor/area-curso/_conteudo.php'; ?>
+    <?php else: ?>
     <section class="panel">
         <div class="panel-header"><div><h2>Instruções</h2></div></div>
         <form method="post" action="/professor/area-curso/instrucoes" class="form-grid">
@@ -300,5 +310,6 @@
             </table>
         </div>
     </section>
+<?php endif; ?>
 <?php endif; ?>
 

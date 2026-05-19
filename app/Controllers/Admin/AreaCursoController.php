@@ -11,12 +11,14 @@ use App\Core\View;
 use App\Services\AreaCursoService;
 use App\Services\AtividadeService;
 use App\Services\AulaService;
+use App\Services\ConteudoCursoService;
 use App\Services\MaterialService;
 use App\Services\ModuloService;
 use App\Services\LmsCriterioConclusaoService;
 use App\Services\RelatorioLmsService;
 use App\Services\ProgressoService;
 use App\Services\RbacService;
+use App\Support\HtmlSanitizer;
 
 class AreaCursoController extends Controller
 {
@@ -28,6 +30,7 @@ class AreaCursoController extends Controller
     private $progressoService;
     private $relatorioService;
     private $criterioConclusaoService;
+    private $conteudoService;
 
     public function __construct()
     {
@@ -39,6 +42,7 @@ class AreaCursoController extends Controller
         $this->progressoService = new ProgressoService();
         $this->relatorioService = new RelatorioLmsService();
         $this->criterioConclusaoService = new LmsCriterioConclusaoService();
+        $this->conteudoService = new ConteudoCursoService();
     }
 
     public function index(Request $request)
@@ -46,7 +50,7 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->query('curso_id', 0);
         $turmaId = (int) $request->query('turma_id', 0);
         $aba = (string) $request->query('aba', 'visao-geral');
-        $abasPermitidas = array('visao-geral', 'turmas', 'modulos-aulas', 'materiais', 'atividades', 'participantes', 'presenca', 'avaliacoes-notas', 'certificados', 'relatorios', 'configuracoes', 'aptos-certificado');
+        $abasPermitidas = array('visao-geral', 'turmas', 'modulos-aulas', 'materiais', 'atividades', 'conteudo', 'participantes', 'presenca', 'avaliacoes-notas', 'certificados', 'relatorios', 'configuracoes', 'aptos-certificado');
         if (!in_array($aba, $abasPermitidas, true)) {
             $aba = 'visao-geral';
         }
@@ -91,6 +95,33 @@ class AreaCursoController extends Controller
             $dados['can_manage_turmas'] = $aba === 'turmas'
                 ? (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar')
                 : false;
+
+            if ($aba === 'conteudo') {
+                $listar = $this->conteudoService->listarModulosComItens($cursoId);
+                if (!empty($listar['ok'])) {
+                    $dados['conteudo_modulos'] = $listar['modulos'];
+                } else {
+                    Session::flash('errors', array($listar['message'] ?? 'NÃ£o foi possÃ­vel carregar o conteÃºdo do curso.'));
+                    $dados['conteudo_modulos'] = array();
+                }
+
+                $conteudoModuloId = (int) $request->query('conteudo_modulo_id', 0);
+                if ($conteudoModuloId > 0) {
+                    $detalheModulo = $this->conteudoService->detalharModulo($conteudoModuloId, $cursoId);
+                    if (!empty($detalheModulo['ok'])) {
+                        $dados['conteudo_modulo_editar'] = $detalheModulo['modulo'];
+                    }
+                }
+
+                $conteudoItemId = (int) $request->query('conteudo_item_id', 0);
+                if ($conteudoItemId > 0) {
+                    $detalheItem = $this->conteudoService->detalharItem($conteudoItemId, $cursoId);
+                    if (!empty($detalheItem['ok'])) {
+                        $dados['conteudo_item_editar'] = $detalheItem['item'];
+                        $dados['conteudo_item_detalhe'] = $detalheItem['detalhe'];
+                    }
+                }
+            }
 
             if ($aba === 'configuracoes') {
                 $dados['criterios_conclusao'] = $this->criterioConclusaoService->resolver($cursoId, $turmaId > 0 ? $turmaId : null);
@@ -243,6 +274,209 @@ class AreaCursoController extends Controller
             $request,
             $this->redirectContexto($request, (string) $request->input('aba', 'modulos-aulas')),
             $this->redirectContexto($request, (string) $request->input('aba', 'modulos-aulas'))
+        );
+    }
+
+    public function salvarConteudoModulo(Request $request)
+    {
+        $usuarioId = (int) Session::get('usuario_id');
+        $id = (int) $request->input('id', 0);
+
+        $payload = $request->all();
+        $payload['descricao'] = isset($payload['descricao']) ? HtmlSanitizer::clean((string) $payload['descricao'], 'basic') : null;
+        $payload['atualizado_por'] = $usuarioId;
+        if ($id <= 0) {
+            $payload['criado_por'] = $usuarioId;
+        }
+
+        $resultado = $id > 0
+            ? $this->conteudoService->atualizarModulo($id, $payload)
+            : $this->conteudoService->criarModulo($payload);
+
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'conteudo'),
+            $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function arquivarConteudoModulo(Request $request)
+    {
+        $resultado = $this->conteudoService->arquivarModulo((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'conteudo'),
+            $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function duplicarConteudoModulo(Request $request)
+    {
+        $resultado = $this->conteudoService->duplicarModulo((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'conteudo'),
+            $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function ordenarConteudoModulos(Request $request)
+    {
+        $cursoEventoId = (int) $request->input('curso_evento_id', 0);
+        $moduloId = (int) $request->input('modulo_id', 0);
+        $direcao = (string) $request->input('direcao', '');
+
+        $listar = $this->conteudoService->listarModulosComItens($cursoEventoId);
+        if (empty($listar['ok'])) {
+            return $this->respondForm($listar, $request, $this->redirectContexto($request, 'conteudo'));
+        }
+
+        $modulos = $listar['modulos'];
+        $idx = -1;
+        foreach ($modulos as $i => $m) {
+            if ((int) $m['id'] === $moduloId) {
+                $idx = (int) $i;
+                break;
+            }
+        }
+
+        if ($idx >= 0) {
+            if ($direcao === 'subir' && $idx > 0) {
+                $tmp = $modulos[$idx - 1];
+                $modulos[$idx - 1] = $modulos[$idx];
+                $modulos[$idx] = $tmp;
+            }
+            if ($direcao === 'descer' && $idx < (count($modulos) - 1)) {
+                $tmp = $modulos[$idx + 1];
+                $modulos[$idx + 1] = $modulos[$idx];
+                $modulos[$idx] = $tmp;
+            }
+        }
+
+        $ordens = array();
+        $ordem = 1;
+        foreach ($modulos as $m) {
+            $ordens[(int) $m['id']] = $ordem++;
+        }
+
+        $resultado = $this->conteudoService->reordenarModulos($cursoEventoId, $ordens);
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'conteudo'),
+            $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function salvarConteudoItem(Request $request)
+    {
+        $usuarioId = (int) Session::get('usuario_id');
+        $arquivo = isset($_FILES['arquivo']) ? $_FILES['arquivo'] : null;
+
+        $payload = $request->all();
+        $payload['atualizado_por'] = $usuarioId;
+        if (empty($payload['id'])) {
+            $payload['criado_por'] = $usuarioId;
+        }
+
+        $resultado = $this->conteudoService->salvarItemComDetalhes($payload, $arquivo, $usuarioId);
+
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'conteudo'),
+            $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function arquivarConteudoItem(Request $request)
+    {
+        $resultado = $this->conteudoService->arquivarItem((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'conteudo'),
+            $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function duplicarConteudoItem(Request $request)
+    {
+        $resultado = $this->conteudoService->duplicarItem((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'conteudo'),
+            $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function moverConteudoItem(Request $request)
+    {
+        $resultado = $this->conteudoService->moverItemParaModulo((int) $request->input('item_id', 0), (int) $request->input('novo_modulo_id', 0), (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'conteudo'),
+            $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function ordenarConteudoItens(Request $request)
+    {
+        $moduloId = (int) $request->input('modulo_id', 0);
+        $itemId = (int) $request->input('item_id', 0);
+        $direcao = (string) $request->input('direcao', '');
+
+        $itens = $this->conteudoService->listarModulosComItens((int) $request->input('curso_evento_id', 0));
+        if (empty($itens['ok'])) {
+            return $this->respondForm($itens, $request, $this->redirectContexto($request, 'conteudo'));
+        }
+
+        $listaItens = array();
+        foreach ($itens['modulos'] as $m) {
+            if ((int) $m['id'] === $moduloId) {
+                $listaItens = isset($m['itens']) && is_array($m['itens']) ? $m['itens'] : array();
+                break;
+            }
+        }
+
+        $idx = -1;
+        foreach ($listaItens as $i => $it) {
+            if ((int) $it['id'] === $itemId) {
+                $idx = (int) $i;
+                break;
+            }
+        }
+
+        if ($idx >= 0) {
+            if ($direcao === 'subir' && $idx > 0) {
+                $tmp = $listaItens[$idx - 1];
+                $listaItens[$idx - 1] = $listaItens[$idx];
+                $listaItens[$idx] = $tmp;
+            }
+            if ($direcao === 'descer' && $idx < (count($listaItens) - 1)) {
+                $tmp = $listaItens[$idx + 1];
+                $listaItens[$idx + 1] = $listaItens[$idx];
+                $listaItens[$idx] = $tmp;
+            }
+        }
+
+        $ordens = array();
+        $ordem = 1;
+        foreach ($listaItens as $it) {
+            $ordens[(int) $it['id']] = $ordem++;
+        }
+
+        $resultado = $this->conteudoService->reordenarItens($moduloId, $ordens);
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $this->redirectContexto($request, 'conteudo'),
+            $this->redirectContexto($request, 'conteudo')
         );
     }
 

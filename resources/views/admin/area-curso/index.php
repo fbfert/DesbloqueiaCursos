@@ -13,6 +13,7 @@ $abasLms = isset($tabs) && !empty($tabs) ? $tabs : array(
     array('slug' => 'modulos-aulas', 'label' => 'Módulos e aulas'),
     array('slug' => 'materiais', 'label' => 'Materiais'),
     array('slug' => 'atividades', 'label' => 'Atividades'),
+    array('slug' => 'conteudo', 'label' => 'Conteúdo'),
     array('slug' => 'participantes', 'label' => 'Participantes'),
     array('slug' => 'presenca', 'label' => 'Presença'),
     array('slug' => 'avaliacoes-notas', 'label' => 'Avaliações / Notas'),
@@ -279,6 +280,8 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
             </section>
 
             <?php require BASE_PATH . '/resources/views/admin/area-curso/_turmas.php'; ?>
+
+            <?php $areaCursoBaseUrl = '/admin/area-curso'; require BASE_PATH . '/resources/views/admin/area-curso/_conteudo.php'; ?>
 
             <?php require BASE_PATH . '/resources/views/admin/area-curso/_materiais.php'; ?>
 
