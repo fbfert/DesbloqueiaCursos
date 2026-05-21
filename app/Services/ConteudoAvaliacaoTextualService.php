@@ -434,26 +434,171 @@ class ConteudoAvaliacaoTextualService
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listarNotasAvaliacoesTextuais($cursoEventoId, $turmaId = null)
+    public function listarNotasAvaliacoesTextuais($cursoEventoId, $turmaId = null, $alunoId = null)
     {
         $cursoEventoId = (int) $cursoEventoId;
         if ($cursoEventoId <= 0) {
             return array();
         }
-        $sql = 'SELECT e.aluno_id, e.inscricao_id, e.item_id, e.nota, e.status, e.corrigido_em
+
+        $sql = 'SELECT
+                    e.aluno_id,
+                    u.nome AS aluno_nome,
+                    e.inscricao_id,
+                    e.turma_id,
+                    e.curso_evento_id,
+                    m.id AS modulo_id,
+                    m.titulo AS modulo_titulo,
+                    i.id AS item_id,
+                    a.id AS avaliacao_id,
+                    i.titulo AS avaliacao_titulo,
+                    e.tentativa,
+                    e.status,
+                    e.nota,
+                    a.nota_maxima,
+                    a.nota_minima,
+                    CASE
+                        WHEN a.peso IS NULL OR a.peso <= 0 THEN 1.00
+                        ELSE a.peso
+                    END AS peso,
+                    e.feedback,
+                    e.enviado_em,
+                    e.corrigido_em,
+                    e.corrigido_por,
+                    i.obrigatorio,
+                    a.prazo
                 FROM conteudo_avaliacoes_entregas e
+                INNER JOIN (
+                    SELECT MAX(e2.id) AS id
+                    FROM conteudo_avaliacoes_entregas e2
+                    WHERE e2.deleted_at IS NULL
+                      AND e2.status <> "cancelada"
+                      AND e2.curso_evento_id = :curso_evento_id
+                    GROUP BY e2.avaliacao_id, e2.aluno_id, e2.inscricao_id
+                ) ult ON ult.id = e.id
+                INNER JOIN conteudo_avaliacoes_textuais a ON a.id = e.avaliacao_id
+                INNER JOIN conteudo_itens i ON i.id = e.item_id
+                INNER JOIN conteudo_modulos m ON m.id = i.modulo_id
+                INNER JOIN usuarios u ON u.id = e.aluno_id
                 WHERE e.deleted_at IS NULL
-                  AND e.curso_evento_id = :curso_evento_id
-                  AND e.status IN ("corrigida","aprovada","reprovada")';
-        $params = array('curso_evento_id' => $cursoEventoId);
+                  AND e.curso_evento_id = :curso_evento_id2
+                  AND i.deleted_at IS NULL
+                  AND i.tipo = "avaliacao_textual"
+                  AND i.status = "publicado"
+                  AND m.deleted_at IS NULL
+                  AND m.status = "publicado"';
+        $params = array(
+            'curso_evento_id' => $cursoEventoId,
+            'curso_evento_id2' => $cursoEventoId,
+        );
         if ($turmaId !== null && (int) $turmaId > 0) {
             $sql .= ' AND e.turma_id = :turma_id';
             $params['turma_id'] = (int) $turmaId;
         }
-        $sql .= ' ORDER BY e.corrigido_em DESC, e.id DESC';
+        if ($alunoId !== null && (int) $alunoId > 0) {
+            $sql .= ' AND e.aluno_id = :aluno_id';
+            $params['aluno_id'] = (int) $alunoId;
+        }
+        $sql .= ' ORDER BY u.nome ASC, m.ordem ASC, i.ordem ASC, e.id DESC';
+
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($items as &$item) {
+            $item['nota'] = $item['nota'] !== null ? (float) $item['nota'] : null;
+            $item['nota_maxima'] = $item['nota_maxima'] !== null ? (float) $item['nota_maxima'] : null;
+            $item['nota_minima'] = $item['nota_minima'] !== null ? (float) $item['nota_minima'] : null;
+            $item['peso'] = $item['peso'] !== null && (float) $item['peso'] > 0 ? (float) $item['peso'] : 1.0;
+            $item['obrigatorio'] = !empty($item['obrigatorio']) ? 1 : 0;
+        }
+        unset($item);
+        return $items;
+    }
+
+    public function resumoNotasAvaliacoesTextuaisPorAluno($cursoEventoId, $turmaId = null)
+    {
+        $notas = $this->listarNotasAvaliacoesTextuais($cursoEventoId, $turmaId, null);
+        $resumo = array();
+
+        foreach ($notas as $nota) {
+            $inscricaoId = (int) ($nota['inscricao_id'] ?? 0);
+            if ($inscricaoId <= 0) {
+                continue;
+            }
+            if (!isset($resumo[$inscricaoId])) {
+                $resumo[$inscricaoId] = array(
+                    'aluno_id' => (int) $nota['aluno_id'],
+                    'aluno_nome' => (string) ($nota['aluno_nome'] ?? ''),
+                    'inscricao_id' => $inscricaoId,
+                    'turma_id' => !empty($nota['turma_id']) ? (int) $nota['turma_id'] : null,
+                    'curso_evento_id' => (int) $nota['curso_evento_id'],
+                    'total_pontos_ponderados' => 0.0,
+                    'soma_pesos' => 0.0,
+                    'media_ponderada' => null,
+                    'avaliacoes_obrigatorias' => 0,
+                    'corrigidas' => 0,
+                    'aprovadas' => 0,
+                    'reprovadas' => 0,
+                    'pendentes' => 0,
+                    'itens' => array(),
+                );
+            }
+
+            $peso = isset($nota['peso']) && (float) $nota['peso'] > 0 ? (float) $nota['peso'] : 1.0;
+            $status = (string) ($nota['status'] ?? '');
+            $temNota = array_key_exists('nota', $nota) && $nota['nota'] !== null;
+
+            if (!empty($nota['obrigatorio'])) {
+                $resumo[$inscricaoId]['avaliacoes_obrigatorias']++;
+            }
+            if ($temNota) {
+                $valorNota = (float) $nota['nota'];
+                $resumo[$inscricaoId]['total_pontos_ponderados'] += ($valorNota * $peso);
+                $resumo[$inscricaoId]['soma_pesos'] += $peso;
+                $resumo[$inscricaoId]['corrigidas']++;
+            } else {
+                $resumo[$inscricaoId]['pendentes']++;
+            }
+            if ($status === 'aprovada') {
+                $resumo[$inscricaoId]['aprovadas']++;
+            } elseif ($status === 'reprovada') {
+                $resumo[$inscricaoId]['reprovadas']++;
+            }
+
+            $resumo[$inscricaoId]['itens'][] = $nota;
+        }
+
+        foreach ($resumo as &$linha) {
+            if ($linha['soma_pesos'] > 0) {
+                $linha['media_ponderada'] = round($linha['total_pontos_ponderados'] / $linha['soma_pesos'], 2);
+            }
+        }
+        unset($linha);
+
+        return array_values($resumo);
+    }
+
+    public function calcularMediaAvaliacoesTextuaisAluno($cursoEventoId, $turmaId, $alunoId)
+    {
+        $resumos = $this->resumoNotasAvaliacoesTextuaisPorAluno($cursoEventoId, $turmaId);
+        $alunoId = (int) $alunoId;
+        foreach ($resumos as $resumo) {
+            if ((int) ($resumo['aluno_id'] ?? 0) === $alunoId) {
+                return $resumo;
+            }
+        }
+        return array(
+            'aluno_id' => $alunoId,
+            'media_ponderada' => null,
+            'total_pontos_ponderados' => 0.0,
+            'soma_pesos' => 0.0,
+            'avaliacoes_obrigatorias' => 0,
+            'corrigidas' => 0,
+            'aprovadas' => 0,
+            'reprovadas' => 0,
+            'pendentes' => 0,
+            'itens' => array(),
+        );
     }
 
     private function cursoIdsAcessiveisProfessor($professorId)

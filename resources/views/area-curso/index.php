@@ -497,5 +497,71 @@ if (!function_exists('sala_material_label')) {
                 <?php endforeach; ?>
             <?php endif; ?>
         </section>
+
+        <section class="panel sala-virtual-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Conteúdo do curso</h2>
+                    <p>Nova área de conteúdo unificado (em paralelo ao modelo antigo).</p>
+                </div>
+            </div>
+            <?php $conteudoNovo = isset($conteudo_novo) && is_array($conteudo_novo) ? $conteudo_novo : array('ok' => false, 'modulos' => array()); ?>
+            <?php if (empty($conteudoNovo['ok']) || empty($conteudoNovo['modulos'])): ?>
+                <article class="status-card">
+                    <strong>Este curso ainda não possui conteúdos publicados nesta nova área.</strong>
+                    <span>Enquanto isso, os módulos, aulas, materiais e atividades antigos continuam disponíveis acima.</span>
+                </article>
+            <?php else: ?>
+                <?php $resumoNovo = !empty($conteudoNovo['resumo']) ? $conteudoNovo['resumo'] : null; ?>
+                <?php if (!empty($resumoNovo) && !empty($resumoNovo['ok'])): ?>
+                    <article class="status-card">
+                        <strong>Progresso do novo conteúdo</strong>
+                        <?php if ((int) $resumoNovo['total_obrigatorios'] > 0): ?>
+                            <span><?php echo (int) $resumoNovo['concluidos_obrigatorios']; ?> de <?php echo (int) $resumoNovo['total_obrigatorios']; ?> itens obrigatórios concluídos — <?php echo Helpers::e(number_format((float) $resumoNovo['percentual'], 2, ',', '.')); ?>%</span>
+                        <?php else: ?>
+                            <span>Sem itens obrigatórios publicados. Itens concluídos: <?php echo (int) $resumoNovo['concluidos_itens']; ?> de <?php echo (int) $resumoNovo['total_itens']; ?>.</span>
+                        <?php endif; ?>
+                    </article>
+                <?php endif; ?>
+
+                <?php foreach ($conteudoNovo['modulos'] as $moduloConteudo): ?>
+                    <?php $itensConteudo = !empty($moduloConteudo['itens']) ? $moduloConteudo['itens'] : array(); ?>
+                    <details class="sala-modulo">
+                        <summary>
+                            <div class="sala-modulo__summary">
+                                <strong><?php echo Helpers::e($moduloConteudo['titulo']); ?></strong>
+                                <?php if (!empty($moduloConteudo['descricao'])): ?><span><?php echo Helpers::e($moduloConteudo['descricao']); ?></span><?php endif; ?>
+                            </div>
+                        </summary>
+                        <div class="sala-modulo__body">
+                            <?php if (empty($itensConteudo)): ?>
+                                <p class="muted-row">Sem itens publicados neste módulo.</p>
+                            <?php else: ?>
+                                <div class="sala-materiais-lista">
+                                    <?php foreach ($itensConteudo as $itemConteudo): ?>
+                                        <?php
+                                        $tipo = (string) ($itemConteudo['tipo'] ?? 'texto');
+                                        $statusProgresso = !empty($itemConteudo['progresso_aluno']['status']) ? (string) $itemConteudo['progresso_aluno']['status'] : 'nao_iniciado';
+                                        $urlItem = '/aluno/cursos/conteudo/item?id=' . (int) $itemConteudo['id'] . '&inscricao_id=' . (int) $inscricaoAtualId . '&curso_id=' . (int) $cursoId . ($turmaId > 0 ? '&turma_id=' . (int) $turmaId : '');
+                                        ?>
+                                        <article class="sala-material">
+                                            <div>
+                                                <strong>[<?php echo Helpers::e(strtoupper($tipo)); ?>] <?php echo Helpers::e($itemConteudo['titulo']); ?></strong>
+                                                <p class="muted-row">
+                                                    <?php echo !empty($itemConteudo['obrigatorio']) ? 'Obrigatório' : 'Opcional'; ?> ·
+                                                    Status: <?php echo Helpers::e($statusProgresso); ?>
+                                                    <?php if (!empty($itemConteudo['descricao_curta'])): ?> · <?php echo Helpers::e($itemConteudo['descricao_curta']); ?><?php endif; ?>
+                                                </p>
+                                            </div>
+                                            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($urlItem); ?>">Abrir</a>
+                                        </article>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </details>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </section>
     </div>
 </section>

@@ -57,5 +57,17 @@ class ConteudoArquivoVersao
 
         return (int) Database::connection()->lastInsertId();
     }
-}
 
+    public function marcarSubstituida($id, $substituidoPor)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE conteudo_arquivos_versoes
+             SET substituido_por = :substituido_por
+             WHERE id = :id'
+        );
+        $stmt->execute(array(
+            'substituido_por' => (int) $substituidoPor,
+            'id' => (int) $id,
+        ));
+    }
+}

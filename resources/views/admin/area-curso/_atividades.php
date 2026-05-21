@@ -12,6 +12,20 @@ $truncateText = static function ($text, $limit = 120, $ellipsis = '...') {
 };
 
 $areaCursoBaseUrl = isset($areaCursoBaseUrl) && $areaCursoBaseUrl !== '' ? $areaCursoBaseUrl : '/admin/area-curso';
+$selectedTab = isset($selectedTab) ? (string) $selectedTab : (isset($selected_tab) ? (string) $selected_tab : 'visao-geral');
+if (!function_exists('areaCursoHeadingWithTooltip')) {
+    function areaCursoHeadingWithTooltip($titulo, $ajuda = '', $nivel = 'h2')
+    {
+        $nivel = in_array($nivel, array('h1', 'h2', 'h3', 'h4', 'h5', 'h6'), true) ? $nivel : 'h2';
+        $tituloSeguro = \App\Core\Helpers::e((string) $titulo);
+
+        if ($ajuda === '' || $ajuda === null) {
+            return '<' . $nivel . '>' . $tituloSeguro . '</' . $nivel . '>';
+        }
+
+        return '<' . $nivel . ' title="' . \App\Core\Helpers::e((string) $ajuda) . '">' . $tituloSeguro . '</' . $nivel . '>';
+    }
+}
 $atividadeEditar = isset($atividade_selecionada) ? $atividade_selecionada : null;
 $atividadesOriginais = isset($atividades) && is_array($atividades) ? $atividades : array();
 $atividadeModuloFiltro = isset($atividade_modulo_id) ? (int) $atividade_modulo_id : 0;
@@ -146,7 +160,7 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
         </label>
         <div class="cta-group">
             <button type="submit" class="button-link button-link--primary">Filtrar</button>
-            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($areaCursoBaseUrl); ?>?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=atividades">Limpar filtros</a>
+            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($areaCursoBaseUrl); ?>?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=conteudo">Limpar filtros</a>
         </div>
     </form>
 
@@ -224,7 +238,7 @@ $entregasAtividade = isset($entregas_atividade) && is_array($entregas_atividade)
                     </select>
                 </label>
                 <?php
-                $cancel_url = $areaCursoBaseUrl . '?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=atividades';
+                $cancel_url = $areaCursoBaseUrl . '?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=conteudo';
                 $show_save_as_copy = false;
                 require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
                 ?>

@@ -90,6 +90,7 @@ $exportBase['export'] = 'csv';
             <div class="admin-area-curso__actions">
                 <a href="<?php echo Helpers::e($areaCursoBaseUrl . '?' . http_build_query(array_merge($exportBase, array('relatorio' => 'progresso')))); ?>">Exportar progresso CSV</a>
                 <a href="<?php echo Helpers::e($areaCursoBaseUrl . '?' . http_build_query(array_merge($exportBase, array('relatorio' => 'atividades')))); ?>">Exportar atividades CSV</a>
+                <a href="<?php echo Helpers::e($areaCursoBaseUrl . '?' . http_build_query(array_merge($exportBase, array('relatorio' => 'conteudo_avaliacoes')))); ?>">Exportar conteúdo textual CSV</a>
                 <a href="<?php echo Helpers::e($areaCursoBaseUrl . '?' . http_build_query(array_merge($exportBase, array('aba' => 'aptos-certificado', 'relatorio' => 'aptos_certificado')))); ?>">Exportar aptos CSV</a>
             </div>
         <?php endif; ?>
@@ -253,6 +254,42 @@ $exportBase['export'] = 'csv';
         </section>
 
         <div class="admin-area-curso__report-lists">
+            <?php $conteudoAvaliacoes = isset($relatorios['conteudo_avaliacoes']) && is_array($relatorios['conteudo_avaliacoes']) ? $relatorios['conteudo_avaliacoes'] : array(); ?>
+            <?php $conteudoResumo = isset($conteudoAvaliacoes['resumo']) && is_array($conteudoAvaliacoes['resumo']) ? $conteudoAvaliacoes['resumo'] : array(); ?>
+            <?php $conteudoRegistros = isset($conteudoAvaliacoes['registros']) && is_array($conteudoAvaliacoes['registros']) ? $conteudoAvaliacoes['registros'] : array(); ?>
+            <section class="status-card admin-area-curso__section">
+                <div class="panel-header"><div><?php echo areaCursoHeadingWithTooltip('Conteúdo Unificado — Avaliações Textuais', 'Resumo consolidado das avaliações textuais do conteúdo.'); ?></div></div>
+                <div class="admin-area-curso__stats">
+                    <div><small>Avaliações textuais publicadas</small><strong><?php echo (int) ($conteudoResumo['total_avaliacoes_textuais'] ?? 0); ?></strong></div>
+                    <div><small>Entregas recebidas</small><strong><?php echo (int) ($conteudoResumo['entregas_enviadas'] ?? 0); ?></strong></div>
+                    <div><small>Pendentes de correção</small><strong><?php echo (int) ($conteudoResumo['pendentes_correcao'] ?? 0); ?></strong></div>
+                    <div><small>Aprovadas</small><strong><?php echo (int) ($conteudoResumo['aprovadas'] ?? 0); ?></strong></div>
+                    <div><small>Reprovadas</small><strong><?php echo (int) ($conteudoResumo['reprovadas'] ?? 0); ?></strong></div>
+                    <div><small>Média geral</small><strong><?php echo isset($conteudoResumo['media_geral']) && $conteudoResumo['media_geral'] !== null ? Helpers::e(number_format((float) $conteudoResumo['media_geral'], 2, ',', '.')) : '—'; ?></strong></div>
+                    <div><small>Alunos com pendências</small><strong><?php echo (int) ($conteudoResumo['alunos_com_pendencia'] ?? 0); ?></strong></div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead><tr><th>Aluno</th><th>Avaliação</th><th>Status</th><th>Nota</th><th>Prazo</th><th>Enviado em</th><th>Corrigido em</th></tr></thead>
+                        <tbody>
+                        <?php if (empty($conteudoRegistros)): ?>
+                            <tr><td colspan="7" class="muted">Nenhum registro para o contexto atual.</td></tr>
+                        <?php else: foreach ($conteudoRegistros as $registro): ?>
+                            <tr>
+                                <td><?php echo Helpers::e((string) ($registro['aluno_nome'] ?? '')); ?></td>
+                                <td><?php echo Helpers::e((string) ($registro['avaliacao_titulo'] ?? '')); ?></td>
+                                <td><?php echo Helpers::e((string) ($registro['status'] ?? '')); ?></td>
+                                <td><?php echo $registro['nota'] !== null ? Helpers::e(number_format((float) $registro['nota'], 2, ',', '.')) : '—'; ?></td>
+                                <td><?php echo !empty($registro['prazo']) ? Helpers::e(date('d/m/Y H:i', strtotime((string) $registro['prazo']))) : '—'; ?></td>
+                                <td><?php echo !empty($registro['enviado_em']) ? Helpers::e(date('d/m/Y H:i', strtotime((string) $registro['enviado_em']))) : '—'; ?></td>
+                                <td><?php echo !empty($registro['corrigido_em']) ? Helpers::e(date('d/m/Y H:i', strtotime((string) $registro['corrigido_em']))) : '—'; ?></td>
+                            </tr>
+                        <?php endforeach; endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             <section class="status-card admin-area-curso__section" id="area-curso-relatorios-aptos-certificado">
                 <div class="panel-header">
                     <div>
@@ -298,6 +335,9 @@ $exportBase['export'] = 'csv';
                                     <th>Progresso</th>
                                     <th>Atividades</th>
                                     <th>Média</th>
+                                    <th>Conteúdo obrigatório</th>
+                                    <th>Pendências conteúdo</th>
+                                    <th>Textuais pendentes/reprovadas</th>
                                     <th>Situação</th>
                                     <th>Certificado</th>
                                     <th>Motivos/Pendências</th>
@@ -313,6 +353,18 @@ $exportBase['export'] = 'csv';
                                         <td><?php echo Helpers::e(number_format((float) ($aluno['progresso_percentual'] ?? 0), 2, ',', '.')); ?>%</td>
                                         <td><?php echo (int) ($aluno['atividades_entregues'] ?? 0); ?> / <?php echo (int) ($aluno['entregas_corrigidas'] ?? 0); ?></td>
                                         <td><?php echo isset($aluno['nota_media']) && $aluno['nota_media'] !== null ? Helpers::e(number_format((float) $aluno['nota_media'], 2, ',', '.')) : '—'; ?></td>
+                                        <td>
+                                            <?php echo (int) ($aluno['elegibilidade_conteudo_obrigatorios_concluidos'] ?? 0); ?>
+                                            /
+                                            <?php echo (int) ($aluno['elegibilidade_conteudo_obrigatorios_total'] ?? 0); ?>
+                                            (<?php echo Helpers::e(number_format((float) ($aluno['elegibilidade_conteudo_percentual'] ?? 0), 2, ',', '.')); ?>%)
+                                        </td>
+                                        <td><?php echo (int) ($aluno['elegibilidade_conteudo_obrigatorios_pendentes'] ?? 0); ?></td>
+                                        <td>
+                                            <?php echo (int) ($aluno['elegibilidade_conteudo_avaliacoes_pendentes'] ?? 0); ?>
+                                            /
+                                            <?php echo (int) ($aluno['elegibilidade_conteudo_avaliacoes_reprovadas'] ?? 0); ?>
+                                        </td>
                                         <td><span class="badge badge--soft"><?php echo Helpers::e(str_replace('_', ' ', (string) ($aluno['elegibilidade_situacao'] ?? 'pendente'))); ?></span></td>
                                         <td><?php echo !empty($aluno['certificado_emitido']) ? 'Sim' : 'Não'; ?></td>
                                         <td>
@@ -320,6 +372,8 @@ $exportBase['export'] = 'csv';
                                                 <summary>Ver detalhe</summary>
                                                 <p class="muted">Inscrição #<?php echo (int) ($aluno['inscricao_id'] ?? 0); ?> · Aulas <?php echo (int) ($aluno['aulas_concluidas'] ?? 0); ?>/<?php echo (int) ($aluno['total_aulas_publicadas'] ?? 0); ?></p>
                                                 <p class="muted">Atividades enviadas: <?php echo (int) ($aluno['atividades_entregues'] ?? 0); ?> · Corrigidas: <?php echo (int) ($aluno['entregas_corrigidas'] ?? 0); ?> · Pendentes: <?php echo (int) ($aluno['atividades_pendentes'] ?? 0); ?> · Devolvidas/aguardando: <?php echo (int) ($aluno['entregas_pendentes_correcao'] ?? 0); ?></p>
+                                                <p class="muted">Conteúdo obrigatório: <?php echo (int) ($aluno['elegibilidade_conteudo_obrigatorios_concluidos'] ?? 0); ?>/<?php echo (int) ($aluno['elegibilidade_conteudo_obrigatorios_total'] ?? 0); ?> (<?php echo Helpers::e(number_format((float) ($aluno['elegibilidade_conteudo_percentual'] ?? 0), 2, ',', '.')); ?>%) · Pendentes: <?php echo (int) ($aluno['elegibilidade_conteudo_obrigatorios_pendentes'] ?? 0); ?></p>
+                                                <p class="muted">Avaliações textuais obrigatórias pendentes: <?php echo (int) ($aluno['elegibilidade_conteudo_avaliacoes_pendentes'] ?? 0); ?> · Reprovadas: <?php echo (int) ($aluno['elegibilidade_conteudo_avaliacoes_reprovadas'] ?? 0); ?></p>
                                                 <p class="muted"><?php echo Helpers::e((string) ($aluno['elegibilidade_motivos_texto'] ?? '')); ?></p>
                                                 <p class="muted">Este painel apenas informa elegibilidade. A emissão de certificado continua pelo fluxo atual.</p>
                                             </details>

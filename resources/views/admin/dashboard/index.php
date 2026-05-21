@@ -79,6 +79,10 @@ $pendingRepassesValue = isset($pendingRepassesCard['value']) ? $pendingRepassesC
                 <span>Repasses pendentes</span>
                 <small><?php echo Helpers::e((string) $pendingRepassesValue); ?> em aberto</small>
             </a>
+            <a class="card-link admin-shortcut admin-shortcut--alert" href="/admin/area-curso/conteudo/avaliacoes/pendentes">
+                <span>Avaliações textuais pendentes</span>
+                <small><span class="badge badge--status badge--status-pendente"><?php echo (int) ($conteudo_avaliacoes_pendentes ?? 0); ?></span> aguardando correção</small>
+            </a>
         </div>
     </section>
 

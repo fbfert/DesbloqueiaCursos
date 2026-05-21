@@ -42,6 +42,11 @@
             <p class="dashboard-kpi__sub"><?php echo Helpers::e($card['subvalue']); ?></p>
         </article>
     <?php endforeach; ?>
+    <article class="status-card">
+        <strong>Avaliações textuais aguardando correção</strong>
+        <p class="dashboard-kpi__value"><?php echo (int) ($conteudo_avaliacoes_pendentes ?? 0); ?></p>
+        <p class="dashboard-kpi__sub"><a href="/professor/area-curso/conteudo/avaliacoes/pendentes">Ver pendências</a></p>
+    </article>
 </section>
 
 <section class="grid-2">

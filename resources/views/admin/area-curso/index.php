@@ -1,4 +1,4 @@
-<?php use App\Core\Helpers; ?>
+﻿<?php use App\Core\Helpers; ?>
 
 <?php
 $instrucaoEditar = isset($instrucao_selecionada) ? $instrucao_selecionada : null;
@@ -8,20 +8,21 @@ $materialEditar = isset($material_selecionado) ? $material_selecionado : null;
 $linkEditar = isset($link_selecionado) ? $link_selecionado : null;
 $selectedTab = isset($selected_tab) && $selected_tab !== '' ? $selected_tab : 'visao-geral';
 $abasLms = isset($tabs) && !empty($tabs) ? $tabs : array(
-    array('slug' => 'visao-geral', 'label' => 'Visão geral'),
+    array('slug' => 'visao-geral', 'label' => 'VisÃ£o geral'),
     array('slug' => 'turmas', 'label' => 'Turmas'),
-    array('slug' => 'modulos-aulas', 'label' => 'Módulos e aulas'),
-    array('slug' => 'materiais', 'label' => 'Materiais'),
-    array('slug' => 'atividades', 'label' => 'Atividades'),
-    array('slug' => 'conteudo', 'label' => 'Conteúdo'),
+    array('slug' => 'conteudo', 'label' => 'ConteÃºdo'),
     array('slug' => 'participantes', 'label' => 'Participantes'),
-    array('slug' => 'presenca', 'label' => 'Presença'),
-    array('slug' => 'avaliacoes-notas', 'label' => 'Avaliações / Notas'),
+    array('slug' => 'presenca', 'label' => 'PresenÃ§a'),
+    array('slug' => 'avaliacoes-notas', 'label' => 'AvaliaÃ§Ãµes / Notas'),
     array('slug' => 'certificados', 'label' => 'Certificados'),
-    array('slug' => 'relatorios', 'label' => 'Relatórios'),
-    array('slug' => 'configuracoes', 'label' => 'Configurações'),
+    array('slug' => 'relatorios', 'label' => 'RelatÃ³rios'),
+    array('slug' => 'configuracoes', 'label' => 'ConfiguraÃ§Ãµes'),
     array('slug' => 'aptos-certificado', 'label' => 'Aptos para certificado'),
 );
+$abasMenu = array_values(array_filter($abasLms, function ($abaItem) {
+    $slug = isset($abaItem['slug']) ? (string) $abaItem['slug'] : '';
+    return !in_array($slug, array('modulos-aulas', 'materiais', 'atividades'), true);
+}));
 $quantidadeModulos = !empty($modulos) ? count($modulos) : 0;
 $quantidadeAulas = 0;
 
@@ -55,8 +56,8 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
         return '<' . $nivel . ' class="area-curso-heading">'
             . '<span class="area-curso-heading__text">' . $tituloSeguro . '</span>'
             . '<span class="area-curso-tooltip">'
-            . '<button type="button" class="area-curso-tooltip__button" aria-describedby="' . $tooltipId . '" aria-label="Mais informações sobre ' . $tituloSeguro . '">'
-            . '<span class="u-sr-only">Mais informações</span>'
+            . '<button type="button" class="area-curso-tooltip__button" aria-describedby="' . $tooltipId . '" aria-label="Mais informaÃ§Ãµes sobre ' . $tituloSeguro . '">'
+            . '<span class="u-sr-only">Mais informaÃ§Ãµes</span>'
             . 'i'
             . '</button>'
             . '<span id="' . $tooltipId . '" class="area-curso-tooltip__bubble" role="tooltip">' . \App\Core\Helpers::e((string) $ajuda) . '</span>'
@@ -69,8 +70,8 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
 <div class="admin-page admin-area-curso">
     <section class="admin-page__header">
         <div>
-            <h1 class="admin-page__title">Área interna do curso</h1>
-            <p class="admin-page__subtitle">Administração de instruções, módulos, aulas, materiais, links e participantes.</p>
+            <h1 class="admin-page__title">Ãrea interna do curso</h1>
+            <p class="admin-page__subtitle">AdministraÃ§Ã£o consolidada do curso com foco na aba ConteÃºdo.</p>
         </div>
     </section>
 
@@ -124,7 +125,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                 </table>
             </div>
         <?php else: ?>
-            <p class="muted">Nenhum curso ativo disponível para edição no momento.</p>
+            <p class="muted">Nenhum curso ativo disponÃ­vel para ediÃ§Ã£o no momento.</p>
         <?php endif; ?>
         <?php if (!empty($cursosRascunho)): ?>
             <section class="admin-area-curso__drafts">
@@ -199,7 +200,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
     <section class="status-card area-curso-workspace__header">
         <div class="area-curso-header">
             <div class="area-curso-header__content">
-                <p class="area-curso-header__eyebrow">Área interna do curso</p>
+                <p class="area-curso-header__eyebrow">Ãrea interna do curso</p>
                 <h1 class="area-curso-header__title"><?php echo Helpers::e($curso['nome'] ?? 'Curso'); ?></h1>
                 <div class="area-curso-header__meta">
                     <span class="badge">#<?php echo (int) $curso['id']; ?></span>
@@ -223,11 +224,13 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
             </button>
         </div>
         <div class="area-curso-tabs" id="area-curso-tabs-list" data-area-curso-tabs-list hidden>
-            <?php foreach ($abasLms as $aba): ?>
-                <a class="area-curso-tabs__link<?php echo $selectedTab === $aba['slug'] ? ' is-active' : ''; ?>" href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=<?php echo urlencode($aba['slug']); ?>">
-                    <?php echo Helpers::e($aba['label']); ?>
-                </a>
-            <?php endforeach; ?>
+            <div class="area-curso-tabs__row">
+                <?php foreach ($abasMenu as $aba): ?>
+                    <a class="area-curso-tabs__link<?php echo $selectedTab === $aba['slug'] ? ' is-active' : ''; ?>" href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=<?php echo urlencode($aba['slug']); ?>">
+                        <?php echo Helpers::e($aba['label']); ?>
+                    </a>
+                <?php endforeach; ?>
+            </div>
         </div>
     </section>
 
@@ -235,7 +238,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
         <section class="status-card admin-area-curso__section admin-area-curso__overview area-curso-tab-panel<?php echo $selectedTab === 'visao-geral' ? ' is-active' : ''; ?>" data-area-curso-tab="visao-geral" id="area-curso-visao-geral">
             <div class="panel-header">
                 <div>
-                    <?php echo areaCursoHeadingWithTooltip('Visão geral', 'Resumo rápido do contexto pedagógico deste curso.'); ?>
+                    <?php echo areaCursoHeadingWithTooltip('VisÃ£o geral', 'Resumo rÃ¡pido do contexto pedagÃ³gico deste curso.'); ?>
                 </div>
             </div>
 
@@ -253,7 +256,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                         <strong><?php echo (int) $resumo['turmas']; ?></strong>
                     </div>
                     <div class="area-curso-overview-card">
-                        <small>Módulos</small>
+                        <small>MÃ³dulos</small>
                         <strong><?php echo (int) $resumo['modulos']; ?></strong>
                     </div>
                     <div class="area-curso-overview-card">
@@ -293,26 +296,19 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                         <h2>Participantes</h2>
                     </div>
                 </div>
-                <p class="muted">Esta área será implementada em etapa posterior.</p>
+                <p class="muted">Esta Ã¡rea serÃ¡ implementada em etapa posterior.</p>
             </section>
 
             <section class="status-card admin-area-curso__section admin-area-curso__placeholder area-curso-tab-panel<?php echo $selectedTab === 'presenca' ? ' is-active' : ''; ?>" data-area-curso-tab="presenca" id="area-curso-presenca">
                 <div class="panel-header">
                     <div>
-                        <h2>Presença</h2>
+                        <h2>PresenÃ§a</h2>
                     </div>
                 </div>
-                <p class="muted">Esta área será implementada em etapa posterior.</p>
+                <p class="muted">Esta Ã¡rea serÃ¡ implementada em etapa posterior.</p>
             </section>
 
-            <section class="status-card admin-area-curso__section admin-area-curso__placeholder area-curso-tab-panel<?php echo $selectedTab === 'avaliacoes-notas' ? ' is-active' : ''; ?>" data-area-curso-tab="avaliacoes-notas" id="area-curso-avaliacoes-notas">
-                <div class="panel-header">
-                    <div>
-                        <h2>Avaliações / Notas</h2>
-                    </div>
-                </div>
-                <p class="muted">Esta área será implementada em etapa posterior.</p>
-            </section>
+            <?php $areaCursoBaseUrl = '/admin/area-curso'; require BASE_PATH . '/resources/views/admin/area-curso/_avaliacoes_notas_conteudo.php'; ?>
 
             <section class="status-card admin-area-curso__section admin-area-curso__placeholder area-curso-tab-panel<?php echo $selectedTab === 'certificados' ? ' is-active' : ''; ?>" data-area-curso-tab="certificados" id="area-curso-certificados">
                 <div class="panel-header">
@@ -320,7 +316,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                         <h2>Certificados</h2>
                     </div>
                 </div>
-                <p class="muted">Esta área será implementada em etapa posterior.</p>
+                <p class="muted">Esta Ã¡rea serÃ¡ implementada em etapa posterior.</p>
             </section>
 
             <?php require BASE_PATH . '/resources/views/admin/area-curso/_relatorios.php'; ?>
@@ -328,7 +324,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
             <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'configuracoes' ? ' is-active' : ''; ?>" data-area-curso-tab="configuracoes" id="area-curso-configuracoes">
                 <div class="panel-header">
                     <div>
-                        <?php echo areaCursoHeadingWithTooltip('Critérios de conclusão', 'Esta configuração calcula a elegibilidade e não emite certificado automaticamente.'); ?>
+                        <?php echo areaCursoHeadingWithTooltip('CritÃ©rios de conclusÃ£o', 'Esta configuraÃ§Ã£o calcula a elegibilidade e nÃ£o emite certificado automaticamente.'); ?>
                     </div>
                 </div>
                 <?php $criterios = isset($criterios_conclusao) && is_array($criterios_conclusao) ? $criterios_conclusao : array(); ?>
@@ -339,36 +335,36 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
                     <input type="hidden" name="aba" value="configuracoes">
 
-                    <label class="checkbox"><input type="checkbox" name="exigir_progresso" value="1" <?php echo !empty($criterios['exigir_progresso']) ? 'checked' : ''; ?>> Exigir conclusão de aulas</label>
-                    <label>Percentual mínimo de progresso
+                    <label class="checkbox"><input type="checkbox" name="exigir_progresso" value="1" <?php echo !empty($criterios['exigir_progresso']) ? 'checked' : ''; ?>> Exigir conclusÃ£o de aulas</label>
+                    <label>Percentual mÃ­nimo de progresso
                         <input type="number" name="progresso_minimo" min="0" max="100" step="0.01" value="<?php echo Helpers::e(number_format((float) ($criterios['progresso_minimo'] ?? 75), 2, '.', '')); ?>">
                     </label>
 
                     <label class="checkbox"><input type="checkbox" name="exigir_atividades" value="1" <?php echo !empty($criterios['exigir_atividades']) ? 'checked' : ''; ?>> Exigir atividades</label>
-                    <label>Critério de atividades
+                    <label>CritÃ©rio de atividades
                         <select name="criterio_atividades">
                             <?php $criterioAtividades = isset($criterios['criterio_atividades']) ? (string) $criterios['criterio_atividades'] : 'nenhuma'; ?>
-                            <option value="nenhuma" <?php echo $criterioAtividades === 'nenhuma' ? 'selected' : ''; ?>>Nenhuma exigência</option>
+                            <option value="nenhuma" <?php echo $criterioAtividades === 'nenhuma' ? 'selected' : ''; ?>>Nenhuma exigÃªncia</option>
                             <option value="todas_enviadas" <?php echo $criterioAtividades === 'todas_enviadas' ? 'selected' : ''; ?>>Todas enviadas</option>
                             <option value="todas_corrigidas" <?php echo $criterioAtividades === 'todas_corrigidas' ? 'selected' : ''; ?>>Todas corrigidas</option>
-                            <option value="media_minima" <?php echo $criterioAtividades === 'media_minima' ? 'selected' : ''; ?>>Média mínima</option>
+                            <option value="media_minima" <?php echo $criterioAtividades === 'media_minima' ? 'selected' : ''; ?>>MÃ©dia mÃ­nima</option>
                         </select>
                     </label>
-                    <label>Nota mínima nas atividades
+                    <label>Nota mÃ­nima nas atividades
                         <input type="number" name="nota_minima_atividades" min="0" step="0.01" value="<?php echo Helpers::e(isset($criterios['nota_minima_atividades']) && $criterios['nota_minima_atividades'] !== null ? number_format((float) $criterios['nota_minima_atividades'], 2, '.', '') : ''); ?>">
                     </label>
 
-                    <label class="checkbox"><input type="checkbox" name="exigir_presenca" value="1" <?php echo !empty($criterios['exigir_presenca']) ? 'checked' : ''; ?>> Exigir presença</label>
-                    <label>Percentual mínimo de presença
+                    <label class="checkbox"><input type="checkbox" name="exigir_presenca" value="1" <?php echo !empty($criterios['exigir_presenca']) ? 'checked' : ''; ?>> Exigir presenÃ§a</label>
+                    <label>Percentual mÃ­nimo de presenÃ§a
                         <input type="number" name="presenca_minima" min="0" max="100" step="0.01" value="<?php echo Helpers::e(number_format((float) ($criterios['presenca_minima'] ?? 75), 2, '.', '')); ?>">
                     </label>
 
-                    <label class="checkbox"><input type="checkbox" name="exigir_avaliacao" value="1" <?php echo !empty($criterios['exigir_avaliacao']) ? 'checked' : ''; ?>> Exigir avaliação</label>
-                    <label>Nota mínima de avaliação
+                    <label class="checkbox"><input type="checkbox" name="exigir_avaliacao" value="1" <?php echo !empty($criterios['exigir_avaliacao']) ? 'checked' : ''; ?>> Exigir avaliaÃ§Ã£o</label>
+                    <label>Nota mÃ­nima de avaliaÃ§Ã£o
                         <input type="number" name="nota_minima_avaliacao" min="0" step="0.01" value="<?php echo Helpers::e(isset($criterios['nota_minima_avaliacao']) && $criterios['nota_minima_avaliacao'] !== null ? number_format((float) $criterios['nota_minima_avaliacao'], 2, '.', '') : ''); ?>">
                     </label>
 
-                    <p class="muted full"><?php echo Helpers::e($criterios['aviso_certificado_manual'] ?? 'A conclusão exibida aqui não emite certificado automaticamente.'); ?></p>
+                    <p class="muted full"><?php echo Helpers::e($criterios['aviso_certificado_manual'] ?? 'A conclusÃ£o exibida aqui nÃ£o emite certificado automaticamente.'); ?></p>
                     <?php
                     $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=configuracoes';
                     $show_save_as_copy = false;
@@ -380,14 +376,14 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
             <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'modulos-aulas' ? ' is-active' : ''; ?>" data-area-curso-tab="modulos-aulas" id="area-curso-modulos-aulas">
                 <div class="panel-header">
                     <div>
-                        <?php echo areaCursoHeadingWithTooltip('Módulos e aulas', 'Administração da estrutura pedagógica principal do curso.'); ?>
+                        <?php echo areaCursoHeadingWithTooltip('MÃ³dulos e aulas', 'AdministraÃ§Ã£o da estrutura pedagÃ³gica principal do curso.'); ?>
                     </div>
                 </div>
 
                 <div class="admin-area-curso__actions">
-                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=modulos-aulas">Novo módulo</a>
-                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=modulos-aulas">Nova aula</a>
-                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=materiais">Materiais</a>
+                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=conteudo">Novo mÃ³dulo</a>
+                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=conteudo">Nova aula</a>
+                    <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=conteudo">Materiais</a>
                 </div>
 
             </section>
@@ -395,7 +391,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
             <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'modulos-aulas' ? ' is-active' : ''; ?>" data-area-curso-tab="modulos-aulas" id="area-curso-modulos-aulas-instrucoes">
                 <div class="panel-header">
                     <div>
-                        <?php echo areaCursoHeadingWithTooltip('Próxima ação do checkout', 'Este conteúdo pode ser exibido na página de sucesso do pedido.'); ?>
+                        <?php echo areaCursoHeadingWithTooltip('PrÃ³xima aÃ§Ã£o do checkout', 'Este conteÃºdo pode ser exibido na pÃ¡gina de sucesso do pedido.'); ?>
                     </div>
                 </div>
                 <form method="post" action="/admin/area-curso/instrucoes" class="form-grid admin-area-curso__form">
@@ -404,12 +400,12 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
                     <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
                     <input type="hidden" name="aba" value="modulos-aulas">
-                    <label class="full">Título<input type="text" name="titulo" value="<?php echo Helpers::e($instrucaoEditar['titulo'] ?? ''); ?>"></label>
-                    <label class="full">Conteúdo<textarea name="conteudo" rows="4"><?php echo Helpers::e($instrucaoEditar['conteudo'] ?? ''); ?></textarea></label>
+                    <label class="full">TÃ­tulo<input type="text" name="titulo" value="<?php echo Helpers::e($instrucaoEditar['titulo'] ?? ''); ?>"></label>
+                    <label class="full">ConteÃºdo<textarea name="conteudo" rows="4"><?php echo Helpers::e($instrucaoEditar['conteudo'] ?? ''); ?></textarea></label>
                     <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($instrucaoEditar['ordem'] ?? 1)); ?>" min="1"></label>
-                    <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($instrucaoEditar) ? (!empty($instrucaoEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visível</label>
+                    <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($instrucaoEditar) ? (!empty($instrucaoEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> VisÃ­vel</label>
                     <?php
-                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=modulos-aulas';
+                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=conteudo';
                     $show_save_as_copy = false;
                     require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
                     ?>
@@ -418,7 +414,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
 
             <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'modulos-aulas' ? ' is-active' : ''; ?>" data-area-curso-tab="modulos-aulas" id="area-curso-modulos-aulas-modulos">
                 <div class="panel-header">
-                    <h2>Módulos</h2>
+                    <h2>MÃ³dulos</h2>
                     <span class="badge"><?php echo (int) $quantidadeModulos; ?> itens</span>
                 </div>
                 <form method="post" action="/admin/area-curso/modulos" class="form-grid admin-area-curso__form">
@@ -427,8 +423,8 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
                     <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
                     <input type="hidden" name="aba" value="modulos-aulas">
-                    <label class="full">Título<input type="text" name="titulo" value="<?php echo Helpers::e($moduloEditar['titulo'] ?? ''); ?>"></label>
-                    <label class="full">Descrição<textarea name="descricao" rows="3"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea></label>
+                    <label class="full">TÃ­tulo<input type="text" name="titulo" value="<?php echo Helpers::e($moduloEditar['titulo'] ?? ''); ?>"></label>
+                    <label class="full">DescriÃ§Ã£o<textarea name="descricao" rows="3"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea></label>
                     <label>Status
                         <select name="status">
                             <?php $statusModulo = 'publicado'; ?>
@@ -442,7 +438,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                     </label>
                     <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($moduloEditar['ordem'] ?? 1)); ?>" min="1"></label>
                     <?php
-                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=modulos-aulas';
+                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=conteudo';
                     $show_save_as_copy = false;
                     require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
                     ?>
@@ -450,7 +446,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
 
                 <div class="table-wrap admin-mt-12">
                     <table class="admin-table admin-table--area-modulos">
-                        <thead><tr><th>Título</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead>
+                        <thead><tr><th>TÃ­tulo</th><th>Ordem</th><th>Status</th><th>AÃ§Ãµes</th></tr></thead>
                         <tbody>
                             <?php foreach ($modulos as $modulo): ?>
                                 <tr>
@@ -459,7 +455,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                                     <td><span class="badge"><?php echo Helpers::e($modulo['status'] ?? (!empty($modulo['visivel']) ? 'publicado' : 'oculto')); ?></span></td>
                                     <td>
                                         <div class="split-actions">
-                                            <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&modulo_id=<?php echo (int) $modulo['id']; ?>&aba=modulos-aulas">Editar</a>
+                                            <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&modulo_id=<?php echo (int) $modulo['id']; ?>&aba=conteudo">Editar</a>
                                         </div>
                                         <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-area-curso__delete-form admin-mt-8">
                                             <?php echo $csrfField; ?>
@@ -490,7 +486,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
                     <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
                     <input type="hidden" name="aba" value="modulos-aulas">
-                    <label class="full">Módulo
+                    <label class="full">MÃ³dulo
                         <select name="modulo_id">
                             <?php foreach ($modulos as $modulo): ?>
                                 <option value="<?php echo (int) $modulo['id']; ?>" <?php echo !empty($aulaEditar) && (int) ($aulaEditar['modulo_id'] ?? 0) === (int) $modulo['id'] ? 'selected' : ''; ?>>
@@ -499,8 +495,8 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                             <?php endforeach; ?>
                         </select>
                     </label>
-                    <label class="full">Título<input type="text" name="titulo" value="<?php echo Helpers::e($aulaEditar['titulo'] ?? ''); ?>"></label>
-                    <label class="full">Conteúdo<textarea name="conteudo" rows="3"><?php echo Helpers::e($aulaEditar['conteudo'] ?? ''); ?></textarea></label>
+                    <label class="full">TÃ­tulo<input type="text" name="titulo" value="<?php echo Helpers::e($aulaEditar['titulo'] ?? ''); ?>"></label>
+                    <label class="full">ConteÃºdo<textarea name="conteudo" rows="3"><?php echo Helpers::e($aulaEditar['conteudo'] ?? ''); ?></textarea></label>
                     <label>Status
                         <?php $statusAula = 'publicado'; ?>
                         <?php if (!empty($aulaEditar)): ?>
@@ -513,12 +509,12 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                         </select>
                     </label>
                     <label>Tipo<input type="text" name="tipo" value="<?php echo Helpers::e($aulaEditar['tipo'] ?? 'texto'); ?>"></label>
-                    <label>URL vídeo<input type="text" name="url_video" value="<?php echo Helpers::e($aulaEditar['url_video'] ?? ''); ?>"></label>
-                    <label>Duração (minutos)<input type="number" name="duracao_minutos" value="<?php echo Helpers::e((string) ($aulaEditar['duracao_minutos'] ?? '')); ?>"></label>
+                    <label>URL vÃ­deo<input type="text" name="url_video" value="<?php echo Helpers::e($aulaEditar['url_video'] ?? ''); ?>"></label>
+                    <label>DuraÃ§Ã£o (minutos)<input type="number" name="duracao_minutos" value="<?php echo Helpers::e((string) ($aulaEditar['duracao_minutos'] ?? '')); ?>"></label>
                     <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($aulaEditar['ordem'] ?? 1)); ?>" min="1"></label>
-                    <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1" <?php echo !empty($aulaEditar) && !empty($aulaEditar['obrigatoria']) ? 'checked' : ''; ?>> Obrigatória</label>
+                    <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1" <?php echo !empty($aulaEditar) && !empty($aulaEditar['obrigatoria']) ? 'checked' : ''; ?>> ObrigatÃ³ria</label>
                     <?php
-                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=modulos-aulas';
+                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=conteudo';
                     $show_save_as_copy = false;
                     require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
                     ?>
@@ -526,7 +522,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
 
                 <div class="table-wrap admin-mt-12">
                     <table class="admin-table admin-table--area-aulas">
-                        <thead><tr><th>Título</th><th>Tipo</th><th>Ordem</th><th>Status</th><th>Ações</th></tr></thead>
+                        <thead><tr><th>TÃ­tulo</th><th>Tipo</th><th>Ordem</th><th>Status</th><th>AÃ§Ãµes</th></tr></thead>
                         <tbody>
                             <?php foreach ($modulos as $modulo): ?>
                                 <?php foreach ($modulo['aulas'] as $aula): ?>
@@ -537,7 +533,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                                     <td><span class="badge"><?php echo Helpers::e($aula['status'] ?? (!empty($aula['visivel']) ? 'publicado' : 'oculto')); ?></span></td>
                                     <td>
                                         <div class="split-actions">
-                                            <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aula_id=<?php echo (int) $aula['id']; ?>&aba=modulos-aulas">Editar</a>
+                                            <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aula_id=<?php echo (int) $aula['id']; ?>&aba=conteudo">Editar</a>
                                         </div>
                                         <form method="post" action="/admin/area-curso/excluir" class="form-grid admin-area-curso__delete-form admin-mt-8">
                                             <?php echo $csrfField; ?>
@@ -555,13 +551,13 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                                                 <span class="badge"><?php echo (int) ($aula['total_materiais'] ?? 0); ?></span>
                                             </div>
                                             <div class="admin-area-curso__aula-materiais-actions">
-                                                <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&modulo_id=<?php echo (int) $modulo['id']; ?>&aula_id=<?php echo (int) $aula['id']; ?>&aba=materiais">Adicionar material</a>
+                                                <a href="/admin/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&modulo_id=<?php echo (int) $modulo['id']; ?>&aula_id=<?php echo (int) $aula['id']; ?>&aba=conteudo">Adicionar material</a>
                                             </div>
                                             <?php if (!empty($aula['materiais'])): ?>
                                                 <div class="admin-area-curso__aula-materiais-list">
                                                     <?php foreach (array_slice($aula['materiais'], 0, 3) as $materialAula): ?>
                                                         <?php $materialStatusLinha = !empty($materialAula['status']) ? $materialAula['status'] : (!empty($materialAula['visivel']) ? 'publicado' : 'oculto'); ?>
-                                                        <span class="badge badge--soft"><?php echo Helpers::e($materialAula['titulo']); ?> · <?php echo Helpers::e($materialStatusLinha); ?></span>
+                                                        <span class="badge badge--soft"><?php echo Helpers::e($materialAula['titulo']); ?> Â· <?php echo Helpers::e($materialStatusLinha); ?></span>
                                                     <?php endforeach; ?>
                                                 </div>
                                             <?php endif; ?>
@@ -586,9 +582,9 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
                     <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
                     <input type="hidden" name="aba" value="modulos-aulas">
-                    <label class="full">Módulo
+                    <label class="full">MÃ³dulo
                         <select name="modulo_id">
-                            <option value="">Sem módulo</option>
+                            <option value="">Sem mÃ³dulo</option>
                             <?php foreach ($modulos as $modulo): ?>
                                 <option value="<?php echo (int) $modulo['id']; ?>" <?php echo !empty($linkEditar) && (int) ($linkEditar['modulo_id'] ?? 0) === (int) $modulo['id'] ? 'selected' : ''; ?>>
                                     <?php echo Helpers::e($modulo['titulo']); ?>
@@ -608,13 +604,13 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                             <?php endforeach; ?>
                         </select>
                     </label>
-                    <label class="full">Título<input type="text" name="titulo" value="<?php echo Helpers::e($linkEditar['titulo'] ?? ''); ?>"></label>
+                    <label class="full">TÃ­tulo<input type="text" name="titulo" value="<?php echo Helpers::e($linkEditar['titulo'] ?? ''); ?>"></label>
                     <label class="full">URL<input type="text" name="url" value="<?php echo Helpers::e($linkEditar['url'] ?? ''); ?>"></label>
                     <label>Tipo de link<input type="text" name="tipo_link" value="<?php echo Helpers::e($linkEditar['tipo_link'] ?? 'generico'); ?>"></label>
                     <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) ($linkEditar['ordem'] ?? 1)); ?>" min="1"></label>
-                    <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($linkEditar) ? (!empty($linkEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> Visível</label>
+                    <label class="checkbox"><input type="checkbox" name="visivel" value="1" <?php echo !empty($linkEditar) ? (!empty($linkEditar['visivel']) ? 'checked' : '') : 'checked'; ?>> VisÃ­vel</label>
                     <?php
-                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=modulos-aulas';
+                    $cancel_url = '/admin/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : '') . '&aba=conteudo';
                     $show_save_as_copy = false;
                     require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
                     ?>
@@ -622,7 +618,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
 
                 <div class="table-wrap admin-mt-12">
                     <table class="admin-table admin-table--area-links">
-                        <thead><tr><th>Título</th><th>Tipo</th><th>URL</th><th>Ações</th></tr></thead>
+                        <thead><tr><th>TÃ­tulo</th><th>Tipo</th><th>URL</th><th>AÃ§Ãµes</th></tr></thead>
                         <tbody>
                             <?php foreach ($links as $link): ?>
                                 <tr>
@@ -711,16 +707,16 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
         if (!dirty) {
             return true;
         }
-        return window.confirm('Há alterações não salvas nesta aba. Deseja sair sem salvar?');
+        return window.confirm('HÃ¡ alteraÃ§Ãµes nÃ£o salvas nesta aba. Deseja sair sem salvar?');
     }
 
     if (hasSelectedCourse() && !window.location.search.match(/[?&]aba=/) && window.location.hash) {
         var hashMap = {
             '#area-curso-visao-geral': 'visao-geral',
             '#area-curso-turmas': 'turmas',
-            '#area-curso-modulos-aulas': 'modulos-aulas',
-            '#area-curso-materiais': 'materiais',
-            '#area-curso-atividades': 'atividades',
+            '#area-curso-modulos-aulas': 'conteudo',
+            '#area-curso-materiais': 'conteudo',
+            '#area-curso-atividades': 'conteudo',
             '#area-curso-participantes': 'participantes',
             '#area-curso-presenca': 'presenca',
             '#area-curso-avaliacoes-notas': 'avaliacoes-notas',
@@ -794,4 +790,5 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
     });
 })();
 </script>
+
 

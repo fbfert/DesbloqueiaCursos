@@ -26,6 +26,7 @@ class AptidaoCertificadoService
     private $notaModel;
     private $auditService;
     private $scopeService;
+    private $lmsElegibilidadeService;
 
     public function __construct(array $dependencies = array())
     {
@@ -44,6 +45,7 @@ class AptidaoCertificadoService
             'inscricaoModel' => $this->inscricaoModel,
             'avaliacaoModel' => $this->avaliacaoModel,
         ));
+        $this->lmsElegibilidadeService = isset($dependencies['lmsElegibilidadeService']) ? $dependencies['lmsElegibilidadeService'] : new LmsElegibilidadeService();
     }
 
     public function contexto($cursoId, $turmaId = null)
@@ -174,14 +176,20 @@ class AptidaoCertificadoService
             $concluidaEm = date('Y-m-d H:i:s');
         }
 
-        $apto = $this->calcularApto($config, $percentualProgresso, $presencaPercentual, $notaFinal);
-
         $this->inscricaoModel->updateAcademico((int) $inscricaoId, array(
             'percentual_progresso' => $percentualProgresso,
             'presenca_percentual' => $presencaPercentual,
             'nota_final' => $notaFinal,
-            'apto_certificado' => $apto,
+            'apto_certificado' => 0,
             'concluida_em' => $concluidaEm,
+        ));
+
+        $inscricaoAtualizada = $this->inscricaoModel->findById((int) $inscricaoId);
+        $elegibilidade = $inscricaoAtualizada ? $this->lmsElegibilidadeService->calcularParaInscricao($inscricaoAtualizada) : null;
+        $apto = (!empty($elegibilidade) && in_array((string) ($elegibilidade['situacao'] ?? ''), array('apto', 'certificado_emitido'), true)) ? 1 : 0;
+
+        $this->inscricaoModel->updateAcademico((int) $inscricaoId, array(
+            'apto_certificado' => $apto,
         ));
 
         $this->auditService->record(
@@ -193,6 +201,8 @@ class AptidaoCertificadoService
                 'presenca_percentual' => $presencaPercentual,
                 'nota_final' => $notaFinal,
                 'apto_certificado' => $apto,
+                'elegibilidade_situacao' => $elegibilidade['situacao'] ?? null,
+                'elegibilidade_motivos' => $elegibilidade['motivos'] ?? array(),
             ),
             $actorUserId,
             $ipAddress,

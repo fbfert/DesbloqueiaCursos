@@ -241,9 +241,6 @@ class AreaCursoService
         return array(
             array('slug' => 'visao-geral', 'label' => 'Visão geral'),
             array('slug' => 'turmas', 'label' => 'Turmas'),
-            array('slug' => 'modulos-aulas', 'label' => 'Módulos e aulas'),
-            array('slug' => 'materiais', 'label' => 'Materiais'),
-            array('slug' => 'atividades', 'label' => 'Atividades'),
             array('slug' => 'conteudo', 'label' => 'Conteúdo'),
             array('slug' => 'participantes', 'label' => 'Participantes'),
             array('slug' => 'presenca', 'label' => 'Presença'),
@@ -1397,6 +1394,40 @@ class AreaCursoService
             default:
                 return null;
         }
+    }
+
+    private function anexarProfessoresResponsaveisAoCurso(array $curso)
+    {
+        $cursoId = !empty($curso['id']) ? (int) $curso['id'] : 0;
+        if ($cursoId <= 0) {
+            $curso['professores_responsaveis'] = array();
+            $curso['professor_responsavel'] = null;
+            return $curso;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT u.id, u.nome, u.email
+               FROM usuario_cursos uc
+               INNER JOIN usuarios u ON u.id = uc.usuario_id
+              WHERE uc.curso_evento_id = :curso_evento_id
+                AND uc.tipo_vinculo = :tipo_vinculo
+                AND uc.status = :status_vinculo
+                AND uc.deleted_at IS NULL
+                AND u.deleted_at IS NULL
+              ORDER BY u.nome ASC'
+        );
+
+        $stmt->execute(array(
+            'curso_evento_id' => $cursoId,
+            'tipo_vinculo' => 'professor',
+            'status_vinculo' => 'ativo',
+        ));
+
+        $professores = $stmt->fetchAll();
+        $curso['professores_responsaveis'] = $professores;
+        $curso['professor_responsavel'] = !empty($professores) ? $professores[0] : null;
+
+        return $curso;
     }
 }
 

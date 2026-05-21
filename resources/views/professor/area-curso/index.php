@@ -50,10 +50,9 @@
 
 <?php if (!empty($curso)): ?>
     <?php $areaCursoCancelUrl = '/professor/area-curso?curso_id=' . (int) $curso['id'] . (!empty($turma['id']) ? '&turma_id=' . (int) $turma['id'] : ''); ?>
-    <?php $selectedTab = isset($selected_tab) && $selected_tab !== '' ? (string) $selected_tab : ''; ?>
+    <?php $selectedTab = isset($selected_tab) && $selected_tab !== '' ? (string) $selected_tab : 'conteudo'; ?>
 
     <nav class="area-curso-tabs" style="margin-top:12px;">
-        <a class="area-curso-tabs__link<?php echo $selectedTab === '' ? ' is-active' : ''; ?>" href="/professor/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>">Visão geral</a>
         <a class="area-curso-tabs__link<?php echo $selectedTab === 'conteudo' ? ' is-active' : ''; ?>" href="/professor/area-curso?curso_id=<?php echo (int) $curso['id']; ?><?php echo !empty($turma) ? '&turma_id=' . (int) $turma['id'] : ''; ?>&aba=conteudo">Conteúdo</a>
     </nav>
 
@@ -290,6 +289,38 @@
     </section>
 
     <?php $areaCursoBaseUrl = '/professor/area-curso'; require BASE_PATH . '/resources/views/admin/area-curso/_atividades.php'; ?>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div><h2>Avaliações / Notas — Notas do Conteúdo</h2></div>
+            <div class="admin-area-curso__actions">
+                <a href="<?php echo Helpers::e('/professor/area-curso/conteudo/avaliacoes/exportar?' . http_build_query(array('curso_id' => (int) ($curso['id'] ?? 0), 'turma_id' => (int) ($turma['id'] ?? 0), 'curso_nome' => (string) ($curso['nome'] ?? ''), 'turma_nome' => (string) ($turma['nome'] ?? '')) + (isset($conteudo_avaliacoes_filtros) && is_array($conteudo_avaliacoes_filtros) ? $conteudo_avaliacoes_filtros : array()))); ?>">Exportar CSV do conteúdo</a>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead><tr><th>Aluno</th><th>Módulo</th><th>Avaliação</th><th>Status</th><th>Tentativa</th><th>Nota</th><th>Peso</th><th>Enviado</th><th>Corrigido</th></tr></thead>
+                <tbody>
+                <?php $notasConteudo = isset($conteudo_avaliacoes_notas) && is_array($conteudo_avaliacoes_notas) ? $conteudo_avaliacoes_notas : array(); ?>
+                <?php if (empty($notasConteudo)): ?>
+                    <tr><td colspan="9" class="muted">Nenhum registro de avaliação textual no conteúdo.</td></tr>
+                <?php else: foreach ($notasConteudo as $item): ?>
+                    <tr>
+                        <td><?php echo Helpers::e((string) ($item['aluno_nome'] ?? '')); ?></td>
+                        <td><?php echo Helpers::e((string) ($item['modulo_titulo'] ?? '')); ?></td>
+                        <td><?php echo Helpers::e((string) ($item['avaliacao_titulo'] ?? '')); ?></td>
+                        <td><?php echo Helpers::e((string) ($item['status'] ?? '')); ?></td>
+                        <td><?php echo (int) ($item['tentativa'] ?? 0); ?></td>
+                        <td><?php echo $item['nota'] !== null ? Helpers::e(number_format((float) $item['nota'], 2, ',', '.')) : '—'; ?></td>
+                        <td><?php echo Helpers::e(number_format((float) ($item['peso'] ?? 1), 2, ',', '.')); ?></td>
+                        <td><?php echo !empty($item['enviado_em']) ? Helpers::e(date('d/m/Y H:i', strtotime((string) $item['enviado_em']))) : '—'; ?></td>
+                        <td><?php echo !empty($item['corrigido_em']) ? Helpers::e(date('d/m/Y H:i', strtotime((string) $item['corrigido_em']))) : '—'; ?></td>
+                    </tr>
+                <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
     <?php $areaCursoBaseUrl = '/professor/area-curso'; require BASE_PATH . '/resources/views/admin/area-curso/_relatorios.php'; ?>
 

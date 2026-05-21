@@ -34,6 +34,8 @@ class CertificadoService
     private $templateService;
     private $globalConfigService;
     private $rbacService;
+    private $elegibilidadeService;
+    private $aptidaoService;
 
     public function __construct()
     {
@@ -52,6 +54,8 @@ class CertificadoService
         $this->templateService = new CertificadoTemplateService();
         $this->globalConfigService = new ConfiguracaoGlobalService();
         $this->rbacService = new RbacService();
+        $this->elegibilidadeService = new LmsElegibilidadeService();
+        $this->aptidaoService = new AptidaoCertificadoService();
     }
 
     public function listarAptos()
@@ -96,8 +100,19 @@ class CertificadoService
             return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
-        if ((int) $inscricao['apto_certificado'] !== 1 && !in_array($inscricao['status'], array('concluida', 'concluida_sem_certificado', 'certificado_emitido'), true)) {
-            return array('ok' => false, 'message' => 'A inscricao ainda nao esta apta para certificado.');
+        $this->aptidaoService->recalcularInscricao((int) $inscricao['id'], $actorUserId, $ipAddress, $userAgent);
+        $inscricao = $this->inscricaoModel->findById($inscricaoId);
+        $elegibilidade = $this->elegibilidadeService->calcularParaInscricao($inscricao);
+        $situacao = (string) ($elegibilidade['situacao'] ?? 'pendente');
+        if (!in_array($situacao, array('apto', 'certificado_emitido'), true)) {
+            $motivos = isset($elegibilidade['motivos']) && is_array($elegibilidade['motivos']) ? $elegibilidade['motivos'] : array();
+            $mensagemConteudo = 'O aluno ainda possui itens obrigatórios pendentes no Conteúdo do curso.';
+            foreach ($motivos as $motivo) {
+                if (strpos((string) $motivo, 'conteúdo_unificado_obrigatorio') !== false || strpos((string) $motivo, 'Conteúdo') !== false || strpos((string) $motivo, 'conteudo_') !== false) {
+                    return array('ok' => false, 'message' => $mensagemConteudo, 'motivos' => $motivos);
+                }
+            }
+            return array('ok' => false, 'message' => 'A inscrição ainda não está apta para certificado.', 'motivos' => $motivos);
         }
 
         $template = $this->resolveTemplate(
@@ -537,7 +552,13 @@ class CertificadoService
 
         $assinaturas = array();
         foreach ($assinantes as $assinante) {
-            $assinaturas[] = isset($assinante['nome']) ? $assinante['nome'] . ' - ' . $assinante['cargo'] : '';
+            $nomeAssinante = isset($assinante['nome']) ? (string) $assinante['nome'] : '';
+            $cargoAssinante = isset($assinante['cargo']) ? (string) $assinante['cargo'] : '';
+            if ($nomeAssinante === '' && $cargoAssinante === '') {
+                $assinaturas[] = '';
+                continue;
+            }
+            $assinaturas[] = $cargoAssinante !== '' ? ($nomeAssinante . ' - ' . $cargoAssinante) : $nomeAssinante;
         }
 
         return $this->buildSimplePdf($lines, $assinaturas, $qrMatrix);

@@ -5,15 +5,18 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
+use App\Services\ConteudoAvaliacaoTextualService;
 use App\Services\DashboardService;
 
 class DashboardController extends Controller
 {
     private $dashboardService;
+    private $conteudoAvaliacaoTextualService;
 
     public function __construct()
     {
         $this->dashboardService = new DashboardService();
+        $this->conteudoAvaliacaoTextualService = new ConteudoAvaliacaoTextualService();
     }
 
     public function index(Request $request)
@@ -43,11 +46,14 @@ class DashboardController extends Controller
             return $this->redirect('/');
         }
 
+        $pendencias = $this->conteudoAvaliacaoTextualService->contarPendentesProfessor(0);
+
         return $this->view('admin/dashboard/index', array_merge(
             array(
                 'title' => 'Dashboard executivo',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
+                'conteudo_avaliacoes_pendentes' => !empty($pendencias['total']) ? (int) $pendencias['total'] : 0,
             ),
             $result
         ));

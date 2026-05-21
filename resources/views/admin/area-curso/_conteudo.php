@@ -13,6 +13,7 @@ $itemDetalhe = isset($conteudo_item_detalhe) && is_array($conteudo_item_detalhe)
 
 $cursoIdAtual = !empty($cursoAtual['id']) ? (int) $cursoAtual['id'] : 0;
 $turmaIdAtual = !empty($turmaAtual['id']) ? (int) $turmaAtual['id'] : 0;
+$moduloSelecionadoPorContexto = isset($_GET['conteudo_modulo_id']) ? (int) $_GET['conteudo_modulo_id'] : 0;
 
 $buildAreaCursoUrl = function (array $params = array()) use ($cursoIdAtual, $turmaIdAtual) {
     $query = array('curso_id' => $cursoIdAtual, 'aba' => 'conteudo');
@@ -89,7 +90,7 @@ $formatTipoHint = function ($tipo) {
     <div class="panel-header">
         <div>
             <h2>Conteúdo do curso</h2>
-            <p class="muted">Nova base unificada (em paralelo às abas antigas).</p>
+            <p class="muted">Use esta área para organizar módulos, textos, arquivos, links, vídeos e avaliações textuais do curso.</p>
         </div>
         <div class="panel-actions">
             <a class="button-link" href="<?php echo Helpers::e($buildAreaCursoUrl()); ?>">Limpar seleção</a>
@@ -155,6 +156,7 @@ $formatTipoHint = function ($tipo) {
                 <?php endif; ?>
 
                 <?php $moduloSelecionado = (int) ($itemEditar['modulo_id'] ?? 0); ?>
+                <?php if ($moduloSelecionado <= 0 && $moduloSelecionadoPorContexto > 0): $moduloSelecionado = $moduloSelecionadoPorContexto; endif; ?>
                 <label>Módulo
                     <select name="modulo_id" required>
                         <option value="">Selecione</option>
@@ -177,6 +179,9 @@ $formatTipoHint = function ($tipo) {
                         <option value="video" title="<?php echo Helpers::e($formatTipoHint('video')); ?>" <?php echo $tipoSelecionado === 'video' ? 'selected' : ''; ?>>Vídeo</option>
                     </select>
                 </label>
+                <div class="muted" style="grid-column: 1 / -1;">
+                    Etiqueta: bloco de orientacao exibido ao aluno. | Texto: pagina de conteudo com editor. | Arquivo: material para download. | Link: endereco externo, botao ou embed. | Avaliacao textual: pergunta discursiva com nota e feedback. | Video: video incorporado por link/embed.
+                </div>
 
                 <label>Título
                     <input type="text" name="titulo" value="<?php echo Helpers::e($itemEditar['titulo'] ?? ''); ?>" required>
@@ -344,6 +349,7 @@ $formatTipoHint = function ($tipo) {
                             </div>
                             <div class="cta-group" style="gap:6px;">
                                 <a class="button-link" href="<?php echo Helpers::e($buildAreaCursoUrl(array('conteudo_modulo_id' => (int) $modulo['id']))); ?>">Editar</a>
+                                <a class="button-link button-link--ghost" href="<?php echo Helpers::e($buildAreaCursoUrl(array('conteudo_modulo_id' => (int) $modulo['id']))); ?>">Adicionar conteÃºdo</a>
                                 <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulo/duplicar'); ?>">
                                     <?php echo $csrfField; ?>
                                     <input type="hidden" name="id" value="<?php echo (int) $modulo['id']; ?>">
@@ -402,6 +408,21 @@ $formatTipoHint = function ($tipo) {
                                                     <strong style="display:block; margin-top:6px;"><?php echo Helpers::e($item['titulo']); ?></strong>
                                                     <?php if (!empty($item['descricao_curta'])): ?>
                                                         <div class="muted" style="margin-top:4px;"><?php echo Helpers::e($item['descricao_curta']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if (($item['tipo'] ?? '') === 'arquivo'): ?>
+                                                        <?php $arquivoItem = isset($item['arquivo_detalhe']) && is_array($item['arquivo_detalhe']) ? $item['arquivo_detalhe'] : array(); ?>
+                                                        <?php if (!empty($arquivoItem['caminho'])): ?>
+                                                            <div class="muted" style="margin-top:4px;">
+                                                                Arquivo: <?php echo Helpers::e((string) ($arquivoItem['nome_original'] ?? 'sem nome')); ?> |
+                                                                ExtensÃ£o: <?php echo Helpers::e((string) ($arquivoItem['extensao'] ?? '-')); ?> |
+                                                                Tamanho: <?php echo Helpers::e(number_format(((int) ($arquivoItem['tamanho_bytes'] ?? 0)) / 1024, 1, ',', '.')); ?> KB
+                                                            </div>
+                                                            <div style="margin-top:4px;">
+                                                                <a class="button-link" href="/admin/area-curso/conteudo/arquivo/download?id=<?php echo (int) $item['id']; ?>&curso_id=<?php echo (int) $cursoIdAtual; ?><?php echo $turmaIdAtual > 0 ? '&turma_id=' . (int) $turmaIdAtual : ''; ?>">Baixar arquivo</a>
+                                                            </div>
+                                                        <?php else: ?>
+                                                            <div class="muted" style="margin-top:4px;">Item em rascunho sem arquivo enviado.</div>
+                                                        <?php endif; ?>
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="cta-group" style="gap:6px;">
@@ -472,4 +493,3 @@ $formatTipoHint = function ($tipo) {
         </section>
     </div>
 </section>
-

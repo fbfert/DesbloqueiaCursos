@@ -8,6 +8,8 @@ use PDO;
 
 class LmsElegibilidadeService
 {
+    private const STATUS_AVALIACAO_PENDENTE = array('enviada', 'reenviada', 'devolvida');
+
     private $inscricaoModel;
     private $criterioService;
 
@@ -71,6 +73,174 @@ class LmsElegibilidadeService
             'mapa_por_inscricao' => $mapa,
             'resumo' => $resumo,
         );
+    }
+
+    public function calcularElegibilidadeConteudoUnificado($cursoEventoId, $turmaId, $inscricaoId, $alunoId)
+    {
+        $cursoEventoId = (int) $cursoEventoId;
+        $inscricaoId = (int) $inscricaoId;
+        $alunoId = (int) $alunoId;
+        $turmaId = $turmaId !== null && $turmaId !== '' ? (int) $turmaId : null;
+
+        if ($cursoEventoId <= 0 || $inscricaoId <= 0 || $alunoId <= 0) {
+            return $this->elegibilidadeConteudoVazia();
+        }
+
+        $pdo = Database::connection();
+        $params = array(
+            'curso_evento_id' => $cursoEventoId,
+            'inscricao_id' => $inscricaoId,
+            'aluno_id' => $alunoId,
+        );
+        $clauseTurma = '';
+
+        $sql = 'SELECT
+                    i.id AS item_id,
+                    i.titulo AS item_titulo,
+                    i.tipo AS item_tipo,
+                    i.obrigatorio,
+                    m.id AS modulo_id,
+                    m.titulo AS modulo_titulo,
+                    p.status AS progresso_status,
+                    p.percentual AS progresso_percentual,
+                    a.id AS avaliacao_id,
+                    a.nota_minima,
+                    a.nota_maxima,
+                    a.peso,
+                    e.id AS entrega_id,
+                    e.status AS entrega_status,
+                    e.nota AS entrega_nota,
+                    e.enviado_em,
+                    e.corrigido_em
+                FROM conteudo_itens i
+                INNER JOIN conteudo_modulos m
+                    ON m.id = i.modulo_id
+                   AND m.deleted_at IS NULL
+                   AND m.status = "publicado"
+                LEFT JOIN conteudo_progresso_aluno p
+                    ON p.item_id = i.id
+                   AND p.inscricao_id = :inscricao_id
+                   AND p.aluno_id = :aluno_id
+                   AND p.deleted_at IS NULL
+                LEFT JOIN conteudo_avaliacoes_textuais a
+                    ON a.item_id = i.id
+                LEFT JOIN (
+                    SELECT e1.*
+                    FROM conteudo_avaliacoes_entregas e1
+                    INNER JOIN (
+                        SELECT MAX(id) AS id
+                        FROM conteudo_avaliacoes_entregas
+                        WHERE deleted_at IS NULL
+                          AND status <> "cancelada"
+                          AND inscricao_id = :inscricao_id
+                          AND aluno_id = :aluno_id
+                        GROUP BY avaliacao_id, aluno_id, inscricao_id
+                    ) ult ON ult.id = e1.id
+                    WHERE e1.deleted_at IS NULL
+                ) e ON e.item_id = i.id
+                WHERE i.curso_evento_id = :curso_evento_id
+                  AND i.deleted_at IS NULL
+                  AND i.status = "publicado"' . $clauseTurma . '
+                ORDER BY m.ordem ASC, i.ordem ASC, i.id ASC';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $itens = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $resumo = array(
+            'total_itens_publicados' => count($itens),
+            'total_itens_obrigatorios' => 0,
+            'obrigatorios_concluidos' => 0,
+            'obrigatorios_pendentes' => 0,
+            'percentual_conteudo_obrigatorio' => 100.00,
+            'avaliacoes_textuais_obrigatorias' => 0,
+            'avaliacoes_textuais_aprovadas' => 0,
+            'avaliacoes_textuais_reprovadas' => 0,
+            'avaliacoes_textuais_pendentes' => 0,
+            'bloqueios' => array(),
+            'apto_conteudo' => true,
+            'detalhes_itens_pendentes' => array(),
+        );
+
+        foreach ($itens as $item) {
+            $obrigatorio = !empty($item['obrigatorio']);
+            if (!$obrigatorio) {
+                continue;
+            }
+
+            $resumo['total_itens_obrigatorios']++;
+            $tipo = (string) ($item['item_tipo'] ?? '');
+            $statusProgresso = (string) ($item['progresso_status'] ?? '');
+            $concluido = false;
+            $motivo = '';
+
+            if ($tipo === 'avaliacao_textual') {
+                $resumo['avaliacoes_textuais_obrigatorias']++;
+                $statusEntrega = (string) ($item['entrega_status'] ?? '');
+                $temEntrega = !empty($item['entrega_id']);
+                $nota = isset($item['entrega_nota']) && $item['entrega_nota'] !== null ? (float) $item['entrega_nota'] : null;
+                $notaMinima = isset($item['nota_minima']) && $item['nota_minima'] !== null ? (float) $item['nota_minima'] : null;
+
+                if (!$temEntrega) {
+                    $motivo = 'Avaliação textual obrigatória sem entrega.';
+                    $resumo['avaliacoes_textuais_pendentes']++;
+                } elseif ($statusEntrega === 'reprovada') {
+                    $motivo = 'Avaliação textual obrigatória reprovada.';
+                    $resumo['avaliacoes_textuais_reprovadas']++;
+                } elseif (in_array($statusEntrega, self::STATUS_AVALIACAO_PENDENTE, true) || $statusEntrega === '') {
+                    $motivo = 'Avaliação textual obrigatória pendente de correção.';
+                    $resumo['avaliacoes_textuais_pendentes']++;
+                } else {
+                    if ($notaMinima !== null) {
+                        if ($statusEntrega === 'aprovada' || ($nota !== null && $nota >= $notaMinima)) {
+                            $concluido = true;
+                            $resumo['avaliacoes_textuais_aprovadas']++;
+                        } else {
+                            $motivo = 'Avaliação textual obrigatória não atingiu nota mínima.';
+                            $resumo['avaliacoes_textuais_reprovadas']++;
+                        }
+                    } else {
+                        if (in_array($statusEntrega, array('corrigida', 'aprovada'), true)) {
+                            $concluido = true;
+                            $resumo['avaliacoes_textuais_aprovadas']++;
+                        } else {
+                            $motivo = 'Avaliação textual obrigatória ainda não está corrigida.';
+                            $resumo['avaliacoes_textuais_pendentes']++;
+                        }
+                    }
+                }
+            } else {
+                if ($statusProgresso === 'concluido') {
+                    $concluido = true;
+                } else {
+                    $motivo = 'Item obrigatório pendente de conclusão.';
+                }
+            }
+
+            if ($concluido) {
+                $resumo['obrigatorios_concluidos']++;
+            } else {
+                $resumo['obrigatorios_pendentes']++;
+                $resumo['apto_conteudo'] = false;
+                $detalhe = array(
+                    'modulo_id' => (int) ($item['modulo_id'] ?? 0),
+                    'modulo_titulo' => (string) ($item['modulo_titulo'] ?? ''),
+                    'item_id' => (int) ($item['item_id'] ?? 0),
+                    'item_titulo' => (string) ($item['item_titulo'] ?? ''),
+                    'item_tipo' => $tipo,
+                    'status' => $tipo === 'avaliacao_textual' ? (string) ($item['entrega_status'] ?? 'sem_entrega') : $statusProgresso,
+                    'motivo' => $motivo,
+                );
+                $resumo['detalhes_itens_pendentes'][] = $detalhe;
+                $resumo['bloqueios'][] = $detalhe['modulo_titulo'] . ' › ' . $detalhe['item_titulo'] . ': ' . $motivo;
+            }
+        }
+
+        if ($resumo['total_itens_obrigatorios'] > 0) {
+            $resumo['percentual_conteudo_obrigatorio'] = round(($resumo['obrigatorios_concluidos'] / $resumo['total_itens_obrigatorios']) * 100, 2);
+        }
+
+        return $resumo;
     }
 
     private function avaliar(array $inscricao, array $criterios, array $atividade, array $totaisPublicados)
@@ -147,6 +317,24 @@ class LmsElegibilidadeService
             }
         }
 
+        $conteudo = $this->calcularElegibilidadeConteudoUnificado(
+            (int) $inscricao['curso_evento_id'],
+            !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null,
+            $this->resolverInscricaoId($inscricao),
+            !empty($inscricao['usuario_id']) ? (int) $inscricao['usuario_id'] : 0
+        );
+        if ((int) $conteudo['total_itens_obrigatorios'] > 0 && empty($conteudo['apto_conteudo'])) {
+            $flags['pendente'] = true;
+            $motivos[] = sprintf(
+                'Critério conteúdo_unificado_obrigatorio: %d de %d itens obrigatórios concluídos.',
+                (int) $conteudo['obrigatorios_concluidos'],
+                (int) $conteudo['total_itens_obrigatorios']
+            );
+            foreach ((array) $conteudo['bloqueios'] as $bloqueio) {
+                $motivos[] = (string) $bloqueio;
+            }
+        }
+
         if ($certificadoEmitido) {
             $situacao = 'certificado_emitido';
             $motivos[] = 'Certificado já emitido.';
@@ -177,9 +365,34 @@ class LmsElegibilidadeService
             'presenca_percentual' => $presenca !== null ? round($presenca, 2) : null,
             'avaliacao_nota' => $avaliacaoNota !== null ? round($avaliacaoNota, 2) : null,
             'certificado_emitido' => $certificadoEmitido ? 1 : 0,
+            'conteudo_unificado' => $conteudo,
+            'conteudo_total_itens_obrigatorios' => (int) $conteudo['total_itens_obrigatorios'],
+            'conteudo_obrigatorios_concluidos' => (int) $conteudo['obrigatorios_concluidos'],
+            'conteudo_obrigatorios_pendentes' => (int) $conteudo['obrigatorios_pendentes'],
+            'conteudo_percentual_obrigatorio' => (float) $conteudo['percentual_conteudo_obrigatorio'],
+            'conteudo_avaliacoes_pendentes' => (int) $conteudo['avaliacoes_textuais_pendentes'],
+            'conteudo_avaliacoes_reprovadas' => (int) $conteudo['avaliacoes_textuais_reprovadas'],
             'situacao' => $situacao,
             'motivos' => $motivos,
             'motivos_texto' => implode(' ', $motivos),
+        );
+    }
+
+    private function elegibilidadeConteudoVazia()
+    {
+        return array(
+            'total_itens_publicados' => 0,
+            'total_itens_obrigatorios' => 0,
+            'obrigatorios_concluidos' => 0,
+            'obrigatorios_pendentes' => 0,
+            'percentual_conteudo_obrigatorio' => 100.00,
+            'avaliacoes_textuais_obrigatorias' => 0,
+            'avaliacoes_textuais_aprovadas' => 0,
+            'avaliacoes_textuais_reprovadas' => 0,
+            'avaliacoes_textuais_pendentes' => 0,
+            'bloqueios' => array(),
+            'apto_conteudo' => true,
+            'detalhes_itens_pendentes' => array(),
         );
     }
 

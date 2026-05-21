@@ -16,6 +16,7 @@ class RelatorioLmsService
     private $turmaModel;
     private $elegibilidadeService;
     private $criterioService;
+    private $conteudoAvaliacaoService;
 
     public function __construct()
     {
@@ -24,6 +25,7 @@ class RelatorioLmsService
         $this->turmaModel = new Turma();
         $this->elegibilidadeService = new LmsElegibilidadeService();
         $this->criterioService = new LmsCriterioConclusaoService();
+        $this->conteudoAvaliacaoService = new ConteudoAvaliacaoTextualService();
     }
 
     public function carregarAdmin($cursoId, $turmaId = null, array $filtros = array())
@@ -48,6 +50,9 @@ class RelatorioLmsService
         if ($tipo === 'atividades') {
             $arquivo = $this->csvAtividades($relatorio);
             $tipoNormalizado = 'atividades';
+        } elseif ($tipo === 'conteudo_avaliacoes') {
+            $arquivo = $this->csvConteudoAvaliacoes($relatorio);
+            $tipoNormalizado = 'conteudo_avaliacoes';
         } elseif ($tipo === 'aptos_certificado') {
             $arquivo = $this->csvAptosCertificado($relatorio);
             $tipoNormalizado = 'aptos_certificado';
@@ -101,6 +106,7 @@ class RelatorioLmsService
         $pendencias = $this->montarPendencias($alunosBase, $resumoConteudo['certificados_emitidos']);
         $criterios = $this->criterioService->resolver($cursoId, $turmaId);
         $painelAptos = $this->montarPainelAptosCertificado($alunos, $criterios);
+        $conteudoAvaliacoes = $this->montarResumoConteudoAvaliacoes($cursoId, $turmaId);
 
         return array(
             'ok' => true,
@@ -126,6 +132,14 @@ class RelatorioLmsService
                 'elegibilidade_em_andamento' => (int) ($elegibilidade['resumo']['em_andamento'] ?? 0),
                 'elegibilidade_nao_apto' => (int) ($elegibilidade['resumo']['nao_apto'] ?? 0),
                 'elegibilidade_certificado_emitido' => (int) ($elegibilidade['resumo']['certificado_emitido'] ?? 0),
+                'conteudo_avaliacoes_publicadas' => (int) ($conteudoAvaliacoes['resumo']['total_avaliacoes_textuais'] ?? 0),
+                'conteudo_entregas_recebidas' => (int) ($conteudoAvaliacoes['resumo']['entregas_enviadas'] ?? 0),
+                'conteudo_pendentes_correcao' => (int) ($conteudoAvaliacoes['resumo']['pendentes_correcao'] ?? 0),
+                'conteudo_corrigidas' => (int) ($conteudoAvaliacoes['resumo']['corrigidas'] ?? 0),
+                'conteudo_aprovadas' => (int) ($conteudoAvaliacoes['resumo']['aprovadas'] ?? 0),
+                'conteudo_reprovadas' => (int) ($conteudoAvaliacoes['resumo']['reprovadas'] ?? 0),
+                'conteudo_media_geral' => $conteudoAvaliacoes['resumo']['media_geral'],
+                'conteudo_alunos_com_pendencias' => (int) ($conteudoAvaliacoes['resumo']['alunos_com_pendencia'] ?? 0),
             ),
             'alunos' => $alunos,
             'atividades' => $atividades,
@@ -133,7 +147,88 @@ class RelatorioLmsService
             'elegibilidade' => $elegibilidade,
             'painel_aptos' => $painelAptos,
             'criterios_conclusao' => $criterios,
+            'conteudo_avaliacoes' => $conteudoAvaliacoes,
         );
+    }
+
+    private function montarResumoConteudoAvaliacoes($cursoId, $turmaId = null)
+    {
+        $notas = $this->conteudoAvaliacaoService->listarNotasAvaliacoesTextuais($cursoId, $turmaId);
+        $porAluno = $this->conteudoAvaliacaoService->resumoNotasAvaliacoesTextuaisPorAluno($cursoId, $turmaId);
+
+        $somaMedias = 0.0;
+        $quantidadeMedias = 0;
+        $pendentes = 0;
+        $corrigidas = 0;
+        $aprovadas = 0;
+        $reprovadas = 0;
+        $totalAvaliacoesPublicadas = $this->contarAvaliacoesTextuaisPublicadas($cursoId);
+        $alunosPendentes = 0;
+        $alunosAprovadosObrigatorias = 0;
+        $alunosReprovadosObrigatorias = 0;
+
+        foreach ($porAluno as $resumoAluno) {
+            if (isset($resumoAluno['media_ponderada']) && $resumoAluno['media_ponderada'] !== null) {
+                $somaMedias += (float) $resumoAluno['media_ponderada'];
+                $quantidadeMedias++;
+            }
+            if ((int) ($resumoAluno['pendentes'] ?? 0) > 0) {
+                $alunosPendentes++;
+            }
+            if ((int) ($resumoAluno['reprovadas'] ?? 0) > 0 && (int) ($resumoAluno['avaliacoes_obrigatorias'] ?? 0) > 0) {
+                $alunosReprovadosObrigatorias++;
+            }
+            if ((int) ($resumoAluno['avaliacoes_obrigatorias'] ?? 0) > 0 && (int) ($resumoAluno['reprovadas'] ?? 0) === 0 && (int) ($resumoAluno['pendentes'] ?? 0) === 0) {
+                $alunosAprovadosObrigatorias++;
+            }
+        }
+
+        foreach ($notas as $item) {
+            $status = (string) ($item['status'] ?? '');
+            if (in_array($status, array('enviada', 'reenviada', 'devolvida'), true) || $item['nota'] === null) {
+                $pendentes++;
+            } else {
+                $corrigidas++;
+            }
+            if ($status === 'aprovada') {
+                $aprovadas++;
+            } elseif ($status === 'reprovada') {
+                $reprovadas++;
+            }
+        }
+
+        return array(
+            'resumo' => array(
+                'total_avaliacoes_textuais' => $totalAvaliacoesPublicadas,
+                'entregas_enviadas' => count($notas),
+                'pendentes_correcao' => $pendentes,
+                'corrigidas' => $corrigidas,
+                'aprovadas' => $aprovadas,
+                'reprovadas' => $reprovadas,
+                'media_geral' => $quantidadeMedias > 0 ? round($somaMedias / $quantidadeMedias, 2) : null,
+                'alunos_com_pendencia' => $alunosPendentes,
+                'alunos_reprovados_obrigatoria' => $alunosReprovadosObrigatorias,
+                'alunos_aprovados_obrigatoria' => $alunosAprovadosObrigatorias,
+            ),
+            'registros' => $notas,
+            'por_aluno' => $porAluno,
+        );
+    }
+
+    private function contarAvaliacoesTextuaisPublicadas($cursoId)
+    {
+        $sql = 'SELECT COUNT(*)
+                FROM conteudo_avaliacoes_textuais a
+                INNER JOIN conteudo_itens i ON i.id = a.item_id
+                INNER JOIN conteudo_modulos m ON m.id = i.modulo_id
+                WHERE i.curso_evento_id = :curso_evento_id
+                  AND i.deleted_at IS NULL
+                  AND i.tipo = "avaliacao_textual"
+                  AND i.status = "publicado"
+                  AND m.deleted_at IS NULL
+                  AND m.status = "publicado"';
+        $row = $this->queryRow($sql, array('curso_evento_id' => (int) $cursoId));
+        return !empty($row) ? (int) array_values($row)[0] : 0;
     }
 
     private function aplicarElegibilidadeNosAlunos(array $alunos, array $mapaElegibilidade)
@@ -149,6 +244,12 @@ class RelatorioLmsService
             $aluno['elegibilidade_atividades_enviadas'] = $item ? (int) $item['atividades_enviadas'] : 0;
             $aluno['elegibilidade_presenca'] = $item ? $item['presenca_percentual'] : null;
             $aluno['elegibilidade_avaliacao'] = $item ? $item['avaliacao_nota'] : null;
+            $aluno['elegibilidade_conteudo_percentual'] = $item ? (float) ($item['conteudo_percentual_obrigatorio'] ?? 100) : 100.0;
+            $aluno['elegibilidade_conteudo_obrigatorios_concluidos'] = $item ? (int) ($item['conteudo_obrigatorios_concluidos'] ?? 0) : 0;
+            $aluno['elegibilidade_conteudo_obrigatorios_total'] = $item ? (int) ($item['conteudo_total_itens_obrigatorios'] ?? 0) : 0;
+            $aluno['elegibilidade_conteudo_obrigatorios_pendentes'] = $item ? (int) ($item['conteudo_obrigatorios_pendentes'] ?? 0) : 0;
+            $aluno['elegibilidade_conteudo_avaliacoes_pendentes'] = $item ? (int) ($item['conteudo_avaliacoes_pendentes'] ?? 0) : 0;
+            $aluno['elegibilidade_conteudo_avaliacoes_reprovadas'] = $item ? (int) ($item['conteudo_avaliacoes_reprovadas'] ?? 0) : 0;
         }
         unset($aluno);
 
@@ -731,7 +832,7 @@ class RelatorioLmsService
                 $resumo['aguardando_correcao']++;
             }
 
-            $motivosTexto = mb_strtolower((string) ($aluno['elegibilidade_motivos_texto'] ?? ''), 'UTF-8');
+            $motivosTexto = $this->toLowercase((string) ($aluno['elegibilidade_motivos_texto'] ?? ''));
             if (strpos($motivosTexto, 'progresso') !== false) {
                 $resumo['pendencia_progresso']++;
             }
@@ -1049,5 +1150,47 @@ class RelatorioLmsService
         $stmt->execute($params);
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    private function csvConteudoAvaliacoes(array $relatorio)
+    {
+        $headers = array('Curso', 'Turma', 'Aluno', 'Módulo', 'Avaliação', 'Obrigatória', 'Status', 'Tentativa', 'Nota', 'Nota máxima', 'Nota mínima', 'Peso', 'Enviado em', 'Corrigido em', 'Feedback resumido');
+        $conteudo = isset($relatorio['conteudo_avaliacoes']) && is_array($relatorio['conteudo_avaliacoes']) ? $relatorio['conteudo_avaliacoes'] : array();
+        $registros = isset($conteudo['registros']) && is_array($conteudo['registros']) ? $conteudo['registros'] : array();
+        $cursoNome = isset($relatorio['curso']['nome']) ? (string) $relatorio['curso']['nome'] : '';
+        $turmaNome = isset($relatorio['turma']['nome']) ? (string) $relatorio['turma']['nome'] : 'Curso inteiro';
+        $rows = array();
+        foreach ($registros as $item) {
+            $rows[] = array(
+                $this->csvSafeValue($cursoNome),
+                $this->csvSafeValue($turmaNome),
+                $this->csvSafeValue((string) ($item['aluno_nome'] ?? '')),
+                $this->csvSafeValue((string) ($item['modulo_titulo'] ?? '')),
+                $this->csvSafeValue((string) ($item['avaliacao_titulo'] ?? '')),
+                !empty($item['obrigatorio']) ? 'Sim' : 'Não',
+                $this->csvSafeValue((string) ($item['status'] ?? '')),
+                (int) ($item['tentativa'] ?? 0),
+                $this->csvSafeValue($item['nota'] !== null ? number_format((float) $item['nota'], 2, ',', '.') : ''),
+                $this->csvSafeValue($item['nota_maxima'] !== null ? number_format((float) $item['nota_maxima'], 2, ',', '.') : ''),
+                $this->csvSafeValue($item['nota_minima'] !== null ? number_format((float) $item['nota_minima'], 2, ',', '.') : ''),
+                $this->csvSafeValue(number_format((float) ($item['peso'] ?? 1), 2, ',', '.')),
+                $this->csvSafeValue(!empty($item['enviado_em']) ? date('d/m/Y H:i', strtotime((string) $item['enviado_em'])) : ''),
+                $this->csvSafeValue(!empty($item['corrigido_em']) ? date('d/m/Y H:i', strtotime((string) $item['corrigido_em'])) : ''),
+                $this->csvSafeValue(substr(trim((string) ($item['feedback'] ?? '')), 0, 180)),
+            );
+        }
+        return array(
+            'filename' => 'relatorio-conteudo-avaliacoes-' . date('Ymd-His') . '.csv',
+            'content' => $this->buildCsv($headers, $rows),
+        );
+    }
+
+    private function toLowercase($texto)
+    {
+        $texto = (string) $texto;
+        if (function_exists('mb_strtolower')) {
+            return mb_strtolower($texto, 'UTF-8');
+        }
+        return strtolower($texto);
     }
 }

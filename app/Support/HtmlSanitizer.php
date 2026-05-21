@@ -36,7 +36,7 @@ class HtmlSanitizer
 
         $wrapped = '<!doctype html><html><head><meta charset="utf-8"></head><body>' . $html . '</body></html>';
         libxml_use_internal_errors(true);
-        $dom->loadHTML($wrapped, LIBXML_HTML_NODEFDTD | LIBXML_HTML_NOIMPLIED);
+        $dom->loadHTML($wrapped);
         libxml_clear_errors();
         libxml_use_internal_errors(false);
 
@@ -53,12 +53,20 @@ class HtmlSanitizer
             $out .= $dom->saveHTML($child);
         }
 
+        if (trim($out) === '') {
+            $texto = trim(strip_tags($html));
+            if ($texto === '') {
+                return '';
+            }
+            return nl2br(htmlspecialchars($texto, ENT_QUOTES, 'UTF-8'));
+        }
+
         return $out;
     }
 
     private static function sanitizeNode(\DOMNode $node, array $allowedTags)
     {
-        if ($node->nodeType === XML_ELEMENT_NODE) {
+        if ($node->nodeType === \XML_ELEMENT_NODE) {
             $tag = strtolower((string) $node->nodeName);
             if (!in_array($tag, $allowedTags, true)) {
                 self::unwrapNode($node);
@@ -225,4 +233,3 @@ class HtmlSanitizer
         $parent->removeChild($node);
     }
 }
-

@@ -55,9 +55,10 @@ class FileStorageService
 
         if (!is_dir($absoluteDirectory)) {
             if (!@mkdir($absoluteDirectory, 0775, true) && !is_dir($absoluteDirectory)) {
-                throw new \RuntimeException('Não foi possivel criar o diretorio de upload.');
+                throw new \RuntimeException('Nao foi possivel criar o diretorio de upload.');
             }
         }
+        $this->writeDirectoryProtection($absoluteDirectory);
 
         $safeName = $prefix . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(6));
         if ($extension !== '') {
@@ -68,7 +69,7 @@ class FileStorageService
         $absolutePath = $this->privatePath($relativePath);
 
         if (!move_uploaded_file($file['tmp_name'], $absolutePath)) {
-            throw new \RuntimeException('Não foi possivel salvar o arquivo enviado.');
+            throw new \RuntimeException('Nao foi possivel salvar o arquivo enviado.');
         }
 
         return array(
@@ -99,5 +100,19 @@ class FileStorageService
 
         return $fallback;
     }
-}
 
+    private function writeDirectoryProtection($absoluteDirectory)
+    {
+        $absoluteDirectory = (string) $absoluteDirectory;
+
+        $htaccessPath = rtrim($absoluteDirectory, '/\\') . '/.htaccess';
+        if (!is_file($htaccessPath)) {
+            @file_put_contents($htaccessPath, "Options -ExecCGI\nAddType text/plain .php .phtml .php3 .php4 .php5 .php7 .phar .pl .py .jsp .asp .aspx .sh .cgi\n");
+        }
+
+        $webConfigPath = rtrim($absoluteDirectory, '/\\') . '/web.config';
+        if (!is_file($webConfigPath)) {
+            @file_put_contents($webConfigPath, '<?xml version="1.0" encoding="UTF-8"?><configuration><system.webServer><handlers><add name="BlockPhp" path="*.php" verb="*" modules="StaticFileModule" resourceType="File" requireAccess="Read" /></handlers></system.webServer></configuration>');
+        }
+    }
+}
