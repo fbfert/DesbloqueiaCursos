@@ -1,21 +1,45 @@
-.env
+# Sistema / ambiente
 .DS_Store
 Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
 *.log
+logs/
+
+# Arquivos temporários
+*.tmp
+*.temp
 *.bak
 
-public_html/.codex/
-.codex/
-conversas.txt
+# Storage (arquivos gerados, testes, dumps)
+storage/*
+!storage/.gitkeep
 
-/storage/cache/*
-/storage/logs/*
-/storage/sessions/*
-/storage/private_uploads/*
-/storage/backups/*
-/storage/tmp/*
-/storage/trash/*
-/storage/uploads/*
-!/storage/**/.gitkeep
+# Uploads e binários
+*.zip
+*.tar
+*.gz
+*.rar
+*.pdf
+*.bin
 
-/deploy/_backup_local/*
+# Dumps HTML / debug
+*.html
+*.txt
+*.csv
+
+# Conflitos de merge (Windows)
+*Cópia em conflito*
+
+# Scripts locais
+scripts/
+
+# SQL temporário / manutenção local
+sql/maintenance/
+
+# Node (caso use futuramente)
+node_modules/
