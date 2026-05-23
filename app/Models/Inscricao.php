@@ -214,6 +214,153 @@ class Inscricao
         return $row ?: null;
     }
 
+    public function findByUsuarioTurma($usuarioId, $turmaId)
+    {
+        if ((int) $usuarioId <= 0 || (int) $turmaId <= 0) {
+            return null;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM inscricoes
+             WHERE usuario_id = :usuario_id
+               AND turma_id = :turma_id
+             ORDER BY id DESC
+             LIMIT 1'
+        );
+
+        $stmt->execute(array(
+            'usuario_id' => (int) $usuarioId,
+            'turma_id' => (int) $turmaId,
+        ));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    private function backofficeBaseSql(array $filters, array &$params)
+    {
+        $sql = ' FROM inscricoes i
+                 INNER JOIN pedidos p ON p.id = i.pedido_id
+                 INNER JOIN participantes_pedido pp ON pp.id = i.participante_pedido_id
+                 INNER JOIN cursos_eventos ce ON ce.id = i.curso_evento_id
+                 LEFT JOIN turmas t ON t.id = i.turma_id
+                 LEFT JOIN certificados c ON c.inscricao_id = i.id AND c.deleted_at IS NULL AND c.status = "emitido"
+                 WHERE i.deleted_at IS NULL';
+
+        $q = isset($filters['q']) ? trim((string) $filters['q']) : '';
+        if ($q !== '') {
+            $sql .= ' AND (
+                        CAST(i.id AS CHAR) LIKE :q
+                        OR p.codigo LIKE :q
+                        OR p.pagador_nome LIKE :q
+                        OR p.pagador_email LIKE :q
+                        OR pp.nome LIKE :q
+                        OR pp.cpf LIKE :q
+                        OR ce.nome LIKE :q
+                        OR t.nome LIKE :q
+                        OR i.status LIKE :q
+                        OR p.status LIKE :q
+                    )';
+            $params['q'] = '%' . $q . '%';
+        }
+
+        $status = isset($filters['status']) ? trim((string) $filters['status']) : '';
+        if ($status !== '') {
+            $sql .= ' AND i.status = :status';
+            $params['status'] = $status;
+        }
+
+        $pedidoStatus = isset($filters['pedido_status']) ? trim((string) $filters['pedido_status']) : '';
+        if ($pedidoStatus !== '') {
+            $sql .= ' AND p.status = :pedido_status';
+            $params['pedido_status'] = $pedidoStatus;
+        }
+
+        $cursoEventoId = isset($filters['curso_evento_id']) ? (int) $filters['curso_evento_id'] : 0;
+        if ($cursoEventoId > 0) {
+            $sql .= ' AND i.curso_evento_id = :curso_evento_id';
+            $params['curso_evento_id'] = $cursoEventoId;
+        }
+
+        $turmaId = isset($filters['turma_id']) ? (int) $filters['turma_id'] : 0;
+        if ($turmaId > 0) {
+            $sql .= ' AND i.turma_id = :turma_id';
+            $params['turma_id'] = $turmaId;
+        }
+
+        return $sql;
+    }
+
+    public function countFilteredBackoffice(array $filters = array())
+    {
+        $params = array();
+        $sql = 'SELECT COUNT(*) AS total' . $this->backofficeBaseSql($filters, $params);
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return isset($row['total']) ? (int) $row['total'] : 0;
+    }
+
+    public function listFilteredBackoffice(array $filters = array(), $limit = 20, $offset = 0)
+    {
+        $sortMap = array(
+            'id' => 'i.id',
+            'created_at' => 'i.created_at',
+            'status' => 'i.status',
+            'pedido_codigo' => 'p.codigo',
+            'pedido_status' => 'p.status',
+            'pagador_nome' => 'p.pagador_nome',
+            'participante_nome' => 'pp.nome',
+            'curso_nome' => 'ce.nome',
+            'turma_nome' => 't.nome',
+        );
+
+        $sortBy = isset($filters['sort_by']) ? (string) $filters['sort_by'] : 'id';
+        $sortDir = strtolower(isset($filters['sort_dir']) ? (string) $filters['sort_dir'] : 'desc');
+        if (!isset($sortMap[$sortBy])) {
+            $sortBy = 'id';
+        }
+        if ($sortDir !== 'asc') {
+            $sortDir = 'desc';
+        }
+
+        $limit = (int) $limit;
+        if ($limit <= 0) {
+            $limit = 20;
+        }
+        if ($limit > 200) {
+            $limit = 200;
+        }
+
+        $offset = (int) $offset;
+        if ($offset < 0) {
+            $offset = 0;
+        }
+
+        $params = array();
+        $sql = 'SELECT i.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.total AS pedido_total,
+                       p.status AS pedido_status, pp.nome AS participante_nome, pp.cpf AS participante_cpf,
+                       ce.nome AS curso_nome, t.nome AS turma_nome,
+                       c.id AS certificado_id, c.codigo AS certificado_codigo, c.status AS certificado_status'
+            . $this->backofficeBaseSql($filters, $params)
+            . ' ORDER BY ' . $sortMap[$sortBy] . ' ' . strtoupper($sortDir) . ', i.id DESC
+               LIMIT :limit OFFSET :offset';
+
+        $stmt = Database::connection()->prepare($sql);
+
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function allForBackoffice()
     {
         $stmt = Database::connection()->query(

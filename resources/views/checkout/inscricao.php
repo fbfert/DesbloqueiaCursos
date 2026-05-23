@@ -12,10 +12,22 @@
 <?php endif; ?>
 
 <?php if (!empty($errors)): ?>
-    <section class="auth-message auth-message-error">
-        <?php foreach ($errors as $error): ?>
-            <p><?php echo Helpers::e($error); ?></p>
-        <?php endforeach; ?>
+    <?php if (empty($inscricaoDuplicada)): ?>
+        <section class="auth-message auth-message-error">
+            <?php foreach ($errors as $error): ?>
+                <p><?php echo Helpers::e($error); ?></p>
+            <?php endforeach; ?>
+        </section>
+    <?php endif; ?>
+<?php endif; ?>
+
+<?php if (!empty($inscricaoDuplicada)): ?>
+    <section class="checkout-panel checkout-status-alert checkout-status-alert--warning">
+        <strong class="checkout-status-alert__title">Você já está inscrito nesta turma.</strong>
+        <p class="checkout-status-alert__text">Não é necessário concluir uma nova inscrição para esta turma.</p>
+        <div class="cta-group">
+            <a class="button-link" href="/minha-pagina">Acessar minha página</a>
+        </div>
     </section>
 <?php endif; ?>
 
@@ -30,7 +42,7 @@
     </section>
 <?php endif; ?>
 
-<?php if (!empty($loggedIn)): ?>
+<?php if (!empty($loggedIn) && empty($inscricaoDuplicada)): ?>
     <section class="checkout-panel">
         <h2>Resumo da inscrição</h2>
         <dl class="summary-list">
@@ -114,7 +126,7 @@
     </form>
 <?php endif; ?>
 
-<?php if (!empty($loggedIn)): ?>
+<?php if (!empty($loggedIn) && empty($inscricaoDuplicada)): ?>
 <script>
 (function () {
     var estadoSelect = document.getElementById('inscricao-estado');

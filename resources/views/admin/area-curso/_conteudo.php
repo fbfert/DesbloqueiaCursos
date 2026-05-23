@@ -362,7 +362,7 @@ $formatTipoHint = function ($tipo) {
                                     <input type="hidden" name="id" value="<?php echo (int) $modulo['id']; ?>">
                                     <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
                                     <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                    <button type="submit" class="button-link button-link--ghost" onclick="return confirm('Arquivar este módulo?');">Arquivar</button>
+                                    <button type="submit" class="button-link button-link--ghost" onclick="return confirmarAcaoCritica({ palavra: 'ARQUIVAR', pergunta: 'Você conferiu o arquivamento deste módulo?' });">Arquivar</button>
                                 </form>
                             </div>
                         </div>
@@ -439,7 +439,7 @@ $formatTipoHint = function ($tipo) {
                                                         <input type="hidden" name="id" value="<?php echo (int) $item['id']; ?>">
                                                         <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
                                                         <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                                        <button type="submit" class="button-link button-link--ghost" onclick="return confirm('Arquivar este item?');">Arquivar</button>
+                                                        <button type="submit" class="button-link button-link--ghost" onclick="return confirmarAcaoCritica({ palavra: 'ARQUIVAR', pergunta: 'Você conferiu o arquivamento deste item?' });">Arquivar</button>
                                                     </form>
                                                 </div>
                                             </div>

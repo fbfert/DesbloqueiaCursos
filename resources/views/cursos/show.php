@@ -49,14 +49,20 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
             <dt>Valor</dt>
             <dd>
                 <?php if (!empty($curso['desconto_promocional'])): ?>
-                    <div class="muted" style="text-decoration:line-through;">R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
-                    <div><strong>R$ <?php echo number_format((float) $curso['valor_efetivo'], 2, ',', '.'); ?></strong></div>
-                    <div class="muted" style="font-size:12px;">
-                        Desconto de R$ <?php echo number_format((float) $curso['desconto_promocional']['desconto_valor'], 2, ',', '.'); ?>
-                        (<?php echo (int) round((float) $curso['desconto_promocional']['desconto_percentual']); ?>%)
-                    </div>
+                    <?php $valorEfetivo = (float) $curso['valor_efetivo']; ?>
+                    <?php if ($valorEfetivo > 0): ?>
+                        <div class="muted" style="text-decoration:line-through;">R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
+                        <div><strong>R$ <?php echo number_format($valorEfetivo, 2, ',', '.'); ?></strong></div>
+                        <div class="muted" style="font-size:12px;">
+                            Desconto de R$ <?php echo number_format((float) $curso['desconto_promocional']['desconto_valor'], 2, ',', '.'); ?>
+                            (<?php echo (int) round((float) $curso['desconto_promocional']['desconto_percentual']); ?>%)
+                        </div>
+                    <?php else: ?>
+                        <strong>Gratuito</strong>
+                    <?php endif; ?>
                 <?php else: ?>
-                    R$ <?php echo number_format((float) ($curso['valor_efetivo'] ?? $curso['valor']), 2, ',', '.'); ?>
+                    <?php $valorPublico = (float) ($curso['valor_efetivo'] ?? $curso['valor']); ?>
+                    <strong><?php echo $valorPublico <= 0 ? 'Gratuito' : 'R$ ' . number_format($valorPublico, 2, ',', '.'); ?></strong>
                 <?php endif; ?>
             </dd>
             <?php if (!empty($professoresResponsaveisNomes)): ?>

@@ -1,4 +1,43 @@
+<?php use App\Core\Helpers; ?>
 <?php
+$filters = isset($filters) && is_array($filters) ? $filters : array();
+$pagination = isset($pagination) && is_array($pagination) ? $pagination : array('total' => 0, 'page' => 1, 'per_page' => 20, 'pages' => 1);
+$currentSortBy = isset($filters['sort_by']) ? (string) $filters['sort_by'] : 'id';
+$currentSortDir = isset($filters['sort_dir']) ? strtolower((string) $filters['sort_dir']) : 'desc';
+$queryBase = array(
+    'q' => isset($filters['q']) ? $filters['q'] : '',
+    'status' => isset($filters['status']) ? $filters['status'] : '',
+    'curso' => isset($filters['curso']) ? $filters['curso'] : '',
+    'de' => isset($filters['de']) ? $filters['de'] : '',
+    'ate' => isset($filters['ate']) ? $filters['ate'] : '',
+    'per_page' => isset($filters['per_page']) ? $filters['per_page'] : 20,
+);
+
+if (!function_exists('pedidosSortUrl')) {
+    function pedidosSortUrl($field, $currentSortBy, $currentSortDir, array $queryBase)
+    {
+        $nextDir = ($currentSortBy === $field && $currentSortDir === 'asc') ? 'desc' : 'asc';
+        $params = array_merge($queryBase, array('sort_by' => $field, 'sort_dir' => $nextDir));
+        return '/admin/pedidos?' . http_build_query($params);
+    }
+}
+
+if (!function_exists('pedidosQuery')) {
+    function pedidosQuery(array $queryBase, $sortBy, $sortDir, $page = null)
+    {
+        $params = array_merge($queryBase, array(
+            'sort_by' => $sortBy,
+            'sort_dir' => $sortDir,
+        ));
+
+        if ($page !== null) {
+            $params['page'] = (int) $page;
+        }
+
+        return $params;
+    }
+}
+
 $totalPedidos = is_array($pedidos) ? count($pedidos) : 0;
 $pendentes = 0;
 $comPix = 0;
@@ -13,6 +52,13 @@ foreach ((array) $pedidos as $pedidoResumo) {
         $comPix++;
     }
 }
+$page = isset($pagination['page']) ? (int) $pagination['page'] : 1;
+$pages = isset($pagination['pages']) ? (int) $pagination['pages'] : 1;
+$total = isset($pagination['total']) ? (int) $pagination['total'] : 0;
+$perPage = isset($pagination['per_page']) ? (int) $pagination['per_page'] : 20;
+$from = $total > 0 ? (($page - 1) * $perPage) + 1 : 0;
+$to = $total > 0 ? min($page * $perPage, $total) : 0;
+$statusAtual = (string) ($filters['status'] ?? '');
 ?>
 
 <div class="admin-page">
@@ -59,17 +105,64 @@ foreach ((array) $pedidos as $pedidoResumo) {
         <div class="admin-section__header">
             <h2 class="admin-section__title">Pedidos</h2>
         </div>
+        <div class="status-card" style="margin-bottom:12px;">
+            <form method="get" action="/admin/pedidos" class="admin-filters">
+                <div class="admin-filters__row">
+                    <label>Busca
+                        <input type="text" name="q" value="<?php echo Helpers::e((string) ($filters['q'] ?? '')); ?>" placeholder="Código, pagador, e-mail, CPF ou curso">
+                    </label>
+                    <label>Status
+                        <select name="status">
+                            <option value="">Todos</option>
+                            <option value="rascunho" <?php echo $statusAtual === 'rascunho' ? 'selected' : ''; ?>>Rascunho</option>
+                            <option value="aguardando_pagamento" <?php echo $statusAtual === 'aguardando_pagamento' ? 'selected' : ''; ?>>Aguardando pagamento</option>
+                            <option value="comprovante_enviado" <?php echo $statusAtual === 'comprovante_enviado' ? 'selected' : ''; ?>>Comprovante enviado</option>
+                            <option value="em_analise" <?php echo $statusAtual === 'em_analise' ? 'selected' : ''; ?>>Em análise</option>
+                            <option value="pendencia" <?php echo $statusAtual === 'pendencia' ? 'selected' : ''; ?>>Pendência</option>
+                            <option value="aguardando_reenvio" <?php echo $statusAtual === 'aguardando_reenvio' ? 'selected' : ''; ?>>Aguardando reenvio</option>
+                            <option value="aprovado" <?php echo $statusAtual === 'aprovado' ? 'selected' : ''; ?>>Aprovado</option>
+                            <option value="cancelado" <?php echo $statusAtual === 'cancelado' ? 'selected' : ''; ?>>Cancelado</option>
+                        </select>
+                    </label>
+                    <label>Curso
+                        <input type="text" name="curso" value="<?php echo Helpers::e((string) ($filters['curso'] ?? '')); ?>" placeholder="Nome do curso">
+                    </label>
+                </div>
+                <div class="admin-filters__row" style="margin-top:12px;">
+                    <label>De
+                        <input type="date" name="de" value="<?php echo Helpers::e((string) ($filters['de'] ?? '')); ?>">
+                    </label>
+                    <label>Até
+                        <input type="date" name="ate" value="<?php echo Helpers::e((string) ($filters['ate'] ?? '')); ?>">
+                    </label>
+                    <label>Por página
+                        <select name="per_page">
+                            <?php $perPageAtual = (int) ($filters['per_page'] ?? 20); ?>
+                            <?php foreach (array(20, 50, 100) as $valor): ?>
+                                <option value="<?php echo (int) $valor; ?>" <?php echo $perPageAtual === (int) $valor ? 'selected' : ''; ?>><?php echo (int) $valor; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <input type="hidden" name="sort_by" value="<?php echo Helpers::e($currentSortBy); ?>">
+                    <input type="hidden" name="sort_dir" value="<?php echo Helpers::e($currentSortDir); ?>">
+                </div>
+                <div class="cta-group" style="margin-top:12px;">
+                    <button type="submit" class="button-link button-link--primary">Filtrar</button>
+                    <a class="button-link button-link--ghost" href="/admin/pedidos">Limpar filtros</a>
+                </div>
+            </form>
+        </div>
         <div class="table-wrap">
             <table class="admin-table admin-table--pedidos-lista">
             <thead>
                 <tr>
-                    <th>Código</th>
-                    <th>Pagador</th>
+                    <th><a href="<?php echo Helpers::e(pedidosSortUrl('codigo', $currentSortBy, $currentSortDir, pedidosQuery($queryBase, $currentSortBy, $currentSortDir))); ?>">Código</a></th>
+                    <th><a href="<?php echo Helpers::e(pedidosSortUrl('pagador_nome', $currentSortBy, $currentSortDir, pedidosQuery($queryBase, $currentSortBy, $currentSortDir))); ?>">Pagador</a></th>
                     <th>Participantes</th>
-                    <th>Total</th>
-                    <th>Status</th>
+                    <th><a href="<?php echo Helpers::e(pedidosSortUrl('total', $currentSortBy, $currentSortDir, pedidosQuery($queryBase, $currentSortBy, $currentSortDir))); ?>">Total</a></th>
+                    <th><a href="<?php echo Helpers::e(pedidosSortUrl('status', $currentSortBy, $currentSortDir, pedidosQuery($queryBase, $currentSortBy, $currentSortDir))); ?>">Status</a></th>
                     <th>Comprovante</th>
-                    <th>Data</th>
+                    <th><a href="<?php echo Helpers::e(pedidosSortUrl('created_at', $currentSortBy, $currentSortDir, pedidosQuery($queryBase, $currentSortBy, $currentSortDir))); ?>">Data</a></th>
                     <th>Ações</th>
                 </tr>
             </thead>
@@ -129,7 +222,7 @@ foreach ((array) $pedidos as $pedidoResumo) {
                                                 <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
                                                 <label>Justificativa da lixeira</label>
                                                 <textarea name="justificativa" rows="2" required placeholder="Informe a justificativa da exclusão."></textarea>
-                                                <button type="submit" class="button-link button-link--danger" onclick="return confirm('Tem certeza de que deseja excluir este pedido?');">🗑 Excluir pedido</button>
+                                                <button type="submit" class="button-link button-link--danger" onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu este pedido?' });">🗑 Excluir pedido</button>
                                             </form>
                                         <?php else: ?>
                                             <div class="alert-danger">
@@ -147,6 +240,22 @@ foreach ((array) $pedidos as $pedidoResumo) {
         </div>
     </section>
 
+    <?php if ($pages > 1): ?>
+        <section class="status-card" style="margin-top:12px;">
+            <div class="cta-group" style="justify-content:space-between;align-items:center;flex-wrap:wrap;">
+                <small>Página <?php echo (int) $page; ?> de <?php echo (int) $pages; ?> — mostrando <?php echo (int) $from; ?> a <?php echo (int) $to; ?> de <?php echo (int) $total; ?> pedidos.</small>
+                <div class="cta-group">
+                    <?php if ($page > 1): ?>
+                        <a class="button-link button-link--ghost" href="<?php echo Helpers::e('/admin/pedidos?' . http_build_query(pedidosQuery($queryBase, $currentSortBy, $currentSortDir, $page - 1))); ?>">Anterior</a>
+                    <?php endif; ?>
+                    <?php if ($page < $pages): ?>
+                        <a class="button-link button-link--ghost" href="<?php echo Helpers::e('/admin/pedidos?' . http_build_query(pedidosQuery($queryBase, $currentSortBy, $currentSortDir, $page + 1))); ?>">Próxima</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
+
     <?php if (!empty($can_manage_pedidos)): ?>
         <section class="admin-section">
             <details class="admin-pedidos__actions-details">
@@ -159,7 +268,7 @@ foreach ((array) $pedidos as $pedidoResumo) {
                             <label>Justificativa da lixeira</label>
                             <textarea name="justificativa" rows="3" required placeholder="Informe a justificativa para a exclusão em lote."></textarea>
                             <div class="cta-group">
-                                <button type="submit" class="button-link button-link--danger" onclick="return confirm('Tem certeza de que deseja excluir apenas pedidos antigos sem pagamento confirmado?');">🗑 Excluir pedidos antigos</button>
+                                <button type="submit" class="button-link button-link--danger" onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão em lote dos pedidos antigos?' });">🗑 Excluir pedidos antigos</button>
                             </div>
                         </form>
                     </div>

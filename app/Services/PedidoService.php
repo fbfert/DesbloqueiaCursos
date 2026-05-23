@@ -308,7 +308,7 @@ class PedidoService
             return array('ok' => false, 'message' => 'Você nao tem permissao para finalizar este pedido.');
         }
 
-        if ($pedido['status'] === 'aguardando_pagamento') {
+        if (in_array((string) $pedido['status'], array('aguardando_pagamento', 'aprovado', 'pago'), true)) {
             return array('ok' => true, 'message' => 'Pedido ja foi finalizado.');
         }
 
@@ -338,8 +338,27 @@ class PedidoService
                 );
             }
 
-            $this->pedidoModel->markAwaitingPayment($pedidoId);
-            $this->pedidoModel->addStatusHistory($pedidoId, $pedido['status'], 'aguardando_pagamento', 'Checkout concluido', $actorUserId);
+            $pedidoAtualizado = $this->pedidoModel->findById($pedidoId);
+            if (!$pedidoAtualizado) {
+                $pdo->rollBack();
+                return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            }
+
+            $autoAprovadoZeroValor = ((float) $pedidoAtualizado['total'] <= 0.0);
+            if ($autoAprovadoZeroValor) {
+                $this->pedidoModel->markApproved($pedidoId, $actorUserId);
+                $this->pedidoModel->addStatusHistory(
+                    $pedidoId,
+                    $pedido['status'],
+                    'aprovado',
+                    'Checkout concluido com valor zero após cupom. Pedido aprovado automaticamente.',
+                    $actorUserId
+                );
+                $this->sincronizarInscricoesAprovadas($pedidoId, $actorUserId);
+            } else {
+                $this->pedidoModel->markAwaitingPayment($pedidoId);
+                $this->pedidoModel->addStatusHistory($pedidoId, $pedido['status'], 'aguardando_pagamento', 'Checkout concluido', $actorUserId);
+            }
 
             $this->auditService->record(
                 'checkout.finalizado',
@@ -347,18 +366,43 @@ class PedidoService
                 $pedidoId,
                 array(
                     'status_anterior' => $pedido['status'],
-                    'status_novo' => 'aguardando_pagamento',
+                    'status_novo' => $autoAprovadoZeroValor ? 'aprovado' : 'aguardando_pagamento',
+                    'auto_aprovado_zero_valor' => $autoAprovadoZeroValor,
+                    'total' => (float) $pedido['total'],
                 ),
                 $actorUserId,
                 $ipAddress,
                 $userAgent
             );
 
-            Logger::info('checkout.finalizado', array('pedido_id' => $pedidoId));
+            Logger::info('checkout.finalizado', array(
+                'pedido_id' => $pedidoId,
+                'auto_aprovado_zero_valor' => $autoAprovadoZeroValor,
+                'total' => (float) $pedidoAtualizado['total'],
+            ));
 
             $pdo->commit();
 
-            return array('ok' => true);
+            if ($autoAprovadoZeroValor) {
+                $observacao = 'Pedido aprovado automaticamente porque o total final ficou em R$ 0,00 após aplicação de cupom.';
+                try {
+                    $this->emailService->pedidoAprovado($pedidoAtualizado, $observacao, $actorUserId, $ipAddress, $userAgent);
+                    $this->emailService->pedidoAprovadoFinanceiroZeroValor($pedidoAtualizado, $observacao, $actorUserId, $ipAddress, $userAgent);
+                } catch (Exception $emailException) {
+                    Logger::error('checkout.finalizado.notificacao_falhou', array(
+                        'pedido_id' => $pedidoId,
+                        'message' => $emailException->getMessage(),
+                    ));
+                }
+
+                return array(
+                    'ok' => true,
+                    'auto_aprovado_zero_valor' => true,
+                    'message' => 'Pedido aprovado automaticamente. Não é necessário comprovante PIX.',
+                );
+            }
+
+            return array('ok' => true, 'auto_aprovado_zero_valor' => false);
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('checkout.finalizar_falhou', array(
@@ -1083,9 +1127,8 @@ class PedidoService
         );
     }
 
-    public function listarBackoffice($usuarioId)
+    public function listarBackoffice($usuarioId, array $filters = array(), $page = 1, $perPage = 20)
     {
-        $pedidos = $this->pedidoModel->allForBackoffice();
         $canSeePedidos = $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
             || $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar')
             || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver');
@@ -1094,8 +1137,33 @@ class PedidoService
         $canManagePedidos = $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar');
 
         if (!$canSeePedidos) {
-            return array('pedidos' => array());
+            return array(
+                'pedidos' => array(),
+                'pagination' => array(
+                    'total' => 0,
+                    'page' => 1,
+                    'per_page' => (int) $perPage,
+                    'pages' => 1,
+                ),
+            );
         }
+
+        $page = (int) $page;
+        if ($page <= 0) {
+            $page = 1;
+        }
+
+        $perPage = (int) $perPage;
+        if ($perPage <= 0) {
+            $perPage = 20;
+        }
+        if ($perPage > 100) {
+            $perPage = 100;
+        }
+
+        $total = $this->pedidoModel->countFilteredForBackoffice($filters);
+        $offset = ($page - 1) * $perPage;
+        $pedidos = $this->pedidoModel->listFilteredForBackoffice($filters, $perPage, $offset);
 
         foreach ($pedidos as &$pedido) {
             $pedido['cupom_manual'] = $this->avaliarCupomManualPedido($pedido);
@@ -1125,6 +1193,12 @@ class PedidoService
 
         return array(
             'pedidos' => $pedidos,
+            'pagination' => array(
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $perPage,
+                'pages' => $perPage > 0 ? max(1, (int) ceil($total / $perPage)) : 1,
+            ),
             'can_manage_pedidos' => $canManagePedidos,
         );
     }

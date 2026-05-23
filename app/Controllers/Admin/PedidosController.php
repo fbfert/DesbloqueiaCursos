@@ -20,13 +20,31 @@ class PedidosController extends Controller
 
     public function index(Request $request)
     {
+        $filters = array(
+            'q' => trim((string) $request->query('q', '')),
+            'status' => trim((string) $request->query('status', '')),
+            'curso' => trim((string) $request->query('curso', '')),
+            'de' => trim((string) $request->query('de', '')),
+            'ate' => trim((string) $request->query('ate', '')),
+            'sort_by' => trim((string) $request->query('sort_by', 'id')),
+            'sort_dir' => strtolower(trim((string) $request->query('sort_dir', 'desc'))),
+            'per_page' => (int) $request->query('per_page', 20),
+        );
+        $page = (int) $request->query('page', 1);
+
         return $this->view('admin/pedidos/index', array_merge(
             array(
                 'title' => 'Pedidos',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
+                'filters' => $filters,
             ),
-            $this->pedidoService->listarBackoffice(Session::get('usuario_id'))
+            $this->pedidoService->listarBackoffice(
+                Session::get('usuario_id'),
+                $filters,
+                $page,
+                $filters['per_page']
+            )
         ));
     }
 
@@ -190,7 +208,13 @@ class PedidosController extends Controller
             return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId);
         }
 
-        Session::flash('success', 'Pedido aprovado.');
+        Session::flash('success', array(
+            'message' => 'Pedido aprovado.',
+            'link' => array(
+                'label' => 'Voltar para analisar outros comprovantes',
+                'href' => '/admin/comprovantes-pix',
+            ),
+        ));
         return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId);
     }
 

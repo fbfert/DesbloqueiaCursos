@@ -71,12 +71,24 @@ class InscricaoService
 
                     $turmaId = !empty($item['turma_id']) ? (int) $item['turma_id'] : null;
                     $cursoId = (int) $item['curso_evento_id'];
+                    $usuarioIdParticipante = !empty($participante['usuario_id']) ? (int) $participante['usuario_id'] : null;
+
+                    if ($usuarioIdParticipante && $turmaId) {
+                        $inscricaoExistente = $this->inscricaoModel->findByUsuarioTurma($usuarioIdParticipante, $turmaId);
+                        if ($inscricaoExistente) {
+                            $pdo->rollBack();
+                            return array(
+                                'ok' => false,
+                                'message' => 'Você já está inscrito nesta turma.',
+                            );
+                        }
+                    }
 
                     $criados[] = $this->inscricaoModel->create(array(
                         'pedido_id' => $pedidoId,
                         'pedido_item_id' => $item['id'],
                         'participante_pedido_id' => $participante['id'],
-                        'usuario_id' => !empty($participante['usuario_id']) ? $participante['usuario_id'] : null,
+                        'usuario_id' => $usuarioIdParticipante,
                         'curso_evento_id' => $cursoId,
                         'turma_id' => $turmaId,
                         'status' => 'pendente',
@@ -128,6 +140,15 @@ class InscricaoService
 
     public function criar(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        $usuarioId = isset($data['usuario_id']) ? (int) $data['usuario_id'] : 0;
+        $turmaId = isset($data['turma_id']) ? (int) $data['turma_id'] : 0;
+        if ($usuarioId > 0 && $turmaId > 0) {
+            $inscricaoExistente = $this->inscricaoModel->findByUsuarioTurma($usuarioId, $turmaId);
+            if ($inscricaoExistente) {
+                return array('ok' => false, 'message' => 'Você já está inscrito nesta turma.');
+            }
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -298,17 +319,54 @@ class InscricaoService
         }
     }
 
-    public function listarBackoffice($usuarioId)
+    public function listarBackoffice($usuarioId, array $filters = array(), $page = 1, $perPage = 20)
     {
         $canSeePedidos = $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver')
             || $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar')
             || $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver');
 
         if (!$canSeePedidos) {
-            return array('inscricoes' => array());
+            return array(
+                'inscricoes' => array(),
+                'pagination' => array(
+                    'total' => 0,
+                    'page' => 1,
+                    'per_page' => (int) $perPage,
+                    'pages' => 1,
+                ),
+                'cursos' => array(),
+                'turmas' => array(),
+            );
         }
 
-        return array('inscricoes' => $this->inscricaoModel->allForBackoffice());
+        $page = (int) $page;
+        if ($page <= 0) {
+            $page = 1;
+        }
+
+        $perPage = (int) $perPage;
+        if ($perPage <= 0) {
+            $perPage = 20;
+        }
+        if ($perPage > 100) {
+            $perPage = 100;
+        }
+
+        $total = $this->inscricaoModel->countFilteredBackoffice($filters);
+        $offset = ($page - 1) * $perPage;
+        $inscricoes = $this->inscricaoModel->listFilteredBackoffice($filters, $perPage, $offset);
+
+        return array(
+            'inscricoes' => $inscricoes,
+            'pagination' => array(
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $perPage,
+                'pages' => $perPage > 0 ? max(1, (int) ceil($total / $perPage)) : 1,
+            ),
+            'cursos' => $this->cursoModel->allForSelect(),
+            'turmas' => $this->turmaModel->allWithCourse(),
+        );
     }
 
     public function listarDoUsuario($usuarioId)
@@ -319,6 +377,11 @@ class InscricaoService
     public function listarAprovadasDoUsuario($usuarioId)
     {
         return array('inscricoes' => $this->inscricaoModel->forUsuarioAprovadas($usuarioId));
+    }
+
+    public function usuarioPossuiInscricaoNaTurma($usuarioId, $turmaId)
+    {
+        return !empty($this->inscricaoModel->findByUsuarioTurma($usuarioId, $turmaId));
     }
 
     private function envelopeInscricaoParaEmail(?array $inscricao = null)

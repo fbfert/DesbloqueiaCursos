@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Helpers;
 use App\Core\Logger;
 use App\Core\View;
+use App\Core\Validator;
 use App\Models\EmailConfiguracao;
 use App\Models\EmailEnvio;
 use Exception;
@@ -118,6 +119,33 @@ class EmailService
         Logger::info('emails.configuracao.atualizada', array('id' => $id));
 
         return array('ok' => true, 'id' => $id);
+    }
+
+    public function sendTestEmail($destinatarioEmail, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $destinatarioEmail = strtolower(trim((string) $destinatarioEmail));
+
+        if ($destinatarioEmail === '' || filter_var($destinatarioEmail, FILTER_VALIDATE_EMAIL) === false) {
+            return array('ok' => false, 'message' => 'Informe um endereço de e-mail válido para o teste.');
+        }
+
+        return $this->sendTemplate(
+            'email.teste_smtp',
+            'teste_smtp',
+            $destinatarioEmail,
+            null,
+            'Teste de e-mail do portal',
+            array(
+                'destinatario_email' => $destinatarioEmail,
+                'data_teste' => date('d/m/Y H:i'),
+            ),
+            'email_teste',
+            null,
+            $actorUserId,
+            $ipAddress,
+            $userAgent,
+            true
+        );
     }
 
     public function listQueue()
@@ -344,6 +372,41 @@ class EmailService
         );
     }
 
+    public function pedidoAprovadoFinanceiroZeroValor(array $pedido, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $destinatarios = $this->financeiroDestinatarios();
+        if (empty($destinatarios)) {
+            Logger::info('pedido_aprovado_zero.financeiro.sem_destinatario', array(
+                'pedido_id' => isset($pedido['id']) ? (int) $pedido['id'] : null,
+            ));
+            return array('ok' => true, 'skipped' => true, 'message' => 'E-mail financeiro não configurado.');
+        }
+
+        $resultados = array();
+        foreach ($destinatarios as $destinatarioEmail) {
+            $resultados[] = $this->sendTemplate(
+                'email.pedido_aprovado_zero_financeiro',
+                'pedido_aprovado_zero_financeiro',
+                $destinatarioEmail,
+                'Financeiro',
+                'Pedido gratuito aprovado automaticamente - {pedido.codigo}',
+                array(
+                    'pedido' => $pedido,
+                    'observacao' => $observacao,
+                    'admin_pedido_url' => Helpers::url('admin/pedidos/show?pedido_id=' . (int) $pedido['id']),
+                    'admin_financeiro_url' => Helpers::url('admin/financeiro'),
+                ),
+                'pedido',
+                isset($pedido['id']) ? $pedido['id'] : null,
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+        }
+
+        return array('ok' => true, 'results' => $resultados);
+    }
+
     public function pedidoExcluidoInatividade(array $pedido, array $cursos = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         return $this->sendTemplate(
@@ -413,6 +476,31 @@ class EmailService
             $ipAddress,
             $userAgent
         );
+    }
+
+    private function financeiroDestinatarios()
+    {
+        $institucional = $this->globalConfigService->institucional();
+        $raw = isset($institucional['email_financeiro']) ? trim((string) $institucional['email_financeiro']) : '';
+        if ($raw === '') {
+            return array();
+        }
+
+        $emails = array();
+        foreach (preg_split('/\\s*,\\s*/', $raw) as $email) {
+            $email = trim((string) $email);
+            if ($email === '') {
+                continue;
+            }
+
+            if (!Validator::email($email)) {
+                continue;
+            }
+
+            $emails[] = strtolower($email);
+        }
+
+        return array_values(array_unique($emails));
     }
 
     public function sendTemplate(

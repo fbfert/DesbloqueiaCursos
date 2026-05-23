@@ -61,7 +61,20 @@ class CheckoutController extends Controller
             return $this->redirect('/cursos/detalhe?curso_id=' . $cursoId);
         }
 
-        $pagadorPrefill = $this->carregarPagadorPrefill((int) Session::get('usuario_id', 0));
+        $usuarioId = (int) Session::get('usuario_id', 0);
+        $turmaSelecionadaId = !empty($curso['curso']['turma_selecionada']['id']) ? (int) $curso['curso']['turma_selecionada']['id'] : 0;
+        if ($usuarioId > 0 && $turmaSelecionadaId > 0 && $this->inscricaoService->usuarioPossuiInscricaoNaTurma($usuarioId, $turmaSelecionadaId)) {
+            Session::flash('success', array(
+                'message' => 'Você já está inscrito nesta turma. Acesse sua página para acompanhar o acesso.',
+                'link' => array(
+                    'label' => 'Acessar minha página',
+                    'href' => '/minha-pagina',
+                ),
+            ));
+            return $this->redirect('/minha-pagina');
+        }
+
+        $pagadorPrefill = $this->carregarPagadorPrefill($usuarioId);
         if (trim((string) $pagadorPrefill['cpf']) === '' && trim((string) Session::get('usuario_cpf', '')) !== '') {
             $pagadorPrefill['cpf'] = (string) Session::get('usuario_cpf');
         }
@@ -73,6 +86,9 @@ class CheckoutController extends Controller
             return $this->redirect('/minha-conta');
         }
 
+        $errors = Session::pullFlash('errors', array());
+        $inscricaoDuplicada = in_array('Você já está inscrito nesta turma.', $errors, true);
+
         return $this->view('checkout/inscricao', array(
             'title' => 'Inscricao',
             'curso' => $curso['curso'],
@@ -80,7 +96,8 @@ class CheckoutController extends Controller
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
             'pagadorPrefill' => $pagadorPrefill,
-            'errors' => Session::pullFlash('errors', array()),
+            'errors' => $errors,
+            'inscricaoDuplicada' => $inscricaoDuplicada,
             'success' => Session::pullFlash('success'),
         ));
     }
@@ -114,6 +131,11 @@ class CheckoutController extends Controller
             if (empty($resultadoCompraPropria['ok'])) {
                 Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
                 return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            }
+
+            if (!empty($resultadoCompraPropria['auto_aprovado_zero_valor'])) {
+                Session::flash('success', 'Curso gratuito liberado. Você foi direcionado para Minha Página.');
+                return $this->redirect('/minha-pagina');
             }
 
             Session::flash('success', 'Compra própria concluída com participante automático.');
@@ -167,6 +189,7 @@ class CheckoutController extends Controller
             'title' => 'Resumo do pedido',
             'pedido' => $pedido['pedido'],
             'canSeePix' => !empty($pedido['can_see_pix']),
+            'pedidoSemCobranca' => ((float) $pedido['pedido']['total'] <= 0.0),
             'comprovanteAguardandoAprovacao' => !empty($pedido['pedido']['comprovante_aguardando_aprovacao']),
             'pedidoPagoOuAprovado' => in_array((string) $pedido['pedido']['status'], array('aprovado', 'pago'), true),
             'loggedIn' => Session::get('usuario_id') !== null,
@@ -266,6 +289,10 @@ class CheckoutController extends Controller
             )), 404);
         }
 
+        if (in_array((string) $pedido['pedido']['status'], array('aprovado', 'pago'), true)) {
+            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
+        }
+
         return $this->view('checkout/comprovante', array(
             'title' => 'Enviar comprovante PIX',
             'pedido' => $pedido['pedido'],
@@ -300,6 +327,7 @@ class CheckoutController extends Controller
             'pedido' => $pedido['pedido'],
             'proximas_acoes' => $proximasAcoes,
             'comprovanteAguardandoAprovacao' => !empty($pedido['pedido']['comprovante_aguardando_aprovacao']),
+            'pedidoSemCobranca' => ((float) $pedido['pedido']['total'] <= 0.0),
             'loggedIn' => Session::get('usuario_id') !== null,
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
@@ -312,6 +340,19 @@ class CheckoutController extends Controller
         if (!Session::get('usuario_id')) {
             Session::flash('errors', array('auth' => 'Faça login ou crie sua conta para continuar.'));
             return $this->redirect('/login');
+        }
+
+        $cursoIdSolicitado = (int) $request->input('curso_evento_id', 0);
+        $turmaIdSolicitada = (int) $request->input('turma_id', 0);
+        if ($cursoIdSolicitado > 0 && $turmaIdSolicitada > 0 && $this->inscricaoService->usuarioPossuiInscricaoNaTurma((int) Session::get('usuario_id'), $turmaIdSolicitada)) {
+            Session::flash('success', array(
+                'message' => 'Você já está inscrito nesta turma. Acesse sua página para acompanhar o acesso.',
+                'link' => array(
+                    'label' => 'Acessar minha página',
+                    'href' => '/minha-pagina',
+                ),
+            ));
+            return $this->redirect('/minha-pagina');
         }
 
         $errors = $this->validateInscricao($request);
@@ -418,6 +459,11 @@ class CheckoutController extends Controller
                 return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
             }
 
+            if (!empty($resultadoCompraPropria['auto_aprovado_zero_valor'])) {
+                Session::flash('success', 'Curso gratuito liberado. Você foi direcionado para Minha Página.');
+                return $this->redirect('/minha-pagina');
+            }
+
             Session::flash('success', 'Compra própria concluída com participante automático.');
             return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
         }
@@ -453,6 +499,11 @@ class CheckoutController extends Controller
             return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
         }
 
+        if (!empty($finalizacao['auto_aprovado_zero_valor'])) {
+            Session::flash('success', 'Curso gratuito liberado. Você foi direcionado para Minha Página.');
+            return $this->redirect('/minha-pagina');
+        }
+
         Session::flash('success', 'Participantes salvos. Revise o pedido e siga para o comprovante PIX.');
         return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
     }
@@ -468,6 +519,11 @@ class CheckoutController extends Controller
         if (empty($pedido['pedido'])) {
             Session::flash('errors', array('pedido' => 'Você nao tem permissao para acessar este pedido.'));
             return $this->redirect('/cursos');
+        }
+
+        if (in_array((string) $pedido['pedido']['status'], array('aprovado', 'pago'), true)) {
+            Session::flash('success', 'Pedido aprovado automaticamente. Não há comprovante PIX para enviar.');
+            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
         }
 
         if (!isset($_FILES['comprovante']) || empty($_FILES['comprovante']['tmp_name'])) {
@@ -627,7 +683,10 @@ class CheckoutController extends Controller
             return $finalizacao;
         }
 
-        return array('ok' => true);
+        return array(
+            'ok' => true,
+            'auto_aprovado_zero_valor' => !empty($finalizacao['auto_aprovado_zero_valor']),
+        );
     }
 
     private function carregarPagadorPrefill($usuarioId)

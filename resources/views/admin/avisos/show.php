@@ -68,7 +68,7 @@ $statusOptions = array(
             <form method="post" action="/admin/avisos/enviar" class="admin-form" style="display:inline;">
                 <?php echo $csrfField; ?>
                 <input type="hidden" name="id" value="<?php echo (int) $aviso['id']; ?>">
-                <button type="submit" class="button-link button-link--primary" onclick="return confirm('Enviar este aviso agora?');"><?php echo $aviso['status'] === 'enviado' ? 'Reenviar aviso' : 'Enviar aviso'; ?></button>
+            <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'ENVIAR', pergunta: 'Você conferiu o envio deste aviso?' });"><?php echo $aviso['status'] === 'enviado' ? 'Reenviar aviso' : 'Enviar aviso'; ?></button>
             </form>
         </div>
     </section>
@@ -99,7 +99,7 @@ $statusOptions = array(
                 Justificativa para lixeira
                 <input type="text" name="justificativa" required>
             </label>
-            <button type="submit" class="button-link button-link--primary">Excluir aviso</button>
+            <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão deste aviso?' });">Excluir aviso</button>
         </form>
     </section>
 </section>

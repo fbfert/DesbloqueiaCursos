@@ -93,6 +93,7 @@ function excluirTemplate(id) {
     if (justificativa === null) return false;
     justificativa = justificativa.trim();
     if (justificativa === '') { window.alert('A justificativa é obrigatória.'); return false; }
+    if (!confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão deste template?' })) return false;
     document.getElementById('excluir-template-id').value = String(id);
     document.getElementById('excluir-template-justificativa').value = justificativa;
     document.getElementById('form-excluir-template').submit();
@@ -100,14 +101,14 @@ function excluirTemplate(id) {
 }
 
 function duplicarTemplate(id) {
-    if (!window.confirm('Deseja duplicar este template?')) return false;
+    if (!confirmarAcaoCritica({ palavra: 'DUPLICAR', pergunta: 'Você conferiu a duplicação deste template?' })) return false;
     document.getElementById('duplicar-template-id').value = String(id);
     document.getElementById('form-duplicar-template').submit();
     return false;
 }
 
 function definirPadraoTemplate(id) {
-    if (!window.confirm('Definir este template como padrão global? Isso desmarca o padrão atual.')) return false;
+    if (!confirmarAcaoCritica({ palavra: 'DEFINIR', pergunta: 'Você conferiu a definição deste template como padrão global?' })) return false;
     document.getElementById('definir-padrao-template-id').value = String(id);
     document.getElementById('form-definir-padrao-template').submit();
     return false;

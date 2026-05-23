@@ -76,7 +76,7 @@
             Observação
             <input type="text" name="observacao">
         </label>
-        <button type="submit" class="button-link button-link--primary">Cancelar</button>
+        <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'CANCELAR', pergunta: 'Você conferiu o cancelamento deste certificado?' });">Cancelar</button>
     </form>
     <form method="post" action="/admin/certificados/revogar" class="form-grid admin-mt-12">
         <input type="hidden" name="certificado_id" value="<?php echo (int) $certificado['id']; ?>">
@@ -84,7 +84,7 @@
             Observação
             <input type="text" name="observacao">
         </label>
-        <button type="submit" class="button-link button-link--primary">Revogar</button>
+        <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'REVOGAR', pergunta: 'Você conferiu a revogação deste certificado?' });">Revogar</button>
     </form>
 </section>
 

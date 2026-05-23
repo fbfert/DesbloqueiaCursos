@@ -32,6 +32,12 @@ class ComprovantesPixController extends Controller
     {
         $comprovanteId = (int) $request->input('comprovante_id', 0);
         $observacao = trim((string) $request->input('observacao', ''));
+        $confirmacaoAprovacao = strtoupper(trim((string) $request->input('confirmacao_aprovacao', '')));
+
+        if ($confirmacaoAprovacao !== 'CONFERIDO') {
+            Session::flash('errors', array('Digite CONFERIDO para aprovar este comprovante.'));
+            return $this->redirect('/admin/comprovantes-pix');
+        }
 
         $result = $this->comprovanteService->aprovar(
             $comprovanteId,
@@ -54,6 +60,12 @@ class ComprovantesPixController extends Controller
     {
         $comprovanteId = (int) $request->input('comprovante_id', 0);
         $observacao = trim((string) $request->input('observacao', ''));
+        $confirmacaoReprovacao = strtoupper(trim((string) $request->input('confirmacao_reprovacao', '')));
+
+        if ($confirmacaoReprovacao !== 'REPROVADO') {
+            Session::flash('errors', array('Digite REPROVADO para reprovar este comprovante.'));
+            return $this->redirect('/admin/comprovantes-pix');
+        }
 
         $result = $this->comprovanteService->reprovar(
             $comprovanteId,

@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\Csrf;
+use App\Core\Validator;
 use App\Services\EmailService;
 use App\Services\EmailAdminService;
 
@@ -170,6 +171,35 @@ class EmailsController extends Controller
 
         Session::flash('success', 'Configuracao SMTP atualizada.');
         return $action === 'save_exit' ? $this->redirect('/admin/emails') : $this->redirect('/admin/emails');
+    }
+
+    public function teste(Request $request)
+    {
+        if (!Csrf::validate($request->input('_token'))) {
+            Session::flash('errors', array('Token CSRF inválido.'));
+            return $this->redirect('/admin/emails');
+        }
+
+        $destinatarioEmail = trim((string) $request->input('email_teste', ''));
+        if ($destinatarioEmail === '' || !Validator::email($destinatarioEmail)) {
+            Session::flash('errors', array('Informe um endereço de e-mail válido para o teste.'));
+            return $this->redirect('/admin/emails');
+        }
+
+        $result = $this->emailService->sendTestEmail(
+            $destinatarioEmail,
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível enviar o e-mail de teste.'));
+            return $this->redirect('/admin/emails');
+        }
+
+        Session::flash('success', 'E-mail de teste enviado para ' . $destinatarioEmail . '.');
+        return $this->redirect('/admin/emails');
     }
 }
 

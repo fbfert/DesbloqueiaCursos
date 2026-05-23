@@ -183,7 +183,7 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
                 Justificativa para lixeira
                 <input type="text" name="justificativa" required>
             </label>
-            <button type="submit">Excluir curso/evento</button>
+            <button type="submit" onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão deste curso ou evento?' });">Excluir curso/evento</button>
         </form>
     <?php endif; ?>
 </section>

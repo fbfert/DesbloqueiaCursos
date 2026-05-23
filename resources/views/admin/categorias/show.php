@@ -30,7 +30,7 @@
             Justificativa para lixeira
             <input type="text" name="justificativa" required>
         </label>
-        <button type="submit">Excluir categoria</button>
+        <button type="submit" onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão desta categoria?' });">Excluir categoria</button>
     </form>
 </section>
 

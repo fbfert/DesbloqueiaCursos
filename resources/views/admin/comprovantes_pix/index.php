@@ -92,13 +92,15 @@
                                 <?php echo $csrfField; ?>
                                 <input type="hidden" name="comprovante_id" value="<?php echo (int) $comprovante['id']; ?>">
                                 <input type="hidden" name="observacao" value="">
-                                <button type="submit" class="button-link button-link--primary" onclick="return confirm('Aprovar este comprovante PIX?');">Aprovar</button>
+                                <input type="hidden" name="confirmacao_aprovacao" value="">
+                                <button type="submit" class="button-link button-link--primary" onclick="return confirmarAprovacaoComprovante(this);">Aprovar</button>
                             </form>
                             <form method="post" action="/admin/comprovantes-pix/reprovar" class="admin-pending-pix__action-form">
                                 <?php echo $csrfField; ?>
                                 <input type="hidden" name="comprovante_id" value="<?php echo (int) $comprovante['id']; ?>">
                                 <input type="hidden" name="observacao" value="">
-                                <button type="submit" class="button-link button-link--danger" onclick="return confirm('Reprovar este comprovante PIX?');">Recusar</button>
+                                <input type="hidden" name="confirmacao_reprovacao" value="">
+                                <button type="submit" class="button-link button-link--danger" onclick="return confirmarReprovacaoComprovante(this);">Recusar</button>
                             </form>
                         </td>
                     </tr>
@@ -170,4 +172,48 @@
     <?php endif; ?>
 </section>
 </div>
+
+<script>
+function confirmarAprovacaoComprovante(botao) {
+    var formulario = botao.closest('form');
+    var confirmacao = window.prompt('Você conferiu o comprovante? Digite CONFERIDO para confirmar.');
+
+    if (confirmacao === null) {
+        return false;
+    }
+
+    if (confirmacao.trim().toUpperCase() !== 'CONFERIDO') {
+        window.alert('Confirmação inválida. Digite CONFERIDO para aprovar este comprovante.');
+        return false;
+    }
+
+    var campoConfirmacao = formulario.querySelector('input[name="confirmacao_aprovacao"]');
+    if (campoConfirmacao) {
+        campoConfirmacao.value = 'CONFERIDO';
+    }
+
+    return true;
+}
+
+function confirmarReprovacaoComprovante(botao) {
+    var formulario = botao.closest('form');
+    var confirmacao = window.prompt('Você conferiu o comprovante? Digite REPROVADO para confirmar.');
+
+    if (confirmacao === null) {
+        return false;
+    }
+
+    if (confirmacao.trim().toUpperCase() !== 'REPROVADO') {
+        window.alert('Confirmação inválida. Digite REPROVADO para recusar este comprovante.');
+        return false;
+    }
+
+    var campoConfirmacao = formulario.querySelector('input[name="confirmacao_reprovacao"]');
+    if (campoConfirmacao) {
+        campoConfirmacao.value = 'REPROVADO';
+    }
+
+    return true;
+}
+</script>
 

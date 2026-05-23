@@ -36,7 +36,7 @@
             Justificativa
             <textarea name="justificativa" rows="3" required></textarea>
         </label>
-        <button type="submit" class="button-link button-link--primary">Enviar para a lixeira</button>
+        <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão deste rateio?' });">Enviar para a lixeira</button>
     </form>
 </section>
 

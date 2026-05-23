@@ -226,6 +226,7 @@ $app->post('/admin/cupons/status', array(CuponsController::class, 'status'), arr
 $app->post('/admin/cupons/excluir', array(CuponsController::class, 'destroy'), array('auth', 'permission:cupons.gerenciar'));
 $app->get('/admin/emails', array(EmailsController::class, 'index'), array('auth', 'permission:emails.ver'));
 $app->post('/admin/emails', array(EmailsController::class, 'save'), array('auth', 'permission:emails.gerenciar'));
+$app->post('/admin/emails/teste', array(EmailsController::class, 'teste'), array('auth', 'permission:emails.gerenciar'));
 $app->get('/admin/emails/fila', array(EmailsController::class, 'fila'), array('auth', 'permission:emails.ver'));
 $app->post('/admin/emails/reenviar', array(EmailsController::class, 'reenviar'), array('auth', 'permission:emails.gerenciar'));
 $app->post('/admin/emails/reenviar-selecionados', array(EmailsController::class, 'reenviarSelecionados'), array('auth', 'permission:emails.gerenciar'));

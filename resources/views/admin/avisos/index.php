@@ -171,7 +171,7 @@ foreach ($avisos as $avisoResumo) {
                                 <form method="post" action="/admin/avisos/enviar" class="admin-form" style="display:inline;">
                                     <?php echo $csrfField; ?>
                                     <input type="hidden" name="id" value="<?php echo (int) $aviso['id']; ?>">
-                                    <button type="submit" class="button-link button-link--primary" onclick="return confirm('Enviar este aviso agora?');"><?php echo $aviso['status'] === 'enviado' ? 'Reenviar' : 'Enviar'; ?></button>
+                                    <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'ENVIAR', pergunta: 'Você conferiu o envio deste aviso?' });"><?php echo $aviso['status'] === 'enviado' ? 'Reenviar' : 'Enviar'; ?></button>
                                 </form>
                                 <form method="post" action="/admin/avisos/excluir" class="admin-form" style="display:inline;">
                                     <?php echo $csrfField; ?>

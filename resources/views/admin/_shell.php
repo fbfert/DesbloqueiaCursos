@@ -152,11 +152,30 @@ if (!empty($title)) {
         });
 
         window.addEventListener('resize', function () {
-            if (window.innerWidth > 1200 && shell.classList.contains('sidebar-open')) {
-                shell.classList.remove('sidebar-open');
-                toggle.setAttribute('aria-expanded', 'false');
-            }
-        });
-    })();
+        if (window.innerWidth > 1200 && shell.classList.contains('sidebar-open')) {
+            shell.classList.remove('sidebar-open');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    window.confirmarAcaoCritica = function (opcoes) {
+        opcoes = opcoes || {};
+        var palavra = String(opcoes.palavra || 'CONFIRMAR').trim().toUpperCase();
+        var pergunta = String(opcoes.pergunta || 'Você conferiu esta ação?');
+        var mensagem = pergunta + ' Digite ' + palavra + ' para confirmar.';
+        var resposta = window.prompt(mensagem);
+
+        if (resposta === null) {
+            return false;
+        }
+
+        if (resposta.trim().toUpperCase() !== palavra) {
+            window.alert('Confirmação inválida. Digite ' + palavra + ' para continuar.');
+            return false;
+        }
+
+        return true;
+    };
+})();
 </script>
 

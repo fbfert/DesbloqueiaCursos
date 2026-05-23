@@ -158,6 +158,133 @@ class Pedido
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    private function backofficeBaseSql(array $filters, array &$params)
+    {
+        $sql = ' FROM pedidos p
+                 LEFT JOIN presentes_campanhas pc ON pc.id = p.presente_campanha_id
+                 WHERE p.deleted_at IS NULL';
+
+        $q = isset($filters['q']) ? trim((string) $filters['q']) : '';
+        if ($q !== '') {
+            $sql .= ' AND (
+                        p.codigo LIKE :q
+                        OR p.pagador_nome LIKE :q
+                        OR p.pagador_email LIKE :q
+                        OR p.pagador_cpf LIKE :q
+                        OR p.status LIKE :q
+                        OR EXISTS (
+                            SELECT 1
+                            FROM pedido_itens pi_q
+                            INNER JOIN cursos_eventos ce_q ON ce_q.id = pi_q.curso_evento_id
+                            WHERE pi_q.pedido_id = p.id
+                              AND pi_q.deleted_at IS NULL
+                              AND ce_q.deleted_at IS NULL
+                              AND ce_q.nome LIKE :q
+                        )
+                    )';
+            $params['q'] = '%' . $q . '%';
+        }
+
+        $status = isset($filters['status']) ? trim((string) $filters['status']) : '';
+        if ($status !== '') {
+            $sql .= ' AND p.status = :status';
+            $params['status'] = $status;
+        }
+
+        $curso = isset($filters['curso']) ? trim((string) $filters['curso']) : '';
+        if ($curso !== '') {
+            $sql .= ' AND EXISTS (
+                        SELECT 1
+                        FROM pedido_itens pi_f
+                        INNER JOIN cursos_eventos ce_f ON ce_f.id = pi_f.curso_evento_id
+                        WHERE pi_f.pedido_id = p.id
+                          AND pi_f.deleted_at IS NULL
+                          AND ce_f.deleted_at IS NULL
+                          AND ce_f.nome LIKE :curso
+                    )';
+            $params['curso'] = '%' . $curso . '%';
+        }
+
+        $de = isset($filters['de']) ? trim((string) $filters['de']) : '';
+        if ($de !== '') {
+            $sql .= ' AND DATE(p.created_at) >= :de';
+            $params['de'] = $de;
+        }
+
+        $ate = isset($filters['ate']) ? trim((string) $filters['ate']) : '';
+        if ($ate !== '') {
+            $sql .= ' AND DATE(p.created_at) <= :ate';
+            $params['ate'] = $ate;
+        }
+
+        return $sql;
+    }
+
+    public function countFilteredForBackoffice(array $filters = array())
+    {
+        $params = array();
+        $sql = 'SELECT COUNT(*) AS total' . $this->backofficeBaseSql($filters, $params);
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return isset($row['total']) ? (int) $row['total'] : 0;
+    }
+
+    public function listFilteredForBackoffice(array $filters = array(), $limit = 20, $offset = 0)
+    {
+        $sortMap = array(
+            'id' => 'p.id',
+            'codigo' => 'p.codigo',
+            'pagador_nome' => 'p.pagador_nome',
+            'total' => 'p.total',
+            'status' => 'p.status',
+            'created_at' => 'p.created_at',
+            'updated_at' => 'p.updated_at',
+        );
+
+        $sortBy = isset($filters['sort_by']) ? (string) $filters['sort_by'] : 'id';
+        $sortDir = strtolower(isset($filters['sort_dir']) ? (string) $filters['sort_dir'] : 'desc');
+        if (!isset($sortMap[$sortBy])) {
+            $sortBy = 'id';
+        }
+        if ($sortDir !== 'asc') {
+            $sortDir = 'desc';
+        }
+
+        $limit = (int) $limit;
+        if ($limit <= 0) {
+            $limit = 20;
+        }
+        if ($limit > 100) {
+            $limit = 100;
+        }
+
+        $offset = (int) $offset;
+        if ($offset < 0) {
+            $offset = 0;
+        }
+
+        $params = array();
+        $sql = 'SELECT p.*,
+                       pc.titulo AS presente_campanha_titulo'
+            . $this->backofficeBaseSql($filters, $params)
+            . ' ORDER BY ' . $sortMap[$sortBy] . ' ' . strtoupper($sortDir) . ', p.id DESC
+               LIMIT :limit OFFSET :offset';
+
+        $stmt = Database::connection()->prepare($sql);
+
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function allDeletedForBackoffice(array $filters = array())
     {
         $sql = 'SELECT p.*,

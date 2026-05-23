@@ -85,7 +85,12 @@
 
     <article class="checkout-panel checkout-next-step-card">
         <h2>Próxima etapa</h2>
-        <?php if (!empty($comprovanteAguardandoAprovacao)): ?>
+        <?php if (!empty($pedidoSemCobranca)): ?>
+            <div class="checkout-status-alert checkout-status-alert--success">
+                <strong class="checkout-status-alert__title">Pedido gratuito confirmado</strong>
+                <p class="checkout-status-alert__text">O valor final ficou em R$ 0,00. Não há pagamento nem envio de comprovante PIX.</p>
+            </div>
+        <?php elseif (!empty($comprovanteAguardandoAprovacao)): ?>
             <div class="checkout-status-alert checkout-status-alert--warning">
                 <strong class="checkout-status-alert__title">Comprovante enviado</strong>
                 <p class="checkout-status-alert__text">Aguardando aprovação do comprovante. Um funcionário irá confirmar o pagamento e liberar o curso em breve.</p>
@@ -98,17 +103,21 @@
         <?php else: ?>
             <p class="muted checkout-next-step-card__text">Após concluir o pagamento, siga para o envio do comprovante PIX.</p>
         <?php endif; ?>
-        <?php if (!empty($loggedIn) && empty($comprovanteAguardandoAprovacao) && empty($pedidoPagoOuAprovado)): ?>
+        <?php if (!empty($loggedIn) && empty($pedidoSemCobranca) && empty($comprovanteAguardandoAprovacao) && empty($pedidoPagoOuAprovado)): ?>
             <div class="cta-group">
                 <a class="button-link button-link--primary" href="/checkout/comprovante?pedido_id=<?php echo (int) $pedido['id']; ?>">Prosseguir para pagamento</a>
                 <a class="button-link button-link--ghost" href="/meus-cursos">Ir para Meus Cursos</a>
+            </div>
+        <?php elseif (!empty($loggedIn) && !empty($pedidoSemCobranca)): ?>
+            <div class="cta-group">
+                <a class="button-link button-link--primary" href="/minha-pagina">Ir para Minha Página</a>
             </div>
         <?php elseif (!empty($loggedIn)): ?>
             <div class="cta-group">
                 <a class="button-link button-link--ghost" href="/meus-cursos">Ir para Meus Cursos</a>
             </div>
         <?php else: ?>
-            <p class="muted">Entre ou crie conta para concluir a compra e enviar o comprovante.</p>
+            <p class="muted"><?php echo !empty($pedidoSemCobranca) ? 'Entre ou crie conta para acessar o pedido gratuito e seus cursos.' : 'Entre ou crie conta para concluir a compra e enviar o comprovante.'; ?></p>
             <div class="cta-group">
                 <a class="button-link" href="/login">Entrar</a>
                 <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>

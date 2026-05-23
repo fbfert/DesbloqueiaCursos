@@ -428,6 +428,11 @@ class PresenteCampanhaService
             return array('ok' => false, 'message' => 'Usuário já possui acesso ativo para este curso.');
         }
 
+        $turmaId = !empty($dados['turma_id']) ? (int) $dados['turma_id'] : null;
+        if ($turmaId && $this->inscricaoModel->findByUsuarioTurma($usuarioId, $turmaId)) {
+            return array('ok' => false, 'message' => 'Usuário já está inscrito nesta turma.');
+        }
+
         $pedidoData = array(
             'codigo' => $this->gerarCodigoPresente(),
             'comprador_usuario_id' => $usuarioId,
@@ -460,7 +465,7 @@ class PresenteCampanhaService
         $pedidoItemId = $this->pedidoItemModel->create(array(
             'pedido_id' => $pedidoId,
             'curso_evento_id' => (int) $dados['curso_evento_id'],
-            'turma_id' => !empty($dados['turma_id']) ? (int) $dados['turma_id'] : null,
+            'turma_id' => $turmaId,
             'quantidade' => 1,
             'valor_unitario' => 0.00,
             'valor_total' => 0.00,
@@ -485,7 +490,7 @@ class PresenteCampanhaService
             'participante_pedido_id' => $participanteId,
             'usuario_id' => $usuarioId,
             'curso_evento_id' => (int) $dados['curso_evento_id'],
-            'turma_id' => !empty($dados['turma_id']) ? (int) $dados['turma_id'] : null,
+            'turma_id' => $turmaId,
             'status' => 'ativa',
             'confirmado_em' => date('Y-m-d H:i:s'),
             'is_presente' => 1,

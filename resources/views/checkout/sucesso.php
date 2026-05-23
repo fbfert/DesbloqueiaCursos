@@ -14,6 +14,13 @@
     <?php endif; ?>
 </section>
 
+<?php if (!empty($pedidoSemCobranca)): ?>
+    <section class="checkout-status-alert checkout-status-alert--success" style="margin-top:16px;">
+        <strong class="checkout-status-alert__title">Pedido gratuito confirmado</strong>
+        <p class="checkout-status-alert__text">O valor final ficou em R$ 0,00. O curso já foi liberado sem necessidade de comprovante PIX.</p>
+    </section>
+<?php endif; ?>
+
 <?php if (!empty($comprovanteAguardandoAprovacao)): ?>
     <section class="checkout-status-alert checkout-status-alert--warning">
         <strong class="checkout-status-alert__title">Comprovante enviado</strong>
@@ -36,7 +43,7 @@
         <p>Agora acompanhe suas inscrições em Meus Cursos.</p>
     <?php endif; ?>
     <div class="cta-group">
-        <a class="button-link" href="/meus-cursos">Ir para Meus Cursos</a>
+        <a class="button-link" href="<?php echo !empty($pedidoSemCobranca) ? '/minha-pagina' : '/meus-cursos'; ?>"><?php echo !empty($pedidoSemCobranca) ? 'Ir para Minha Página' : 'Ir para Meus Cursos'; ?></a>
         <?php if (!empty($pedido)): ?>
             <a class="button-link button-link--ghost" href="/checkout/resumo?pedido_id=<?php echo (int) $pedido['id']; ?>">Voltar ao resumo</a>
         <?php endif; ?>

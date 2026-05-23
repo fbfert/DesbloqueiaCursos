@@ -1,4 +1,7 @@
 <div class="admin-page">
+    <?php $oldInputValues = isset($oldInput) && is_array($oldInput) ? $oldInput : array(); ?>
+    <?php $emailTeste = isset($oldInputValues['email_teste']) ? (string) $oldInputValues['email_teste'] : ''; ?>
+
     <section class="admin-page__header">
         <div>
             <h1 class="admin-page__title">E-mails</h1>
@@ -9,7 +12,7 @@
             <a class="button-link button-link--ghost" href="/admin/emails/fila">Fila e Histórico</a>
             <form method="post" action="/admin/emails/reenviar-pendentes" style="display:inline;">
                 <?php echo $csrfField; ?>
-                <button type="submit" class="button-link" onclick="return window.confirm('Reenviar todos os e-mails pendentes e falhos?');">Reenviar pendentes</button>
+                <button type="submit" class="button-link" onclick="return confirmarAcaoCritica({ palavra: 'REENVIAR', pergunta: 'Você conferiu o reenvio dos e-mails pendentes e falhos?' });">Reenviar pendentes</button>
             </form>
         </div>
     </section>
@@ -94,6 +97,29 @@
             $save_label = 'Salvar configuração';
             require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
             ?>
+        </form>
+    </section>
+
+    <section class="status-card" style="margin-top:16px;">
+        <div class="panel-header">
+            <div>
+                <h2>E-mail de teste</h2>
+                <p class="muted">Envie uma mensagem de validação para confirmar a configuração SMTP atual.</p>
+            </div>
+        </div>
+
+        <form method="post" action="/admin/emails/teste" class="form-grid">
+            <?php echo $csrfField; ?>
+            <div style="grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+                <label style="flex:1 1 260px;min-width:0;">
+                    Endereço de e-mail para teste
+                    <input type="email" name="email_teste" value="<?php echo htmlspecialchars($emailTeste, ENT_QUOTES, 'UTF-8'); ?>" placeholder="exemplo@dominio.com">
+                </label>
+
+                <div class="cta-group" style="flex:0 0 auto;">
+                    <button type="submit" class="button-link button-link--primary">Enviar teste</button>
+                </div>
+            </div>
         </form>
     </section>
 

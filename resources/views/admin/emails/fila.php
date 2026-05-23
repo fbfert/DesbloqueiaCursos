@@ -141,7 +141,7 @@ $buildQuery = function (array $override = array()) use ($filters) {
                                     <form method="post" action="/admin/emails/reenviar" style="display:inline;">
                                         <?php echo $csrfField; ?>
                                         <input type="hidden" name="id" value="<?php echo $emailId; ?>">
-                                        <button type="submit" class="button-link button-link--ghost" onclick="return window.confirm('Reenviar este e-mail agora?');">Reenviar</button>
+                                        <button type="submit" class="button-link button-link--ghost" onclick="return confirmarAcaoCritica({ palavra: 'REENVIAR', pergunta: 'Você conferiu o reenvio deste e-mail?' });">Reenviar</button>
                                     </form>
                                     <?php if ($excluivel): ?>
                                         <button type="submit"
@@ -194,7 +194,7 @@ function confirmarReenvioSelecionados() {
         window.alert('Selecione ao menos um e-mail para reenviar.');
         return false;
     }
-    return window.confirm('Reenviar ' + checked.length + ' e-mails selecionados?');
+    return confirmarAcaoCritica({ palavra: 'REENVIAR', pergunta: 'Você conferiu o reenvio de ' + checked.length + ' e-mails selecionados?' });
 }
 
 function confirmarExclusaoIndividual() {
@@ -205,7 +205,7 @@ function confirmarExclusaoIndividual() {
     }
     var input = document.getElementById('emails-justificativa');
     if (input) input.value = reason;
-    return window.confirm('Tem certeza que deseja excluir este e-mail com falha?');
+    return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão deste e-mail com falha?' });
 }
 
 function confirmarExclusaoSelecionados() {
@@ -226,6 +226,6 @@ function confirmarExclusaoSelecionados() {
     var input = document.getElementById('emails-justificativa');
     if (input) input.value = reason;
 
-    return window.confirm('Excluir ' + checked.length + ' e-mails selecionados? (Somente os que estiverem com status falhou serão excluídos)');
+    return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão de ' + checked.length + ' e-mails selecionados?' });
 }
 </script>

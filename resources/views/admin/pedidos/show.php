@@ -1,7 +1,19 @@
 <div class="admin-page admin-pedido-show">
+<?php
+$nomesCursosPedido = array();
+if (!empty($pedido['itens']) && is_array($pedido['itens'])) {
+    foreach ($pedido['itens'] as $item) {
+        if (!empty($item['curso_nome'])) {
+            $nomesCursosPedido[] = (string) $item['curso_nome'];
+        }
+    }
+}
+$nomesCursosPedido = array_values(array_unique($nomesCursosPedido));
+$nomeCursoPedido = !empty($nomesCursosPedido) ? implode(', ', $nomesCursosPedido) : '';
+?>
 <section class="admin-page__header">
     <div>
-        <h1 class="admin-page__title">Pedido #<?php echo (int) $pedido['id']; ?></h1>
+        <h1 class="admin-page__title">Pedido #<?php echo (int) $pedido['id']; ?><?php if ($nomeCursoPedido !== ''): ?> - <?php echo htmlspecialchars($nomeCursoPedido, ENT_QUOTES, 'UTF-8'); ?><?php endif; ?></h1>
         <p class="admin-page__subtitle"><?php echo htmlspecialchars($pedido['codigo'], ENT_QUOTES, 'UTF-8'); ?> | <?php echo htmlspecialchars($pedido['status'], ENT_QUOTES, 'UTF-8'); ?></p>
     </div>
 </section>
@@ -128,7 +140,7 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
                             Se já existir um cupom ativo, ele será substituído pelo código informado após a validação.
                         </div>
 
-                        <button type="submit" class="button-link button-link--primary" onclick="return confirm('Tem certeza de que deseja aplicar este cupom manualmente?');">Aplicar cupom manualmente</button>
+                        <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'APLICAR', pergunta: 'Você conferiu a aplicação manual deste cupom?' });">Aplicar cupom manualmente</button>
                     </form>
 
                     <?php if ($cupomAtual): ?>
@@ -140,7 +152,7 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
                             <label for="cupom_justificativa_remover">Justificativa para remoção</label>
                             <textarea id="cupom_justificativa_remover" name="justificativa" rows="3" required placeholder="Informe a justificativa para remover o cupom aplicado."></textarea>
 
-                            <button type="submit" class="button-link button-link--danger" onclick="return confirm('Tem certeza de que deseja remover o cupom aplicado deste pedido?');">Remover cupom aplicado</button>
+                            <button type="submit" class="button-link button-link--danger" onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a remoção do cupom aplicado deste pedido?' });">Remover cupom aplicado</button>
                         </form>
                     <?php endif; ?>
                 </div>
@@ -189,7 +201,7 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
                         <?php echo htmlspecialchars($pedido['exclusao']['motivos_texto'] ?? 'Este pedido não pode ser excluído.', ENT_QUOTES, 'UTF-8'); ?>
                     </div>
                 <?php endif; ?>
-                <button type="submit" class="button-link button-link--danger" <?php echo (!empty($pedido['exclusao']) && empty($pedido['exclusao']['ok'])) ? 'disabled' : ''; ?> onclick="return confirm('Tem certeza de que deseja excluir este pedido?');">🗑 Excluir pedido</button>
+                <button type="submit" class="button-link button-link--danger" <?php echo (!empty($pedido['exclusao']) && empty($pedido['exclusao']['ok'])) ? 'disabled' : ''; ?> onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão deste pedido?' });">🗑 Excluir pedido</button>
             </form>
         <?php endif; ?>
     </div>

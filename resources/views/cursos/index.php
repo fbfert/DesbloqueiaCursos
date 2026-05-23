@@ -1,5 +1,13 @@
 <?php use App\Core\Helpers; ?>
 <?php
+if (!function_exists('curso_preco_publico_texto')) {
+    function curso_preco_publico_texto(array $curso)
+    {
+        $valorEfetivo = isset($curso['valor_efetivo']) ? (float) $curso['valor_efetivo'] : (float) ($curso['valor'] ?? 0);
+        return $valorEfetivo <= 0 ? 'Gratuito' : 'R$ ' . number_format($valorEfetivo, 2, ',', '.');
+    }
+}
+
 if (!function_exists('curso_professores_publico_texto')) {
     function curso_professores_publico_texto(array $curso)
     {
@@ -63,12 +71,15 @@ if (!function_exists('curso_professores_publico_texto')) {
                     <div class="course-card__meta">
                         <span><?php echo (int) $curso['total_turmas_abertas']; ?> turma(s) aberta(s)</span>
                         <?php if (!empty($curso['desconto_promocional'])): ?>
+                            <?php $precoEfetivo = (float) $curso['valor_efetivo']; ?>
                             <div>
-                                <span class="muted" style="font-size:12px;text-decoration:line-through;">R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></span>
-                                <strong style="display:block;">R$ <?php echo number_format((float) $curso['valor_efetivo'], 2, ',', '.'); ?></strong>
+                                <?php if ($precoEfetivo > 0): ?>
+                                    <span class="muted" style="font-size:12px;text-decoration:line-through;">R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></span>
+                                <?php endif; ?>
+                                <strong style="display:block;"><?php echo $precoEfetivo <= 0 ? 'Gratuito' : 'R$ ' . number_format($precoEfetivo, 2, ',', '.'); ?></strong>
                             </div>
                         <?php else: ?>
-                            <strong>R$ <?php echo number_format((float) ($curso['valor_efetivo'] ?? $curso['valor']), 2, ',', '.'); ?></strong>
+                            <strong><?php echo curso_preco_publico_texto($curso); ?></strong>
                         <?php endif; ?>
                     </div>
                     <div class="cta-group">

@@ -29,6 +29,16 @@ $pedidoCanceladoDesc = $pedidoCanceladoFeedback && !empty($pedidoCanceladoFeedba
             <?php endif; ?>
         </div>
     </div>
+<?php elseif (is_array($success) && !empty($success['message'])): ?>
+    <div class="student-feedback-card student-feedback-card--success" role="status" aria-live="polite">
+        <div class="student-feedback-card__icon" aria-hidden="true">✓</div>
+        <div class="student-feedback-card__content">
+            <strong><?php echo Helpers::e($success['message']); ?></strong>
+            <?php if (!empty($success['link']['href']) && !empty($success['link']['label'])): ?>
+                <p><a class="card-link" href="<?php echo Helpers::e($success['link']['href']); ?>"><?php echo Helpers::e($success['link']['label']); ?></a></p>
+            <?php endif; ?>
+        </div>
+    </div>
 <?php elseif (!empty($success)): ?>
     <section class="auth-message auth-message-success">
         <p><?php echo Helpers::e($success); ?></p>

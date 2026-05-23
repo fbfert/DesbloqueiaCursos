@@ -49,7 +49,7 @@
                 Justificativa obrigatória
                 <textarea name="justificativa" rows="3" required></textarea>
             </label>
-            <button type="submit">Excluir e enviar para lixeira</button>
+            <button type="submit" onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão desta página?' });">Excluir e enviar para lixeira</button>
         </form>
     </section>
 </section>

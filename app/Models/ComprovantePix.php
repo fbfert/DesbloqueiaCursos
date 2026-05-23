@@ -105,6 +105,7 @@ class ComprovantePix
                 LEFT JOIN turmas t ON t.id = pi.turma_id AND t.deleted_at IS NULL
                 WHERE cp.deleted_at IS NULL
                   AND cp.is_atual = 1
+                  AND p.status <> "aguardando_reenvio"
                   AND cp.status IN (' . implode(', ', $placeholders) . ')
                 GROUP BY cp.id
                 ORDER BY cp.enviado_em DESC, cp.id DESC';
