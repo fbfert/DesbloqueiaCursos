@@ -63,6 +63,7 @@ class Inscricao
                     p.status AS pedido_status,
                     p.pagador_nome,
                     p.pagador_email,
+                    p.pagador_telefone,
                     pp.nome AS participante_nome,
                     pp.cpf AS participante_cpf,
                     ce.nome AS curso_nome,
@@ -340,7 +341,7 @@ class Inscricao
         }
 
         $params = array();
-        $sql = 'SELECT i.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.total AS pedido_total,
+        $sql = 'SELECT i.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.pagador_telefone, p.total AS pedido_total,
                        p.status AS pedido_status, pp.nome AS participante_nome, pp.cpf AS participante_cpf,
                        ce.nome AS curso_nome, t.nome AS turma_nome,
                        c.id AS certificado_id, c.codigo AS certificado_codigo, c.status AS certificado_status'
@@ -383,7 +384,7 @@ class Inscricao
 
     public function listForContext($cursoId, $turmaId = null)
     {
-        $sql = 'SELECT i.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.total AS pedido_total,
+        $sql = 'SELECT i.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.pagador_telefone, p.total AS pedido_total,
                     p.status AS pedido_status, pp.nome AS participante_nome, pp.cpf AS participante_cpf,
                     ce.nome AS curso_nome, t.nome AS turma_nome,
                     c.id AS certificado_id, c.codigo AS certificado_codigo, c.status AS certificado_status

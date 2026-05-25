@@ -529,10 +529,13 @@ class DashboardService
     {
         return (int) $this->queryValue(
             'SELECT COUNT(*) AS total
-             FROM comprovantes_pix
-             WHERE deleted_at IS NULL
-               AND is_atual = 1
-               AND status IN ("pendente", "em_analise")'
+             FROM comprovantes_pix cp
+             INNER JOIN pedidos p ON p.id = cp.pedido_id
+             WHERE cp.deleted_at IS NULL
+               AND cp.is_atual = 1
+               AND p.deleted_at IS NULL
+               AND p.status <> "aguardando_reenvio"
+               AND cp.status IN ("pendente", "em_analise")'
         );
     }
 

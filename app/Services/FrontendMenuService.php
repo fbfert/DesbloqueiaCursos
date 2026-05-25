@@ -5,12 +5,14 @@ namespace App\Services;
 use App\Core\Database;
 use App\Core\Logger;
 use App\Models\FrontendMenu;
+use App\Models\FrontendMenuExibicaoRegra;
 use App\Models\FrontendMenuItem;
 use PDO;
 
 class FrontendMenuService
 {
     private $menuModel;
+    private $regraModel;
     private $itemModel;
     private $auditService;
     private $trashService;
@@ -18,6 +20,7 @@ class FrontendMenuService
     public function __construct()
     {
         $this->menuModel = new FrontendMenu();
+        $this->regraModel = new FrontendMenuExibicaoRegra();
         $this->itemModel = new FrontendMenuItem();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
@@ -34,7 +37,24 @@ class FrontendMenuService
 
     public function formData($id = null)
     {
-        return array('menu' => $id ? $this->menuModel->findById((int) $id) : null);
+        $menu = $id ? $this->menuModel->findById((int) $id) : null;
+        $regrasExibicao = array();
+
+        if ($menu && !empty($menu['id'])) {
+            try {
+                $regrasExibicao = $this->regraModel->listarPorMenu((int) $menu['id']);
+            } catch (\Throwable $throwable) {
+                $this->registrarProblemaRegra('Não foi possível carregar as regras do menu.', array(
+                    'menu_id' => (int) $menu['id'],
+                    'erro' => $throwable->getMessage(),
+                ));
+            }
+        }
+
+        return array(
+            'menu' => $menu,
+            'regras_exibicao' => $regrasExibicao,
+        );
     }
 
     public function itensData($menuId)
@@ -56,9 +76,15 @@ class FrontendMenuService
         return array('menu' => $menu, 'item' => $item);
     }
 
-    public function buscarMenuAtivoPorPosicao($posicao, $codigo = null)
+    public function buscarMenuAtivoPorPosicao($posicao, $codigo = null, array $contexto = array())
     {
-        return $this->menuModel->findActiveByPositionOrCode($posicao, $codigo);
+        $menu = $this->menuModel->findActiveByPositionOrCode($posicao, $codigo);
+        if (!$menu) {
+            return null;
+        }
+
+        $menusFiltrados = $this->filtrarMenusPorContexto(array($menu), $contexto);
+        return !empty($menusFiltrados) ? $menusFiltrados[0] : null;
     }
 
     public function listarItensAtivos($menuId)
@@ -66,7 +92,7 @@ class FrontendMenuService
         return $this->itemModel->listActiveByMenu((int) $menuId);
     }
 
-    public function menuTopoPublico($isAuthenticated)
+    public function menuTopoPublico($isAuthenticated, array $contexto = array())
     {
         $fallbackPublico = array(
             array('rotulo' => 'Início', 'url' => '/', 'target' => '_self', 'rel' => null),
@@ -88,6 +114,9 @@ class FrontendMenuService
         $codigo = $isAuthenticated ? 'menu_topo_logado' : 'menu_topo_publico';
         $posicao = $isAuthenticated ? 'topo_logado' : 'topo_publico';
         $fallback = $isAuthenticated ? $fallbackLogado : $fallbackPublico;
+        $contexto = $this->obterContextoExibicao(array_merge($contexto, array(
+            'auth_state' => $isAuthenticated ? 'logged' : 'guest',
+        )));
 
         try {
             $menu = $this->menuModel->findActiveByPositionOrCode($posicao, $codigo);
@@ -95,6 +124,15 @@ class FrontendMenuService
                 $menu = $this->menuModel->findActiveByPositionOrCode($posicao, null);
             }
             if (!$menu) {
+                return array(
+                    'menu' => null,
+                    'itens' => $fallback,
+                    'from_fallback' => true,
+                );
+            }
+
+            $menusFiltrados = $this->filtrarMenusPorContexto(array($menu), $contexto);
+            if (empty($menusFiltrados)) {
                 return array(
                     'menu' => null,
                     'itens' => $fallback,
@@ -115,7 +153,7 @@ class FrontendMenuService
             }
 
             return array(
-                'menu' => $menu,
+                'menu' => $menusFiltrados[0],
                 'itens' => $itens,
                 'from_fallback' => false,
             );
@@ -125,12 +163,68 @@ class FrontendMenuService
                 'posicao' => $posicao,
                 'message' => $exception->getMessage(),
             ));
-            return array(
-                'menu' => null,
-                'itens' => $fallback,
-                'from_fallback' => true,
-            );
+            return array('menu' => null, 'itens' => $fallback, 'from_fallback' => true);
         }
+    }
+
+    public function obterContextoExibicao(array $contexto = array())
+    {
+        $requestPath = isset($contexto['route']) ? (string) $contexto['route'] : parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $requestPath = $this->normalizarCaminho($requestPath ?: '/');
+        $pageKey = isset($contexto['page_key']) ? $this->normalizarChaveContexto($contexto['page_key']) : null;
+        $area = isset($contexto['area']) ? $this->normalizarChaveContexto($contexto['area']) : $this->detectarAreaAtual($requestPath);
+        $authState = isset($contexto['auth_state']) ? $this->normalizarChaveContexto($contexto['auth_state']) : null;
+
+        if ($authState === null || $authState === '') {
+            $authState = isset($_SESSION['usuario_id']) ? 'logged' : 'guest';
+        }
+
+        return array(
+            'route' => $requestPath,
+            'page_key' => $pageKey,
+            'area' => $area,
+            'auth_state' => $authState,
+        );
+    }
+
+    public function filtrarMenusPorContexto(array $menus, array $contexto = array())
+    {
+        if (empty($menus)) {
+            return array();
+        }
+
+        try {
+            $contexto = $this->obterContextoExibicao($contexto);
+            $menuIds = array();
+            foreach ($menus as $menu) {
+                if (is_array($menu) && !empty($menu['id'])) {
+                    $menuIds[] = (int) $menu['id'];
+                }
+            }
+
+            $regrasPorMenu = $this->regraModel->buscarRegrasAtivasPorMenus($menuIds);
+            $menusFiltrados = array();
+
+            foreach ($menus as $menu) {
+                if (!is_array($menu) || empty($menu['id'])) {
+                    $menusFiltrados[] = $menu;
+                    continue;
+                }
+
+                $regras = isset($regrasPorMenu[(int) $menu['id']]) ? $regrasPorMenu[(int) $menu['id']] : array();
+                if ($this->menuVisivelNoContexto($menu, $regras, $contexto)) {
+                    $menusFiltrados[] = $menu;
+                }
+            }
+
+            return $menusFiltrados;
+        } catch (\Throwable $throwable) {
+            $this->registrarProblemaRegra('Não foi possível aplicar as regras de exibição dos menus.', array(
+                'erro' => $throwable->getMessage(),
+            ));
+        }
+
+        return $menus;
     }
 
     private function appendAvisosMenuItem(array $itens)
@@ -194,6 +288,7 @@ class FrontendMenuService
         if ($this->menuModel->findByCode($payload['codigo'], $id > 0 ? $id : null)) {
             $errors[] = 'Já existe um menu com este código.';
         }
+        $regrasExibicao = $this->extrairRegrasExibicao(isset($input['regras_exibicao']) && is_array($input['regras_exibicao']) ? $input['regras_exibicao'] : array());
         if ($errors) {
             return array('ok' => false, 'errors' => $errors);
         }
@@ -212,6 +307,14 @@ class FrontendMenuService
             $anterior = null;
             $id = $this->menuModel->create($payload);
             $acao = 'frontend_menu.criado';
+        }
+        try {
+            $this->regraModel->salvarRegrasDoMenu($id, $regrasExibicao);
+        } catch (\Throwable $throwable) {
+            $this->registrarProblemaRegra('Não foi possível salvar as regras de exibição do menu.', array(
+                'menu_id' => $id,
+                'erro' => $throwable->getMessage(),
+            ));
         }
         $this->auditService->record($acao, 'frontend_menu', $id, array('antes' => $anterior, 'depois' => $payload), $usuarioId, $ipAddress, $userAgent);
         $pdo->commit();
@@ -232,6 +335,14 @@ class FrontendMenuService
         $pdo = Database::connection();
         $pdo->beginTransaction();
         $this->trashService->record('frontend_menu', $id, $justificativa, $menu, $usuarioId, $ipAddress, $userAgent);
+        try {
+            $this->regraModel->excluirPorMenu($id);
+        } catch (\Throwable $throwable) {
+            $this->registrarProblemaRegra('Não foi possível remover as regras de exibição do menu.', array(
+                'menu_id' => (int) $id,
+                'erro' => $throwable->getMessage(),
+            ));
+        }
         $this->menuModel->softDelete($id, $usuarioId, $justificativa);
         foreach ($this->itemModel->allByMenu((int) $id) as $item) {
             $this->trashService->record('frontend_menu_item', (int) $item['id'], $justificativa, $item, $usuarioId, $ipAddress, $userAgent);
@@ -272,6 +383,22 @@ class FrontendMenuService
                 'criado_por' => $usuarioId ? (int) $usuarioId : null,
                 'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
             ));
+
+            $regrasOriginais = $this->regraModel->listarPorMenu($id);
+            $regrasCopia = array();
+            foreach ($regrasOriginais as $regra) {
+                if (!is_array($regra)) {
+                    continue;
+                }
+                $regrasCopia[] = array(
+                    'tipo_regra' => isset($regra['tipo_regra']) ? $regra['tipo_regra'] : 'include',
+                    'alvo_tipo' => isset($regra['alvo_tipo']) ? $regra['alvo_tipo'] : 'route',
+                    'alvo_valor' => isset($regra['alvo_valor']) ? $regra['alvo_valor'] : '',
+                    'ativo' => isset($regra['ativo']) ? (int) $regra['ativo'] : 1,
+                    'ordem' => isset($regra['ordem']) ? (int) $regra['ordem'] : 0,
+                );
+            }
+            $this->regraModel->salvarRegrasDoMenu($menuId, $regrasCopia);
 
             $itensCopiados = 0;
             foreach ($this->itemModel->allByMenu($id) as $item) {
@@ -579,6 +706,228 @@ class FrontendMenuService
     {
         $value = trim((string) $value);
         return $value === '' ? null : $value;
+    }
+
+    private function extrairRegrasExibicao(array $entrada)
+    {
+        $tiposPermitidos = array('include', 'exclude');
+        $alvosPermitidos = array('route', 'page_key', 'area', 'auth_state');
+        $tipos = isset($entrada['tipo_regra']) && is_array($entrada['tipo_regra']) ? $entrada['tipo_regra'] : array();
+        $alvos = isset($entrada['alvo_tipo']) && is_array($entrada['alvo_tipo']) ? $entrada['alvo_tipo'] : array();
+        $valores = isset($entrada['alvo_valor']) && is_array($entrada['alvo_valor']) ? $entrada['alvo_valor'] : array();
+        $ativos = isset($entrada['ativo']) && is_array($entrada['ativo']) ? $entrada['ativo'] : array();
+        $ordens = isset($entrada['ordem']) && is_array($entrada['ordem']) ? $entrada['ordem'] : array();
+
+        $quantidade = max(count($tipos), count($alvos), count($valores), count($ativos), count($ordens));
+        $regras = array();
+
+        for ($i = 0; $i < $quantidade; $i++) {
+            $tipo = $this->normalizarChaveContexto(isset($tipos[$i]) ? $tipos[$i] : '');
+            $alvoTipo = $this->normalizarChaveContexto(isset($alvos[$i]) ? $alvos[$i] : '');
+            $alvoValor = trim((string) (isset($valores[$i]) ? $valores[$i] : ''));
+            $ativo = isset($ativos[$i]) ? (int) $ativos[$i] : 0;
+            $ordem = isset($ordens[$i]) ? (int) $ordens[$i] : 0;
+
+            if ($tipo === '' && $alvoTipo === '' && $alvoValor === '') {
+                continue;
+            }
+
+            if (!in_array($tipo, $tiposPermitidos, true)) {
+                $this->registrarProblemaRegra('Regra de exibição ignorada por tipo inválido.', array('indice' => $i, 'tipo_regra' => $tipo));
+                continue;
+            }
+
+            if (!in_array($alvoTipo, $alvosPermitidos, true)) {
+                $this->registrarProblemaRegra('Regra de exibição ignorada por alvo inválido.', array('indice' => $i, 'alvo_tipo' => $alvoTipo));
+                continue;
+            }
+
+            $alvoValor = $this->normalizarValorRegra($alvoValor);
+            if ($alvoValor === '') {
+                $this->registrarProblemaRegra('Regra de exibição ignorada por valor vazio.', array('indice' => $i, 'alvo_tipo' => $alvoTipo));
+                continue;
+            }
+
+            $regras[] = array(
+                'tipo_regra' => $tipo,
+                'alvo_tipo' => $alvoTipo,
+                'alvo_valor' => $alvoValor,
+                'ativo' => $ativo === 1 ? 1 : 0,
+                'ordem' => $ordem,
+            );
+        }
+
+        return $regras;
+    }
+
+    private function menuVisivelNoContexto(array $menu, array $regras, array $contexto)
+    {
+        if (empty($regras)) {
+            return true;
+        }
+
+        $regrasValidas = array();
+        foreach ($regras as $regra) {
+            if (!is_array($regra)) {
+                continue;
+            }
+
+            $tipo = isset($regra['tipo_regra']) ? $this->normalizarChaveContexto($regra['tipo_regra']) : '';
+            $alvoTipo = isset($regra['alvo_tipo']) ? $this->normalizarChaveContexto($regra['alvo_tipo']) : '';
+            $alvoValor = isset($regra['alvo_valor']) ? trim((string) $regra['alvo_valor']) : '';
+
+            if ($tipo === '' || $alvoTipo === '' || $alvoValor === '') {
+                $this->registrarProblemaRegra('Regra de exibição ignorada durante o filtro.', array(
+                    'menu_id' => isset($menu['id']) ? (int) $menu['id'] : null,
+                ));
+                continue;
+            }
+
+            $regrasValidas[] = array(
+                'tipo_regra' => $tipo,
+                'alvo_tipo' => $alvoTipo,
+                'alvo_valor' => $alvoValor,
+            );
+        }
+
+        if (empty($regrasValidas)) {
+            return true;
+        }
+
+        $temInclude = false;
+        $matchInclude = false;
+
+        foreach ($regrasValidas as $regra) {
+            $combinou = $this->regraCombinaComContexto($regra, $contexto);
+            if ($regra['tipo_regra'] === 'exclude' && $combinou) {
+                return false;
+            }
+            if ($regra['tipo_regra'] === 'include') {
+                $temInclude = true;
+                if ($combinou) {
+                    $matchInclude = true;
+                }
+            }
+        }
+
+        if ($temInclude) {
+            return $matchInclude;
+        }
+
+        return true;
+    }
+
+    private function regraCombinaComContexto(array $regra, array $contexto)
+    {
+        $alvoTipo = isset($regra['alvo_tipo']) ? $this->normalizarChaveContexto($regra['alvo_tipo']) : '';
+        $alvoValor = isset($regra['alvo_valor']) ? trim((string) $regra['alvo_valor']) : '';
+        $valorContexto = isset($contexto[$alvoTipo]) ? $contexto[$alvoTipo] : null;
+
+        if ($alvoTipo === '' || $alvoValor === '' || $valorContexto === null) {
+            return false;
+        }
+
+        $valorContexto = $this->normalizarValorContexto($alvoTipo, $valorContexto);
+        $alvoValor = $this->normalizarValorContexto($alvoTipo, $alvoValor);
+
+        if ($alvoTipo === 'route') {
+            return $this->coringaCombina($alvoValor, $valorContexto);
+        }
+
+        return $alvoValor === $valorContexto;
+    }
+
+    private function coringaCombina($padrao, $valor)
+    {
+        if ($padrao === '*') {
+            return true;
+        }
+
+        $expressao = preg_quote($padrao, '#');
+        $expressao = str_replace('\\*', '.*', $expressao);
+
+        return (bool) preg_match('#^' . $expressao . '$#i', $valor);
+    }
+
+    private function normalizarValorContexto($tipo, $valor)
+    {
+        $valor = trim((string) $valor);
+        if ($tipo === 'route') {
+            return $this->normalizarCaminho($valor);
+        }
+
+        return $this->normalizarChaveContexto($valor);
+    }
+
+    private function normalizarValorRegra($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return '';
+        }
+
+        if (strpos($valor, '/') === 0) {
+            return $this->normalizarCaminho($valor);
+        }
+
+        return $this->normalizarChaveContexto($valor);
+    }
+
+    private function normalizarCaminho($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return '/';
+        }
+
+        $valor = str_replace('\\', '/', $valor);
+        if (strpos($valor, '/') !== 0) {
+            $valor = '/' . $valor;
+        }
+
+        if ($valor !== '/' && substr($valor, -1) === '/') {
+            $valor = rtrim($valor, '/');
+        }
+
+        return function_exists('mb_strtolower') ? mb_strtolower($valor, 'UTF-8') : strtolower($valor);
+    }
+
+    private function normalizarChaveContexto($valor)
+    {
+        $valor = trim((string) $valor);
+        return function_exists('mb_strtolower') ? mb_strtolower($valor, 'UTF-8') : strtolower($valor);
+    }
+
+    private function detectarAreaAtual($requestPath)
+    {
+        if (strpos($requestPath, '/admin') === 0) {
+            return 'admin';
+        }
+
+        if (strpos($requestPath, '/professor') === 0) {
+            return 'professor';
+        }
+
+        if (in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true) || strpos($requestPath, '/area-curso/') === 0) {
+            return 'aluno';
+        }
+
+        return 'publica';
+    }
+
+    private function registrarProblemaRegra($mensagem, array $contexto = array())
+    {
+        $mensagem = trim((string) $mensagem);
+        if ($mensagem === '') {
+            return;
+        }
+
+        $contextoTexto = $contexto ? ' ' . json_encode($contexto, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : '';
+        Logger::error('frontend_menu.regras_exibicao', array(
+            'message' => $mensagem,
+            'contexto' => $contexto,
+        ));
+        @error_log('[FrontendMenuService] ' . $mensagem . $contextoTexto);
     }
 
     private function listarLixeira($entidadeTipo)

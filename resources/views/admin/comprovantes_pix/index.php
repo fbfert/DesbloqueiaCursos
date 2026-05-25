@@ -8,6 +8,28 @@
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+<?php
+if (!function_exists('comprovantesPixFormatarTelefone')) {
+    function comprovantesPixFormatarTelefone($telefone)
+    {
+        $telefone = preg_replace('/\D+/', '', (string) $telefone);
+
+        if ($telefone === '') {
+            return '';
+        }
+
+        if (strlen($telefone) === 11) {
+            return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 5) . '-' . substr($telefone, 7, 4);
+        }
+
+        if (strlen($telefone) === 10) {
+            return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 4) . '-' . substr($telefone, 6, 4);
+        }
+
+        return $telefone;
+    }
+}
+?>
 
 <section class="status-card admin-pending-pix">
     <div class="admin-pending-pix__header">
@@ -64,6 +86,9 @@
                         <td>
                             <?php echo htmlspecialchars((string) $comprovante['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
                             <small><?php echo htmlspecialchars((string) $comprovante['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>
+                            <?php if (!empty($comprovante['pagador_telefone'])): ?>
+                                <br><small><?php echo htmlspecialchars(comprovantesPixFormatarTelefone((string) $comprovante['pagador_telefone']), ENT_QUOTES, 'UTF-8'); ?></small>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <?php echo htmlspecialchars((string) ($comprovante['cursos_nome'] ?: '-'), ENT_QUOTES, 'UTF-8'); ?><br>
@@ -137,10 +162,13 @@
                                     <?php echo htmlspecialchars((string) $comprovante['pedido_codigo'], ENT_QUOTES, 'UTF-8'); ?>
                                 </a>
                             </td>
-                            <td>
-                                <?php echo htmlspecialchars((string) $comprovante['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
-                                <small><?php echo htmlspecialchars((string) $comprovante['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>
-                            </td>
+                        <td>
+                            <?php echo htmlspecialchars((string) $comprovante['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
+                            <small><?php echo htmlspecialchars((string) $comprovante['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>
+                            <?php if (!empty($comprovante['pagador_telefone'])): ?>
+                                <br><small><?php echo htmlspecialchars(comprovantesPixFormatarTelefone((string) $comprovante['pagador_telefone']), ENT_QUOTES, 'UTF-8'); ?></small>
+                            <?php endif; ?>
+                        </td>
                             <td><?php echo (int) $comprovante['versao']; ?></td>
                             <td>
                                 <span class="<?php echo htmlspecialchars($statusMeta['classe'], ENT_QUOTES, 'UTF-8'); ?>">

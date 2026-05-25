@@ -13,6 +13,24 @@ $queryBase = array(
     'per_page' => isset($filters['per_page']) ? $filters['per_page'] : 20,
 );
 
+$formatarTelefonePagador = function ($telefone) {
+    $telefone = preg_replace('/\D+/', '', (string) $telefone);
+
+    if ($telefone === '') {
+        return '';
+    }
+
+    if (strlen($telefone) === 11) {
+        return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 5) . '-' . substr($telefone, 7, 4);
+    }
+
+    if (strlen($telefone) === 10) {
+        return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 4) . '-' . substr($telefone, 6, 4);
+    }
+
+    return $telefone;
+};
+
 if (!function_exists('inscricoesSortUrl')) {
     function inscricoesSortUrl($field, $currentSortBy, $currentSortDir, array $queryBase)
     {
@@ -176,10 +194,13 @@ $to = $total > 0 ? min($page * $perPage, $total) : 0;
                     <?php foreach ($inscricoes as $inscricao): ?>
                         <tr>
                             <td><?php echo Helpers::e((string) $inscricao['pedido_codigo']); ?></td>
-                            <td>
-                                <?php echo Helpers::e((string) $inscricao['pagador_nome']); ?><br>
-                                <small><?php echo Helpers::e((string) $inscricao['pagador_email']); ?></small>
-                            </td>
+                        <td>
+                            <?php echo Helpers::e((string) $inscricao['pagador_nome']); ?><br>
+                            <small><?php echo Helpers::e((string) $inscricao['pagador_email']); ?></small>
+                            <?php if (!empty($inscricao['pagador_telefone'])): ?>
+                                <br><small><?php echo Helpers::e($formatarTelefonePagador((string) $inscricao['pagador_telefone'])); ?></small>
+                            <?php endif; ?>
+                        </td>
                             <td>
                                 <?php echo Helpers::e((string) $inscricao['participante_nome']); ?><br>
                                 <small><?php echo Helpers::e((string) $inscricao['participante_cpf']); ?></small>

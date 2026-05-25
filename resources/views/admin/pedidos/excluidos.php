@@ -2,6 +2,27 @@
 $pedidosExcluidos = isset($pedidos_excluidos) && is_array($pedidos_excluidos) ? $pedidos_excluidos : array();
 $filters = isset($filters) && is_array($filters) ? $filters : array();
 $totalPedidosExcluidos = count($pedidosExcluidos);
+
+if (!function_exists('pedidosFormatarTelefone')) {
+    function pedidosFormatarTelefone($telefone)
+    {
+        $telefone = preg_replace('/\D+/', '', (string) $telefone);
+
+        if ($telefone === '') {
+            return '';
+        }
+
+        if (strlen($telefone) === 11) {
+            return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 5) . '-' . substr($telefone, 7, 4);
+        }
+
+        if (strlen($telefone) === 10) {
+            return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 4) . '-' . substr($telefone, 6, 4);
+        }
+
+        return $telefone;
+    }
+}
 ?>
 
 <div class="admin-page">
@@ -85,6 +106,9 @@ $totalPedidosExcluidos = count($pedidosExcluidos);
                             <td>
                                 <?php echo htmlspecialchars((string) $pedido['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
                                 <small><?php echo htmlspecialchars((string) $pedido['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                <?php if (!empty($pedido['pagador_telefone'])): ?>
+                                    <br><small><?php echo htmlspecialchars(pedidosFormatarTelefone((string) $pedido['pagador_telefone']), ENT_QUOTES, 'UTF-8'); ?></small>
+                                <?php endif; ?>
                             </td>
                             <td><?php echo htmlspecialchars((string) ($pedido['cursos_nome'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $pedido['status'], ENT_QUOTES, 'UTF-8'); ?></td>

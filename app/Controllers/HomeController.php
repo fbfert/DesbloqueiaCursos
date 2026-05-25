@@ -12,6 +12,7 @@ use App\Services\FrontendModuloService;
 
 class HomeController extends Controller
 {
+    private $pageKey = 'home';
     private $cursoService;
     private $avisoService;
     private $configuracaoGlobalService;
@@ -36,6 +37,7 @@ class HomeController extends Controller
         return $this->view('home', array(
             'title' => isset($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos',
             'success' => Session::pullFlash('success'),
+            'page_key' => $this->pageKey,
             'loggedIn' => $usuarioId !== null,
             'usuarioNome' => Session::get('usuario_nome'),
             'postLoginChoiceModal' => Session::pullFlash('post_login_choice_modal'),
@@ -86,7 +88,12 @@ class HomeController extends Controller
     private function depoimentosCapa()
     {
         try {
-            $depoimentos = $this->frontendModuloService->listarAtivosPorPosicao('depoimentos_capa_item', 12);
+            $depoimentos = $this->frontendModuloService->listarAtivosPorPosicao('depoimentos_capa_item', 12, array(
+                'page_key' => $this->pageKey,
+                'route' => '/',
+                'area' => 'publica',
+                'auth_state' => Session::get('usuario_id') !== null ? 'logged' : 'guest',
+            ));
             return is_array($depoimentos) ? $depoimentos : array();
         } catch (\Throwable $exception) {
             // Mantém a capa pública disponível mesmo antes da migration dos depoimentos.
@@ -98,7 +105,12 @@ class HomeController extends Controller
     private function moduloCapaOuPadrao($codigo, array $padrao)
     {
         try {
-            $modulo = $this->frontendModuloService->buscarPorCodigo($codigo);
+            $modulo = $this->frontendModuloService->buscarPorCodigo($codigo, array(
+                'page_key' => $this->pageKey,
+                'route' => '/',
+                'area' => 'publica',
+                'auth_state' => Session::get('usuario_id') !== null ? 'logged' : 'guest',
+            ));
             if ($modulo) {
                 return ((int) $modulo['ativo'] === 1) ? $modulo : null;
             }

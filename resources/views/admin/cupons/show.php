@@ -3,6 +3,23 @@ $cupomCursos = isset($cupom_cursos) ? $cupom_cursos : array();
 $escopoCupom = isset($cupom['escopo']) && $cupom['escopo'] === 'cursos_especificos'
     ? 'Cursos específicos (' . count($cupomCursos) . ')'
     : 'Todo o site';
+$formatarTelefonePagador = function ($telefone) {
+    $telefone = preg_replace('/\D+/', '', (string) $telefone);
+
+    if ($telefone === '') {
+        return '';
+    }
+
+    if (strlen($telefone) === 11) {
+        return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 5) . '-' . substr($telefone, 7, 4);
+    }
+
+    if (strlen($telefone) === 10) {
+        return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 4) . '-' . substr($telefone, 6, 4);
+    }
+
+    return $telefone;
+};
 ?>
 
 <div class="admin-page">
@@ -71,6 +88,9 @@ $escopoCupom = isset($cupom['escopo']) && $cupom['escopo'] === 'cursos_especific
                         <td>
                             <?php echo htmlspecialchars((string) $uso['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
                             <small><?php echo htmlspecialchars((string) $uso['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>
+                            <?php if (!empty($uso['pagador_telefone'])): ?>
+                                <br><small><?php echo htmlspecialchars($formatarTelefonePagador((string) $uso['pagador_telefone']), ENT_QUOTES, 'UTF-8'); ?></small>
+                            <?php endif; ?>
                         </td>
                         <td>R$ <?php echo number_format((float) $uso['valor_desconto'], 2, ',', '.'); ?></td>
                         <td><?php echo htmlspecialchars((string) $uso['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>

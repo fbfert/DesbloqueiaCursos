@@ -10,6 +10,30 @@ if (!empty($pedido['itens']) && is_array($pedido['itens'])) {
 }
 $nomesCursosPedido = array_values(array_unique($nomesCursosPedido));
 $nomeCursoPedido = !empty($nomesCursosPedido) ? implode(', ', $nomesCursosPedido) : '';
+$formatarTelefone = function ($telefone) {
+    $telefone = preg_replace('/\D+/', '', (string) $telefone);
+
+    if ($telefone === '') {
+        return '';
+    }
+
+    if (strlen($telefone) === 11) {
+        return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 5) . '-' . substr($telefone, 7, 4);
+    }
+
+    if (strlen($telefone) === 10) {
+        return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 4) . '-' . substr($telefone, 6, 4);
+    }
+
+    return $telefone;
+};
+$telefonePagador = '';
+if (!empty($pedido['usuario_pagador']) && is_array($pedido['usuario_pagador']) && !empty($pedido['usuario_pagador']['telefone'])) {
+    $telefonePagador = (string) $pedido['usuario_pagador']['telefone'];
+} elseif (!empty($pedido['pagador_telefone'])) {
+    $telefonePagador = (string) $pedido['pagador_telefone'];
+}
+$telefonePagador = $formatarTelefone($telefonePagador);
 ?>
 <section class="admin-page__header">
     <div>
@@ -43,6 +67,7 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
             <?php endif; ?>
             <strong>Pagador:</strong> <?php echo htmlspecialchars((string) $pedido['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
             <strong>E-mail:</strong> <?php echo htmlspecialchars((string) $pedido['pagador_email'], ENT_QUOTES, 'UTF-8'); ?><br>
+            <strong>Telefone/WhatsApp:</strong> <?php echo htmlspecialchars($telefonePagador !== '' ? $telefonePagador : '-', ENT_QUOTES, 'UTF-8'); ?><br>
             <strong>CPF:</strong> <?php echo htmlspecialchars((string) $pedido['pagador_cpf'], ENT_QUOTES, 'UTF-8'); ?><br>
             <strong>Total:</strong> R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?><br>
             <strong>Status do pagamento:</strong> <?php echo htmlspecialchars((string) $pedido['status'], ENT_QUOTES, 'UTF-8'); ?>

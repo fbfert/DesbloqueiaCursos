@@ -29,6 +29,7 @@ class CupomUso
                     p.codigo AS pedido_codigo,
                     p.pagador_nome,
                     p.pagador_email,
+                    p.pagador_telefone,
                     p.status AS pedido_status,
                     p.total AS pedido_total,
                     p.created_at AS pedido_created_at

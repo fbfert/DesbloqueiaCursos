@@ -3,13 +3,16 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\Session;
 use App\Models\FrontendModulo;
+use App\Models\FrontendModuloExibicaoRegra;
 use Exception;
 use PDO;
 
 class FrontendModuloService
 {
     private $model;
+    private $regraModel;
     private $auditService;
     private $trashService;
     private $imagemDirectoryPublic;
@@ -18,6 +21,7 @@ class FrontendModuloService
     public function __construct()
     {
         $this->model = new FrontendModulo();
+        $this->regraModel = new FrontendModuloExibicaoRegra();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->imagemDirectoryPublic = '/assets/uploads/modulos';
@@ -34,22 +38,53 @@ class FrontendModuloService
 
     public function formData($id = null)
     {
-        return array('modulo' => $id ? $this->model->findById((int) $id) : null);
+        $modulo = $id ? $this->model->findById((int) $id) : null;
+        $regrasExibicao = array();
+
+        if ($modulo && !empty($modulo['id'])) {
+            try {
+                $regrasExibicao = $this->regraModel->listarPorModulo((int) $modulo['id']);
+            } catch (Exception $exception) {
+                $this->registrarProblemaRegra('Não foi possível carregar as regras do módulo.', array(
+                    'modulo_id' => (int) $modulo['id'],
+                    'erro' => $exception->getMessage(),
+                ));
+                $regrasExibicao = array();
+            }
+        }
+
+        return array(
+            'modulo' => $modulo,
+            'regras_exibicao' => $regrasExibicao,
+        );
     }
 
-    public function buscarAtivoPorPosicaoOuCodigo($posicao, $codigo = null)
+    public function buscarAtivoPorPosicaoOuCodigo($posicao, $codigo = null, array $contexto = array())
     {
-        return $this->model->findActiveByPositionOrCode($posicao, $codigo);
+        $modulo = $this->model->findActiveByPositionOrCode($posicao, $codigo);
+        if (!$modulo) {
+            return null;
+        }
+
+        $modulosFiltrados = $this->filtrarModulosPorContexto(array($modulo), $contexto);
+        return !empty($modulosFiltrados) ? $modulosFiltrados[0] : null;
     }
 
-    public function buscarPorCodigo($codigo)
+    public function buscarPorCodigo($codigo, array $contexto = array())
     {
-        return $this->model->findByCode((string) $codigo);
+        $modulo = $this->model->findByCode((string) $codigo);
+        if (!$modulo) {
+            return null;
+        }
+
+        $modulosFiltrados = $this->filtrarModulosPorContexto(array($modulo), $contexto);
+        return !empty($modulosFiltrados) ? $modulosFiltrados[0] : null;
     }
 
-    public function listarAtivosPorPosicao($posicao, $limit = null)
+    public function listarAtivosPorPosicao($posicao, $limit = null, array $contexto = array())
     {
-        return $this->model->allActiveByPosition((string) $posicao, $limit);
+        $modulos = $this->model->allActiveByPosition((string) $posicao, $limit);
+        return $this->filtrarModulosPorContexto($modulos, $contexto);
     }
 
     public function salvar(array $input, array $files = array(), $usuarioId = null, $ipAddress = null, $userAgent = null)
@@ -81,6 +116,7 @@ class FrontendModuloService
             'criado_por' => $usuarioId ? (int) $usuarioId : null,
             'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
         );
+        $regrasExibicao = $this->extrairRegrasExibicao(isset($input['regras_exibicao']) && is_array($input['regras_exibicao']) ? $input['regras_exibicao'] : array());
 
         $errors = array();
 
@@ -117,24 +153,41 @@ class FrontendModuloService
         }
 
         $pdo = Database::connection();
-        $pdo->beginTransaction();
-        if ($id > 0) {
-            $anterior = $registroAtual ?: $this->model->findById($id);
-            if (!$anterior) {
-                $pdo->rollBack();
-                return array('ok' => false, 'errors' => array('Módulo não encontrado.'));
+        try {
+            $pdo->beginTransaction();
+            if ($id > 0) {
+                $anterior = $registroAtual ?: $this->model->findById($id);
+                if (!$anterior) {
+                    $pdo->rollBack();
+                    return array('ok' => false, 'errors' => array('Módulo não encontrado.'));
+                }
+                $this->model->update($id, $payload);
+                $acao = 'frontend_modulo.atualizado';
+            } else {
+                $anterior = null;
+                $id = $this->model->create($payload);
+                $acao = 'frontend_modulo.criado';
             }
-            $this->model->update($id, $payload);
-            $acao = 'frontend_modulo.atualizado';
-        } else {
-            $anterior = null;
-            $id = $this->model->create($payload);
-            $acao = 'frontend_modulo.criado';
-        }
 
-        $this->auditService->record($acao, 'frontend_modulo', $id, array('antes' => $anterior, 'depois' => $payload), $usuarioId, $ipAddress, $userAgent);
-        $pdo->commit();
-        return array('ok' => true, 'id' => $id);
+            try {
+                $this->regraModel->salvarRegrasDoModulo($id, $regrasExibicao);
+            } catch (Exception $exception) {
+                $this->registrarProblemaRegra('Não foi possível salvar as regras de exibição do módulo.', array(
+                    'modulo_id' => $id,
+                    'erro' => $exception->getMessage(),
+                ));
+            }
+
+            $this->auditService->record($acao, 'frontend_modulo', $id, array('antes' => $anterior, 'depois' => $payload), $usuarioId, $ipAddress, $userAgent);
+            $pdo->commit();
+            return array('ok' => true, 'id' => $id);
+        } catch (Exception $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            return array('ok' => false, 'errors' => array('Não foi possível salvar o módulo.'));
+        }
     }
 
     public function duplicar(array $input, array $files = array(), $usuarioId = null, $ipAddress = null, $userAgent = null)
@@ -158,6 +211,9 @@ class FrontendModuloService
         $payload['titulo'] = $this->nomeDaCopia(isset($input['titulo']) && trim((string) $input['titulo']) !== '' ? $input['titulo'] : $modulo['titulo']);
         $payload['posicao'] = $this->posicaoDaCopia($posicaoBase);
         $payload['ativo'] = 0;
+        if (!isset($payload['regras_exibicao']) || !is_array($payload['regras_exibicao']) || empty($payload['regras_exibicao'])) {
+            $payload['regras_exibicao'] = $this->formatarRegrasParaInput($this->regraModel->listarPorModulo($id));
+        }
 
         return $this->salvar($payload, $files, $usuarioId, $ipAddress, $userAgent);
     }
@@ -177,10 +233,74 @@ class FrontendModuloService
         $pdo = Database::connection();
         $pdo->beginTransaction();
         $this->trashService->record('frontend_modulo', $id, $justificativa, $modulo, $usuarioId, $ipAddress, $userAgent);
+        try {
+            $this->regraModel->excluirPorModulo($id);
+        } catch (Exception $exception) {
+            $this->registrarProblemaRegra('Não foi possível remover as regras de exibição do módulo.', array(
+                'modulo_id' => (int) $id,
+                'erro' => $exception->getMessage(),
+            ));
+        }
         $this->model->softDelete($id, $usuarioId, $justificativa);
         $this->auditService->record('frontend_modulo.excluido', 'frontend_modulo', $id, array('justificativa' => $justificativa, 'antes' => $modulo), $usuarioId, $ipAddress, $userAgent);
         $pdo->commit();
         return array('ok' => true);
+    }
+
+    public function obterContextoExibicao(array $contexto = array())
+    {
+        $requestPath = isset($contexto['route']) ? (string) $contexto['route'] : parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $requestPath = $this->normalizarCaminho($requestPath ?: '/');
+        $pageKey = isset($contexto['page_key']) ? $this->normalizarChaveContexto($contexto['page_key']) : null;
+        $area = isset($contexto['area']) ? $this->normalizarChaveContexto($contexto['area']) : $this->detectarAreaAtual($requestPath);
+        $authState = isset($contexto['auth_state']) ? $this->normalizarChaveContexto($contexto['auth_state']) : ((Session::get('usuario_id') !== null) ? 'logged' : 'guest');
+
+        return array(
+            'route' => $requestPath,
+            'page_key' => $pageKey,
+            'area' => $area,
+            'auth_state' => $authState,
+        );
+    }
+
+    public function filtrarModulosPorContexto(array $modulos, array $contexto = array())
+    {
+        if (empty($modulos)) {
+            return array();
+        }
+
+        try {
+            $contexto = $this->obterContextoExibicao($contexto);
+            $moduloIds = array();
+            foreach ($modulos as $modulo) {
+                if (is_array($modulo) && !empty($modulo['id'])) {
+                    $moduloIds[] = (int) $modulo['id'];
+                }
+            }
+
+            $regrasPorModulo = $this->regraModel->buscarRegrasAtivasPorModulos($moduloIds);
+            $modulosFiltrados = array();
+
+            foreach ($modulos as $modulo) {
+                if (!is_array($modulo) || empty($modulo['id'])) {
+                    $modulosFiltrados[] = $modulo;
+                    continue;
+                }
+
+                $regras = isset($regrasPorModulo[(int) $modulo['id']]) ? $regrasPorModulo[(int) $modulo['id']] : array();
+                if ($this->moduloVisivelNoContexto($modulo, $regras, $contexto)) {
+                    $modulosFiltrados[] = $modulo;
+                }
+            }
+
+            return $modulosFiltrados;
+        } catch (Exception $exception) {
+            $this->registrarProblemaRegra('Não foi possível aplicar as regras de exibição dos módulos.', array(
+                'erro' => $exception->getMessage(),
+            ));
+        }
+
+        return $modulos;
     }
 
     private function detectarMimeType($arquivoTmp, $fallback = null)
@@ -336,6 +456,249 @@ class FrontendModuloService
     {
         $value = trim((string) $value);
         return $value === '' ? null : $value;
+    }
+
+    private function extrairRegrasExibicao(array $entrada)
+    {
+        $tiposPermitidos = array('include', 'exclude');
+        $alvosPermitidos = array('route', 'page_key', 'area', 'auth_state');
+        $tipos = isset($entrada['tipo_regra']) && is_array($entrada['tipo_regra']) ? $entrada['tipo_regra'] : array();
+        $alvos = isset($entrada['alvo_tipo']) && is_array($entrada['alvo_tipo']) ? $entrada['alvo_tipo'] : array();
+        $valores = isset($entrada['alvo_valor']) && is_array($entrada['alvo_valor']) ? $entrada['alvo_valor'] : array();
+        $ativos = isset($entrada['ativo']) && is_array($entrada['ativo']) ? $entrada['ativo'] : array();
+        $ordens = isset($entrada['ordem']) && is_array($entrada['ordem']) ? $entrada['ordem'] : array();
+
+        $quantidade = max(count($tipos), count($alvos), count($valores), count($ativos), count($ordens));
+        $regras = array();
+
+        for ($i = 0; $i < $quantidade; $i++) {
+            $tipo = $this->normalizarChaveContexto(isset($tipos[$i]) ? $tipos[$i] : '');
+            $alvoTipo = $this->normalizarChaveContexto(isset($alvos[$i]) ? $alvos[$i] : '');
+            $alvoValor = trim((string) (isset($valores[$i]) ? $valores[$i] : ''));
+            $ativo = isset($ativos[$i]) ? (int) $ativos[$i] : 0;
+            $ordem = isset($ordens[$i]) ? (int) $ordens[$i] : 0;
+
+            if ($tipo === '' && $alvoTipo === '' && $alvoValor === '') {
+                continue;
+            }
+
+            if (!in_array($tipo, $tiposPermitidos, true)) {
+                $this->registrarProblemaRegra('Regra de exibição ignorada por tipo inválido.', array('indice' => $i, 'tipo_regra' => $tipo));
+                continue;
+            }
+
+            if (!in_array($alvoTipo, $alvosPermitidos, true)) {
+                $this->registrarProblemaRegra('Regra de exibição ignorada por alvo inválido.', array('indice' => $i, 'alvo_tipo' => $alvoTipo));
+                continue;
+            }
+
+            $alvoValor = $this->normalizarValorRegra($alvoValor);
+            if ($alvoValor === '') {
+                $this->registrarProblemaRegra('Regra de exibição ignorada por valor vazio.', array('indice' => $i, 'alvo_tipo' => $alvoTipo));
+                continue;
+            }
+
+            $regras[] = array(
+                'tipo_regra' => $tipo,
+                'alvo_tipo' => $alvoTipo,
+                'alvo_valor' => $alvoValor,
+                'ativo' => $ativo === 1 ? 1 : 0,
+                'ordem' => $ordem,
+            );
+        }
+
+        return $regras;
+    }
+
+    private function formatarRegrasParaInput(array $regras)
+    {
+        $formato = array(
+            'tipo_regra' => array(),
+            'alvo_tipo' => array(),
+            'alvo_valor' => array(),
+            'ativo' => array(),
+            'ordem' => array(),
+        );
+
+        foreach ($regras as $regra) {
+            if (!is_array($regra)) {
+                continue;
+            }
+
+            $formato['tipo_regra'][] = isset($regra['tipo_regra']) ? $regra['tipo_regra'] : 'include';
+            $formato['alvo_tipo'][] = isset($regra['alvo_tipo']) ? $regra['alvo_tipo'] : 'route';
+            $formato['alvo_valor'][] = isset($regra['alvo_valor']) ? $regra['alvo_valor'] : '';
+            $formato['ativo'][] = isset($regra['ativo']) ? (int) $regra['ativo'] : 1;
+            $formato['ordem'][] = isset($regra['ordem']) ? (int) $regra['ordem'] : 0;
+        }
+
+        return $formato;
+    }
+
+    private function moduloVisivelNoContexto(array $modulo, array $regras, array $contexto)
+    {
+        if (empty($regras)) {
+            return true;
+        }
+
+        $regrasValidas = array();
+        foreach ($regras as $regra) {
+            if (!is_array($regra)) {
+                continue;
+            }
+
+            $tipo = isset($regra['tipo_regra']) ? $this->normalizarChaveContexto($regra['tipo_regra']) : '';
+            $alvoTipo = isset($regra['alvo_tipo']) ? $this->normalizarChaveContexto($regra['alvo_tipo']) : '';
+            $alvoValor = isset($regra['alvo_valor']) ? trim((string) $regra['alvo_valor']) : '';
+
+            if ($tipo === '' || $alvoTipo === '' || $alvoValor === '') {
+                $this->registrarProblemaRegra('Regra de exibição ignorada durante o filtro.', array(
+                    'modulo_id' => isset($modulo['id']) ? (int) $modulo['id'] : null,
+                ));
+                continue;
+            }
+
+            $regrasValidas[] = array(
+                'tipo_regra' => $tipo,
+                'alvo_tipo' => $alvoTipo,
+                'alvo_valor' => $alvoValor,
+            );
+        }
+
+        if (empty($regrasValidas)) {
+            return true;
+        }
+
+        $temInclude = false;
+        $matchInclude = false;
+
+        foreach ($regrasValidas as $regra) {
+            $combinou = $this->regraCombinaComContexto($regra, $contexto);
+            if ($regra['tipo_regra'] === 'exclude' && $combinou) {
+                return false;
+            }
+            if ($regra['tipo_regra'] === 'include') {
+                $temInclude = true;
+                if ($combinou) {
+                    $matchInclude = true;
+                }
+            }
+        }
+
+        if ($temInclude) {
+            return $matchInclude;
+        }
+
+        return true;
+    }
+
+    private function regraCombinaComContexto(array $regra, array $contexto)
+    {
+        $alvoTipo = isset($regra['alvo_tipo']) ? $this->normalizarChaveContexto($regra['alvo_tipo']) : '';
+        $alvoValor = isset($regra['alvo_valor']) ? trim((string) $regra['alvo_valor']) : '';
+        $valorContexto = isset($contexto[$alvoTipo]) ? $contexto[$alvoTipo] : null;
+
+        if ($alvoTipo === '' || $alvoValor === '' || $valorContexto === null) {
+            return false;
+        }
+
+        $valorContexto = $this->normalizarValorContexto($alvoTipo, $valorContexto);
+        $alvoValor = $this->normalizarValorContexto($alvoTipo, $alvoValor);
+
+        if ($alvoTipo === 'route') {
+            return $this->coringaCombina($alvoValor, $valorContexto);
+        }
+
+        return $alvoValor === $valorContexto;
+    }
+
+    private function coringaCombina($padrao, $valor)
+    {
+        if ($padrao === '*') {
+            return true;
+        }
+
+        $expressao = preg_quote($padrao, '#');
+        $expressao = str_replace('\\*', '.*', $expressao);
+
+        return (bool) preg_match('#^' . $expressao . '$#i', $valor);
+    }
+
+    private function normalizarValorContexto($tipo, $valor)
+    {
+        $valor = trim((string) $valor);
+        if ($tipo === 'route') {
+            return $this->normalizarCaminho($valor);
+        }
+
+        return $this->normalizarChaveContexto($valor);
+    }
+
+    private function normalizarValorRegra($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return '';
+        }
+
+        if (strpos($valor, '/') === 0) {
+            return $this->normalizarCaminho($valor);
+        }
+
+        return $this->normalizarChaveContexto($valor);
+    }
+
+    private function normalizarCaminho($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return '/';
+        }
+
+        $valor = str_replace('\\', '/', $valor);
+        if (strpos($valor, '/') !== 0) {
+            $valor = '/' . $valor;
+        }
+
+        if ($valor !== '/' && substr($valor, -1) === '/') {
+            $valor = rtrim($valor, '/');
+        }
+
+        return function_exists('mb_strtolower') ? mb_strtolower($valor, 'UTF-8') : strtolower($valor);
+    }
+
+    private function normalizarChaveContexto($valor)
+    {
+        $valor = trim((string) $valor);
+        return function_exists('mb_strtolower') ? mb_strtolower($valor, 'UTF-8') : strtolower($valor);
+    }
+
+    private function detectarAreaAtual($requestPath)
+    {
+        if (strpos($requestPath, '/admin') === 0) {
+            return 'admin';
+        }
+
+        if (strpos($requestPath, '/professor') === 0) {
+            return 'professor';
+        }
+
+        if (in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true) || strpos($requestPath, '/area-curso/') === 0) {
+            return 'aluno';
+        }
+
+        return 'publica';
+    }
+
+    private function registrarProblemaRegra($mensagem, array $contexto = array())
+    {
+        $mensagem = trim((string) $mensagem);
+        if ($mensagem === '') {
+            return;
+        }
+
+        $contextoTexto = $contexto ? ' ' . json_encode($contexto, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : '';
+        @error_log('[FrontendModuloService] ' . $mensagem . $contextoTexto);
     }
 
     private function listarLixeira()

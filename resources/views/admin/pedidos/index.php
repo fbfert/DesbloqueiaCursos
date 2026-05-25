@@ -38,6 +38,27 @@ if (!function_exists('pedidosQuery')) {
     }
 }
 
+if (!function_exists('pedidosFormatarTelefone')) {
+    function pedidosFormatarTelefone($telefone)
+    {
+        $telefone = preg_replace('/\D+/', '', (string) $telefone);
+
+        if ($telefone === '') {
+            return '';
+        }
+
+        if (strlen($telefone) === 11) {
+            return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 5) . '-' . substr($telefone, 7, 4);
+        }
+
+        if (strlen($telefone) === 10) {
+            return '(' . substr($telefone, 0, 2) . ') ' . substr($telefone, 2, 4) . '-' . substr($telefone, 6, 4);
+        }
+
+        return $telefone;
+    }
+}
+
 $totalPedidos = is_array($pedidos) ? count($pedidos) : 0;
 $pendentes = 0;
 $comPix = 0;
@@ -190,6 +211,9 @@ $statusAtual = (string) ($filters['status'] ?? '');
                         <td>
                             <?php echo htmlspecialchars((string) $pedido['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
                             <small><?php echo htmlspecialchars((string) $pedido['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>
+                            <?php if (!empty($pedido['pagador_telefone'])): ?>
+                                <br><small><?php echo htmlspecialchars(pedidosFormatarTelefone((string) $pedido['pagador_telefone']), ENT_QUOTES, 'UTF-8'); ?></small>
+                            <?php endif; ?>
                         </td>
                         <td><?php echo isset($pedido['quantidade_participantes']) ? (int) $pedido['quantidade_participantes'] : 0; ?></td>
                         <td>R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?></td>

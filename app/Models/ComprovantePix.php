@@ -64,7 +64,7 @@ class ComprovantePix
     public function allForBackoffice()
     {
         $stmt = Database::connection()->query(
-            'SELECT cp.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.total AS pedido_total,
+            'SELECT cp.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.pagador_telefone, p.total AS pedido_total,
                     p.status AS pedido_status, p.created_at AS pedido_created_at
              FROM comprovantes_pix cp
              INNER JOIN pedidos p ON p.id = cp.pedido_id
@@ -92,6 +92,7 @@ class ComprovantePix
                        p.codigo AS pedido_codigo,
                        p.pagador_nome,
                        p.pagador_email,
+                       p.pagador_telefone,
                        p.total AS pedido_total,
                        p.status AS pedido_status,
                        p.created_at AS pedido_created_at,

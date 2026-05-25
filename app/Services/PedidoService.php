@@ -11,6 +11,7 @@ use App\Models\PedidoCupom;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
 use App\Models\ParticipantePedido;
+use App\Models\Usuario;
 use App\Models\Turma;
 use Exception;
 
@@ -30,6 +31,7 @@ class PedidoService
     private $auditService;
     private $trashService;
     private $rbacService;
+    private $usuarioModel;
 
     public function __construct()
     {
@@ -47,6 +49,7 @@ class PedidoService
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->rbacService = new RbacService();
+        $this->usuarioModel = new Usuario();
     }
 
     public function criarCheckoutDraft(array $dados, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -1119,6 +1122,11 @@ class PedidoService
         $pedido['comprovantes'] = $canSeePix ? $this->comprovanteModel->versionsForPedido($pedidoId) : array();
         $pedido['exclusao'] = $this->avaliarExclusaoPedido($pedidoId, $pedido);
         $pedido['cupom_manual'] = $this->avaliarCupomManualPedido($pedido);
+        $pedido['usuario_pagador'] = null;
+
+        if (!empty($pedido['pagador_usuario_id'])) {
+            $pedido['usuario_pagador'] = $this->usuarioModel->findById((int) $pedido['pagador_usuario_id']);
+        }
 
         return array(
             'pedido' => $pedido,
