@@ -2,44 +2,69 @@
 .DS_Store
 Thumbs.db
 
+# Segredos
+.env
+.env.*
+!.env.example
+
 # IDE
 .vscode/
 .idea/
 
-# Logs
-*.log
-logs/
+# Ferramentas locais e artefatos de manutenção
+.codex/
+_cleanup_quarantine/
+deploy/_backup_local/
+deploy/releases/
+node_modules/
+vendor/
 
-# Arquivos temporários
+# Logs, temporários e backups
+*.log
 *.tmp
 *.temp
 *.bak
-
-# Storage (arquivos gerados, testes, dumps)
-storage/*
-!storage/.gitkeep
-
-# Uploads e binários
+*.old
 *.zip
 *.tar
+*.tar.gz
 *.gz
-*.rar
-*.pdf
-*.bin
+*.cookies
+*.sql
+!sql/*.sql
+!sql/**/*.sql
+*_backup*
+backup_*
 
-# Dumps HTML / debug
+# Arquivos de conflito
+*Cópia em conflito*
+*cópia em conflito*
+*C#U00f3pia em conflito*
+*conflicted copy*
+
+# Storage de runtime
+storage/logs/
+storage/backups/
+storage/tmp/
+storage/cache/
+storage/sessions/
+storage/test_uploads/
+storage/scripts/
+storage/private_uploads/
+storage/uploads/
+storage/trash/
+!storage/cache/.gitkeep
+!storage/private_uploads/.gitkeep
+!storage/uploads/.gitkeep
+!storage/trash/.gitkeep
+
+# Estrutura auxiliar de execução
+var/cache/
+var/log/
+scripts/
+
+# Mantido para compatibilidade com o pacote atual
 *.html
 *.txt
 *.csv
-
-# Conflitos de merge (Windows)
-*Cópia em conflito*
-
-# Scripts locais
-scripts/
-
-# SQL temporário / manutenção local
-sql/maintenance/
-
-# Node (caso use futuramente)
-node_modules/
+*.bin
