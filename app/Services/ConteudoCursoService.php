@@ -102,18 +102,90 @@ class ConteudoCursoService
             }
         }
 
+        $avaliacaoItemIds = array();
+        foreach ($modulos as $moduloBase) {
+            $itensModuloBase = $this->itemModel->listForModulo((int) $moduloBase['id'], 'publicado');
+            foreach ($itensModuloBase as $itemModuloBase) {
+                if ((string) ($itemModuloBase['tipo'] ?? '') === 'avaliacao_textual') {
+                    $avaliacaoItemIds[] = (int) $itemModuloBase['id'];
+                }
+            }
+        }
+        $avaliacoesPorItem = !empty($avaliacaoItemIds)
+            ? $this->avaliacaoEntregaModel->listarUltimasEntregasPorItensAluno($avaliacaoItemIds, $alunoId, $inscricaoId)
+            : array();
+
+        $totalItens = 0;
+        $totalObrigatorios = 0;
+        $concluidosItens = 0;
+        $concluidosObrigatorios = 0;
+        $avaliacoesPendentes = 0;
+
         foreach ($modulos as &$modulo) {
             $itens = $this->itemModel->listForModulo((int) $modulo['id'], 'publicado');
+            $totalItensModulo = 0;
+            $totalObrigatoriosModulo = 0;
+            $concluidosItensModulo = 0;
+            $concluidosObrigatoriosModulo = 0;
+            $avaliacoesPendentesModulo = 0;
             foreach ($itens as &$item) {
-                $item['detalhe'] = $this->carregarDetalhePorTipo((string) $item['tipo'], (int) $item['id']);
-                $item['progresso_aluno'] = isset($progressoPorItem[(int) $item['id']]) ? $progressoPorItem[(int) $item['id']] : null;
+                $itemId = (int) $item['id'];
+                $tipo = (string) $item['tipo'];
+                $item['detalhe'] = $this->carregarDetalhePorTipo($tipo, $itemId);
+                $item['progresso_aluno'] = isset($progressoPorItem[$itemId]) ? $progressoPorItem[$itemId] : null;
+                $item['avaliacao_entrega'] = isset($avaliacoesPorItem[$itemId]) ? $avaliacoesPorItem[$itemId] : null;
+                $item = $this->enriquecerItemParaAluno($item, $cursoEventoId, $inscricaoId, $turmaId);
+
+                $totalItens++;
+                $totalItensModulo++;
+                if (!empty($item['obrigatorio'])) {
+                    $totalObrigatorios++;
+                    $totalObrigatoriosModulo++;
+                }
+                if (!empty($item['concluido_aluno'])) {
+                    $concluidosItens++;
+                    $concluidosItensModulo++;
+                    if (!empty($item['obrigatorio'])) {
+                        $concluidosObrigatorios++;
+                        $concluidosObrigatoriosModulo++;
+                    }
+                }
+                if ($tipo === 'avaliacao_textual' && empty($item['concluido_aluno'])) {
+                    $avaliacoesPendentes++;
+                    $avaliacoesPendentesModulo++;
+                }
             }
             unset($item);
             $modulo['itens'] = $itens;
+            $modulo['total_itens'] = $totalItensModulo;
+            $modulo['total_obrigatorios'] = $totalObrigatoriosModulo;
+            $modulo['concluidos_itens'] = $concluidosItensModulo;
+            $modulo['concluidos_obrigatorios'] = $concluidosObrigatoriosModulo;
+            $modulo['pendentes_itens'] = max(0, $totalItensModulo - $concluidosItensModulo);
+            $modulo['pendentes_obrigatorios'] = max(0, $totalObrigatoriosModulo - $concluidosObrigatoriosModulo);
+            $modulo['avaliacoes_pendentes'] = $avaliacoesPendentesModulo;
+            $modulo['percentual_conclusao'] = $totalObrigatoriosModulo > 0
+                ? round(($concluidosObrigatoriosModulo / $totalObrigatoriosModulo) * 100, 2)
+                : ($totalItensModulo > 0 ? round(($concluidosItensModulo / $totalItensModulo) * 100, 2) : 0);
+            $modulo['status_publico'] = $this->statusModuloPublicoAluno($modulo);
+            $modulo['status_label'] = $this->rotuloStatusPublicoAluno($modulo['status_publico']);
+            $modulo['status_class'] = $this->classeStatusPublicoAluno($modulo['status_publico']);
         }
         unset($modulo);
 
         $resumo = $this->obterResumoProgressoAluno($cursoEventoId, $alunoId, $inscricaoId, $turmaId);
+        if (!empty($resumo['ok'])) {
+            $resumo['total_itens'] = $totalItens;
+            $resumo['concluidos_itens'] = $concluidosItens;
+            $resumo['itens_pendentes'] = max(0, $totalItens - $concluidosItens);
+            $resumo['total_obrigatorios'] = $totalObrigatorios;
+            $resumo['concluidos_obrigatorios'] = $concluidosObrigatorios;
+            $resumo['pendentes_obrigatorios'] = max(0, $totalObrigatorios - $concluidosObrigatorios);
+            $resumo['avaliacoes_pendentes'] = $avaliacoesPendentes;
+            $resumo['status_publico'] = $this->statusGeralAluno($resumo);
+            $resumo['status_label'] = $this->rotuloStatusPublicoAluno($resumo['status_publico']);
+            $resumo['status_class'] = $this->classeStatusPublicoAluno($resumo['status_publico']);
+        }
 
         return array(
             'ok' => true,
@@ -1186,6 +1258,231 @@ class ConteudoCursoService
         }
 
         return null;
+    }
+
+    private function enriquecerItemParaAluno(array $item, $cursoEventoId, $inscricaoId, $turmaId = null)
+    {
+        $tipo = (string) ($item['tipo'] ?? '');
+        $progresso = !empty($item['progresso_aluno']) && is_array($item['progresso_aluno']) ? $item['progresso_aluno'] : null;
+        $entrega = !empty($item['avaliacao_entrega']) && is_array($item['avaliacao_entrega']) ? $item['avaliacao_entrega'] : null;
+        $statusPublico = $this->statusItemPublicoAluno($tipo, $progresso, $entrega);
+
+        $item['status_publico'] = $statusPublico;
+        $item['status_label'] = $this->rotuloStatusPublicoAluno($statusPublico);
+        $item['status_class'] = $this->classeStatusPublicoAluno($statusPublico);
+        $item['concluido_aluno'] = in_array($statusPublico, array('concluido', 'aprovada', 'corrigida'), true);
+        $item['aguardando_correcao'] = in_array($statusPublico, array('aguardando_correcao', 'pendente_correcao'), true);
+        $item['tipo_label'] = $this->rotuloTipoItemPublicoAluno($tipo);
+        $item['acao_label'] = $this->acaoItemPublicaAluno($tipo, $entrega);
+        $item['acao_url'] = $this->urlAcaoItemPublicaAluno($item, $cursoEventoId, $inscricaoId, $turmaId, $tipo, $entrega);
+        $item['detalhes_url'] = $this->urlDetalhesItemPublicoAluno($item, $cursoEventoId, $inscricaoId, $turmaId);
+
+        return $item;
+    }
+
+    private function statusItemPublicoAluno($tipo, ?array $progresso, ?array $entrega)
+    {
+        $tipo = (string) $tipo;
+
+        if ($tipo === 'avaliacao_textual') {
+            $statusEntrega = !empty($entrega['status']) ? (string) $entrega['status'] : '';
+            if ($statusEntrega === '') {
+                return 'aguardando_envio';
+            }
+            if (in_array($statusEntrega, array('enviada', 'reenviada'), true)) {
+                return 'aguardando_correcao';
+            }
+            if ($statusEntrega === 'devolvida') {
+                return 'devolvida';
+            }
+            if ($statusEntrega === 'reprovada') {
+                return 'reprovada';
+            }
+            if ($statusEntrega === 'aprovada') {
+                return 'aprovada';
+            }
+            if ($statusEntrega === 'corrigida') {
+                return 'corrigida';
+            }
+            if ($statusEntrega === 'cancelada') {
+                return 'cancelada';
+            }
+
+            return $statusEntrega !== '' ? $statusEntrega : 'aguardando_envio';
+        }
+
+        if ($tipo === 'etiqueta') {
+            if (!empty($progresso) && !empty($progresso['status']) && (string) $progresso['status'] === 'concluido') {
+                return 'concluido';
+            }
+            if (!empty($progresso) && !empty($progresso['status'])) {
+                return (string) $progresso['status'];
+            }
+            return 'nao_iniciado';
+        }
+
+        $status = !empty($progresso) && !empty($progresso['status']) ? (string) $progresso['status'] : 'nao_iniciado';
+        if ($status === 'acessado') {
+            return 'em_andamento';
+        }
+
+        return $status;
+    }
+
+    private function statusModuloPublicoAluno(array $modulo)
+    {
+        $totalObrigatorios = isset($modulo['total_obrigatorios']) ? (int) $modulo['total_obrigatorios'] : 0;
+        $concluidosObrigatorios = isset($modulo['concluidos_obrigatorios']) ? (int) $modulo['concluidos_obrigatorios'] : 0;
+        $totalItens = isset($modulo['total_itens']) ? (int) $modulo['total_itens'] : 0;
+        $concluidosItens = isset($modulo['concluidos_itens']) ? (int) $modulo['concluidos_itens'] : 0;
+        $avaliacoesPendentes = isset($modulo['avaliacoes_pendentes']) ? (int) $modulo['avaliacoes_pendentes'] : 0;
+
+        if ($totalItens <= 0) {
+            return 'pendente';
+        }
+        if ($avaliacoesPendentes > 0) {
+            return 'aguardando_correcao';
+        }
+        if ($totalObrigatorios > 0 && $concluidosObrigatorios >= $totalObrigatorios) {
+            return 'concluido';
+        }
+        if ($concluidosItens > 0) {
+            return 'em_andamento';
+        }
+
+        return 'pendente';
+    }
+
+    private function statusGeralAluno(array $resumo)
+    {
+        $totalItens = isset($resumo['total_itens']) ? (int) $resumo['total_itens'] : 0;
+        $concluidosItens = isset($resumo['concluidos_itens']) ? (int) $resumo['concluidos_itens'] : 0;
+        $totalObrigatorios = isset($resumo['total_obrigatorios']) ? (int) $resumo['total_obrigatorios'] : 0;
+        $concluidosObrigatorios = isset($resumo['concluidos_obrigatorios']) ? (int) $resumo['concluidos_obrigatorios'] : 0;
+        $avaliacoesPendentes = isset($resumo['avaliacoes_pendentes']) ? (int) $resumo['avaliacoes_pendentes'] : 0;
+
+        if ($totalItens <= 0) {
+            return 'pendente';
+        }
+        if ($avaliacoesPendentes > 0) {
+            return 'aguardando_correcao';
+        }
+        if ($totalObrigatorios > 0 && $concluidosObrigatorios >= $totalObrigatorios) {
+            return 'concluido';
+        }
+        if ($concluidosItens > 0) {
+            return 'em_andamento';
+        }
+
+        return 'pendente';
+    }
+
+    private function rotuloTipoItemPublicoAluno($tipo)
+    {
+        $mapa = array(
+            'etiqueta' => 'Etiqueta',
+            'texto' => 'Texto',
+            'arquivo' => 'Arquivo',
+            'link' => 'Link externo',
+            'video' => 'Vídeo',
+            'avaliacao_textual' => 'Avaliação textual',
+        );
+
+        $tipo = (string) $tipo;
+        return isset($mapa[$tipo]) ? $mapa[$tipo] : 'Conteúdo';
+    }
+
+    private function acaoItemPublicaAluno($tipo, ?array $entrega = null)
+    {
+        $tipo = (string) $tipo;
+        if ($tipo === 'texto') {
+            return 'Abrir conteúdo';
+        }
+        if ($tipo === 'arquivo') {
+            return 'Baixar arquivo';
+        }
+        if ($tipo === 'link') {
+            return 'Acessar link';
+        }
+        if ($tipo === 'video') {
+            return 'Assistir vídeo';
+        }
+        if ($tipo === 'avaliacao_textual') {
+            $statusEntrega = !empty($entrega['status']) ? (string) $entrega['status'] : '';
+            return in_array($statusEntrega, array('enviada', 'reenviada', 'devolvida', 'corrigida', 'aprovada', 'reprovada'), true)
+                ? 'Ver avaliação'
+                : 'Responder avaliação';
+        }
+
+        return 'Ver conteúdo';
+    }
+
+    private function urlDetalhesItemPublicoAluno(array $item, $cursoEventoId, $inscricaoId, $turmaId = null)
+    {
+        $url = '/aluno/cursos/conteudo/item?id=' . (int) ($item['id'] ?? 0) . '&inscricao_id=' . (int) $inscricaoId . '&curso_id=' . (int) $cursoEventoId;
+        if ($turmaId !== null && (int) $turmaId > 0) {
+            $url .= '&turma_id=' . (int) $turmaId;
+        }
+
+        return $url;
+    }
+
+    private function urlAcaoItemPublicaAluno(array $item, $cursoEventoId, $inscricaoId, $turmaId = null, $tipo = null, ?array $entrega = null)
+    {
+        $tipo = $tipo !== null ? (string) $tipo : (string) ($item['tipo'] ?? '');
+        if ($tipo === 'link') {
+            return '/aluno/cursos/conteudo/link/acessar?id=' . (int) ($item['id'] ?? 0) . '&inscricao_id=' . (int) $inscricaoId . '&curso_id=' . (int) $cursoEventoId . ($turmaId !== null && (int) $turmaId > 0 ? '&turma_id=' . (int) $turmaId : '');
+        }
+        if ($tipo === 'arquivo') {
+            return '/aluno/cursos/conteudo/arquivo/download?id=' . (int) ($item['id'] ?? 0) . '&inscricao_id=' . (int) $inscricaoId . '&curso_id=' . (int) $cursoEventoId . ($turmaId !== null && (int) $turmaId > 0 ? '&turma_id=' . (int) $turmaId : '');
+        }
+
+        return $this->urlDetalhesItemPublicoAluno($item, $cursoEventoId, $inscricaoId, $turmaId);
+    }
+
+    private function rotuloStatusPublicoAluno($status)
+    {
+        $mapa = array(
+            'nao_iniciado' => 'Não iniciado',
+            'acessado' => 'Acessado',
+            'em_andamento' => 'Em andamento',
+            'concluido' => 'Concluído',
+            'aguardando_envio' => 'Aguardando envio',
+            'aguardando_correcao' => 'Aguardando correção',
+            'pendente_correcao' => 'Aguardando correção',
+            'devolvida' => 'Devolvida',
+            'aprovada' => 'Aprovada',
+            'reprovada' => 'Reprovada',
+            'corrigida' => 'Corrigida',
+            'cancelada' => 'Cancelada',
+            'pendente' => 'Pendente',
+        );
+
+        $status = (string) $status;
+        if (isset($mapa[$status])) {
+            return $mapa[$status];
+        }
+
+        return $status !== '' ? ucwords(str_replace('_', ' ', $status)) : '-';
+    }
+
+    private function classeStatusPublicoAluno($status)
+    {
+        $status = (string) $status;
+        if (in_array($status, array('concluido', 'aprovada', 'corrigida'), true)) {
+            return 'success';
+        }
+        if (in_array($status, array('aguardando_correcao', 'pendente_correcao', 'devolvida', 'aguardando_envio'), true)) {
+            return 'warning';
+        }
+        if (in_array($status, array('reprovada', 'cancelada'), true)) {
+            return 'danger';
+        }
+        if (in_array($status, array('em_andamento', 'acessado'), true)) {
+            return 'info';
+        }
+
+        return 'neutral';
     }
 
     private function salvarDetalhesPorTipo($itemId, $tipo, array $dados, ?array $arquivoUpload, $usuarioId)

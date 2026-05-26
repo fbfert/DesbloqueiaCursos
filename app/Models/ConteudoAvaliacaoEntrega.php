@@ -85,6 +85,42 @@ class ConteudoAvaliacaoEntrega
         return $row ?: null;
     }
 
+    public function listarUltimasEntregasPorItensAluno(array $itemIds, $alunoId, $inscricaoId)
+    {
+        $itemIds = array_values(array_unique(array_map('intval', $itemIds)));
+        $alunoId = (int) $alunoId;
+        $inscricaoId = (int) $inscricaoId;
+
+        if (empty($itemIds) || $alunoId <= 0 || $inscricaoId <= 0) {
+            return array();
+        }
+
+        $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+        $sql = 'SELECT *
+                FROM conteudo_avaliacoes_entregas
+                WHERE deleted_at IS NULL
+                  AND aluno_id = ?
+                  AND inscricao_id = ?
+                  AND item_id IN (' . $placeholders . ')
+                ORDER BY item_id ASC, tentativa DESC, id DESC';
+
+        $params = array_merge(array($alunoId, $inscricaoId), $itemIds);
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $resultado = array();
+        foreach ($rows as $row) {
+            $itemId = (int) ($row['item_id'] ?? 0);
+            if ($itemId <= 0 || isset($resultado[$itemId])) {
+                continue;
+            }
+            $resultado[$itemId] = $row;
+        }
+
+        return $resultado;
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(

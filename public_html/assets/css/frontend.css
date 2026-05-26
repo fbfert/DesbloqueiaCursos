@@ -1319,6 +1319,128 @@ body.has-post-login-modal {
     min-height: 42px;
 }
 
+.frontend-theme .sala-virtual-layout,
+.frontend-theme .sala-curso-conteudo {
+    display: grid;
+    gap: 16px;
+}
+
+.frontend-theme .sala-curso-conteudo__header {
+    align-items: flex-start;
+}
+
+.frontend-theme .sala-curso-conteudo__resumo {
+    display: grid;
+    gap: 10px;
+}
+
+.frontend-theme .sala-curso-conteudo__resumo-percentual {
+    display: block;
+    font-family: "Sora", Arial, sans-serif;
+    font-size: clamp(1.8rem, 8vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--color-purple);
+}
+
+.frontend-theme .sala-curso-conteudo__resumo-linha {
+    display: grid;
+    gap: 6px;
+}
+
+.frontend-theme .sala-curso-conteudo__modulo {
+    display: grid;
+    gap: 14px;
+}
+
+.frontend-theme .sala-curso-conteudo__modulo-header {
+    display: grid;
+    gap: 12px;
+}
+
+.frontend-theme .sala-curso-conteudo__modulo-header strong {
+    display: block;
+    font-size: 1.08rem;
+    color: var(--text-main);
+}
+
+.frontend-theme .sala-curso-conteudo__modulo-header span {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.frontend-theme .sala-curso-conteudo__itens {
+    display: grid;
+    gap: 12px;
+}
+
+.frontend-theme .sala-curso-conteudo__item {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(75, 0, 142, 0.10);
+    background: linear-gradient(180deg, #ffffff 0%, #faf7ff 100%);
+}
+
+.frontend-theme .sala-curso-conteudo__item-body {
+    min-width: 0;
+}
+
+.frontend-theme .sala-curso-conteudo__item-body strong {
+    display: block;
+    font-size: 1.03rem;
+    line-height: 1.35;
+    color: var(--color-coal);
+    margin-top: 2px;
+}
+
+.frontend-theme .sala-curso-conteudo__item-body .muted-row {
+    margin-top: 8px;
+}
+
+.frontend-theme .sala-curso-conteudo__item-actions {
+    display: grid;
+    gap: 10px;
+}
+
+.frontend-theme .sala-curso-conteudo__item-actions .button-link {
+    width: 100%;
+    justify-content: center;
+}
+
+.frontend-theme .pill--success {
+    background: rgba(0, 230, 210, 0.14);
+    border-color: rgba(0, 230, 210, 0.28);
+    color: #0f766e;
+}
+
+.frontend-theme .pill--warning {
+    background: rgba(255, 106, 0, 0.12);
+    border-color: rgba(255, 106, 0, 0.24);
+    color: #c2410c;
+}
+
+.frontend-theme .pill--danger {
+    background: rgba(255, 77, 109, 0.12);
+    border-color: rgba(255, 77, 109, 0.24);
+    color: #be123c;
+}
+
+.frontend-theme .pill--info {
+    background: rgba(75, 0, 142, 0.10);
+    border-color: rgba(75, 0, 142, 0.20);
+    color: #4b008e;
+}
+
+.frontend-theme .pill--neutral {
+    background: rgba(107, 114, 128, 0.10);
+    border-color: rgba(107, 114, 128, 0.18);
+    color: #4b5563;
+}
+
 @media (min-width: 720px) {
     .frontend-theme .post-login-modal__dialog {
         margin-top: 12vh;
@@ -1327,6 +1449,20 @@ body.has-post-login-modal {
 
     .frontend-theme .post-login-modal__actions {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .frontend-theme .sala-curso-conteudo__item {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+    }
+
+    .frontend-theme .sala-curso-conteudo__item-actions {
+        min-width: 240px;
+        justify-items: end;
+    }
+
+    .frontend-theme .sala-curso-conteudo__item-actions .button-link {
+        width: auto;
     }
 }
 
