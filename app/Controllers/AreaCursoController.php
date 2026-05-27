@@ -286,9 +286,11 @@ class AreaCursoController extends Controller
         );
 
         $entregasAvaliacao = array();
+        $avaliacaoPodeEnviar = null;
         if ((string) ($item['tipo'] ?? '') === 'avaliacao_textual') {
             $entregasAvaliacao = $this->conteudoAvaliacaoTextualService->listarEntregasAluno((int) ($detalhe['detalhe']['id'] ?? 0), (int) Session::get('usuario_id'), (int) $inscricao['id']);
             $ultimaEntrega = !empty($entregasAvaliacao) ? $entregasAvaliacao[0] : null;
+            $avaliacaoPodeEnviar = $this->conteudoAvaliacaoTextualService->podeReenviar((int) ($detalhe['detalhe']['id'] ?? 0), (int) Session::get('usuario_id'), (int) $inscricao['id']);
             if (!empty($ultimaEntrega['status']) && in_array((string) $ultimaEntrega['status'], array('corrigida', 'aprovada', 'reprovada'), true)) {
                 $this->conteudoService->registrarLogAluno(array(
                     'curso_evento_id' => (int) $inscricao['curso_evento_id'],
@@ -316,6 +318,7 @@ class AreaCursoController extends Controller
             'conteudo_detalhe' => $detalhe['detalhe'],
             'conteudo_progresso' => $detalhe['progresso'],
             'conteudo_avaliacao_entregas' => $entregasAvaliacao,
+            'conteudo_avaliacao_pode_enviar' => $avaliacaoPodeEnviar,
             'conteudo_resumo' => !empty($resumo['ok']) ? $resumo : null,
         ));
     }
