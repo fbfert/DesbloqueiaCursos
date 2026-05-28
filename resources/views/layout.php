@@ -83,6 +83,10 @@ if (!$isAdmin) {
     <?php if ($isAdmin): ?>
         <link rel="stylesheet" href="/assets/css/admin.css">
     <?php endif; ?>
+    <?php if ($isAdmin || $isProfessor): ?>
+        <link rel="stylesheet" href="/assets/css/conteudo-editor.css?v=20260528">
+        <script src="/assets/js/conteudo-editor.js?v=20260528" defer></script>
+    <?php endif; ?>
 </head>
 <body class="<?php echo Helpers::e($scopeClass); ?><?php echo $useFrontendTheme ? ' frontend-theme' : ''; ?> theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
     <?php if ($isAdmin): ?>

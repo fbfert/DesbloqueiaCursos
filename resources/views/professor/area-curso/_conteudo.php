@@ -106,7 +106,7 @@ $formatTipoHint = function ($tipo) {
 
             <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($moduloEditar['titulo'] ?? ''); ?>" required></label>
             <label>Descrição
-                <textarea name="descricao" class="js-wysiwyg" data-wysiwyg="basic" rows="5"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea>
+                <textarea name="descricao" class="js-conteudo-rich-editor" data-editor-mode="full" rows="5"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea>
             </label>
             <label>Status
                 <?php $statusModulo = (string) ($moduloEditar['status'] ?? 'rascunho'); ?>
@@ -161,7 +161,7 @@ $formatTipoHint = function ($tipo) {
                 </select>
             </label>
             <div class="muted" style="grid-column: 1 / -1;">
-                Etiqueta: bloco de orientacao exibido ao aluno. | Texto: pagina de conteudo com editor. | Arquivo: material para download. | Link: endereco externo, botao ou embed. | Avaliacao textual: pergunta discursiva com nota e feedback. | Video: video incorporado por link/embed.
+                Etiqueta: bloco de orientação exibido ao aluno. | Texto: página de conteúdo com editor. | Arquivo: material para download. | Link: endereço externo, botão ou embed. | Avaliação textual: pergunta discursiva com nota e feedback. | Vídeo: vídeo incorporado por link/embed.
             </div>
 
             <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($itemEditar['titulo'] ?? ''); ?>" required></label>
@@ -180,14 +180,14 @@ $formatTipoHint = function ($tipo) {
             <div id="prof-conteudo-tipo-etiqueta" style="grid-column: 1 / -1;">
                 <h4 style="margin:0;">Etiqueta</h4>
                 <label>Conteúdo
-                    <textarea name="etiqueta_conteudo" class="js-wysiwyg" data-wysiwyg="full" rows="8"><?php echo Helpers::e($itemDetalhe['conteudo'] ?? ''); ?></textarea>
+                    <textarea name="etiqueta_conteudo" class="js-conteudo-rich-editor" data-editor-mode="full" rows="8"><?php echo Helpers::e($itemDetalhe['conteudo'] ?? ''); ?></textarea>
                 </label>
             </div>
 
             <div id="prof-conteudo-tipo-texto" style="grid-column: 1 / -1;">
                 <h4 style="margin:0;">Texto</h4>
                 <label>Conteúdo
-                    <textarea name="texto_conteudo" class="js-wysiwyg" data-wysiwyg="full" rows="10"><?php echo Helpers::e($itemDetalhe['conteudo'] ?? ''); ?></textarea>
+                    <textarea name="texto_conteudo" class="js-conteudo-rich-editor" data-editor-mode="full" rows="10"><?php echo Helpers::e($itemDetalhe['conteudo'] ?? ''); ?></textarea>
                 </label>
             </div>
 
@@ -213,10 +213,10 @@ $formatTipoHint = function ($tipo) {
             <div id="prof-conteudo-tipo-avaliacao" style="grid-column: 1 / -1;">
                 <h4 style="margin:0;">Avaliação textual</h4>
                 <label>Enunciado
-                    <textarea name="avaliacao_enunciado" class="js-wysiwyg" data-wysiwyg="full" rows="10"><?php echo Helpers::e($itemDetalhe['enunciado'] ?? ''); ?></textarea>
+                    <textarea name="avaliacao_enunciado" class="js-conteudo-rich-editor" data-editor-mode="full" rows="10"><?php echo Helpers::e($itemDetalhe['enunciado'] ?? ''); ?></textarea>
                 </label>
                 <label>Orientações
-                    <textarea name="avaliacao_orientacoes" class="js-wysiwyg" data-wysiwyg="basic" rows="6"><?php echo Helpers::e($itemDetalhe['orientacoes'] ?? ''); ?></textarea>
+                    <textarea name="avaliacao_orientacoes" class="js-conteudo-rich-editor" data-editor-mode="full" rows="6"><?php echo Helpers::e($itemDetalhe['orientacoes'] ?? ''); ?></textarea>
                 </label>
                 <label>Nota máxima<input type="number" name="avaliacao_nota_maxima" min="0" step="0.01" value="<?php echo Helpers::e($itemDetalhe['nota_maxima'] ?? ''); ?>"></label>
                 <label>Nota mínima<input type="number" name="avaliacao_nota_minima" min="0" step="0.01" value="<?php echo Helpers::e($itemDetalhe['nota_minima'] ?? ''); ?>"></label>
@@ -249,27 +249,56 @@ $formatTipoHint = function ($tipo) {
             (function () {
                 function toggleTipo() {
                     var tipo = document.getElementById('prof-conteudo-item-tipo');
-                    if (!tipo) return;
+                    if (!tipo) {
+                        return;
+                    }
+
                     var value = tipo.value || 'texto';
                     var blocks = {
-                        'etiqueta': document.getElementById('prof-conteudo-tipo-etiqueta'),
-                        'texto': document.getElementById('prof-conteudo-tipo-texto'),
-                        'link': document.getElementById('prof-conteudo-tipo-link'),
-                        'video': document.getElementById('prof-conteudo-tipo-video'),
-                        'avaliacao_textual': document.getElementById('prof-conteudo-tipo-avaliacao'),
-                        'arquivo': document.getElementById('prof-conteudo-tipo-arquivo')
+                        etiqueta: document.getElementById('prof-conteudo-tipo-etiqueta'),
+                        texto: document.getElementById('prof-conteudo-tipo-texto'),
+                        link: document.getElementById('prof-conteudo-tipo-link'),
+                        video: document.getElementById('prof-conteudo-tipo-video'),
+                        avaliacao_textual: document.getElementById('prof-conteudo-tipo-avaliacao'),
+                        arquivo: document.getElementById('prof-conteudo-tipo-arquivo')
                     };
-                    Object.keys(blocks).forEach(function (k) {
-                        if (!blocks[k]) return;
-                        blocks[k].style.display = (k === value) ? '' : 'none';
+
+                    Object.keys(blocks).forEach(function (key) {
+                        if (!blocks[key]) {
+                            return;
+                        }
+                        blocks[key].style.display = key === value ? '' : 'none';
                     });
                 }
+
+                function initRichEditors() {
+                    if (window.initConteudoRichEditors) {
+                        window.initConteudoRichEditors();
+                        return;
+                    }
+                    if (window.initAreaCursoWysiwyg) {
+                        window.initAreaCursoWysiwyg();
+                    }
+                }
+
+                function init() {
+                    toggleTipo();
+                    initRichEditors();
+                }
+
                 document.addEventListener('change', function (ev) {
                     if (ev.target && ev.target.id === 'prof-conteudo-item-tipo') {
                         toggleTipo();
                     }
                 });
-                toggleTipo();
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', init);
+                } else {
+                    init();
+                }
+
+                window.addEventListener('load', initRichEditors);
             })();
         </script>
     </section>
@@ -295,7 +324,7 @@ $formatTipoHint = function ($tipo) {
                         </div>
                         <div class="cta-group" style="gap:6px;">
                             <a class="button-link" href="<?php echo Helpers::e($buildAreaCursoUrl(array('conteudo_modulo_id' => (int) $modulo['id']))); ?>">Editar</a>
-                            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($buildAreaCursoUrl(array('conteudo_modulo_id' => (int) $modulo['id']))); ?>">Adicionar conteÃºdo</a>
+                            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($buildAreaCursoUrl(array('conteudo_modulo_id' => (int) $modulo['id']))); ?>">Adicionar conteúdo</a>
                             <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulo/duplicar'); ?>">
                                 <?php echo $csrfField; ?>
                                 <input type="hidden" name="id" value="<?php echo (int) $modulo['id']; ?>">
@@ -360,7 +389,7 @@ $formatTipoHint = function ($tipo) {
                                                     <?php if (!empty($arquivoItem['caminho'])): ?>
                                                         <div class="muted" style="margin-top:4px;">
                                                             Arquivo: <?php echo Helpers::e((string) ($arquivoItem['nome_original'] ?? 'sem nome')); ?> |
-                                                            ExtensÃ£o: <?php echo Helpers::e((string) ($arquivoItem['extensao'] ?? '-')); ?> |
+                                                            Extensão: <?php echo Helpers::e((string) ($arquivoItem['extensao'] ?? '-')); ?> |
                                                             Tamanho: <?php echo Helpers::e(number_format(((int) ($arquivoItem['tamanho_bytes'] ?? 0)) / 1024, 1, ',', '.')); ?> KB
                                                         </div>
                                                         <div style="margin-top:4px;">
