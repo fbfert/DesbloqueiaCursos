@@ -5,15 +5,10 @@ $areaCursoBaseUrl = isset($areaCursoBaseUrl) && $areaCursoBaseUrl !== '' ? (stri
 $cursoAtual = isset($curso) && is_array($curso) ? $curso : array();
 $turmaAtual = isset($turma) && is_array($turma) ? $turma : array();
 $selectedTab = isset($selected_tab) && $selected_tab !== '' ? (string) $selected_tab : 'visao-geral';
-
 $conteudoModulos = isset($conteudo_modulos) && is_array($conteudo_modulos) ? $conteudo_modulos : array();
-$moduloEditar = isset($conteudo_modulo_editar) && is_array($conteudo_modulo_editar) ? $conteudo_modulo_editar : null;
-$itemEditar = isset($conteudo_item_editar) && is_array($conteudo_item_editar) ? $conteudo_item_editar : null;
-$itemDetalhe = isset($conteudo_item_detalhe) && is_array($conteudo_item_detalhe) ? $conteudo_item_detalhe : array();
 
 $cursoIdAtual = !empty($cursoAtual['id']) ? (int) $cursoAtual['id'] : 0;
 $turmaIdAtual = !empty($turmaAtual['id']) ? (int) $turmaAtual['id'] : 0;
-$moduloSelecionadoPorContexto = isset($_GET['conteudo_modulo_id']) ? (int) $_GET['conteudo_modulo_id'] : 0;
 
 $buildAreaCursoUrl = function (array $params = array()) use ($cursoIdAtual, $turmaIdAtual) {
     $query = array('curso_id' => $cursoIdAtual, 'aba' => 'conteudo');
@@ -31,6 +26,21 @@ $buildAreaCursoUrl = function (array $params = array()) use ($cursoIdAtual, $tur
     return '/admin/area-curso?' . http_build_query($query);
 };
 
+$buildConteudoUrl = function ($path, array $params = array()) use ($cursoIdAtual, $turmaIdAtual) {
+    $query = array('curso_id' => $cursoIdAtual);
+    if ($turmaIdAtual > 0) {
+        $query['turma_id'] = $turmaIdAtual;
+    }
+    foreach ($params as $chave => $valor) {
+        if ($valor === null || $valor === '' || $valor === 0) {
+            continue;
+        }
+        $query[$chave] = $valor;
+    }
+
+    return '/admin/area-curso/conteudo/' . ltrim((string) $path, '/') . '?' . http_build_query($query);
+};
+
 $formatStatusBadge = function ($status) {
     $status = (string) $status;
     if ($status === 'publicado') {
@@ -41,9 +51,6 @@ $formatStatusBadge = function ($status) {
     }
     if ($status === 'oculto') {
         return 'badge badge--soft';
-    }
-    if ($status === 'arquivado') {
-        return 'badge';
     }
     return 'badge';
 };
@@ -84,441 +91,310 @@ $formatTipoHint = function ($tipo) {
     $tipo = (string) $tipo;
     return isset($mapa[$tipo]) ? $mapa[$tipo] : '';
 };
+
+$moduloSelecionadoId = isset($conteudo_modulo_selecionado_id) ? (int) $conteudo_modulo_selecionado_id : 0;
+$moduloSelecionado = isset($conteudo_modulo_selecionado) && is_array($conteudo_modulo_selecionado) ? $conteudo_modulo_selecionado : null;
+$moduloSelecionadoItens = isset($conteudo_modulo_itens) && is_array($conteudo_modulo_itens) ? $conteudo_modulo_itens : array();
+$moduloErro = isset($conteudo_modulo_erro) ? trim((string) $conteudo_modulo_erro) : '';
+$modoModuloAtivo = $moduloSelecionadoId > 0 && !empty($moduloSelecionado);
+$temModulos = !empty($conteudoModulos);
 ?>
 
 <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'conteudo' ? ' is-active' : ''; ?>" data-area-curso-tab="conteudo" id="area-curso-conteudo">
-    <div class="panel-header">
+    <div class="panel-header area-curso-conteudo__header">
         <div>
-            <h2>Conteúdo do curso</h2>
-            <p class="muted">Use esta área para organizar módulos, textos, arquivos, links, vídeos e avaliações textuais do curso.</p>
+            <h2>Módulos do Curso</h2>
+            <?php if ($modoModuloAtivo): ?>
+                <p class="muted" style="margin:6px 0 0;">Você está vendo apenas os conteúdos do módulo selecionado.</p>
+            <?php endif; ?>
         </div>
-        <div class="panel-actions">
-            <a class="button-link" href="<?php echo Helpers::e($buildAreaCursoUrl()); ?>">Limpar seleção</a>
+
+        <div class="area-curso-conteudo__toolbar">
+            <?php if ($modoModuloAtivo): ?>
+                <a class="button-link button-link--ghost" href="<?php echo Helpers::e($buildAreaCursoUrl()); ?>">Voltar aos módulos</a>
+            <?php else: ?>
+                <a class="button-link button-link--primary" href="<?php echo Helpers::e($buildConteudoUrl('modulos/criar')); ?>">Novo módulo</a>
+                <?php if ($temModulos): ?>
+                    <a class="button-link" href="<?php echo Helpers::e($buildConteudoUrl('itens/criar')); ?>">Novo conteúdo</a>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
     </div>
 
-    <div class="admin-area-curso__stack" style="display:grid; gap:14px;">
-        <section class="panel">
-            <div class="panel-header">
+    <?php if ($moduloErro !== ''): ?>
+        <div class="area-curso-empty-state">
+            <strong>Não foi possível abrir o módulo selecionado.</strong>
+            <p class="muted" style="margin:0;"><?php echo Helpers::e($moduloErro); ?></p>
+            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($buildAreaCursoUrl()); ?>">Voltar aos módulos</a>
+        </div>
+    <?php elseif ($modoModuloAtivo && !empty($moduloSelecionado)): ?>
+        <?php
+        $descricaoModulo = trim((string) strip_tags((string) ($moduloSelecionado['descricao'] ?? '')));
+        $ordemModulo = isset($moduloSelecionado['ordem']) ? (int) $moduloSelecionado['ordem'] : 0;
+        $itensDoModulo = !empty($moduloSelecionadoItens) && is_array($moduloSelecionadoItens)
+            ? $moduloSelecionadoItens
+            : (isset($moduloSelecionado['itens']) && is_array($moduloSelecionado['itens']) ? $moduloSelecionado['itens'] : array());
+        $contadorItens = count($itensDoModulo);
+        ?>
+
+        <article class="area-curso-conteudo-module is-selected">
+            <div class="area-curso-conteudo-module__header">
                 <div>
-                    <h3><?php echo $moduloEditar ? 'Editar módulo' : 'Novo módulo'; ?></h3>
-                </div>
-            </div>
-            <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulo/salvar'); ?>" class="form-grid">
-                <?php echo $csrfField; ?>
-                <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                <input type="hidden" name="aba" value="conteudo">
-                <?php if ($moduloEditar): ?>
-                    <input type="hidden" name="id" value="<?php echo (int) $moduloEditar['id']; ?>">
-                <?php endif; ?>
+                    <div class="area-curso-conteudo-module__title-row">
+                        <a class="area-curso-conteudo-module__title-link" href="<?php echo Helpers::e($buildAreaCursoUrl(array('modulo_id' => (int) $moduloSelecionado['id'], 'conteudo_modulo_id' => (int) $moduloSelecionado['id']))); ?>">
+                            <?php echo Helpers::e((string) ($moduloSelecionado['titulo'] ?? 'Módulo')); ?>
+                        </a>
+                        <span class="badge">#<?php echo (int) ($ordemModulo > 0 ? $ordemModulo : 1); ?></span>
+                        <span class="badge"><?php echo (int) $contadorItens; ?> itens</span>
+                        <span class="<?php echo Helpers::e($formatStatusBadge($moduloSelecionado['status'] ?? 'rascunho')); ?>"><?php echo Helpers::e($formatStatusLabel($moduloSelecionado['status'] ?? 'rascunho')); ?></span>
+                    </div>
 
-                <label>Título
-                    <input type="text" name="titulo" value="<?php echo Helpers::e($moduloEditar['titulo'] ?? ''); ?>" required>
-                </label>
+                    <div class="area-curso-conteudo-module__meta">
+                        <span class="muted">Ordem <?php echo (int) ($ordemModulo > 0 ? $ordemModulo : 1); ?></span>
+                        <span class="muted">ID <?php echo (int) ($moduloSelecionado['id'] ?? 0); ?></span>
+                    </div>
 
-                <label>Descrição
-                    <textarea name="descricao" class="js-conteudo-rich-editor" data-editor-mode="full" rows="5"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea>
-                </label>
-
-                <label>Status
-                    <?php $statusModulo = (string) ($moduloEditar['status'] ?? 'rascunho'); ?>
-                    <select name="status">
-                        <option value="rascunho" <?php echo $statusModulo === 'rascunho' ? 'selected' : ''; ?>>Rascunho</option>
-                        <option value="publicado" <?php echo $statusModulo === 'publicado' ? 'selected' : ''; ?>>Publicado</option>
-                        <option value="oculto" <?php echo $statusModulo === 'oculto' ? 'selected' : ''; ?>>Oculto</option>
-                        <option value="arquivado" <?php echo $statusModulo === 'arquivado' ? 'selected' : ''; ?>>Arquivado</option>
-                    </select>
-                </label>
-
-                <?php
-                $cancel_url = $buildAreaCursoUrl();
-                $show_save_as_copy = false;
-                require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
-                ?>
-            </form>
-        </section>
-
-        <section class="panel">
-            <div class="panel-header">
-                <div>
-                    <h3><?php echo $itemEditar ? 'Editar item' : 'Adicionar conteúdo'; ?></h3>
-                    <p class="muted">Selecione o módulo e o tipo do item.</p>
-                </div>
-            </div>
-            <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/item/salvar'); ?>" class="form-grid" enctype="multipart/form-data">
-                <?php echo $csrfField; ?>
-                <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                <input type="hidden" name="aba" value="conteudo">
-                <?php if ($itemEditar): ?>
-                    <input type="hidden" name="id" value="<?php echo (int) $itemEditar['id']; ?>">
-                <?php endif; ?>
-
-                <?php $moduloSelecionado = (int) ($itemEditar['modulo_id'] ?? 0); ?>
-                <?php if ($moduloSelecionado <= 0 && $moduloSelecionadoPorContexto > 0): $moduloSelecionado = $moduloSelecionadoPorContexto; endif; ?>
-                <label>Módulo
-                    <select name="modulo_id" required>
-                        <option value="">Selecione</option>
-                        <?php foreach ($conteudoModulos as $m): ?>
-                            <option value="<?php echo (int) $m['id']; ?>" <?php echo $moduloSelecionado === (int) $m['id'] ? 'selected' : ''; ?>>
-                                <?php echo Helpers::e($m['titulo']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-
-                <?php $tipoSelecionado = (string) ($itemEditar['tipo'] ?? 'texto'); ?>
-                <label>Tipo
-                    <select name="tipo" id="conteudo-item-tipo" required>
-                        <option value="etiqueta" title="<?php echo Helpers::e($formatTipoHint('etiqueta')); ?>" <?php echo $tipoSelecionado === 'etiqueta' ? 'selected' : ''; ?>>Etiqueta</option>
-                        <option value="texto" title="<?php echo Helpers::e($formatTipoHint('texto')); ?>" <?php echo $tipoSelecionado === 'texto' ? 'selected' : ''; ?>>Texto</option>
-                        <option value="arquivo" title="<?php echo Helpers::e($formatTipoHint('arquivo')); ?>" <?php echo $tipoSelecionado === 'arquivo' ? 'selected' : ''; ?>>Arquivo</option>
-                        <option value="link" title="<?php echo Helpers::e($formatTipoHint('link')); ?>" <?php echo $tipoSelecionado === 'link' ? 'selected' : ''; ?>>Link</option>
-                        <option value="avaliacao_textual" title="<?php echo Helpers::e($formatTipoHint('avaliacao_textual')); ?>" <?php echo $tipoSelecionado === 'avaliacao_textual' ? 'selected' : ''; ?>>Avaliação textual</option>
-                        <option value="video" title="<?php echo Helpers::e($formatTipoHint('video')); ?>" <?php echo $tipoSelecionado === 'video' ? 'selected' : ''; ?>>Vídeo</option>
-                    </select>
-                </label>
-                <div class="muted" style="grid-column: 1 / -1;">
-                    Etiqueta: bloco de orientação exibido ao aluno. | Texto: página de conteúdo com editor. | Arquivo: material para download. | Link: endereço externo, botão ou embed. | Avaliação textual: pergunta discursiva com nota e feedback. | Vídeo: vídeo incorporado por link/embed.
-                </div>
-
-                <label>Título
-                    <input type="text" name="titulo" value="<?php echo Helpers::e($itemEditar['titulo'] ?? ''); ?>" required>
-                </label>
-
-                <label>Descrição curta (opcional)
-                    <textarea name="descricao_curta" rows="3"><?php echo Helpers::e($itemEditar['descricao_curta'] ?? ''); ?></textarea>
-                </label>
-
-                <label class="checkbox">
-                    <input type="checkbox" name="obrigatorio" value="1" <?php echo !empty($itemEditar['obrigatorio']) ? 'checked' : ''; ?>>
-                    Obrigatório (contará para progresso e certificado futuramente)
-                </label>
-
-                <label>Status
-                    <?php $statusItem = (string) ($itemEditar['status'] ?? 'rascunho'); ?>
-                    <select name="status">
-                        <option value="rascunho" <?php echo $statusItem === 'rascunho' ? 'selected' : ''; ?>>Rascunho</option>
-                        <option value="publicado" <?php echo $statusItem === 'publicado' ? 'selected' : ''; ?>>Publicado</option>
-                        <option value="oculto" <?php echo $statusItem === 'oculto' ? 'selected' : ''; ?>>Oculto</option>
-                        <option value="arquivado" <?php echo $statusItem === 'arquivado' ? 'selected' : ''; ?>>Arquivado</option>
-                    </select>
-                </label>
-
-                <div id="conteudo-tipo-etiqueta" class="form-grid" style="grid-column: 1 / -1;">
-                    <h4 style="margin:0;">Etiqueta</h4>
-                    <label>Conteúdo
-                        <textarea name="etiqueta_conteudo" class="js-conteudo-rich-editor" data-editor-mode="full" rows="8"><?php echo Helpers::e($itemDetalhe['conteudo'] ?? ''); ?></textarea>
-                    </label>
-                </div>
-
-                <div id="conteudo-tipo-texto" class="form-grid" style="grid-column: 1 / -1;">
-                    <h4 style="margin:0;">Texto</h4>
-                    <label>Conteúdo
-                        <textarea name="texto_conteudo" class="js-conteudo-rich-editor" data-editor-mode="full" rows="10"><?php echo Helpers::e($itemDetalhe['conteudo'] ?? ''); ?></textarea>
-                    </label>
-                </div>
-
-                <div id="conteudo-tipo-link" class="form-grid" style="grid-column: 1 / -1;">
-                    <h4 style="margin:0;">Link externo</h4>
-                    <label>URL
-                        <input type="url" name="link_url" value="<?php echo Helpers::e($itemDetalhe['url'] ?? ''); ?>">
-                    </label>
-                    <?php $modoLink = (string) ($itemDetalhe['modo_abertura'] ?? 'nova_aba'); ?>
-                    <label>Modo de abertura
-                        <select name="link_modo_abertura">
-                            <option value="nova_aba" <?php echo $modoLink === 'nova_aba' ? 'selected' : ''; ?>>Nova aba</option>
-                            <option value="embed" <?php echo $modoLink === 'embed' ? 'selected' : ''; ?>>Embed</option>
-                            <option value="botao" <?php echo $modoLink === 'botao' ? 'selected' : ''; ?>>Botão</option>
-                        </select>
-                    </label>
-                </div>
-
-                <div id="conteudo-tipo-video" class="form-grid" style="grid-column: 1 / -1;">
-                    <h4 style="margin:0;">Vídeo</h4>
-                    <label>URL
-                        <input type="url" name="video_url" value="<?php echo Helpers::e($itemDetalhe['url'] ?? ''); ?>">
-                    </label>
-                    <label>Duração (segundos, opcional)
-                        <input type="number" name="video_duracao_segundos" value="<?php echo Helpers::e($itemDetalhe['duracao_segundos'] ?? ''); ?>" min="0">
-                    </label>
-                </div>
-
-                <div id="conteudo-tipo-avaliacao" class="form-grid" style="grid-column: 1 / -1;">
-                    <h4 style="margin:0;">Avaliação textual</h4>
-                    <label>Enunciado
-                        <textarea name="avaliacao_enunciado" class="js-conteudo-rich-editor" data-editor-mode="full" rows="10"><?php echo Helpers::e($itemDetalhe['enunciado'] ?? ''); ?></textarea>
-                    </label>
-                    <label>Orientações (opcional)
-                        <textarea name="avaliacao_orientacoes" class="js-conteudo-rich-editor" data-editor-mode="full" rows="6"><?php echo Helpers::e($itemDetalhe['orientacoes'] ?? ''); ?></textarea>
-                    </label>
-                    <label>Nota máxima (opcional)
-                        <input type="number" name="avaliacao_nota_maxima" min="0" step="0.01" value="<?php echo Helpers::e($itemDetalhe['nota_maxima'] ?? ''); ?>">
-                    </label>
-                    <label>Nota mínima para aprovação (opcional)
-                        <input type="number" name="avaliacao_nota_minima" min="0" step="0.01" value="<?php echo Helpers::e($itemDetalhe['nota_minima'] ?? ''); ?>">
-                    </label>
-                    <label>Peso
-                        <input type="number" name="avaliacao_peso" min="0.01" step="0.01" value="<?php echo Helpers::e($itemDetalhe['peso'] ?? '1.00'); ?>">
-                    </label>
-                    <label>Prazo (opcional)
-                        <input type="datetime-local" name="avaliacao_prazo" value="<?php echo !empty($itemDetalhe['prazo']) ? Helpers::e(str_replace(' ', 'T', substr((string) $itemDetalhe['prazo'], 0, 16))) : ''; ?>">
-                    </label>
-                    <label class="checkbox">
-                        <input type="checkbox" name="avaliacao_permite_reenvio" value="1" <?php echo !empty($itemDetalhe['permite_reenvio']) ? 'checked' : ''; ?>>
-                        Permitir reenvio
-                    </label>
-                    <label class="checkbox">
-                        <input type="checkbox" name="avaliacao_reenvio_livre_ate_prazo" value="1" <?php echo !isset($itemDetalhe['reenvio_livre_ate_prazo']) || !empty($itemDetalhe['reenvio_livre_ate_prazo']) ? 'checked' : ''; ?>>
-                        Reenvio livre até o prazo
-                    </label>
-                </div>
-
-                <div id="conteudo-tipo-arquivo" class="form-grid" style="grid-column: 1 / -1;">
-                    <h4 style="margin:0;">Arquivo</h4>
-                    <p class="muted" style="margin:0;">Limite: 10 MB. Extensões permitidas: pdf, jpg, jpeg, png, webp, doc, docx, odt, xls, xlsx, ods, ppt, pptx, odp, txt, csv.</p>
-                    <label>Arquivo
-                        <input type="file" name="arquivo" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.odt,.xls,.xlsx,.ods,.ppt,.pptx,.odp,.txt,.csv">
-                    </label>
-                    <label class="checkbox">
-                        <input type="checkbox" name="arquivo_permite_download" value="1" <?php echo !empty($itemDetalhe['permite_download']) ? 'checked' : ''; ?>>
-                        Permitir download
-                    </label>
-                    <?php if (!empty($itemDetalhe['nome_original'])): ?>
-                        <p class="muted" style="margin:0;">Arquivo atual: <?php echo Helpers::e($itemDetalhe['nome_original']); ?></p>
+                    <?php if ($descricaoModulo !== ''): ?>
+                        <p class="muted" style="margin:8px 0 0;"><?php echo Helpers::e($descricaoModulo); ?></p>
+                    <?php else: ?>
+                        <p class="muted" style="margin:8px 0 0;">Este módulo ainda não tem descrição.</p>
                     <?php endif; ?>
                 </div>
 
-                <?php
-                $cancel_url = $buildAreaCursoUrl();
-                $show_save_as_copy = false;
-                require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
-                ?>
-            </form>
+                <div class="area-curso-conteudo-actions">
+                    <a class="button-link" href="<?php echo Helpers::e($buildConteudoUrl('modulos/editar', array('modulo_id' => (int) $moduloSelecionado['id']))); ?>">Editar</a>
+                    <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulo/duplicar'); ?>">
+                        <?php echo $csrfField; ?>
+                        <input type="hidden" name="id" value="<?php echo (int) ($moduloSelecionado['id'] ?? 0); ?>">
+                        <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                        <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                        <button type="submit" class="button-link">Duplicar</button>
+                    </form>
+                    <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulo/arquivar'); ?>">
+                        <?php echo $csrfField; ?>
+                        <input type="hidden" name="id" value="<?php echo (int) ($moduloSelecionado['id'] ?? 0); ?>">
+                        <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                        <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                        <button type="submit" class="button-link button-link--danger" onclick="return confirmarAcaoCritica({ palavra: 'ARQUIVAR', pergunta: 'Você conferiu o arquivamento deste módulo?' });">Arquivar</button>
+                    </form>
+                    <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulos/ordenar'); ?>">
+                        <?php echo $csrfField; ?>
+                        <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                        <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                        <input type="hidden" name="modulo_id" value="<?php echo (int) ($moduloSelecionado['id'] ?? 0); ?>">
+                        <input type="hidden" name="direcao" value="subir">
+                        <button type="submit" class="button-link">Subir</button>
+                    </form>
+                    <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulos/ordenar'); ?>">
+                        <?php echo $csrfField; ?>
+                        <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                        <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                        <input type="hidden" name="modulo_id" value="<?php echo (int) ($moduloSelecionado['id'] ?? 0); ?>">
+                        <input type="hidden" name="direcao" value="descer">
+                        <button type="submit" class="button-link">Descer</button>
+                    </form>
+                </div>
+            </div>
+        </article>
 
-        <script>
-            (function () {
-                function toggleTipo() {
-                    var tipo = document.getElementById('conteudo-item-tipo');
-                    if (!tipo) {
-                        return;
-                    }
-
-                    var value = tipo.value || 'texto';
-                    var blocks = {
-                        etiqueta: document.getElementById('conteudo-tipo-etiqueta'),
-                        texto: document.getElementById('conteudo-tipo-texto'),
-                        link: document.getElementById('conteudo-tipo-link'),
-                        video: document.getElementById('conteudo-tipo-video'),
-                        avaliacao_textual: document.getElementById('conteudo-tipo-avaliacao'),
-                        arquivo: document.getElementById('conteudo-tipo-arquivo')
-                    };
-
-                    Object.keys(blocks).forEach(function (key) {
-                        if (!blocks[key]) {
-                            return;
-                        }
-                        blocks[key].style.display = key === value ? '' : 'none';
-                    });
-                }
-
-                function initRichEditors() {
-                    if (window.initConteudoRichEditors) {
-                        window.initConteudoRichEditors();
-                        return;
-                    }
-                    if (window.initAreaCursoWysiwyg) {
-                        window.initAreaCursoWysiwyg();
-                    }
-                }
-
-                function init() {
-                    toggleTipo();
-                    initRichEditors();
-                }
-
-                document.addEventListener('change', function (ev) {
-                    if (ev.target && ev.target.id === 'conteudo-item-tipo') {
-                        toggleTipo();
-                    }
-                });
-
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', init);
-                } else {
-                    init();
-                }
-
-                window.addEventListener('load', initRichEditors);
-            })();
-        </script>
-        </section>
-
-        <section class="panel">
-            <div class="panel-header">
-                <div><h3>Módulos e itens</h3></div>
+        <div class="area-curso-conteudo-module__items">
+            <div class="panel-header" style="margin-top:4px;">
+                <h3 style="margin:0;">Itens do módulo</h3>
+                <span class="badge"><?php echo (int) $contadorItens; ?> itens</span>
             </div>
 
-            <?php if (empty($conteudoModulos)): ?>
-                <p class="muted">Nenhum módulo cadastrado ainda.</p>
-            <?php endif; ?>
-
-            <div style="display:grid; gap:12px;">
-                <?php foreach ($conteudoModulos as $modulo): ?>
-                    <?php $itensModulo = isset($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array(); ?>
-                    <div class="status-card" style="padding:14px;">
-                        <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+            <?php if (empty($itensDoModulo)): ?>
+                <div class="area-curso-empty-state">
+                    <strong>Este módulo ainda não possui conteúdos cadastrados.</strong>
+                    <p class="muted" style="margin:0;">Use o botão de criação para adicionar o primeiro conteúdo deste módulo.</p>
+                    <a class="button-link button-link--primary" href="<?php echo Helpers::e($buildConteudoUrl('itens/criar', array('modulo_id' => (int) $moduloSelecionado['id']))); ?>">Novo conteúdo neste módulo</a>
+                </div>
+            <?php else: ?>
+                <?php $indiceItem = 1; ?>
+                <?php foreach ($itensDoModulo as $item): ?>
+                    <?php
+                    $itemId = (int) ($item['id'] ?? 0);
+                    $ordemItem = isset($item['ordem']) ? (int) $item['ordem'] : $indiceItem;
+                    $descricaoCurta = trim((string) ($item['descricao_curta'] ?? ''));
+                    $tipoItem = (string) ($item['tipo'] ?? '');
+                    $temMaisDeUmModulo = count($conteudoModulos) > 1;
+                    ?>
+                    <article class="area-curso-conteudo-item">
+                        <div class="area-curso-conteudo-item__header">
                             <div>
-                                <strong><?php echo Helpers::e($modulo['titulo']); ?></strong>
-                                <div class="muted" style="margin-top:4px;"><?php echo Helpers::e(trim(strip_tags((string) ($modulo['descricao'] ?? '')))); ?></div>
-                                <div style="margin-top:6px;">
+                                <div class="area-curso-conteudo-item__title-row">
+                                    <strong><?php echo Helpers::e((string) ($item['titulo'] ?? 'Conteúdo')); ?></strong>
+                                    <span class="badge">#<?php echo (int) $ordemItem; ?></span>
+                                    <?php if ($tipoItem !== ''): ?>
+                                        <span class="badge" title="<?php echo Helpers::e($formatTipoHint($tipoItem)); ?>"><?php echo Helpers::e($formatTipoLabel($tipoItem)); ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($item['obrigatorio'])): ?>
+                                        <span class="badge badge--warn">Obrigatório</span>
+                                    <?php else: ?>
+                                        <span class="badge badge--soft">Opcional</span>
+                                    <?php endif; ?>
+                                    <span class="<?php echo Helpers::e($formatStatusBadge($item['status'] ?? 'rascunho')); ?>"><?php echo Helpers::e($formatStatusLabel($item['status'] ?? 'rascunho')); ?></span>
+                                </div>
+
+                                <div class="area-curso-conteudo-item__meta">
+                                    <span class="muted">Módulo: <?php echo Helpers::e((string) ($moduloSelecionado['titulo'] ?? '')); ?></span>
+                                    <?php if (!empty($item['tipo'])): ?>
+                                        <span class="muted">Tipo: <?php echo Helpers::e($formatTipoLabel($tipoItem)); ?></span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <?php if ($descricaoCurta !== ''): ?>
+                                    <p class="muted" style="margin:8px 0 0;"><?php echo Helpers::e($descricaoCurta); ?></p>
+                                <?php else: ?>
+                                    <p class="muted" style="margin:8px 0 0;">Sem descrição curta.</p>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="area-curso-conteudo-actions">
+                                <a class="button-link button-link--primary" href="<?php echo Helpers::e($buildConteudoUrl('itens/editar', array('item_id' => $itemId, 'modulo_id' => (int) $moduloSelecionado['id']))); ?>">Editar</a>
+                                <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/item/duplicar'); ?>">
+                                    <?php echo $csrfField; ?>
+                                    <input type="hidden" name="id" value="<?php echo $itemId; ?>">
+                                    <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                                    <button type="submit" class="button-link">Duplicar</button>
+                                </form>
+                                <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/item/arquivar'); ?>">
+                                    <?php echo $csrfField; ?>
+                                    <input type="hidden" name="id" value="<?php echo $itemId; ?>">
+                                    <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                                    <button type="submit" class="button-link button-link--danger" onclick="return confirmarAcaoCritica({ palavra: 'ARQUIVAR', pergunta: 'Você conferiu o arquivamento deste item?' });">Arquivar</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="area-curso-conteudo-item__body">
+                            <div class="area-curso-conteudo-actions">
+                                <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/itens/ordenar'); ?>">
+                                    <?php echo $csrfField; ?>
+                                    <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                                    <input type="hidden" name="modulo_id" value="<?php echo (int) $moduloSelecionado['id']; ?>">
+                                    <input type="hidden" name="item_id" value="<?php echo $itemId; ?>">
+                                    <input type="hidden" name="direcao" value="subir">
+                                    <button type="submit" class="button-link">Subir</button>
+                                </form>
+                                <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/itens/ordenar'); ?>">
+                                    <?php echo $csrfField; ?>
+                                    <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                                    <input type="hidden" name="modulo_id" value="<?php echo (int) $moduloSelecionado['id']; ?>">
+                                    <input type="hidden" name="item_id" value="<?php echo $itemId; ?>">
+                                    <input type="hidden" name="direcao" value="descer">
+                                    <button type="submit" class="button-link">Descer</button>
+                                </form>
+
+                                <?php if ($temMaisDeUmModulo): ?>
+                                    <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/item/mover'); ?>" class="area-curso-conteudo-item__move-form">
+                                        <?php echo $csrfField; ?>
+                                        <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                                        <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                                        <input type="hidden" name="item_id" value="<?php echo $itemId; ?>">
+                                        <label style="margin:0;">
+                                            <small class="muted">Mover para</small>
+                                            <select name="novo_modulo_id">
+                                                <?php foreach ($conteudoModulos as $m2): ?>
+                                                    <option value="<?php echo (int) $m2['id']; ?>" <?php echo (int) $m2['id'] === (int) $moduloSelecionado['id'] ? 'selected' : ''; ?>>
+                                                        <?php echo Helpers::e((string) ($m2['titulo'] ?? 'Módulo')); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </label>
+                                        <button type="submit" class="button-link">Mover</button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </article>
+                    <?php $indiceItem++; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    <?php else: ?>
+        <?php if (empty($conteudoModulos)): ?>
+            <div class="area-curso-empty-state">
+                <strong>Nenhum módulo cadastrado neste curso ainda.</strong>
+                <p class="muted" style="margin:0;">Crie o primeiro módulo para começar a organizar o conteúdo do curso.</p>
+                <a class="button-link button-link--primary" href="<?php echo Helpers::e($buildConteudoUrl('modulos/criar')); ?>">Criar primeiro módulo</a>
+            </div>
+        <?php else: ?>
+            <div class="area-curso-conteudo__module-list">
+                <?php $indiceModulo = 1; ?>
+                <?php foreach ($conteudoModulos as $modulo): ?>
+                    <?php
+                    $moduloId = (int) ($modulo['id'] ?? 0);
+                    $itensModulo = isset($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array();
+                    $descricaoModulo = trim((string) strip_tags((string) ($modulo['descricao'] ?? '')));
+                    $ordemModulo = isset($modulo['ordem']) ? (int) $modulo['ordem'] : $indiceModulo;
+                    ?>
+                    <article class="area-curso-conteudo-module">
+                        <div class="area-curso-conteudo-module__header">
+                            <div>
+                                <div class="area-curso-conteudo-module__title-row">
+                    <a class="area-curso-conteudo-module__title-link" href="<?php echo Helpers::e($buildAreaCursoUrl(array('modulo_id' => $moduloId, 'conteudo_modulo_id' => $moduloId))); ?>">
+                        <?php echo Helpers::e((string) ($modulo['titulo'] ?? 'Módulo')); ?>
+                    </a>
+                                    <span class="badge">#<?php echo (int) $ordemModulo; ?></span>
+                                    <span class="badge"><?php echo (int) count($itensModulo); ?> itens</span>
                                     <span class="<?php echo Helpers::e($formatStatusBadge($modulo['status'] ?? 'rascunho')); ?>"><?php echo Helpers::e($formatStatusLabel($modulo['status'] ?? 'rascunho')); ?></span>
                                 </div>
+
+                                <div class="area-curso-conteudo-module__meta">
+                                    <span class="muted">Ordem <?php echo (int) $ordemModulo; ?></span>
+                                    <span class="muted">ID <?php echo $moduloId; ?></span>
+                                </div>
+
+                                <?php if ($descricaoModulo !== ''): ?>
+                                    <p class="muted" style="margin:8px 0 0;"><?php echo Helpers::e($descricaoModulo); ?></p>
+                                <?php else: ?>
+                                    <p class="muted" style="margin:8px 0 0;">Este módulo ainda não tem descrição.</p>
+                                <?php endif; ?>
                             </div>
-                            <div class="cta-group" style="gap:6px;">
-                                <a class="button-link" href="<?php echo Helpers::e($buildAreaCursoUrl(array('conteudo_modulo_id' => (int) $modulo['id']))); ?>">Editar</a>
-                                <a class="button-link button-link--ghost" href="<?php echo Helpers::e($buildAreaCursoUrl(array('conteudo_modulo_id' => (int) $modulo['id']))); ?>">Adicionar conteúdo</a>
+
+                            <div class="area-curso-conteudo-actions">
+                                <a class="button-link" href="<?php echo Helpers::e($buildConteudoUrl('modulos/editar', array('modulo_id' => $moduloId))); ?>">Editar</a>
                                 <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulo/duplicar'); ?>">
                                     <?php echo $csrfField; ?>
-                                    <input type="hidden" name="id" value="<?php echo (int) $modulo['id']; ?>">
-                                    <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
+                                    <input type="hidden" name="id" value="<?php echo $moduloId; ?>">
+                                    <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
                                     <button type="submit" class="button-link">Duplicar</button>
                                 </form>
                                 <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulo/arquivar'); ?>">
                                     <?php echo $csrfField; ?>
-                                    <input type="hidden" name="id" value="<?php echo (int) $modulo['id']; ?>">
-                                    <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                    <button type="submit" class="button-link button-link--ghost" onclick="return confirmarAcaoCritica({ palavra: 'ARQUIVAR', pergunta: 'Você conferiu o arquivamento deste módulo?' });">Arquivar</button>
+                                    <input type="hidden" name="id" value="<?php echo $moduloId; ?>">
+                                    <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                                    <button type="submit" class="button-link button-link--danger" onclick="return confirmarAcaoCritica({ palavra: 'ARQUIVAR', pergunta: 'Você conferiu o arquivamento deste módulo?' });">Arquivar</button>
+                                </form>
+                                <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulos/ordenar'); ?>">
+                                    <?php echo $csrfField; ?>
+                                    <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                                    <input type="hidden" name="modulo_id" value="<?php echo $moduloId; ?>">
+                                    <input type="hidden" name="direcao" value="subir">
+                                    <button type="submit" class="button-link">Subir</button>
+                                </form>
+                                <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulos/ordenar'); ?>">
+                                    <?php echo $csrfField; ?>
+                                    <input type="hidden" name="curso_evento_id" value="<?php echo $cursoIdAtual; ?>">
+                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? $turmaIdAtual : ''; ?>">
+                                    <input type="hidden" name="modulo_id" value="<?php echo $moduloId; ?>">
+                                    <input type="hidden" name="direcao" value="descer">
+                                    <button type="submit" class="button-link">Descer</button>
                                 </form>
                             </div>
                         </div>
-
-                        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
-                            <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulos/ordenar'); ?>">
-                                <?php echo $csrfField; ?>
-                                <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                                <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                <input type="hidden" name="modulo_id" value="<?php echo (int) $modulo['id']; ?>">
-                                <input type="hidden" name="direcao" value="subir">
-                                <button type="submit" class="button-link">Subir</button>
-                            </form>
-                            <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/modulos/ordenar'); ?>">
-                                <?php echo $csrfField; ?>
-                                <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                                <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                <input type="hidden" name="modulo_id" value="<?php echo (int) $modulo['id']; ?>">
-                                <input type="hidden" name="direcao" value="descer">
-                                <button type="submit" class="button-link">Descer</button>
-                            </form>
-                        </div>
-
-                        <div style="margin-top:12px;">
-                            <strong>Itens</strong>
-                            <?php if (empty($itensModulo)): ?>
-                                <p class="muted" style="margin-top:6px;">Nenhum item neste módulo.</p>
-                            <?php else: ?>
-                                <div style="display:grid; gap:8px; margin-top:8px;">
-                                    <?php foreach ($itensModulo as $item): ?>
-                                        <div style="border:1px solid rgba(0,0,0,.08); padding:10px; border-radius:10px;">
-                                            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                                                <div>
-                                                    <div>
-                                                        <span class="badge" title="<?php echo Helpers::e($formatTipoHint($item['tipo'] ?? '')); ?>"><?php echo Helpers::e($formatTipoLabel($item['tipo'] ?? '')); ?></span>
-                                                        <?php if (!empty($item['obrigatorio'])): ?>
-                                                            <span class="badge badge--warn">Obrigatório</span>
-                                                        <?php else: ?>
-                                                            <span class="badge badge--soft">Opcional</span>
-                                                        <?php endif; ?>
-                                                        <span class="<?php echo Helpers::e($formatStatusBadge($item['status'] ?? 'rascunho')); ?>"><?php echo Helpers::e($formatStatusLabel($item['status'] ?? 'rascunho')); ?></span>
-                                                    </div>
-                                                    <strong style="display:block; margin-top:6px;"><?php echo Helpers::e($item['titulo']); ?></strong>
-                                                    <?php if (!empty($item['descricao_curta'])): ?>
-                                                        <div class="muted" style="margin-top:4px;"><?php echo Helpers::e($item['descricao_curta']); ?></div>
-                                                    <?php endif; ?>
-                                                    <?php if (($item['tipo'] ?? '') === 'arquivo'): ?>
-                                                        <?php $arquivoItem = isset($item['arquivo_detalhe']) && is_array($item['arquivo_detalhe']) ? $item['arquivo_detalhe'] : array(); ?>
-                                                        <?php if (!empty($arquivoItem['caminho'])): ?>
-                                                            <div class="muted" style="margin-top:4px;">
-                                                                Arquivo: <?php echo Helpers::e((string) ($arquivoItem['nome_original'] ?? 'sem nome')); ?> |
-                                                                Extensão: <?php echo Helpers::e((string) ($arquivoItem['extensao'] ?? '-')); ?> |
-                                                                Tamanho: <?php echo Helpers::e(number_format(((int) ($arquivoItem['tamanho_bytes'] ?? 0)) / 1024, 1, ',', '.')); ?> KB
-                                                            </div>
-                                                            <div style="margin-top:4px;">
-                                                                <a class="button-link" href="/admin/area-curso/conteudo/arquivo/download?id=<?php echo (int) $item['id']; ?>&curso_id=<?php echo (int) $cursoIdAtual; ?><?php echo $turmaIdAtual > 0 ? '&turma_id=' . (int) $turmaIdAtual : ''; ?>">Baixar arquivo</a>
-                                                            </div>
-                                                        <?php else: ?>
-                                                            <div class="muted" style="margin-top:4px;">Item em rascunho sem arquivo enviado.</div>
-                                                        <?php endif; ?>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <div class="cta-group" style="gap:6px;">
-                                                    <a class="button-link" href="<?php echo Helpers::e($buildAreaCursoUrl(array('conteudo_item_id' => (int) $item['id']))); ?>">Editar</a>
-                                                    <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/item/duplicar'); ?>">
-                                                        <?php echo $csrfField; ?>
-                                                        <input type="hidden" name="id" value="<?php echo (int) $item['id']; ?>">
-                                                        <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                                                        <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                                        <button type="submit" class="button-link">Duplicar</button>
-                                                    </form>
-                                                    <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/item/arquivar'); ?>">
-                                                        <?php echo $csrfField; ?>
-                                                        <input type="hidden" name="id" value="<?php echo (int) $item['id']; ?>">
-                                                        <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                                                        <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                                        <button type="submit" class="button-link button-link--ghost" onclick="return confirmarAcaoCritica({ palavra: 'ARQUIVAR', pergunta: 'Você conferiu o arquivamento deste item?' });">Arquivar</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-
-                                            <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
-                                                <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/itens/ordenar'); ?>">
-                                                    <?php echo $csrfField; ?>
-                                                    <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                                    <input type="hidden" name="modulo_id" value="<?php echo (int) $modulo['id']; ?>">
-                                                    <input type="hidden" name="item_id" value="<?php echo (int) $item['id']; ?>">
-                                                    <input type="hidden" name="direcao" value="subir">
-                                                    <button type="submit" class="button-link">Subir</button>
-                                                </form>
-                                                <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/itens/ordenar'); ?>">
-                                                    <?php echo $csrfField; ?>
-                                                    <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                                    <input type="hidden" name="modulo_id" value="<?php echo (int) $modulo['id']; ?>">
-                                                    <input type="hidden" name="item_id" value="<?php echo (int) $item['id']; ?>">
-                                                    <input type="hidden" name="direcao" value="descer">
-                                                    <button type="submit" class="button-link">Descer</button>
-                                                </form>
-
-                                                <form method="post" action="<?php echo Helpers::e($areaCursoBaseUrl . '/conteudo/item/mover'); ?>" class="form-grid" style="align-items:end;">
-                                                    <?php echo $csrfField; ?>
-                                                    <input type="hidden" name="curso_evento_id" value="<?php echo (int) $cursoIdAtual; ?>">
-                                                    <input type="hidden" name="turma_id" value="<?php echo $turmaIdAtual > 0 ? (int) $turmaIdAtual : ''; ?>">
-                                                    <input type="hidden" name="item_id" value="<?php echo (int) $item['id']; ?>">
-                                                    <label style="margin:0;">
-                                                        <small class="muted">Mover para</small>
-                                                        <select name="novo_modulo_id">
-                                                            <?php foreach ($conteudoModulos as $m2): ?>
-                                                                <option value="<?php echo (int) $m2['id']; ?>" <?php echo (int) $m2['id'] === (int) $modulo['id'] ? 'selected' : ''; ?>>
-                                                                    <?php echo Helpers::e($m2['titulo']); ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
-                                                        </select>
-                                                    </label>
-                                                    <button type="submit" class="button-link">Mover</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+                    </article>
+                    <?php $indiceModulo++; ?>
                 <?php endforeach; ?>
             </div>
-        </section>
-    </div>
+        <?php endif; ?>
+    <?php endif; ?>
 </section>

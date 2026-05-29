@@ -321,8 +321,8 @@ if (!function_exists('sala_material_label')) {
                         ?>
                     </span>
                     <?php if (!empty($selected_atividade)): ?>
-                        <?php if (!empty($selected_atividade['descricao'])): ?>
-                            <p class="muted-row"><?php echo nl2br(Helpers::e($selected_atividade['descricao'])); ?></p>
+                    <?php if (!empty($selected_atividade['descricao'])): ?>
+                        <div class="muted-row"><?php echo Helpers::renderSafeHtml($selected_atividade['descricao'], 'full'); ?></div>
                         <?php endif; ?>
                         <?php
                         $prazoAtividadeSelecionada = !empty($selected_atividade['prazo']) ? strtotime($selected_atividade['prazo']) : false;
@@ -426,9 +426,9 @@ if (!function_exists('sala_material_label')) {
                             <?php endif; ?>
                         </div>
                     <?php elseif (!empty($selected_aula) && !empty($selected_aula['conteudo'])): ?>
-                        <p class="muted-row"><?php echo nl2br(Helpers::e($selected_aula['conteudo'])); ?></p>
+                        <div class="muted-row"><?php echo Helpers::renderSafeHtml($selected_aula['conteudo'], 'full'); ?></div>
                     <?php elseif (!empty($selected_modulo['descricao'])): ?>
-                        <p class="muted-row"><?php echo nl2br(Helpers::e($selected_modulo['descricao'])); ?></p>
+                        <div class="muted-row"><?php echo Helpers::renderSafeHtml($selected_modulo['descricao'], 'basic'); ?></div>
                     <?php endif; ?>
                 </article>
             <?php endif; ?>
@@ -476,7 +476,7 @@ if (!function_exists('sala_material_label')) {
                         <div>
                             <strong><?php echo Helpers::textoLms($moduloConteudo['titulo'] ?? 'Módulo'); ?></strong>
                             <?php if (!empty($moduloConteudo['descricao'])): ?>
-                                <span><?php echo nl2br(Helpers::textoLmsMultilinha($moduloConteudo['descricao'])); ?></span>
+                                <div><?php echo Helpers::renderSafeHtml($moduloConteudo['descricao'], 'basic'); ?></div>
                             <?php endif; ?>
                         </div>
                         <div class="aluno-meta-row-v2 aluno-modulo-meta-v2" aria-label="Resumo do módulo">
@@ -540,7 +540,7 @@ if (!function_exists('sala_material_label')) {
                                         </div>
                                         <strong><?php echo Helpers::textoLms($itemConteudo['titulo'] ?? ''); ?></strong>
                                         <?php if (!empty($itemConteudo['descricao_curta'])): ?>
-                                            <p class="muted-row"><?php echo nl2br(Helpers::textoLmsMultilinha($itemConteudo['descricao_curta'])); ?></p>
+                                            <div class="muted-row"><?php echo Helpers::renderSafeHtml($itemConteudo['descricao_curta'], 'basic'); ?></div>
                                         <?php endif; ?>
 
                                         <?php if ($tipo === 'arquivo'): ?>

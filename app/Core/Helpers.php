@@ -4,6 +4,49 @@ namespace App\Core;
 
 class Helpers
 {
+    public static function decodeEditorHtml($value)
+    {
+        $texto = (string) $value;
+
+        for ($i = 0; $i < 3; $i++) {
+            $decodificado = html_entity_decode($texto, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($decodificado === $texto) {
+                break;
+            }
+            $texto = $decodificado;
+        }
+
+        return str_replace(array("\xc2\xa0", '&#160;'), ' ', $texto);
+    }
+
+    public static function renderSafeHtml($value, $profile = 'basic')
+    {
+        $raw = (string) $value;
+        if (trim($raw) === '') {
+            return '';
+        }
+
+        $normalizado = self::decodeEditorHtml($raw);
+
+        if (!preg_match('/<\s*\/?\s*[a-z][\s\S]*>/i', $normalizado)) {
+            $normalizado = preg_replace("/\r\n?/", "\n", $normalizado);
+            return nl2br(self::e($normalizado));
+        }
+
+        $sanitized = \App\Support\HtmlSanitizer::clean($normalizado, $profile);
+        if (trim((string) $sanitized) !== '') {
+            return $sanitized;
+        }
+
+        $texto = trim(strip_tags($normalizado));
+        if ($texto === '') {
+            return '';
+        }
+
+        $texto = preg_replace("/\r\n?/", "\n", $texto);
+        return nl2br(self::e($texto));
+    }
+
     public static function e($value)
     {
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');

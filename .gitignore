@@ -68,3 +68,6 @@ scripts/
 *.txt
 *.csv
 *.bin
+!public_html/assets/vendor/
+!public_html/assets/vendor/ckeditor5/
+!public_html/assets/vendor/ckeditor5/**

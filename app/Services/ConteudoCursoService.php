@@ -208,12 +208,12 @@ class ConteudoCursoService
 
         $item = $this->itemModel->findById($itemId);
         if (!$item || (int) $item['curso_evento_id'] !== $cursoEventoId || (string) $item['status'] !== 'publicado') {
-            return array('ok' => false, 'message' => 'Item nÃ£o encontrado.');
+            return array('ok' => false, 'message' => 'Item não encontrado.');
         }
 
         $modulo = $this->moduloModel->findById((int) $item['modulo_id']);
         if (!$modulo || (int) $modulo['curso_evento_id'] !== $cursoEventoId || (string) $modulo['status'] !== 'publicado') {
-            return array('ok' => false, 'message' => 'MÃ³dulo nÃ£o disponÃ­vel.');
+            return array('ok' => false, 'message' => 'Módulo não disponível.');
         }
 
         $detalhe = $this->carregarDetalhePorTipo((string) $item['tipo'], (int) $item['id']);
@@ -354,16 +354,16 @@ class ConteudoCursoService
 
         $item = $this->itemModel->findById($itemId);
         if (!$item || (int) $item['curso_evento_id'] !== $cursoEventoId || (string) $item['status'] !== 'publicado') {
-            return array('ok' => false, 'message' => 'Item nÃ£o disponÃ­vel para conclusÃ£o.');
+            return array('ok' => false, 'message' => 'Item não disponível para conclusão.');
         }
 
         $modulo = $this->moduloModel->findById((int) $item['modulo_id']);
         if (!$modulo || (string) $modulo['status'] !== 'publicado') {
-            return array('ok' => false, 'message' => 'MÃ³dulo nÃ£o disponÃ­vel para conclusÃ£o.');
+            return array('ok' => false, 'message' => 'Módulo não disponível para conclusão.');
         }
 
         if ((string) $item['tipo'] === 'avaliacao_textual') {
-            return array('ok' => false, 'message' => 'A avaliaÃ§Ã£o textual nÃ£o pode ser concluÃ­da manualmente nesta etapa.');
+            return array('ok' => false, 'message' => 'A avaliação textual não pode ser concluída manualmente nesta etapa.');
         }
 
         $contexto['modulo_id'] = (int) $item['modulo_id'];
@@ -398,12 +398,12 @@ class ConteudoCursoService
     {
         $id = (int) $id;
         if ($id <= 0) {
-            return array('ok' => false, 'message' => 'MÃ³dulo invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Módulo inválido.');
         }
 
         $existente = $this->moduloModel->findById($id);
         if (!$existente) {
-            return array('ok' => false, 'message' => 'MÃ³dulo nÃ£o encontrado.');
+            return array('ok' => false, 'message' => 'Módulo não encontrado.');
         }
 
         $payload = $this->normalizarModuloPayload(array_merge($existente, (array) $dados));
@@ -419,7 +419,7 @@ class ConteudoCursoService
     {
         $id = (int) $id;
         if ($id <= 0) {
-            return array('ok' => false, 'message' => 'MÃ³dulo invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Módulo inválido.');
         }
 
         $ok = $this->moduloModel->updateStatus($id, 'arquivado', $usuarioId ? (int) $usuarioId : null);
@@ -430,7 +430,7 @@ class ConteudoCursoService
     {
         $cursoEventoId = (int) $cursoEventoId;
         if ($cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'Curso invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Curso inválido.');
         }
 
         $pdo = Database::connection();
@@ -476,7 +476,7 @@ class ConteudoCursoService
 
         $origem = $this->moduloModel->findById($id);
         if (!$origem) {
-            return array('ok' => false, 'message' => 'MÃ³dulo nÃ£o encontrado.');
+            return array('ok' => false, 'message' => 'Módulo não encontrado.');
         }
 
         $pdo = Database::connection();
@@ -1174,7 +1174,7 @@ class ConteudoCursoService
         } catch (\RuntimeException $exception) {
             $pdo->rollBack();
             Logger::error('conteudo.item.salvar_arquivo_falhou', array('message' => $exception->getMessage()));
-            return array('ok' => false, 'message' => 'Nao foi possivel salvar o arquivo enviado.');
+            return array('ok' => false, 'message' => 'Não foi possível salvar o arquivo enviado.');
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('conteudo.item.salvar_falhou', array('message' => $exception->getMessage()));
@@ -1187,17 +1187,17 @@ class ConteudoCursoService
         $itemId = (int) $itemId;
         $cursoEventoId = (int) $cursoEventoId;
         if ($itemId <= 0 || $cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'Parametros invalidos.');
+            return array('ok' => false, 'message' => 'Parâmetros inválidos.');
         }
 
         $item = $this->itemModel->findById($itemId);
         if (!$item || (int) $item['curso_evento_id'] !== $cursoEventoId || (string) $item['tipo'] !== 'arquivo') {
-            return array('ok' => false, 'message' => 'Arquivo de conteudo nao encontrado.');
+            return array('ok' => false, 'message' => 'Arquivo de conteúdo não encontrado.');
         }
 
         $arquivo = $this->arquivoModel->findByItemId($itemId);
         if (!$arquivo || empty($arquivo['caminho'])) {
-            return array('ok' => false, 'message' => 'Arquivo de conteudo indisponivel.');
+            return array('ok' => false, 'message' => 'Arquivo de conteúdo indisponível.');
         }
 
         return array('ok' => true, 'item' => $item, 'arquivo' => $arquivo);

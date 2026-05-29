@@ -83,9 +83,11 @@ if (!$isAdmin) {
     <?php if ($isAdmin): ?>
         <link rel="stylesheet" href="/assets/css/admin.css">
     <?php endif; ?>
-    <?php if ($isAdmin || $isProfessor): ?>
-        <link rel="stylesheet" href="/assets/css/conteudo-editor.css?v=20260528">
-        <script src="/assets/js/conteudo-editor.js?v=20260528" defer></script>
+<?php if ($isAdmin || $isProfessor): ?>
+        <link rel="stylesheet" href="/assets/css/conteudo-editor.css?v=20260529">
+        <script src="/assets/vendor/ckeditor5/ckeditor.js?v=41.4.2" defer></script>
+        <script src="/assets/vendor/ckeditor5/translations/pt-br.js?v=41.4.2" defer></script>
+        <script src="/assets/js/conteudo-editor.js?v=20260529-ckeditor5" defer></script>
     <?php endif; ?>
 </head>
 <body class="<?php echo Helpers::e($scopeClass); ?><?php echo $useFrontendTheme ? ' frontend-theme' : ''; ?> theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">

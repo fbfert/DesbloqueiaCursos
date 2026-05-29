@@ -11,10 +11,10 @@ class HtmlSanitizer
             'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a'),
         ),
         'basic' => array(
-            'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre', 'h2', 'h3', 'span', 'div'),
+            'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a', 'blockquote', 'h2', 'h3', 'h4', 'table', 'thead', 'tbody', 'tr', 'th', 'td'),
         ),
         'full' => array(
-            'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div'),
+            'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td'),
         ),
     );
 
@@ -24,6 +24,8 @@ class HtmlSanitizer
         if (trim($html) === '') {
             return '';
         }
+
+        $html = self::normalizeInput($html);
 
         $profile = isset(self::PROFILES[$profile]) ? (string) $profile : 'basic';
         $allowedTags = self::PROFILES[$profile]['tags'];
@@ -136,8 +138,12 @@ class HtmlSanitizer
                 continue;
             }
 
+            if (in_array($tag, array('td', 'th'), true) && in_array($name, array('colspan', 'rowspan', 'scope'), true)) {
+                continue;
+            }
+
             if ($tag === 'a') {
-                if (!in_array($name, array('href', 'target', 'rel', 'title'), true)) {
+                if (!in_array($name, array('href', 'target', 'rel'), true)) {
                     $toRemove[] = $name;
                     continue;
                 }
@@ -213,6 +219,20 @@ class HtmlSanitizer
         }
 
         return implode(';', $safe);
+    }
+
+    private static function normalizeInput($html)
+    {
+        $html = (string) $html;
+        for ($i = 0; $i < 3; $i++) {
+            $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($decoded === $html) {
+                break;
+            }
+            $html = $decoded;
+        }
+
+        return str_replace(array("\xc2\xa0", '&#160;'), ' ', $html);
     }
 
     private static function sanitizeWithoutDom($html, array $allowedTags)
@@ -328,8 +348,13 @@ class HtmlSanitizer
                     continue;
                 }
 
+                if (in_array($tag, array('td', 'th'), true) && in_array($name, array('colspan', 'rowspan', 'scope'), true)) {
+                    $attrs[$name] = $value;
+                    continue;
+                }
+
                 if ($tag === 'a') {
-                    if (!in_array($name, array('href', 'target', 'rel', 'title'), true)) {
+                    if (!in_array($name, array('href', 'target', 'rel'), true)) {
                         continue;
                     }
 
@@ -354,10 +379,6 @@ class HtmlSanitizer
                         continue;
                     }
 
-                    if ($name === 'title') {
-                        $attrs['title'] = $value;
-                        continue;
-                    }
                 }
             }
         }

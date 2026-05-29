@@ -1,5 +1,4 @@
 <?php use App\Core\Helpers; ?>
-<?php use App\Support\HtmlSanitizer; ?>
 <?php
 $item = isset($conteudo_item) && is_array($conteudo_item) ? $conteudo_item : array();
 $modulo = isset($conteudo_modulo) && is_array($conteudo_modulo) ? $conteudo_modulo : array();
@@ -61,8 +60,7 @@ $formatarDataHora = function ($valor) {
 };
 
 $renderRich = function ($valor, $perfil = 'basic') {
-    $html = HtmlSanitizer::clean(html_entity_decode((string) $valor, ENT_QUOTES | ENT_HTML5, 'UTF-8'), $perfil);
-    return trim((string) $html);
+    return Helpers::renderSafeHtml($valor, $perfil);
 };
 
 $statusProgresso = !empty($progresso['status']) ? (string) $progresso['status'] : 'nao_iniciado';
@@ -188,7 +186,7 @@ $avaliacaoStatusPodeReenviar = $avaliacaoPodeManipular ? 'Disponível' : 'Indisp
         <h1 class="conteudo-item-hero__title"><?php echo Helpers::textoLms($itemTitulo); ?></h1>
 
         <?php if ($itemDescricao !== ''): ?>
-            <p class="conteudo-item-hero__description"><?php echo nl2br(Helpers::textoLmsMultilinha($itemDescricao)); ?></p>
+            <div class="conteudo-item-hero__description"><?php echo $renderRich($itemDescricao, 'basic'); ?></div>
         <?php endif; ?>
 
         <div class="conteudo-item-hero__meta">
@@ -244,7 +242,7 @@ $avaliacaoStatusPodeReenviar = $avaliacaoPodeManipular ? 'Disponível' : 'Indisp
                 </div>
                 <div class="conteudo-item-file__meta">
                     <span>Tamanho: <?php echo $formatarBytes($arquivoTamanho); ?></span>
-                    <?php if ($itemDescricao !== ''): ?><span><?php echo nl2br(Helpers::textoLmsMultilinha($itemDescricao)); ?></span><?php endif; ?>
+                    <?php if ($itemDescricao !== ''): ?><div class="conteudo-item-file__description"><?php echo $renderRich($itemDescricao, 'basic'); ?></div><?php endif; ?>
                 </div>
                 <?php if ($arquivoDisponivel): ?>
                     <div class="conteudo-item-actions" id="conteudo-item-acao">
@@ -272,7 +270,7 @@ $avaliacaoStatusPodeReenviar = $avaliacaoPodeManipular ? 'Disponível' : 'Indisp
                 </div>
                 <div class="conteudo-item-rich">
                     <?php if ($itemDescricao !== ''): ?>
-                        <?php echo nl2br(Helpers::textoLmsMultilinha($itemDescricao)); ?>
+                        <?php echo $renderRich($itemDescricao, 'basic'); ?>
                     <?php else: ?>
                         <p>Use o botão abaixo para acessar o conteúdo por meio da rota intermediária, sem pular o registro de acesso.</p>
                     <?php endif; ?>
@@ -290,7 +288,7 @@ $avaliacaoStatusPodeReenviar = $avaliacaoPodeManipular ? 'Disponível' : 'Indisp
                         <span>Provedor: <?php echo Helpers::textoLms($videoProvedor); ?></span>
                     <?php endif; ?>
                     <?php if ($itemDescricao !== ''): ?>
-                        <span><?php echo nl2br(Helpers::textoLmsMultilinha($itemDescricao)); ?></span>
+                        <div class="conteudo-item-video__description"><?php echo $renderRich($itemDescricao, 'basic'); ?></div>
                     <?php endif; ?>
                 </div>
                 <?php if ($videoEmbedHtml !== '' && false): ?>

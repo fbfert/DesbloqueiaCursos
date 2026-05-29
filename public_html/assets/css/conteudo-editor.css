@@ -1,91 +1,23 @@
-.conteudo-rich-editor {
-    margin-top: 0.5rem;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    border-radius: 12px;
-    background: #ffffff;
-    overflow: hidden;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+.ck.ck-editor {
+    width: 100%;
 }
 
-.conteudo-rich-editor__toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    padding: 0.75rem;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-    background: linear-gradient(180deg, #fafbfd 0%, #eef2f7 100%);
+.ck.ck-editor__top .ck-sticky-panel__content {
+    border-radius: 12px 12px 0 0;
 }
 
-.conteudo-rich-editor__button {
-    appearance: none;
-    border: 1px solid rgba(148, 163, 184, 0.5);
-    background: #ffffff;
-    color: #1f2937;
-    border-radius: 8px;
-    padding: 0.45rem 0.7rem;
-    font: inherit;
-    font-weight: 600;
-    line-height: 1;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+.ck.ck-editor__editable_inline {
+    min-height: 18rem;
 }
 
-.conteudo-rich-editor__button:hover:not(:disabled) {
-    background: #f8fafc;
-    border-color: rgba(71, 85, 105, 0.35);
-}
-
-.conteudo-rich-editor__button:focus-visible {
-    outline: 2px solid #2563eb;
-    outline-offset: 2px;
-}
-
-.conteudo-rich-editor__button:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-}
-
-.conteudo-rich-editor__surface {
-    min-height: 16rem;
-    padding: 1rem;
-    line-height: 1.65;
-    font: inherit;
-    color: #111827;
-    background: #ffffff;
-    outline: none;
-    overflow-wrap: anywhere;
-}
-
-.conteudo-rich-editor__surface:focus {
+.ck.ck-editor__editable_inline.ck-focused {
     box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
-.conteudo-rich-editor__surface:empty::before {
-    content: attr(data-placeholder);
-    color: #94a3b8;
-    pointer-events: none;
+.ck.ck-toolbar {
+    border-color: rgba(148, 163, 184, 0.4);
 }
 
-.conteudo-rich-editor__source {
-    display: none;
-    width: 100%;
-    min-height: 16rem;
-    margin: 0;
-    padding: 1rem;
-    border: 0;
-    border-top: 1px solid rgba(148, 163, 184, 0.25);
-    box-sizing: border-box;
-    font: inherit;
-    line-height: 1.65;
-    color: #111827;
-    background: #ffffff;
-    resize: vertical;
-}
-
-.conteudo-rich-editor.is-html-mode .conteudo-rich-editor__surface {
-    display: none;
-}
-
-.conteudo-rich-editor.is-html-mode .conteudo-rich-editor__source {
-    display: block;
+.ck.ck-toolbar .ck-toolbar__separator {
+    background: rgba(148, 163, 184, 0.35);
 }

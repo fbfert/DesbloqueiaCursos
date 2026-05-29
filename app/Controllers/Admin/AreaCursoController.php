@@ -115,26 +115,42 @@ class AreaCursoController extends Controller
                 $listar = $this->conteudoService->listarModulosComItens($cursoId);
                 if (!empty($listar['ok'])) {
                     $dados['conteudo_modulos'] = $listar['modulos'];
+                    $moduloSelecionadoId = (int) $request->query('modulo_id', $request->query('conteudo_modulo_id', 0));
+                    $dados['conteudo_modulo_selecionado_id'] = $moduloSelecionadoId;
+                    $dados['conteudo_modulo_selecionado'] = null;
+                    $dados['conteudo_modulo_itens'] = array();
+                    $dados['conteudo_modulo_erro'] = '';
+
+                    if ($moduloSelecionadoId > 0) {
+                        foreach ($listar['modulos'] as $modulo) {
+                            if ((int) ($modulo['id'] ?? 0) === $moduloSelecionadoId) {
+                                $dados['conteudo_modulo_selecionado'] = $modulo;
+                                $dados['conteudo_modulo_itens'] = isset($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array();
+                                break;
+                            }
+                        }
+
+                        if (empty($dados['conteudo_modulo_selecionado']) && $moduloSelecionadoId > 0) {
+                            $detalheModulo = $this->conteudoService->detalharModulo($moduloSelecionadoId, $cursoId);
+                            if (!empty($detalheModulo['ok']) && !empty($detalheModulo['modulo']) && is_array($detalheModulo['modulo'])) {
+                                $dados['conteudo_modulo_selecionado'] = $detalheModulo['modulo'];
+                                $dados['conteudo_modulo_itens'] = isset($detalheModulo['modulo']['itens']) && is_array($detalheModulo['modulo']['itens'])
+                                    ? $detalheModulo['modulo']['itens']
+                                    : array();
+                            }
+                        }
+
+                        if (empty($dados['conteudo_modulo_selecionado'])) {
+                            $dados['conteudo_modulo_erro'] = 'O módulo selecionado não pertence a este curso.';
+                        }
+                    }
                 } else {
-                    Session::flash('errors', array($listar['message'] ?? 'NÃ£o foi possÃ­vel carregar o conteÃºdo do curso.'));
+                    Session::flash('errors', array($listar['message'] ?? 'Não foi possível carregar o conteúdo do curso.'));
                     $dados['conteudo_modulos'] = array();
-                }
-
-                $conteudoModuloId = (int) $request->query('conteudo_modulo_id', 0);
-                if ($conteudoModuloId > 0) {
-                    $detalheModulo = $this->conteudoService->detalharModulo($conteudoModuloId, $cursoId);
-                    if (!empty($detalheModulo['ok'])) {
-                        $dados['conteudo_modulo_editar'] = $detalheModulo['modulo'];
-                    }
-                }
-
-                $conteudoItemId = (int) $request->query('conteudo_item_id', 0);
-                if ($conteudoItemId > 0) {
-                    $detalheItem = $this->conteudoService->detalharItem($conteudoItemId, $cursoId);
-                    if (!empty($detalheItem['ok'])) {
-                        $dados['conteudo_item_editar'] = $detalheItem['item'];
-                        $dados['conteudo_item_detalhe'] = $detalheItem['detalhe'];
-                    }
+                    $dados['conteudo_modulo_selecionado_id'] = 0;
+                    $dados['conteudo_modulo_selecionado'] = null;
+                    $dados['conteudo_modulo_itens'] = array();
+                    $dados['conteudo_modulo_erro'] = '';
                 }
             }
 
@@ -179,6 +195,52 @@ class AreaCursoController extends Controller
         $dados['relatorios_filtros'] = $relatoriosFiltros;
 
         return $this->view('admin/area-curso/index', $dados);
+    }
+
+    public function criarConteudoModulo(Request $request)
+    {
+        return $this->renderConteudoModuloForm($request, null);
+    }
+
+    public function editarConteudoModulo(Request $request)
+    {
+        $cursoId = (int) $request->query('curso_id', 0);
+        $moduloId = (int) $request->query('modulo_id', 0);
+        if ($cursoId <= 0 || $moduloId <= 0) {
+            Session::flash('errors', array('Informe um curso e um módulo válidos.'));
+            return $this->redirect($this->redirectContexto($request, 'conteudo'));
+        }
+
+        $detalhe = $this->conteudoService->detalharModulo($moduloId, $cursoId);
+        if (empty($detalhe['ok'])) {
+            Session::flash('errors', array($detalhe['message'] ?? 'Módulo não encontrado.'));
+            return $this->redirect($this->redirectContexto($request, 'conteudo'));
+        }
+
+        return $this->renderConteudoModuloForm($request, $detalhe['modulo']);
+    }
+
+    public function criarConteudoItem(Request $request)
+    {
+        return $this->renderConteudoItemForm($request, null, null);
+    }
+
+    public function editarConteudoItem(Request $request)
+    {
+        $cursoId = (int) $request->query('curso_id', 0);
+        $itemId = (int) $request->query('item_id', 0);
+        if ($cursoId <= 0 || $itemId <= 0) {
+            Session::flash('errors', array('Informe um curso e um conteúdo válidos.'));
+            return $this->redirect($this->redirectContexto($request, 'conteudo'));
+        }
+
+        $detalhe = $this->conteudoService->detalharItem($itemId, $cursoId);
+        if (empty($detalhe['ok'])) {
+            Session::flash('errors', array($detalhe['message'] ?? 'Conteúdo não encontrado.'));
+            return $this->redirect($this->redirectContexto($request, 'conteudo'));
+        }
+
+        return $this->renderConteudoItemForm($request, $detalhe['item'], $detalhe['detalhe']);
     }
 
     public function salvarCriteriosConclusao(Request $request)
@@ -309,6 +371,7 @@ class AreaCursoController extends Controller
     {
         $usuarioId = (int) Session::get('usuario_id');
         $id = (int) $request->input('id', 0);
+        $formUrl = $this->conteudoModuloFormUrl($request, $id > 0 ? 'editar' : 'criar', $id);
 
         $payload = $request->all();
         $payload['descricao'] = isset($payload['descricao']) ? HtmlSanitizer::clean((string) $payload['descricao'], 'basic') : null;
@@ -321,12 +384,18 @@ class AreaCursoController extends Controller
             ? $this->conteudoService->atualizarModulo($id, $payload)
             : $this->conteudoService->criarModulo($payload);
 
-        return $this->respondForm(
-            $resultado,
-            $request,
-            $this->redirectContexto($request, 'conteudo'),
-            $this->redirectContexto($request, 'conteudo')
-        );
+        if (empty($resultado['ok'])) {
+            Session::flash('errors', array($resultado['message'] ?? 'Não foi possível salvar o módulo.'));
+            Session::flash('old_input', $payload);
+            return $this->redirect($formUrl);
+        }
+
+        Session::flash('success', $id > 0 ? 'Módulo atualizado com sucesso.' : 'Módulo criado com sucesso.');
+        if ($id > 0) {
+            return $this->redirect($this->conteudoModuloContextoUrl($request, $id));
+        }
+
+        return $this->redirect($this->redirectContexto($request, 'conteudo'));
     }
 
     public function arquivarConteudoModulo(Request $request)
@@ -403,6 +472,8 @@ class AreaCursoController extends Controller
     {
         $usuarioId = (int) Session::get('usuario_id');
         $arquivo = isset($_FILES['arquivo']) ? $_FILES['arquivo'] : null;
+        $id = (int) $request->input('id', 0);
+        $formUrl = $this->conteudoItemFormUrl($request, $id > 0 ? 'editar' : 'criar', $id);
 
         $payload = $request->all();
         $payload['atualizado_por'] = $usuarioId;
@@ -412,12 +483,19 @@ class AreaCursoController extends Controller
 
         $resultado = $this->conteudoService->salvarItemComDetalhes($payload, $arquivo, $usuarioId);
 
-        return $this->respondForm(
-            $resultado,
-            $request,
-            $this->redirectContexto($request, 'conteudo'),
-            $this->redirectContexto($request, 'conteudo')
-        );
+        if (empty($resultado['ok'])) {
+            Session::flash('errors', array($resultado['message'] ?? 'Não foi possível salvar o conteúdo.'));
+            Session::flash('old_input', $payload);
+            return $this->redirect($formUrl);
+        }
+
+        Session::flash('success', $id > 0 ? 'Conteúdo atualizado com sucesso.' : 'Conteúdo criado com sucesso.');
+        $moduloId = (int) ($payload['modulo_id'] ?? 0);
+        if ($moduloId > 0) {
+            return $this->redirect($this->conteudoModuloContextoUrl($request, $moduloId));
+        }
+
+        return $this->redirect($this->redirectContexto($request, 'conteudo'));
     }
 
     public function arquivarConteudoItem(Request $request)
@@ -522,12 +600,12 @@ class AreaCursoController extends Controller
         $material = $this->areaCursoService->materialAutorizado(Session::get('usuario_id'), $materialId, 'admin');
 
         if (!$material) {
-            return new Response(View::render('errors/404', array('title' => 'Material nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Material não encontrado')), 404);
         }
 
         $acesso = $this->areaCursoService->prepararAcessoMaterial($material);
         if (!$acesso) {
-            return new Response(View::render('errors/404', array('title' => 'Material indisponivel')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Material indisponível')), 404);
         }
 
         if ($acesso['tipo'] === 'url') {
@@ -535,7 +613,7 @@ class AreaCursoController extends Controller
         }
 
         if (!is_file($acesso['absolute_path'])) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         $content = file_get_contents($acesso['absolute_path']);
@@ -556,16 +634,16 @@ class AreaCursoController extends Controller
                 'entrega_id' => $entregaId,
                 'usuario_id' => Session::get('usuario_id'),
             ));
-            return new Response(View::render('errors/404', array('title' => 'Entrega nao encontrada')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Entrega não encontrada')), 404);
         }
 
         $acesso = $this->atividadeService->prepararAcessoEntrega($entrega);
         if (!$acesso) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo indisponivel')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo indisponível')), 404);
         }
 
         if (!is_file($acesso['absolute_path'])) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         Logger::info('atividade.entrega.download', array(
@@ -589,7 +667,7 @@ class AreaCursoController extends Controller
 
         if (empty($arquivo['ok'])) {
             Logger::info('conteudo.arquivo.download_bloqueado', array('contexto' => 'admin', 'item_id' => $itemId, 'usuario_id' => Session::get('usuario_id')));
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         $storage = new \App\Services\FileStorageService();
@@ -610,7 +688,7 @@ class AreaCursoController extends Controller
         }
         if (!is_file($absolutePath)) {
             Logger::error('conteudo.arquivo.download_arquivo_ausente', array('contexto' => 'admin', 'item_id' => $itemId, 'caminho' => $relativePath));
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         $content = file_get_contents($absolutePath);
@@ -727,12 +805,125 @@ class AreaCursoController extends Controller
     private function respondForm(array $resultado, Request $request, $redirectTo, $exitUrl = null)
     {
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível salvar o registro.'));
         } else {
             Session::flash('success', 'Registro salvo com sucesso.');
         }
 
         return $this->redirectAfterFormAction($request, $redirectTo, $exitUrl);
+    }
+
+    private function conteudoModuloFormUrl(Request $request, $modo, $moduloId = 0)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', $request->input('curso_id', $request->query('curso_id', 0)));
+        $turmaId = (int) $request->input('turma_id', $request->query('turma_id', 0));
+        $params = array('curso_id' => $cursoId);
+        if ($turmaId > 0) {
+            $params['turma_id'] = $turmaId;
+        }
+        if ((int) $moduloId > 0) {
+            $params['modulo_id'] = (int) $moduloId;
+        }
+
+        $route = $modo === 'editar'
+            ? '/admin/area-curso/conteudo/modulos/editar'
+            : '/admin/area-curso/conteudo/modulos/criar';
+
+        return $route . '?' . http_build_query($params);
+    }
+
+    private function conteudoModuloContextoUrl(Request $request, $moduloId = 0)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', $request->input('curso_id', $request->query('curso_id', 0)));
+        $turmaId = (int) $request->input('turma_id', $request->query('turma_id', 0));
+        $params = array('curso_id' => $cursoId, 'aba' => 'conteudo');
+        if ($turmaId > 0) {
+            $params['turma_id'] = $turmaId;
+        }
+        if ((int) $moduloId > 0) {
+            $params['modulo_id'] = (int) $moduloId;
+        }
+
+        return '/admin/area-curso?' . http_build_query($params);
+    }
+
+    private function conteudoItemFormUrl(Request $request, $modo, $itemId = 0)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', $request->input('curso_id', $request->query('curso_id', 0)));
+        $turmaId = (int) $request->input('turma_id', $request->query('turma_id', 0));
+        $moduloId = (int) $request->input('modulo_id', $request->query('modulo_id', 0));
+        $params = array('curso_id' => $cursoId);
+        if ($turmaId > 0) {
+            $params['turma_id'] = $turmaId;
+        }
+        if ($moduloId > 0) {
+            $params['modulo_id'] = $moduloId;
+        }
+        if ((int) $itemId > 0) {
+            $params['item_id'] = (int) $itemId;
+        }
+
+        $route = $modo === 'editar'
+            ? '/admin/area-curso/conteudo/itens/editar'
+            : '/admin/area-curso/conteudo/itens/criar';
+
+        return $route . '?' . http_build_query($params);
+    }
+
+    private function renderConteudoModuloForm(Request $request, ?array $modulo)
+    {
+        $cursoId = (int) $request->query('curso_id', 0);
+        $turmaId = (int) $request->query('turma_id', 0);
+        if ($cursoId <= 0) {
+            Session::flash('errors', array('Selecione um curso para continuar.'));
+            return $this->redirect('/admin/area-curso');
+        }
+
+        return $this->view('admin/area-curso/conteudo_modulo_form', array(
+            'title' => $modulo ? 'Editar módulo' : 'Novo módulo',
+            'success' => Session::pullFlash('success'),
+            'errors' => Session::pullFlash('errors', array()),
+            'curso_id' => $cursoId,
+            'turma_id' => $turmaId,
+            'modulo' => $modulo,
+            'action_url' => '/admin/area-curso/conteudo/modulo/salvar',
+            'cancel_url' => $modulo && !empty($modulo['id']) ? $this->conteudoModuloContextoUrl($request, (int) $modulo['id']) : $this->redirectContexto($request, 'conteudo'),
+        ));
+    }
+
+    private function renderConteudoItemForm(Request $request, ?array $item, ?array $detalhe)
+    {
+        $cursoId = (int) $request->query('curso_id', 0);
+        $turmaId = (int) $request->query('turma_id', 0);
+        if ($cursoId <= 0) {
+            Session::flash('errors', array('Selecione um curso para continuar.'));
+            return $this->redirect('/admin/area-curso');
+        }
+
+        $listar = $this->conteudoService->listarModulosComItens($cursoId);
+        $modulos = !empty($listar['ok']) ? $listar['modulos'] : array();
+        if (empty($listar['ok'])) {
+            Session::flash('errors', array($listar['message'] ?? 'Não foi possível carregar o conteúdo do curso.'));
+        }
+
+        $moduloSelecionado = (int) $request->query('modulo_id', 0);
+        if ($item && !empty($item['modulo_id'])) {
+            $moduloSelecionado = (int) $item['modulo_id'];
+        }
+
+        return $this->view('admin/area-curso/conteudo_item_form', array(
+            'title' => $item ? 'Editar conteúdo' : 'Novo conteúdo',
+            'success' => Session::pullFlash('success'),
+            'errors' => Session::pullFlash('errors', array()),
+            'curso_id' => $cursoId,
+            'turma_id' => $turmaId,
+            'modulos' => $modulos,
+            'item' => $item,
+            'detalhe' => $detalhe,
+            'modulo_selecionado' => $moduloSelecionado,
+            'action_url' => '/admin/area-curso/conteudo/item/salvar',
+            'cancel_url' => $moduloSelecionado > 0 ? $this->conteudoModuloContextoUrl($request, $moduloSelecionado) : $this->redirectContexto($request, 'conteudo'),
+        ));
     }
 
     private function redirectContexto(Request $request, $aba = 'visao-geral')

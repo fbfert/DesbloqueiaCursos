@@ -55,6 +55,10 @@ $formatStatusLabel = function ($status) {
     return isset($mapa[$status]) ? $mapa[$status] : ucfirst(str_replace('_', ' ', $status));
 };
 
+$editorValue = function ($value) {
+    return Helpers::e(Helpers::decodeEditorHtml((string) $value));
+};
+
 $formatTipoLabel = function ($tipo) {
     $mapa = array(
         'etiqueta' => 'Etiqueta',
@@ -106,7 +110,7 @@ $formatTipoHint = function ($tipo) {
 
             <label>Título<input type="text" name="titulo" value="<?php echo Helpers::e($moduloEditar['titulo'] ?? ''); ?>" required></label>
             <label>Descrição
-                <textarea name="descricao" class="js-conteudo-rich-editor" data-editor-mode="full" rows="5"><?php echo Helpers::e($moduloEditar['descricao'] ?? ''); ?></textarea>
+                <textarea name="descricao" class="js-conteudo-rich-editor" data-editor-mode="full" rows="5"><?php echo $editorValue($moduloEditar['descricao'] ?? ''); ?></textarea>
             </label>
             <label>Status
                 <?php $statusModulo = (string) ($moduloEditar['status'] ?? 'rascunho'); ?>
@@ -180,14 +184,14 @@ $formatTipoHint = function ($tipo) {
             <div id="prof-conteudo-tipo-etiqueta" style="grid-column: 1 / -1;">
                 <h4 style="margin:0;">Etiqueta</h4>
                 <label>Conteúdo
-                    <textarea name="etiqueta_conteudo" class="js-conteudo-rich-editor" data-editor-mode="full" rows="8"><?php echo Helpers::e($itemDetalhe['conteudo'] ?? ''); ?></textarea>
+                    <textarea name="etiqueta_conteudo" class="js-conteudo-rich-editor" data-editor-mode="full" rows="8"><?php echo $editorValue($itemDetalhe['conteudo'] ?? ''); ?></textarea>
                 </label>
             </div>
 
             <div id="prof-conteudo-tipo-texto" style="grid-column: 1 / -1;">
                 <h4 style="margin:0;">Texto</h4>
                 <label>Conteúdo
-                    <textarea name="texto_conteudo" class="js-conteudo-rich-editor" data-editor-mode="full" rows="10"><?php echo Helpers::e($itemDetalhe['conteudo'] ?? ''); ?></textarea>
+                    <textarea name="texto_conteudo" class="js-conteudo-rich-editor" data-editor-mode="full" rows="10"><?php echo $editorValue($itemDetalhe['conteudo'] ?? ''); ?></textarea>
                 </label>
             </div>
 
@@ -213,10 +217,10 @@ $formatTipoHint = function ($tipo) {
             <div id="prof-conteudo-tipo-avaliacao" style="grid-column: 1 / -1;">
                 <h4 style="margin:0;">Avaliação textual</h4>
                 <label>Enunciado
-                    <textarea name="avaliacao_enunciado" class="js-conteudo-rich-editor" data-editor-mode="full" rows="10"><?php echo Helpers::e($itemDetalhe['enunciado'] ?? ''); ?></textarea>
+                    <textarea name="avaliacao_enunciado" class="js-conteudo-rich-editor" data-editor-mode="full" rows="10"><?php echo $editorValue($itemDetalhe['enunciado'] ?? ''); ?></textarea>
                 </label>
                 <label>Orientações
-                    <textarea name="avaliacao_orientacoes" class="js-conteudo-rich-editor" data-editor-mode="full" rows="6"><?php echo Helpers::e($itemDetalhe['orientacoes'] ?? ''); ?></textarea>
+                    <textarea name="avaliacao_orientacoes" class="js-conteudo-rich-editor" data-editor-mode="full" rows="6"><?php echo $editorValue($itemDetalhe['orientacoes'] ?? ''); ?></textarea>
                 </label>
                 <label>Nota máxima<input type="number" name="avaliacao_nota_maxima" min="0" step="0.01" value="<?php echo Helpers::e($itemDetalhe['nota_maxima'] ?? ''); ?>"></label>
                 <label>Nota mínima<input type="number" name="avaliacao_nota_minima" min="0" step="0.01" value="<?php echo Helpers::e($itemDetalhe['nota_minima'] ?? ''); ?>"></label>

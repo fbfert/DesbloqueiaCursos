@@ -2,325 +2,222 @@
     'use strict';
 
     var SELECTOR = 'textarea.js-conteudo-rich-editor';
-    var BUTTON_CLASS = 'conteudo-rich-editor__button';
-    var COMMAND_BUTTON_CLASS = 'conteudo-rich-editor__button--command';
-    var HTML_BUTTON_CLASS = 'conteudo-rich-editor__button--html';
+    var INITIALIZED_ATTR = 'data-ckeditor-initialized';
+    var PENDING_ATTR = 'data-ckeditor-pending';
+    var REGISTRY_KEY = '__conteudoEditors';
 
-    function ready(fn) {
+    function ready(callback) {
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', fn, { once: true });
+            document.addEventListener('DOMContentLoaded', callback, { once: true });
             return;
         }
-        fn();
-    }
 
-    function escapeHtml(value) {
-        return String(value || '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    function looksLikeHtml(value) {
-        return /<\s*\/?\s*[a-z][\s\S]*>/i.test(String(value || ''));
-    }
-
-    function sanitizeUrl(value) {
-        var raw = String(value || '').trim();
-        if (raw === '') {
-            return '';
-        }
-
-        if (raw.charAt(0) === '#') {
-            return raw;
-        }
-
-        if (/^(https?:|mailto:)/i.test(raw)) {
-            return raw;
-        }
-
-        return '';
-    }
-
-    function createButton(label, title, command, extraClass) {
-        var button = document.createElement('button');
-        button.type = 'button';
-        button.className = BUTTON_CLASS + ' ' + COMMAND_BUTTON_CLASS + (extraClass ? ' ' + extraClass : '');
-        button.textContent = label;
-        button.title = title;
-        button.setAttribute('aria-label', title);
-        button.setAttribute('data-editor-command', command);
-        return button;
-    }
-
-    function execCommand(surface, command, value) {
-        surface.focus();
-        document.execCommand(command, false, value);
+        callback();
     }
 
     function toArray(list) {
         return Array.prototype.slice.call(list || []);
     }
 
-    function ensureFormBinding(form) {
-        if (!form || form.dataset.conteudoEditorFormBound === '1') {
+    function getRegistry() {
+        if (!window[REGISTRY_KEY]) {
+            window[REGISTRY_KEY] = [];
+        }
+
+        return window[REGISTRY_KEY];
+    }
+
+    function getBuiltinPluginNames() {
+        var editorClass = window.ClassicEditor;
+        var plugins = editorClass && editorClass.builtinPlugins ? editorClass.builtinPlugins : [];
+        var names = [];
+
+        for (var i = 0; i < plugins.length; i++) {
+            var plugin = plugins[i];
+            var name = plugin && (plugin.pluginName || plugin.name) ? String(plugin.pluginName || plugin.name) : '';
+            if (name) {
+                names.push(name);
+            }
+        }
+
+        return names;
+    }
+
+    function hasPlugin(pluginNames, name) {
+        return pluginNames.indexOf(name) >= 0;
+    }
+
+    function getToolbarItems(pluginNames) {
+        var items = ['heading', '|', 'bold', 'italic'];
+
+        if (hasPlugin(pluginNames, 'Underline')) {
+            items.push('underline');
+        }
+
+        items.push('link', 'bulletedList', 'numberedList', 'blockQuote');
+
+        if (hasPlugin(pluginNames, 'Table')) {
+            items.push('insertTable');
+        }
+
+        items.push('|', 'undo', 'redo');
+
+        return items;
+    }
+
+    function getHeadingOptions() {
+        return [
+            {
+                model: 'paragraph',
+                title: 'Parágrafo',
+                class: 'ck-heading_paragraph'
+            },
+            {
+                model: 'heading2',
+                view: 'h2',
+                title: 'Título 2',
+                class: 'ck-heading_heading2'
+            },
+            {
+                model: 'heading3',
+                view: 'h3',
+                title: 'Título 3',
+                class: 'ck-heading_heading3'
+            },
+            {
+                model: 'heading4',
+                view: 'h4',
+                title: 'Título 4',
+                class: 'ck-heading_heading4'
+            }
+        ];
+    }
+
+    function syncEditor(textarea) {
+        var editor = textarea && textarea._ckeditorInstance;
+        if (!editor) {
             return;
         }
 
-        form.dataset.conteudoEditorFormBound = '1';
-        form.addEventListener('submit', function () {
-            var editors = toArray(form.querySelectorAll(SELECTOR));
-            for (var i = 0; i < editors.length; i++) {
-                syncTextarea(editors[i]);
-            }
+        if (typeof editor.updateSourceElement === 'function') {
+            editor.updateSourceElement();
+            return;
+        }
+
+        if (typeof editor.getData === 'function') {
+            textarea.value = editor.getData();
+        }
+    }
+
+    function syncAllEditors() {
+        var textareas = toArray(document.querySelectorAll(SELECTOR));
+        for (var i = 0; i < textareas.length; i++) {
+            syncEditor(textareas[i]);
+        }
+    }
+
+    function bindEditorEvents(textarea, editor) {
+        if (!editor || !editor.model || !editor.model.document) {
+            return;
+        }
+
+        editor.model.document.on('change:data', function () {
+            syncEditor(textarea);
         });
-    }
 
-    function getEditorState(textarea) {
-        return textarea._conteudoEditorState || null;
-    }
-
-    function syncTextarea(textarea) {
-        var state = getEditorState(textarea);
-        if (!state) {
-            return;
-        }
-
-        if (state.htmlMode) {
-            textarea.value = state.textarea.value;
-            return;
-        }
-
-        textarea.value = state.surface.innerHTML;
-    }
-
-    function syncSurfaceFromTextarea(textarea) {
-        var state = getEditorState(textarea);
-        if (!state) {
-            return;
-        }
-
-        var value = textarea.value || '';
-        if (looksLikeHtml(value)) {
-            state.surface.innerHTML = value;
-            return;
-        }
-
-        state.surface.innerHTML = escapeHtml(value).replace(/\r?\n/g, '<br>');
-    }
-
-    function setHtmlMode(textarea, enabled) {
-        var state = getEditorState(textarea);
-        if (!state || state.htmlMode === enabled) {
-            return;
-        }
-
-        state.htmlMode = enabled;
-        state.wrapper.classList.toggle('is-html-mode', enabled);
-        state.surface.hidden = enabled;
-        state.textarea.hidden = !enabled;
-        state.htmlButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-        state.htmlButton.textContent = enabled ? 'Visual' : 'HTML';
-
-        for (var i = 0; i < state.commandButtons.length; i++) {
-            state.commandButtons[i].disabled = enabled;
-        }
-
-        if (enabled) {
-            state.textarea.style.display = 'block';
-            state.textarea.value = state.surface.innerHTML;
-            state.textarea.focus();
-            state.textarea.select();
-            return;
-        }
-
-        state.textarea.style.display = 'none';
-        syncSurfaceFromTextarea(textarea);
-        state.surface.focus();
-    }
-
-    function updateButtonState(state) {
-        var isHtml = state.htmlMode;
-        state.htmlButton.setAttribute('aria-pressed', isHtml ? 'true' : 'false');
-        state.htmlButton.textContent = isHtml ? 'Visual' : 'HTML';
-        for (var i = 0; i < state.commandButtons.length; i++) {
-            state.commandButtons[i].disabled = isHtml;
+        if (editor.editing && editor.editing.view && editor.editing.view.document) {
+            editor.editing.view.document.on('blur', function () {
+                syncEditor(textarea);
+            });
         }
     }
 
-    function handleCommand(textarea, command) {
-        var state = getEditorState(textarea);
-        if (!state) {
-            return;
-        }
+    function markAsInitialized(textarea, editor) {
+        textarea._ckeditorInstance = editor;
+        textarea.setAttribute(INITIALIZED_ATTR, '1');
+        textarea.removeAttribute(PENDING_ATTR);
 
-        if (command === 'html') {
-            if (state.htmlMode) {
-                state.textarea.value = state.textarea.value || state.surface.innerHTML;
-            } else {
-                state.textarea.value = state.surface.innerHTML;
-            }
-            setHtmlMode(textarea, !state.htmlMode);
-            updateButtonState(state);
-            return;
+        var registry = getRegistry();
+        if (registry.indexOf(editor) === -1) {
+            registry.push(editor);
         }
-
-        if (state.htmlMode) {
-            return;
-        }
-
-        switch (command) {
-        case 'bold':
-            execCommand(state.surface, 'bold');
-            break;
-        case 'italic':
-            execCommand(state.surface, 'italic');
-            break;
-        case 'h2':
-            execCommand(state.surface, 'formatBlock', '<H2>');
-            break;
-        case 'p':
-            execCommand(state.surface, 'formatBlock', '<P>');
-            break;
-        case 'ul':
-            execCommand(state.surface, 'insertUnorderedList');
-            break;
-        case 'ol':
-            execCommand(state.surface, 'insertOrderedList');
-            break;
-        case 'link':
-            var url = sanitizeUrl(window.prompt('Informe o link', 'https://'));
-            if (url) {
-                execCommand(state.surface, 'createLink', url);
-            }
-            break;
-        case 'clean':
-            execCommand(state.surface, 'removeFormat');
-            execCommand(state.surface, 'unlink');
-            execCommand(state.surface, 'formatBlock', '<P>');
-            break;
-        default:
-            break;
-        }
-
-        syncTextarea(textarea);
     }
 
     function initEditor(textarea) {
-        if (!textarea || textarea.dataset.editorInitialized === '1') {
-            return;
+        if (!textarea || textarea.getAttribute(INITIALIZED_ATTR) === '1' || textarea.getAttribute(PENDING_ATTR) === '1' || textarea._ckeditorInstance) {
+            return null;
         }
 
-        textarea.dataset.editorInitialized = '1';
-
-        var wrapper = document.createElement('div');
-        wrapper.className = 'conteudo-rich-editor';
-
-        var toolbar = document.createElement('div');
-        toolbar.className = 'conteudo-rich-editor__toolbar';
-        toolbar.setAttribute('role', 'toolbar');
-        toolbar.setAttribute('aria-label', 'Editor de conteúdo');
-
-        var buttons = [
-            createButton('Negrito', 'Negrito', 'bold'),
-            createButton('Itálico', 'Itálico', 'italic'),
-            createButton('Título', 'Título H2', 'h2'),
-            createButton('Parágrafo', 'Parágrafo', 'p'),
-            createButton('Lista', 'Lista com marcadores', 'ul'),
-            createButton('Lista 1', 'Lista numerada', 'ol'),
-            createButton('Link', 'Inserir link', 'link'),
-            createButton('Limpar', 'Limpar formatação', 'clean'),
-            createButton('HTML', 'Alternar para edição HTML', 'html', HTML_BUTTON_CLASS),
-        ];
-
-        var surface = document.createElement('div');
-        surface.className = 'conteudo-rich-editor__surface';
-        surface.contentEditable = 'true';
-        surface.spellcheck = true;
-        surface.setAttribute('role', 'textbox');
-        surface.setAttribute('aria-multiline', 'true');
-        surface.setAttribute('data-placeholder', textarea.getAttribute('data-editor-placeholder') || 'Digite o conteúdo aqui.');
-
-        var parent = textarea.parentNode;
-        if (!parent) {
-            return;
+        if (!window.ClassicEditor || typeof window.ClassicEditor.create !== 'function') {
+            return null;
         }
 
-        parent.insertBefore(wrapper, textarea);
-        wrapper.appendChild(toolbar);
-        wrapper.appendChild(surface);
+        textarea.setAttribute(PENDING_ATTR, '1');
 
-        for (var i = 0; i < buttons.length; i++) {
-            toolbar.appendChild(buttons[i]);
-        }
-
-        var state = {
-            wrapper: wrapper,
-            toolbar: toolbar,
-            surface: surface,
-            textarea: textarea,
-            htmlButton: buttons[buttons.length - 1],
-            commandButtons: buttons.slice(0, buttons.length - 1),
-            htmlMode: false,
+        var pluginNames = getBuiltinPluginNames();
+        var config = {
+            language: 'pt-br',
+            toolbar: {
+                items: getToolbarItems(pluginNames)
+            },
+            heading: {
+                options: getHeadingOptions()
+            },
+            link: {
+                addTargetToExternalLinks: true,
+                defaultProtocol: 'https://'
+            }
         };
 
-        textarea._conteudoEditorState = state;
-        textarea.hidden = true;
-        textarea.classList.add('conteudo-rich-editor__source');
-        textarea.style.display = 'none';
-
-        syncSurfaceFromTextarea(textarea);
-
-        surface.addEventListener('input', function () {
-            syncTextarea(textarea);
-        });
-
-        surface.addEventListener('blur', function () {
-            syncTextarea(textarea);
-        });
-
-        textarea.addEventListener('input', function () {
-            if (!state.htmlMode) {
-                syncSurfaceFromTextarea(textarea);
-            }
-        });
-
-        toolbar.addEventListener('mousedown', function (event) {
-            var target = event.target;
-            if (target && target.tagName === 'BUTTON') {
-                event.preventDefault();
-            }
-        });
-
-        toolbar.addEventListener('click', function (event) {
-            var target = event.target;
-            if (!target || target.tagName !== 'BUTTON') {
-                return;
-            }
-
-            handleCommand(textarea, target.getAttribute('data-editor-command') || '');
-        });
-
-        ensureFormBinding(textarea.form);
-        updateButtonState(state);
+        return window.ClassicEditor.create(textarea, config)
+            .then(function (editor) {
+                markAsInitialized(textarea, editor);
+                bindEditorEvents(textarea, editor);
+                syncEditor(textarea);
+                return editor;
+            })
+            .catch(function (error) {
+                textarea.removeAttribute(PENDING_ATTR);
+                if (window.console && typeof window.console.error === 'function') {
+                    window.console.error('[conteudo-editor] Falha ao inicializar o CKEditor 5.', error);
+                }
+                return null;
+            });
     }
 
     function initEditors() {
         var textareas = toArray(document.querySelectorAll(SELECTOR));
+        var editors = [];
+
         for (var i = 0; i < textareas.length; i++) {
-            initEditor(textareas[i]);
+            var editor = initEditor(textareas[i]);
+            if (editor) {
+                editors.push(editor);
+            }
         }
 
-        if (window.location.search.indexOf('debug_editor=1') !== -1 && window.console && typeof window.console.log === 'function') {
-            window.console.log('[conteudo-editor] inicializado', textareas.length);
-        }
+        return editors;
     }
 
-    window.initConteudoRichEditors = initEditors;
-    window.initAreaCursoWysiwyg = initEditors;
+    function bindGlobalSubmitSync() {
+        if (window.__conteudoEditorSubmitBound) {
+            return;
+        }
 
+        window.__conteudoEditorSubmitBound = true;
+
+        document.addEventListener('submit', function () {
+            syncAllEditors();
+        }, true);
+    }
+
+    window.initConteudoRichEditors = function () {
+        return initEditors();
+    };
+
+    window.initAreaCursoWysiwyg = window.initConteudoRichEditors;
+
+    bindGlobalSubmitSync();
     ready(initEditors);
     window.addEventListener('load', initEditors);
     window.addEventListener('pageshow', initEditors);
