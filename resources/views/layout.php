@@ -18,6 +18,10 @@ $isAdmin = strpos($requestPath, '/admin') === 0;
 $isProfessor = strpos($requestPath, '/professor') === 0;
 $isAluno = in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true);
 $useFrontendTheme = !$isAdmin && !$isProfessor;
+$shouldLoadConteudoAudio = strpos($requestPath, '/aluno/cursos/conteudo/item') === 0
+    || strpos($requestPath, '/area-curso/conteudo/item') === 0
+    || (strpos($requestPath, '/aluno/cursos') === 0 && !empty($_GET['aula_id']))
+    || (strpos($requestPath, '/area-curso') === 0 && !empty($_GET['aula_id']));
 $scopeClass = $isAdmin ? 'app-admin' : ($isProfessor ? 'app-professor' : ($isAluno ? 'app-aluno' : 'app-public'));
 $publicMenu = array(
     array('label' => 'Início', 'href' => '/', 'active' => $requestPath === '/'),
@@ -79,15 +83,21 @@ if (!$isAdmin) {
     <link rel="stylesheet" href="/assets/css/app.css">
     <?php if ($useFrontendTheme): ?>
         <link rel="stylesheet" href="/assets/css/frontend.css">
+    <?php if ($shouldLoadConteudoAudio): ?>
+        <link rel="stylesheet" href="/assets/css/conteudo-audio.css?v=20260529">
+    <?php endif; ?>
     <?php endif; ?>
     <?php if ($isAdmin): ?>
         <link rel="stylesheet" href="/assets/css/admin.css">
     <?php endif; ?>
-<?php if ($isAdmin || $isProfessor): ?>
+    <?php if ($isAdmin || $isProfessor): ?>
         <link rel="stylesheet" href="/assets/css/conteudo-editor.css?v=20260529">
         <script src="/assets/vendor/ckeditor5/ckeditor.js?v=41.4.2" defer></script>
         <script src="/assets/vendor/ckeditor5/translations/pt-br.js?v=41.4.2" defer></script>
         <script src="/assets/js/conteudo-editor.js?v=20260529-ckeditor5" defer></script>
+    <?php endif; ?>
+    <?php if ($useFrontendTheme && $shouldLoadConteudoAudio): ?>
+        <script src="/assets/js/conteudo-audio.js?v=20260529" defer></script>
     <?php endif; ?>
 </head>
 <body class="<?php echo Helpers::e($scopeClass); ?><?php echo $useFrontendTheme ? ' frontend-theme' : ''; ?> theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">

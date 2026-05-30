@@ -221,7 +221,7 @@ $avaliacaoStatusPodeReenviar = $avaliacaoPodeManipular ? 'Disponível' : 'Indisp
             <?php endif; ?>
         <?php elseif ($tipo === 'texto'): ?>
             <article class="conteudo-item-bloco">
-                <div class="conteudo-item-rich conteudo-item-rich--reading">
+                <div class="conteudo-item-rich conteudo-item-rich--reading js-conteudo-texto-audio" data-audio-texto="1">
                     <?php echo $renderRich($valorPrimeiro($detalhe, array('conteudo'), ''), 'full'); ?>
                 </div>
                 <div class="conteudo-item-action-summary" id="conteudo-item-acao">

@@ -426,7 +426,7 @@ if (!function_exists('sala_material_label')) {
                             <?php endif; ?>
                         </div>
                     <?php elseif (!empty($selected_aula) && !empty($selected_aula['conteudo'])): ?>
-                        <div class="muted-row"><?php echo Helpers::renderSafeHtml($selected_aula['conteudo'], 'full'); ?></div>
+                        <div class="muted-row js-conteudo-texto-audio" data-audio-texto="1"><?php echo Helpers::renderSafeHtml($selected_aula['conteudo'], 'full'); ?></div>
                     <?php elseif (!empty($selected_modulo['descricao'])): ?>
                         <div class="muted-row"><?php echo Helpers::renderSafeHtml($selected_modulo['descricao'], 'basic'); ?></div>
                     <?php endif; ?>
