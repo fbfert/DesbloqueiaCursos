@@ -13,6 +13,10 @@ $requestPath = $requestPath ?: '/';
 $globalConfigService = new ConfiguracaoGlobalService();
 $institucional = $globalConfigService->institucional();
 $frontend = $globalConfigService->frontend();
+$frontendCardGap = $globalConfigService->frontendCardGap();
+$frontendSectionGap = $globalConfigService->frontendSectionGap();
+$frontendCssPath = BASE_PATH . '/public_html/assets/css/frontend.css';
+$frontendCssVersion = is_file($frontendCssPath) ? filemtime($frontendCssPath) : null;
 $brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : (!empty($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos');
 $isAdmin = strpos($requestPath, '/admin') === 0;
 $isProfessor = strpos($requestPath, '/professor') === 0;
@@ -82,7 +86,7 @@ if (!$isAdmin) {
     <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="/assets/css/app.css">
     <?php if ($useFrontendTheme): ?>
-        <link rel="stylesheet" href="/assets/css/frontend.css">
+        <link rel="stylesheet" href="/assets/css/frontend.css<?php echo $frontendCssVersion ? '?v=' . (int) $frontendCssVersion : ''; ?>">
     <?php if ($shouldLoadConteudoAudio): ?>
         <link rel="stylesheet" href="/assets/css/conteudo-audio.css?v=20260529">
     <?php endif; ?>
@@ -98,6 +102,18 @@ if (!$isAdmin) {
     <?php endif; ?>
     <?php if ($useFrontendTheme && $shouldLoadConteudoAudio): ?>
         <script src="/assets/js/conteudo-audio.js?v=20260529" defer></script>
+    <?php endif; ?>
+    <?php if ($useFrontendTheme && $scopeClass === 'app-public'): ?>
+        <style>
+            <?php
+            // A variável global do frontend público vem da configuração administrativa.
+            // O valor é sanitizado no backend e recebe fallback seguro caso esteja ausente.
+            ?>
+            .app-public.frontend-theme {
+                --frontend-card-gap: <?php echo htmlspecialchars($frontendCardGap, ENT_QUOTES, 'UTF-8'); ?>;
+                --frontend-section-gap: <?php echo htmlspecialchars($frontendSectionGap, ENT_QUOTES, 'UTF-8'); ?>;
+            }
+        </style>
     <?php endif; ?>
 </head>
 <body class="<?php echo Helpers::e($scopeClass); ?><?php echo $useFrontendTheme ? ' frontend-theme' : ''; ?> theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">

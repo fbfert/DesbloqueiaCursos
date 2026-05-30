@@ -201,6 +201,7 @@ $app->post('/admin/pedidos/excluir', array(PedidosController::class, 'excluir'),
 $app->post('/admin/pedidos/excluir-lote', array(PedidosController::class, 'excluirEmLote'), array('auth', 'permission:pedidos.gerenciar'));
 $app->post('/admin/pedidos/cupom-manual', array(PedidosController::class, 'cupomManual'), array('auth', 'permission:pedidos.gerenciar'));
 $app->get('/admin/pedidos/comprovante', array(PedidosController::class, 'comprovante'), array('auth', 'permission:pedidos.ver'));
+$app->post('/admin/pedidos/comprovante', array(PedidosController::class, 'anexarComprovante'), array('auth', 'permission:pedidos.ver'));
 $app->post('/admin/pedidos/aprovar', array(PedidosController::class, 'aprovar'), array('auth', 'permission:pedidos.ver'));
 $app->post('/admin/pedidos/marcar-pendencia', array(PedidosController::class, 'marcarPendencia'), array('auth', 'permission:pedidos.ver'));
 $app->post('/admin/pedidos/solicitar-reenvio', array(PedidosController::class, 'solicitarReenvio'), array('auth', 'permission:pedidos.ver'));

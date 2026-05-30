@@ -1,130 +1,134 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="page-header">
-    <h1>Inscrição</h1>
-    <p><?php echo Helpers::e($curso['nome']); ?></p>
-</section>
-
-<?php if (!empty($success)): ?>
-    <section class="auth-message auth-message-success">
-        <p><?php echo Helpers::e($success); ?></p>
+<div class="front-section-stack">
+    <section class="page-header front-section">
+        <h1>Inscrição</h1>
+        <p><?php echo Helpers::e($curso['nome']); ?></p>
     </section>
-<?php endif; ?>
 
-<?php if (!empty($errors)): ?>
-    <?php if (empty($inscricaoDuplicada)): ?>
-        <section class="auth-message auth-message-error">
-            <?php foreach ($errors as $error): ?>
-                <p><?php echo Helpers::e($error); ?></p>
-            <?php endforeach; ?>
+    <?php if (!empty($success)): ?>
+        <section class="auth-message auth-message-success front-section">
+            <p><?php echo Helpers::e($success); ?></p>
         </section>
     <?php endif; ?>
-<?php endif; ?>
 
-<?php if (!empty($inscricaoDuplicada)): ?>
-    <section class="checkout-panel checkout-status-alert checkout-status-alert--warning">
-        <strong class="checkout-status-alert__title">Você já está inscrito nesta turma.</strong>
-        <p class="checkout-status-alert__text">Não é necessário concluir uma nova inscrição para esta turma.</p>
-        <div class="cta-group">
-            <a class="button-link" href="/minha-pagina">Acessar minha página</a>
-        </div>
-    </section>
-<?php endif; ?>
+    <?php if (!empty($errors)): ?>
+        <?php if (empty($inscricaoDuplicada)): ?>
+            <section class="auth-message auth-message-error front-section">
+                <?php foreach ($errors as $error): ?>
+                    <p><?php echo Helpers::e($error); ?></p>
+                <?php endforeach; ?>
+            </section>
+        <?php endif; ?>
+    <?php endif; ?>
 
-<?php if (empty($loggedIn)): ?>
-    <section class="notice">
-        <strong>Entre para continuar</strong>
-        <p>Você pode revisar o curso, mas precisa entrar na conta para iniciar a compra.</p>
-        <div class="cta-group">
-            <a class="button-link" href="/login">Entrar</a>
-            <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>
-        </div>
-    </section>
-<?php endif; ?>
+    <div class="front-card-section front-section">
+    <?php if (!empty($inscricaoDuplicada)): ?>
+        <section class="checkout-panel checkout-status-alert checkout-status-alert--warning front-card">
+            <strong class="checkout-status-alert__title">Você já está inscrito nesta turma.</strong>
+            <p class="checkout-status-alert__text">Não é necessário concluir uma nova inscrição para esta turma.</p>
+            <div class="cta-group">
+                <a class="button-link" href="/minha-pagina">Acessar minha página</a>
+            </div>
+        </section>
+    <?php endif; ?>
 
-<?php if (!empty($loggedIn) && empty($inscricaoDuplicada)): ?>
-    <section class="checkout-panel">
-        <h2>Resumo da inscrição</h2>
-        <dl class="summary-list">
-            <dt>Curso</dt>
-            <dd><?php echo Helpers::e($curso['nome']); ?></dd>
-            <?php if (!empty($curso['turma_selecionada']['nome'])): ?>
-                <dt>Turma</dt>
-                <dd><?php echo Helpers::e($curso['turma_selecionada']['nome']); ?></dd>
-                <dt>Status</dt>
-                <dd><?php echo Helpers::e($curso['turma_selecionada']['status']); ?></dd>
-            <?php endif; ?>
-            <dt>Valor</dt>
-            <dd>
-                <?php if (!empty($curso['desconto_promocional'])): ?>
-                    <div class="muted" style="text-decoration:line-through;">R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
-                    <div><strong>R$ <?php echo number_format((float) $curso['valor_efetivo'], 2, ',', '.'); ?></strong></div>
-                <?php else: ?>
-                    R$ <?php echo number_format((float) ($curso['valor_efetivo'] ?? $curso['valor']), 2, ',', '.'); ?>
+    <?php if (empty($loggedIn)): ?>
+        <section class="notice front-card">
+            <strong>Entre para continuar</strong>
+            <p>Você pode revisar o curso, mas precisa entrar na conta para iniciar a compra.</p>
+            <div class="cta-group">
+                <a class="button-link" href="/login">Entrar</a>
+                <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <?php if (!empty($loggedIn) && empty($inscricaoDuplicada)): ?>
+        <section class="checkout-panel front-card">
+            <h2>Resumo da inscrição</h2>
+            <dl class="summary-list">
+                <dt>Curso</dt>
+                <dd><?php echo Helpers::e($curso['nome']); ?></dd>
+                <?php if (!empty($curso['turma_selecionada']['nome'])): ?>
+                    <dt>Turma</dt>
+                    <dd><?php echo Helpers::e($curso['turma_selecionada']['nome']); ?></dd>
+                    <dt>Status</dt>
+                    <dd><?php echo Helpers::e($curso['turma_selecionada']['status']); ?></dd>
                 <?php endif; ?>
-            </dd>
-        </dl>
-    </section>
-
-    <form class="admin-form checkout-form" method="post" action="/inscricao">
-        <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
-        <input type="hidden" name="turma_id" value="<?php echo !empty($curso['turma_selecionada']['id']) ? (int) $curso['turma_selecionada']['id'] : ''; ?>">
-
-        <section class="checkout-panel">
-            <h2>Dados do pagamento</h2>
-            <label>
-                Nome do pagador
-                <input type="text" name="pagador_nome" value="<?php echo Helpers::e(isset($pagadorPrefill['nome']) && $pagadorPrefill['nome'] !== '' ? $pagadorPrefill['nome'] : $usuarioNome); ?>">
-            </label>
-            <label>
-                CPF do pagador
-                <input type="text" name="pagador_cpf" value="<?php echo Helpers::e(isset($pagadorPrefill['cpf']) ? $pagadorPrefill['cpf'] : ''); ?>" placeholder="000.000.000-00" data-skip-old-input="1">
-            </label>
-            <label>
-                E-mail do pagador
-                <input type="email" name="pagador_email" value="<?php echo Helpers::e(isset($pagadorPrefill['email']) && $pagadorPrefill['email'] !== '' ? $pagadorPrefill['email'] : (isset($usuarioEmail) ? $usuarioEmail : '')); ?>">
-            </label>
-            <label>
-                Telefone
-                <input type="text" name="pagador_telefone" value="<?php echo Helpers::e(isset($pagadorPrefill['telefone']) ? $pagadorPrefill['telefone'] : ''); ?>" data-skip-old-input="1">
-            </label>
-            <label>
-                Estado
-                <?php $estadoAtual = strtoupper((string) (isset($pagadorPrefill['estado']) ? $pagadorPrefill['estado'] : '')); ?>
-                <select name="pagador_estado" id="inscricao-estado">
-                    <option value="">Selecione o estado</option>
-                    <?php foreach (array('AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO') as $uf): ?>
-                        <option value="<?php echo Helpers::e($uf); ?>" <?php echo $estadoAtual === $uf ? 'selected' : ''; ?>><?php echo Helpers::e($uf); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label>
-                Cidade
-                <select name="pagador_cidade" id="inscricao-cidade">
-                    <option value="">Selecione o estado primeiro</option>
-                </select>
-            </label>
-            <label>
-                Tipo do pedido
-                <select name="tipo_pedido" id="tipo-pedido">
-                    <option value="propria">Compra própria</option>
-                    <option value="terceiros">Compra para terceiros</option>
-                    <option value="lote">Compra em lote</option>
-                </select>
-            </label>
-            <label id="quantidade-vagas-wrap">
-                Quantidade de vagas
-                <input type="number" id="quantidade-vagas" name="quantidade" min="1" value="1">
-            </label>
-            <label>
-                Comentários sobre a inscrição
-                <textarea name="observacoes_publicas" rows="4"></textarea>
-            </label>
+                <dt>Valor</dt>
+                <dd>
+                    <?php if (!empty($curso['desconto_promocional'])): ?>
+                        <div class="muted" style="text-decoration:line-through;">R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></div>
+                        <div><strong>R$ <?php echo number_format((float) $curso['valor_efetivo'], 2, ',', '.'); ?></strong></div>
+                    <?php else: ?>
+                        R$ <?php echo number_format((float) ($curso['valor_efetivo'] ?? $curso['valor']), 2, ',', '.'); ?>
+                    <?php endif; ?>
+                </dd>
+            </dl>
         </section>
 
-        <button type="submit" id="checkout-avancar-btn">Avançar para pagamento</button>
-    </form>
-<?php endif; ?>
+        <form class="admin-form checkout-form front-card-list" method="post" action="/inscricao">
+            <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
+            <input type="hidden" name="turma_id" value="<?php echo !empty($curso['turma_selecionada']['id']) ? (int) $curso['turma_selecionada']['id'] : ''; ?>">
+
+            <section class="checkout-panel front-card">
+                <h2>Dados do pagamento</h2>
+                <label>
+                    Nome do pagador
+                    <input type="text" name="pagador_nome" value="<?php echo Helpers::e(isset($pagadorPrefill['nome']) && $pagadorPrefill['nome'] !== '' ? $pagadorPrefill['nome'] : $usuarioNome); ?>">
+                </label>
+                <label>
+                    CPF do pagador
+                    <input type="text" name="pagador_cpf" value="<?php echo Helpers::e(isset($pagadorPrefill['cpf']) ? $pagadorPrefill['cpf'] : ''); ?>" placeholder="000.000.000-00" data-skip-old-input="1">
+                </label>
+                <label>
+                    E-mail do pagador
+                    <input type="email" name="pagador_email" value="<?php echo Helpers::e(isset($pagadorPrefill['email']) && $pagadorPrefill['email'] !== '' ? $pagadorPrefill['email'] : (isset($usuarioEmail) ? $usuarioEmail : '')); ?>">
+                </label>
+                <label>
+                    Telefone
+                    <input type="text" name="pagador_telefone" value="<?php echo Helpers::e(isset($pagadorPrefill['telefone']) ? $pagadorPrefill['telefone'] : ''); ?>" data-skip-old-input="1">
+                </label>
+                <label>
+                    Estado
+                    <?php $estadoAtual = strtoupper((string) (isset($pagadorPrefill['estado']) ? $pagadorPrefill['estado'] : '')); ?>
+                    <select name="pagador_estado" id="inscricao-estado">
+                        <option value="">Selecione o estado</option>
+                        <?php foreach (array('AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO') as $uf): ?>
+                            <option value="<?php echo Helpers::e($uf); ?>" <?php echo $estadoAtual === $uf ? 'selected' : ''; ?>><?php echo Helpers::e($uf); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>
+                    Cidade
+                    <select name="pagador_cidade" id="inscricao-cidade">
+                        <option value="">Selecione o estado primeiro</option>
+                    </select>
+                </label>
+                <label>
+                    Tipo do pedido
+                    <select name="tipo_pedido" id="tipo-pedido">
+                        <option value="propria">Compra própria</option>
+                        <option value="terceiros">Compra para terceiros</option>
+                        <option value="lote">Compra em lote</option>
+                    </select>
+                </label>
+                <label id="quantidade-vagas-wrap">
+                    Quantidade de vagas
+                    <input type="number" id="quantidade-vagas" name="quantidade" min="1" value="1">
+                </label>
+                <label>
+                    Comentários sobre a inscrição
+                    <textarea name="observacoes_publicas" rows="4"></textarea>
+                </label>
+            </section>
+
+            <button type="submit" id="checkout-avancar-btn">Avançar para pagamento</button>
+        </form>
+    <?php endif; ?>
+</div>
+</div>
 
 <?php if (!empty($loggedIn) && empty($inscricaoDuplicada)): ?>
 <script>

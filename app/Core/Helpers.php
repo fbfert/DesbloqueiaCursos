@@ -163,4 +163,46 @@ class Helpers
 
         return rtrim($config['url'], '/') . '/' . ltrim($path, '/');
     }
+
+    public static function isValidCssSpacingValue($value)
+    {
+        if (is_array($value) || is_object($value)) {
+            return false;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return false;
+        }
+
+        if (preg_match('/[;{}]/', $value)) {
+            return false;
+        }
+
+        if (preg_match('/(?:url|expression|var)\s*\(/i', $value)) {
+            return false;
+        }
+
+        $length = '(?:\\d+(?:\\.\\d+)?(?:px|rem|em|vw|%))';
+        $clamp = '/^clamp\\(\\s*' . $length . '\\s*,\\s*' . $length . '\\s*,\\s*' . $length . '\\s*\\)$/i';
+        $single = '/^' . $length . '$/i';
+
+        return preg_match($single, $value) === 1 || preg_match($clamp, $value) === 1;
+    }
+
+    public static function sanitizeCssSpacingValue($value, $fallback = 'clamp(16px, 2vw, 24px)')
+    {
+        $fallback = trim((string) $fallback) !== '' ? trim((string) $fallback) : 'clamp(16px, 2vw, 24px)';
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return $fallback;
+        }
+
+        if (!self::isValidCssSpacingValue($value)) {
+            return $fallback;
+        }
+
+        return $value;
+    }
 }

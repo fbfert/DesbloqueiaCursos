@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Logger;
+use App\Core\Helpers;
 use App\Core\Validator;
 use App\Models\ConfiguracaoCertificado;
 use App\Models\ConfiguracaoFinanceira;
@@ -12,6 +13,9 @@ use App\Models\ConfiguracaoSeguranca;
 
 class ConfiguracaoGlobalService
 {
+    const FRONTEND_CARD_GAP_DEFAULT = 'clamp(16px, 2vw, 24px)';
+    const FRONTEND_SECTION_GAP_DEFAULT = 'clamp(24px, 3vw, 40px)';
+
     private $globalModel;
     private $certificadoModel;
     private $financeiraModel;
@@ -193,7 +197,7 @@ class ConfiguracaoGlobalService
     {
         $current = $this->frontendModel->current();
 
-        return $current ?: array(
+        $defaults = array(
             'template_visual_portal' => 'padrao',
             'cor_primaria' => null,
             'cor_secundaria' => null,
@@ -201,6 +205,44 @@ class ConfiguracaoGlobalService
             'banner_caminho' => null,
             'descricao_home' => null,
             'home_destaques_limite' => 6,
+            'frontend_card_gap' => self::FRONTEND_CARD_GAP_DEFAULT,
+            'frontend_section_gap' => self::FRONTEND_SECTION_GAP_DEFAULT,
+        );
+
+        if (!$current) {
+            return $defaults;
+        }
+
+        $frontend = array_merge($defaults, $current);
+        $frontend['frontend_card_gap'] = Helpers::sanitizeCssSpacingValue(
+            isset($frontend['frontend_card_gap']) ? $frontend['frontend_card_gap'] : null,
+            self::FRONTEND_CARD_GAP_DEFAULT
+        );
+        $frontend['frontend_section_gap'] = Helpers::sanitizeCssSpacingValue(
+            isset($frontend['frontend_section_gap']) ? $frontend['frontend_section_gap'] : null,
+            self::FRONTEND_SECTION_GAP_DEFAULT
+        );
+
+        return $frontend;
+    }
+
+    public function frontendCardGap()
+    {
+        $frontend = $this->frontend();
+
+        return Helpers::sanitizeCssSpacingValue(
+            isset($frontend['frontend_card_gap']) ? $frontend['frontend_card_gap'] : null,
+            self::FRONTEND_CARD_GAP_DEFAULT
+        );
+    }
+
+    public function frontendSectionGap()
+    {
+        $frontend = $this->frontend();
+
+        return Helpers::sanitizeCssSpacingValue(
+            isset($frontend['frontend_section_gap']) ? $frontend['frontend_section_gap'] : null,
+            self::FRONTEND_SECTION_GAP_DEFAULT
         );
     }
 
@@ -403,6 +445,30 @@ class ConfiguracaoGlobalService
 
     public function saveFrontend(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        $frontendCardGap = isset($data['frontend_card_gap']) ? trim((string) $data['frontend_card_gap']) : '';
+        if ($frontendCardGap === '') {
+            $frontendCardGap = self::FRONTEND_CARD_GAP_DEFAULT;
+        } elseif (!Helpers::isValidCssSpacingValue($frontendCardGap)) {
+            return array(
+                'ok' => false,
+                'errors' => array(
+                    'frontend_card_gap' => 'Informe um valor de espaçamento CSS válido.',
+                ),
+            );
+        }
+
+        $frontendSectionGap = isset($data['frontend_section_gap']) ? trim((string) $data['frontend_section_gap']) : '';
+        if ($frontendSectionGap === '') {
+            $frontendSectionGap = self::FRONTEND_SECTION_GAP_DEFAULT;
+        } elseif (!Helpers::isValidCssSpacingValue($frontendSectionGap)) {
+            return array(
+                'ok' => false,
+                'errors' => array(
+                    'frontend_section_gap' => 'Informe um valor de espaçamento CSS válido.',
+                ),
+            );
+        }
+
         $payload = array(
             'template_visual_portal' => isset($data['template_visual_portal']) ? trim((string) $data['template_visual_portal']) : 'padrao',
             'cor_primaria' => isset($data['cor_primaria']) ? trim((string) $data['cor_primaria']) : null,
@@ -411,6 +477,8 @@ class ConfiguracaoGlobalService
             'banner_caminho' => isset($data['banner_caminho']) ? trim((string) $data['banner_caminho']) : null,
             'descricao_home' => isset($data['descricao_home']) ? trim((string) $data['descricao_home']) : null,
             'home_destaques_limite' => $this->normalizeHomeDestaquesLimite(isset($data['home_destaques_limite']) ? $data['home_destaques_limite'] : null),
+            'frontend_card_gap' => $frontendCardGap,
+            'frontend_section_gap' => $frontendSectionGap,
         );
 
         $errors = $this->validateFrontend($payload);
@@ -553,6 +621,14 @@ class ConfiguracaoGlobalService
 
         if ($payload['template_visual_portal'] === '') {
             $errors['template_visual_portal'] = 'Informe o template visual do portal.';
+        }
+
+        if (!empty($payload['frontend_card_gap']) && !Helpers::isValidCssSpacingValue($payload['frontend_card_gap'])) {
+            $errors['frontend_card_gap'] = 'Informe um valor de espaçamento CSS válido.';
+        }
+
+        if (!empty($payload['frontend_section_gap']) && !Helpers::isValidCssSpacingValue($payload['frontend_section_gap'])) {
+            $errors['frontend_section_gap'] = 'Informe um valor de espaçamento CSS válido.';
         }
 
         return $errors;

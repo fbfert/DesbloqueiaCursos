@@ -1,26 +1,27 @@
 <?php use App\Core\Helpers; ?>
 
-<section class="page-header">
-    <h1>Resumo do pedido</h1>
-    <p><?php echo Helpers::e($pedido['codigo']); ?></p>
-</section>
-
-<?php if (!empty($success)): ?>
-    <section class="auth-message auth-message-success">
-        <p><?php echo Helpers::e($success); ?></p>
+<div class="front-section-stack">
+    <section class="page-header front-section">
+        <h1>Resumo do pedido</h1>
+        <p><?php echo Helpers::e($pedido['codigo']); ?></p>
     </section>
-<?php endif; ?>
 
-<?php if (!empty($errors)): ?>
-    <section class="auth-message auth-message-error">
-        <?php foreach ($errors as $error): ?>
-            <p><?php echo Helpers::e($error); ?></p>
-        <?php endforeach; ?>
-    </section>
-<?php endif; ?>
+    <?php if (!empty($success)): ?>
+        <section class="auth-message auth-message-success front-section">
+            <p><?php echo Helpers::e($success); ?></p>
+        </section>
+    <?php endif; ?>
 
-<section class="checkout-grid">
-    <article class="checkout-panel">
+    <?php if (!empty($errors)): ?>
+        <section class="auth-message auth-message-error front-section">
+            <?php foreach ($errors as $error): ?>
+                <p><?php echo Helpers::e($error); ?></p>
+            <?php endforeach; ?>
+        </section>
+    <?php endif; ?>
+
+    <section class="checkout-grid front-card-grid front-section">
+        <article class="checkout-panel front-card">
         <h2>Dados do pedido</h2>
         <dl class="summary-list">
             <dt>Pagador</dt>
@@ -34,13 +35,13 @@
             <dt>Total</dt>
             <dd><?php echo Helpers::e($pedido['total']); ?></dd>
         </dl>
-    </article>
+        </article>
 
-    <?php if (empty($pedidoPagoOuAprovado)): ?>
-        <article class="checkout-panel">
+        <?php if (empty($pedidoPagoOuAprovado)): ?>
+            <article class="checkout-panel front-card">
             <h2>Itens e participantes</h2>
             <?php foreach ($pedido['itens'] as $item): ?>
-                <div class="status-card">
+                <div class="status-card front-card">
                     <strong><?php echo Helpers::e($item['curso_nome']); ?></strong>
                     <span><?php echo Helpers::e($item['turma_nome']); ?></span>
                     <span><?php echo (int) $item['quantidade']; ?> vaga(s)</span>
@@ -48,19 +49,19 @@
                 </div>
             <?php endforeach; ?>
             <?php foreach ($pedido['participantes'] as $participante): ?>
-                <div class="status-card">
+                <div class="status-card front-card">
                     <strong><?php echo Helpers::e($participante['nome']); ?></strong>
                     <span><?php echo Helpers::e($participante['email']); ?></span>
                     <span><?php echo Helpers::e($participante['status']); ?></span>
                 </div>
             <?php endforeach; ?>
-        </article>
-    <?php endif; ?>
-</section>
+            </article>
+        <?php endif; ?>
+    </section>
 
-<section class="checkout-grid">
-    <?php if (empty($comprovanteAguardandoAprovacao) && empty($pedidoPagoOuAprovado)): ?>
-        <article class="checkout-panel">
+    <section class="checkout-grid front-card-grid front-section">
+        <?php if (empty($comprovanteAguardandoAprovacao) && empty($pedidoPagoOuAprovado)): ?>
+            <article class="checkout-panel front-card">
             <h2>Cupom</h2>
             <?php if (!empty($pedido['cupom'])): ?>
                 <p class="muted">Cupom aplicado: <?php echo Helpers::e($pedido['cupom']['cupom_codigo']); ?></p>
@@ -72,18 +73,18 @@
                 <form class="admin-form" method="post" action="/checkout/cupom">
                     <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
                     <label>
-                        Codigo do cupom
-                        <input type="text" name="cupom_codigo" placeholder="Codigo do cupom" value="<?php echo Helpers::e((string) ($cupomPromocional ?? '')); ?>">
+                        Código do cupom
+                        <input type="text" name="cupom_codigo" placeholder="Código do cupom" value="<?php echo Helpers::e((string) ($cupomPromocional ?? '')); ?>">
                     </label>
                     <button type="submit">Aplicar cupom</button>
                 </form>
             <?php else: ?>
                 <p class="muted">Entre na sua conta para aplicar um cupom.</p>
             <?php endif; ?>
-        </article>
-    <?php endif; ?>
+            </article>
+        <?php endif; ?>
 
-    <article class="checkout-panel checkout-next-step-card">
+        <article class="checkout-panel checkout-next-step-card front-card">
         <h2>Próxima etapa</h2>
         <?php if (!empty($pedidoSemCobranca)): ?>
             <div class="checkout-status-alert checkout-status-alert--success">
@@ -123,6 +124,7 @@
                 <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>
             </div>
         <?php endif; ?>
-    </article>
-</section>
+        </article>
+    </section>
+</div>
 

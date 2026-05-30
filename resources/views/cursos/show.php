@@ -12,27 +12,28 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
 }
 ?>
 
-<section class="page-header">
-    <h1><?php echo Helpers::e($curso['nome']); ?></h1>
-    <p><?php echo Helpers::e($curso['descricao_curta'] ?: 'Curso disponivel para inscricao publica.'); ?></p>
-</section>
-
-<?php if (!empty($success)): ?>
-    <section class="auth-message auth-message-success">
-        <p><?php echo Helpers::e($success); ?></p>
+<div class="front-section-stack">
+    <section class="page-header front-section">
+        <h1><?php echo Helpers::e($curso['nome']); ?></h1>
+        <p><?php echo Helpers::e($curso['descricao_curta'] ?: 'Curso disponível para inscrição pública.'); ?></p>
     </section>
-<?php endif; ?>
 
-<?php if (!empty($errors)): ?>
-    <section class="auth-message auth-message-error">
-        <?php foreach ($errors as $error): ?>
-            <p><?php echo Helpers::e($error); ?></p>
-        <?php endforeach; ?>
-    </section>
-<?php endif; ?>
+    <?php if (!empty($success)): ?>
+        <section class="auth-message auth-message-success front-section">
+            <p><?php echo Helpers::e($success); ?></p>
+        </section>
+    <?php endif; ?>
 
-<section class="checkout-grid">
-    <article class="checkout-panel">
+    <?php if (!empty($errors)): ?>
+        <section class="auth-message auth-message-error front-section">
+            <?php foreach ($errors as $error): ?>
+                <p><?php echo Helpers::e($error); ?></p>
+            <?php endforeach; ?>
+        </section>
+    <?php endif; ?>
+
+    <section class="checkout-grid front-card-grid front-section">
+        <article class="checkout-panel front-card">
         <h2>Detalhes</h2>
         <?php if (!empty($curso['thumbnail'])): ?>
             <div class="course-detail__image">
@@ -126,10 +127,10 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
         <?php if (!empty($cp['texto']) || !empty($cp['html']) || !empty($cp['modulos'])): ?>
             <h3 style="margin:16px 0 6px;">Conteúdo programático</h3>
             <?php if (($cp['tipo'] ?? 'texto') === 'modulos'): ?>
-                <div class="stack">
+                <div class="stack front-card-list">
                     <?php foreach (($cp['modulos'] ?? array()) as $modulo): ?>
                         <?php if (!is_array($modulo)) continue; ?>
-                        <div class="status-card" style="padding:12px;">
+                        <div class="status-card front-card" style="padding:12px;">
                             <?php if (!empty($modulo['titulo'])): ?>
                                 <strong><?php echo Helpers::e($modulo['titulo']); ?></strong>
                             <?php endif; ?>
@@ -173,20 +174,20 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
             <h3 style="margin:16px 0 6px;">Avaliação</h3>
             <p><?php echo nl2br(Helpers::e($curso['avaliacao'])); ?></p>
         <?php endif; ?>
-    </article>
+        </article>
 
-    <article class="checkout-panel">
+        <article class="checkout-panel">
         <h2>Turmas abertas</h2>
         <?php if (empty($curso['turmas_abertas'])): ?>
-            <p class="muted">Não ha turma aberta no momento para inscricao publica.</p>
+            <p class="muted">Não há turma aberta no momento para inscrição pública.</p>
         <?php else: ?>
-            <div class="stack">
+            <div class="stack front-card-list">
                 <?php foreach ($curso['turmas_abertas'] as $turma): ?>
-                    <div class="status-card<?php echo !empty($curso['turma_selecionada']) && (int) $curso['turma_selecionada']['id'] === (int) $turma['id'] ? ' status-card--selected' : ''; ?>">
+                    <div class="status-card front-card<?php echo !empty($curso['turma_selecionada']) && (int) $curso['turma_selecionada']['id'] === (int) $turma['id'] ? ' status-card--selected' : ''; ?>">
                         <strong><?php echo Helpers::e($turma['nome']); ?></strong>
-                        <span>Codigo <?php echo Helpers::e($turma['codigo']); ?></span>
+                        <span>Código <?php echo Helpers::e($turma['codigo']); ?></span>
                         <?php if (!empty($turma['data_inicio'])): ?>
-                            <span>Inicio <?php echo Helpers::e($turma['data_inicio']); ?></span>
+                            <span>Início <?php echo Helpers::e($turma['data_inicio']); ?></span>
                         <?php endif; ?>
                         <?php if (!empty($turma['data_fim'])): ?>
                             <span>Fim <?php echo Helpers::e($turma['data_fim']); ?></span>
@@ -200,32 +201,33 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
-    </article>
-</section>
+        </article>
+    </section>
 
-<?php if (!empty($curso['inscricao_disponivel']) && !empty($curso['turma_selecionada'])): ?>
-    <section class="notice notice--success">
-        <strong>Inscrição disponivel</strong>
-        <p>A turma <?php echo Helpers::e($curso['turma_selecionada']['nome']); ?> esta aberta e pode receber inscricoes agora.</p>
-        <div class="cta-group">
-            <a class="button-link" href="/inscricao?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo (int) $curso['turma_selecionada']['id']; ?>">Iniciar inscricao</a>
-        </div>
-    </section>
-<?php else: ?>
-    <section class="notice">
-        <strong>Sem inscricao aberta</strong>
-        <p>Este curso esta publico, mas ainda não possui turma aberta para inscricao.</p>
-    </section>
-<?php endif; ?>
+    <?php if (!empty($curso['inscricao_disponivel']) && !empty($curso['turma_selecionada'])): ?>
+        <section class="notice notice--success front-card front-section">
+            <strong>Inscrição disponível</strong>
+            <p>A turma <?php echo Helpers::e($curso['turma_selecionada']['nome']); ?> está aberta e pode receber inscrições agora.</p>
+            <div class="cta-group">
+                <a class="button-link" href="/inscricao?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo (int) $curso['turma_selecionada']['id']; ?>">Iniciar inscrição</a>
+            </div>
+        </section>
+    <?php else: ?>
+        <section class="notice front-card front-section">
+            <strong>Sem inscrição aberta</strong>
+            <p>Este curso está público, mas ainda não possui turma aberta para inscrição.</p>
+        </section>
+    <?php endif; ?>
 
-<?php if (empty($loggedIn)): ?>
-    <section class="notice">
-        <strong>Para continuar</strong>
-        <p>Entre na sua conta ou crie uma nova para seguir com a inscricao.</p>
-        <div class="cta-group">
-            <a class="button-link" href="/login">Entrar</a>
-            <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>
-        </div>
-    </section>
-<?php endif; ?>
+    <?php if (empty($loggedIn)): ?>
+        <section class="notice front-section">
+            <strong>Para continuar</strong>
+            <p>Entre na sua conta ou crie uma nova para seguir com a inscrição.</p>
+            <div class="cta-group">
+                <a class="button-link" href="/login">Entrar</a>
+                <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>
+            </div>
+        </section>
+    <?php endif; ?>
+</div>
 

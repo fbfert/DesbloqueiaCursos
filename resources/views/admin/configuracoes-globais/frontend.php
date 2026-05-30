@@ -16,9 +16,20 @@
             <span class="muted">Ajustes publicados no portal</span>
         </div>
         <form method="post" action="/admin/configuracoes-globais/frontend" class="form-grid admin-config-frontend__form">
+            <?php echo $csrfField; ?>
             <label class="full">
                 Template visual do portal
                 <input type="text" name="template_visual_portal" value="<?php echo htmlspecialchars((string) (isset($configuracao['template_visual_portal']) ? $configuracao['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
+            </label>
+            <label class="full">
+                Espaçamento entre cards do frontend
+                <input type="text" name="frontend_card_gap" value="<?php echo htmlspecialchars((string) (isset($configuracao['frontend_card_gap']) && trim((string) $configuracao['frontend_card_gap']) !== '' ? $configuracao['frontend_card_gap'] : 'clamp(16px, 2vw, 24px)'), ENT_QUOTES, 'UTF-8'); ?>" placeholder="clamp(16px, 2vw, 24px)">
+                <small>Informe um valor CSS válido, como 16px, 1rem, 24px ou clamp(16px, 2vw, 24px).</small>
+            </label>
+            <label class="full">
+                Espaçamento vertical entre seções do frontend
+                <input type="text" name="frontend_section_gap" value="<?php echo htmlspecialchars((string) (isset($configuracao['frontend_section_gap']) && trim((string) $configuracao['frontend_section_gap']) !== '' ? $configuracao['frontend_section_gap'] : 'clamp(24px, 3vw, 40px)'), ENT_QUOTES, 'UTF-8'); ?>" placeholder="clamp(24px, 3vw, 40px)">
+                <small>Informe um valor CSS válido para controlar o espaço vertical entre blocos e seções do frontend público. Exemplos: 24px, 2rem ou clamp(24px, 3vw, 40px).</small>
             </label>
             <label>
                 Cor primária
@@ -63,6 +74,14 @@
             <div>
                 <strong>Limite na capa</strong>
                 <span><?php echo (int) (isset($configuracao['home_destaques_limite']) && (int) $configuracao['home_destaques_limite'] > 0 ? $configuracao['home_destaques_limite'] : 6); ?> destaque(s)</span>
+            </div>
+            <div>
+                <strong>Espaçamento entre cards</strong>
+                <span><?php echo htmlspecialchars((string) (isset($configuracao['frontend_card_gap']) && trim((string) $configuracao['frontend_card_gap']) !== '' ? $configuracao['frontend_card_gap'] : 'clamp(16px, 2vw, 24px)'), ENT_QUOTES, 'UTF-8'); ?></span>
+            </div>
+            <div>
+                <strong>Espaçamento entre seções</strong>
+                <span><?php echo htmlspecialchars((string) (isset($configuracao['frontend_section_gap']) && trim((string) $configuracao['frontend_section_gap']) !== '' ? $configuracao['frontend_section_gap'] : 'clamp(24px, 3vw, 40px)'), ENT_QUOTES, 'UTF-8'); ?></span>
             </div>
             <div>
                 <strong>Template</strong>

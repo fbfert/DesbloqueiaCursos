@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS configuracoes_frontend (
     logo_caminho VARCHAR(255) NULL,
     banner_caminho VARCHAR(255) NULL,
     descricao_home TEXT NULL,
+    frontend_card_gap VARCHAR(191) NULL,
+    frontend_section_gap VARCHAR(191) NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NULL,
     deleted_at DATETIME NULL,

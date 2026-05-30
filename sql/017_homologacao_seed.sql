@@ -25,12 +25,14 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO configuracoes_frontend
-    (template_visual_portal, cor_primaria, cor_secundaria, descricao_home, created_at, updated_at, deleted_at)
+    (template_visual_portal, cor_primaria, cor_secundaria, descricao_home, frontend_card_gap, frontend_section_gap, created_at, updated_at, deleted_at)
 SELECT
     'padrao',
     '#0c5b4f',
     '#f08c52',
     'Portal de homologacao para cursos, turmas e inscricoes.',
+    'clamp(16px, 2vw, 24px)',
+    'clamp(24px, 3vw, 40px)',
     NOW(),
     NOW(),
     NULL

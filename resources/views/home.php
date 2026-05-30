@@ -28,8 +28,9 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 };
 ?>
 
+<div class="front-page-stack home-page-stack">
 <?php if ($loggedIn): ?>
-<section class="home-greeting">
+<section class="home-greeting front-section">
     <strong><?php echo Helpers::e('Bem-vindo' . (!empty($usuarioNome) ? ' ' . $usuarioNome : ' usuário')); ?></strong>
 </section>
 <?php endif; ?>
@@ -39,7 +40,7 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 <?php endif; ?>
 
 <?php if (!empty($chamadaPrincipalCapa)): ?>
-<section class="hero hero--public">
+<section class="hero hero--public front-section">
     <div class="hero__content">
         <?php $imagemModulo($chamadaPrincipalCapa, 'module-public-image module-public-image--hero'); ?>
         <?php if (!empty($chamadaPrincipalCapa['titulo'])): ?>
@@ -53,18 +54,19 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 </section>
 <?php endif; ?>
 
+<div class="home-public-stack front-section-stack">
 <?php if (!empty($success)): ?>
-<section class="status-card">
+<section class="status-card front-card front-section">
     <strong>Estado</strong>
     <span><?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></span>
 </section>
 <?php endif; ?>
 
 <?php if (!empty($modulosCapaStatus)): ?>
-<section class="status-grid" aria-label="Módulos da capa">
+<section class="status-grid front-card-grid front-section" aria-label="Módulos da capa">
     <?php foreach ($modulosCapaStatus as $moduloCapa): ?>
         <?php $textoStatus = $textoModulo($moduloCapa); ?>
-        <article class="status-card">
+        <article class="status-card front-card">
             <?php $imagemModulo($moduloCapa, 'module-public-image module-public-image--card'); ?>
             <?php if (!empty($moduloCapa['titulo'])): ?>
                 <strong><?php echo Helpers::e($moduloCapa['titulo']); ?></strong>
@@ -77,20 +79,20 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 </section>
 <?php endif; ?>
 
-<section class="status-card home-destaques-card">
+<section class="status-card front-card home-destaques-card front-section">
     <header class="home-destaques-card__header">
         <h2>Destaques</h2>
     </header>
 
-    <div class="destaques-grid home-destaques-grid">
+    <div class="destaques-grid home-destaques-grid front-card-grid">
         <?php if (empty($cursos)): ?>
-            <article class="status-card">
+            <article class="status-card front-card">
                 <strong>Sem cursos públicos</strong>
                 <span>O catálogo ainda está vazio.</span>
             </article>
         <?php else: ?>
             <?php foreach ($cursos as $curso): ?>
-                <article class="course-card home-destaques-grid__card">
+                <article class="course-card home-destaques-grid__card front-card">
                     <?php if (!empty($curso['thumbnail'])): ?>
                         <div class="course-card__image">
                             <a href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>">
@@ -127,7 +129,7 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 </section>
 
     <?php if (!empty($topCursosModulo)): ?>
-<section class="status-card home-extra-card home-top-cursos-card">
+<section class="status-card front-card home-extra-card home-top-cursos-card front-section">
     <header class="home-extra-card__header">
         <div>
             <?php $imagemModulo($topCursosModulo, 'module-public-image module-public-image--section'); ?>
@@ -138,14 +140,14 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
     </header>
 
     <?php if (empty($topCursos)): ?>
-        <article class="home-empty-state">
+        <article class="home-empty-state front-card">
             <strong>Aguardando cursos em destaque</strong>
             <span>Quando houver cursos publicados com turmas abertas, os cinco destaques aparecerão aqui automaticamente.</span>
         </article>
     <?php else: ?>
-        <ol class="home-ranking-list" aria-label="Top 5 cursos em destaque">
+        <ol class="home-ranking-list front-card-list" aria-label="Top 5 cursos em destaque">
             <?php foreach ($topCursos as $indice => $cursoTop): ?>
-                <li class="home-ranking-item">
+                <li class="home-ranking-item front-card">
                     <span class="home-ranking-item__position">#<?php echo (int) ($indice + 1); ?></span>
                     <?php if (!empty($cursoTop['thumbnail'])): ?>
                         <a class="home-ranking-item__image" href="/cursos/detalhe?curso_id=<?php echo (int) $cursoTop['id']; ?>">
@@ -171,7 +173,7 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 <?php endif; ?>
 
 <?php if (!empty($topAvaliacoesModulo)): ?>
-<section class="status-card home-extra-card home-avaliacoes-card">
+<section class="status-card front-card home-extra-card home-avaliacoes-card front-section">
     <header class="home-extra-card__header">
         <div>
             <?php $imagemModulo($topAvaliacoesModulo, 'module-public-image module-public-image--section'); ?>
@@ -185,7 +187,7 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
         </div>
     </header>
 
-    <article class="home-empty-state home-empty-state--soft">
+    <article class="home-empty-state home-empty-state--soft front-card">
         <strong>Módulo preparado para avaliações</strong>
         <span>Assim que o sistema tiver avaliações públicas consolidadas, esta área poderá exibir automaticamente os cinco cursos com melhor nota.</span>
     </article>
@@ -193,7 +195,7 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 <?php endif; ?>
 
 <?php if (!empty($depoimentosModulo)): ?>
-<section class="status-card home-extra-card home-depoimentos-card">
+<section class="status-card front-card home-extra-card home-depoimentos-card front-section">
     <header class="home-extra-card__header">
         <div>
             <?php $imagemModulo($depoimentosModulo, 'module-public-image module-public-image--section'); ?>
@@ -209,14 +211,14 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 
     <div class="testimonial-slider" aria-label="Depoimentos">
         <?php if (empty($depoimentosCapa)): ?>
-            <article class="testimonial-slide testimonial-slide--empty">
+            <article class="testimonial-slide testimonial-slide--empty front-card">
                 <strong>Depoimentos em preparação</strong>
                 <span>Cadastre módulos ativos com posição <code>depoimentos_capa_item</code> para alimentar este carrossel.</span>
             </article>
         <?php else: ?>
             <?php foreach ($depoimentosCapa as $depoimento): ?>
                 <?php $textoDepoimento = $textoModulo($depoimento); ?>
-                <article class="testimonial-slide">
+                <article class="testimonial-slide front-card">
                     <?php $imagemModulo($depoimento, 'module-public-image module-public-image--testimonial'); ?>
                     <?php if ($textoDepoimento !== ''): ?>
                         <p>“<?php echo nl2br(Helpers::e($textoDepoimento)); ?>”</p>
@@ -234,6 +236,8 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 </section>
 <?php endif; ?>
 
+</div>
+</div>
 <?php if (!empty($postLoginChoiceModal)): ?>
 <div class="post-login-modal" id="post-login-choice-modal" role="dialog" aria-modal="true" aria-labelledby="post-login-choice-modal-title">
     <div class="post-login-modal__backdrop" data-post-login-modal-close></div>

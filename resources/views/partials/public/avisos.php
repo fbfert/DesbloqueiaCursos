@@ -7,14 +7,14 @@ if (empty($avisos)) {
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 ?>
 
-<section class="status-card avisos-feed" id="avisos">
+<section class="status-card avisos-feed front-card front-section" id="avisos">
     <header class="avisos-feed__header">
         <h2>Avisos</h2>
         <p>Mensagens importantes para sua conta e seus cursos.</p>
     </header>
-    <div class="avisos-list">
+    <div class="avisos-list front-card-list">
         <?php foreach ($avisos as $aviso): ?>
-            <article class="aviso-card<?php echo !empty($aviso['destaque']) ? ' aviso-card--destaque' : ''; ?>">
+            <article class="aviso-card front-card<?php echo !empty($aviso['destaque']) ? ' aviso-card--destaque' : ''; ?>">
                 <div class="aviso-card__top">
                     <div>
                         <strong><?php echo Helpers::e(!empty($aviso['titulo']) ? $aviso['titulo'] : 'Aviso'); ?></strong>

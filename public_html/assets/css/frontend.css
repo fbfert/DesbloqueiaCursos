@@ -363,7 +363,7 @@ body.frontend-theme {
 .frontend-theme .destaques-grid {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
-    gap: 16px !important;
+    gap: 16px;
     align-items: stretch !important;
     justify-items: stretch !important;
     grid-auto-flow: row !important;
@@ -1290,7 +1290,6 @@ body.frontend-theme {
 
 /* ---------- capa: módulos e destaques ---------- */
 .frontend-theme .home-destaques-card {
-    margin-top: 20px;
     padding: 18px;
 }
 
@@ -1343,7 +1342,6 @@ body.frontend-theme {
 }
 
 .frontend-theme .home-extra-card {
-    margin-top: 18px;
     padding: 18px;
 }
 
@@ -2403,6 +2401,112 @@ body.has-post-login-modal {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+
+.app-public.frontend-theme .front-card-grid {
+    display: grid;
+    gap: var(--frontend-card-gap, clamp(16px, 2vw, 24px));
+}
+
+.app-public.frontend-theme .front-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--frontend-card-gap, clamp(16px, 2vw, 24px));
+}
+
+.app-public.frontend-theme .front-card-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--frontend-card-gap, clamp(16px, 2vw, 24px));
+}
+
+.app-public.frontend-theme .front-card-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--frontend-card-gap, clamp(16px, 2vw, 24px));
+}
+
+.app-public.frontend-theme .front-page-stack,
+.app-public.frontend-theme .front-section-stack,
+.app-public.frontend-theme .home-public-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--frontend-section-gap, clamp(24px, 3vw, 40px));
+}
+
+.app-public.frontend-theme .front-section {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.app-public.frontend-theme .page-header,
+.app-public.frontend-theme .auth-message,
+.app-public.frontend-theme .notice {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.app-public.frontend-theme .front-section-compact {
+    display: flex;
+    flex-direction: column;
+    gap: var(--frontend-card-gap, clamp(16px, 2vw, 24px));
+}
+
+.app-public.frontend-theme .home-public-stack {
+    margin: 0;
+}
+
+.app-public.frontend-theme .home-destaques-card,
+.app-public.frontend-theme .home-extra-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--frontend-card-gap, clamp(16px, 2vw, 24px));
+}
+
+.app-public.frontend-theme .home-destaques-card .card-grid,
+.app-public.frontend-theme .card-grid--inside {
+    padding-top: 0;
+}
+
+.app-public.frontend-theme .home-destaques-card__footer,
+.app-public.frontend-theme .home-extra-card__header {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.app-public.frontend-theme .avisos-feed {
+    margin: 0;
+    padding: 16px;
+}
+
+.app-public.frontend-theme .avisos-list {
+    gap: var(--frontend-card-gap, clamp(16px, 2vw, 24px));
+    margin-top: 0;
+}
+
+.app-public.frontend-theme .front-card {
+    margin: 0;
+}
+
+.app-public.frontend-theme .status-grid,
+.app-public.frontend-theme .card-grid,
+.app-public.frontend-theme .checkout-grid,
+.app-public.frontend-theme .home-destaques-grid,
+.app-public.frontend-theme .destaques-grid,
+.app-public.frontend-theme .home-ranking-list,
+.app-public.frontend-theme .testimonial-slider,
+.app-public.frontend-theme .stack {
+    gap: var(--frontend-card-gap, clamp(16px, 2vw, 24px));
+}
+
+.app-public.frontend-theme .stack {
+    display: flex;
+    flex-direction: column;
+}
+
+.app-public.frontend-theme .home-greeting {
+    margin: 0;
+}
+
 .sr-only {
     position: absolute;
     width: 1px;
