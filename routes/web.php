@@ -195,9 +195,15 @@ $app->get('/admin/promocionais/presentes/show', array(PresentesController::class
 $app->post('/admin/promocionais/presentes/cancelar', array(PresentesController::class, 'cancelar'), array('auth', 'permission:promocionais.presentes.gerenciar'));
 $app->post('/admin/promocionais/presentes/cancelar-lote', array(PresentesController::class, 'cancelarLote'), array('auth', 'permission:promocionais.presentes.gerenciar'));
 $app->get('/admin/pedidos', array(PedidosController::class, 'index'), array('auth', 'permission:pedidos.ver'));
+$app->get('/admin/pedidos/criar', array(PedidosController::class, 'criar'), array('auth', 'permission:pedidos.gerenciar'));
+$app->post('/admin/pedidos/criar', array(PedidosController::class, 'criar'), array('auth', 'permission:pedidos.gerenciar'));
+$app->get('/admin/pedidos/alunos', array(PedidosController::class, 'alunos'), array('auth', 'permission:pedidos.gerenciar'));
 $app->get('/admin/pedidos/excluidos', array(PedidosController::class, 'excluidos'), array('auth', 'permission:pedidos.gerenciar'));
 $app->get('/admin/pedidos/show', array(PedidosController::class, 'show'), array('auth', 'permission:pedidos.ver'));
 $app->post('/admin/pedidos/excluir', array(PedidosController::class, 'excluir'), array('auth', 'permission:pedidos.gerenciar'));
+$app->post('/admin/pedidos/reverter-cancelamento', array(PedidosController::class, 'reverterCancelamento'), array('auth', 'permission:pedidos.gerenciar'));
+$app->post('/admin/pedidos/reabrir-aguardando-pagamento', array(PedidosController::class, 'reabrirComoAguardandoPagamento'), array('auth', 'permission:pedidos.gerenciar'));
+$app->post('/admin/pedidos/rascunho-aguardando-pagamento', array(PedidosController::class, 'marcarRascunhoComoAguardandoPagamento'), array('auth', 'permission:pedidos.gerenciar'));
 $app->post('/admin/pedidos/excluir-lote', array(PedidosController::class, 'excluirEmLote'), array('auth', 'permission:pedidos.gerenciar'));
 $app->post('/admin/pedidos/cupom-manual', array(PedidosController::class, 'cupomManual'), array('auth', 'permission:pedidos.gerenciar'));
 $app->get('/admin/pedidos/comprovante', array(PedidosController::class, 'comprovante'), array('auth', 'permission:pedidos.ver'));
@@ -242,6 +248,7 @@ $app->post('/admin/emails/modelos/editar', array(EmailModelosController::class, 
 $app->post('/admin/emails/modelos/status', array(EmailModelosController::class, 'toggleStatus'), array('auth', 'permission:emails.gerenciar'));
 $app->post('/admin/emails/modelos/restaurar-padrao', array(EmailModelosController::class, 'restoreDefault'), array('auth', 'permission:emails.gerenciar'));
 $app->get('/admin/financeiro', array(AdminFinanceiroController::class, 'index'), array('auth', 'permission:financeiro.ver'));
+$app->get('/admin/financeiro/entradas/exportar', array(AdminFinanceiroController::class, 'exportarEntradas'), array('auth', 'permission:financeiro.ver'));
 $app->post('/admin/financeiro/apurar', array(AdminFinanceiroController::class, 'apurar'), array('auth', 'permission:financeiro.gerenciar'));
 $app->get('/admin/financeiro/repasses', array(AdminFinanceiroController::class, 'repasses'), array('auth', 'permission:financeiro.ver'));
 $app->post('/admin/financeiro/repasses/gerar', array(AdminFinanceiroController::class, 'gerarRepasses'), array('auth', 'permission:financeiro.gerenciar'));

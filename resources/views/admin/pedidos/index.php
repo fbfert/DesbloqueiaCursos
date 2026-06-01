@@ -112,6 +112,9 @@ $statusAtual = (string) ($filters['status'] ?? '');
             <h2 class="admin-section__title">Atalhos de operação</h2>
         </div>
         <div class="quick-actions quick-actions--dashboard">
+            <?php if (!empty($can_manage_pedidos)): ?>
+                <a class="card-link admin-shortcut" href="/admin/pedidos/criar"><span>Criar pedido manualmente</span><small>Selecionar aluno, curso, turma e cupom</small></a>
+            <?php endif; ?>
             <a class="card-link admin-shortcut" href="/admin/comprovantes-pix"><span>Comprovantes PIX</span><small>Fila de análise e aprovação</small></a>
             <a class="card-link admin-shortcut" href="/admin/inscricoes"><span>Inscrições</span><small>Acompanhar status de alunos</small></a>
             <a class="card-link admin-shortcut" href="/admin/pedidos/excluidos"><span>Pedidos excluídos</span><small>Consultar a lixeira de pedidos</small></a>
@@ -239,7 +242,7 @@ $statusAtual = (string) ($filters['status'] ?? '');
                                     <summary>Mais opções</summary>
                                     <div class="admin-pedidos__actions-body">
                                         <?php if (!empty($pedido['cupom_manual']) && !empty($pedido['cupom_manual']['ok'])): ?>
-                                            <a class="button-link button-link--ghost" href="/admin/pedidos/show?pedido_id=<?php echo (int) $pedido['id']; ?>#cupom-manual">Aplicar cupom</a>
+                                            <a class="button-link button-link--ghost" href="/admin/pedidos/show?pedido_id=<?php echo (int) $pedido['id']; ?>#cupom-manual"><?php echo !empty($pedido['cupom_manual']['pedido_confirmado']) ? 'Ajustar cupom' : 'Aplicar cupom'; ?></a>
                                         <?php endif; ?>
                                         <?php if (!empty($exclusao['ok'])): ?>
                                             <form method="post" action="/admin/pedidos/excluir" class="admin-form admin-pedidos__delete-form">

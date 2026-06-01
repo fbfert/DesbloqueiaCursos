@@ -14,6 +14,11 @@ class Logger
         self::write('error', $message, $context);
     }
 
+    public static function warning($message, array $context = array())
+    {
+        self::write('warning', $message, $context);
+    }
+
     private static function write($level, $message, array $context)
     {
         $line = json_encode(array(

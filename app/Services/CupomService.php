@@ -470,7 +470,7 @@ class CupomService
         return $this->persistirAplicacao($pedidoId, $cupomCodigo, 'pedido.cupom.aplicado', 'aplicado', $actorUserId, $ipAddress, $userAgent);
     }
 
-    public function aplicarAoPedidoManual($pedidoId, $cupomCodigo, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function aplicarAoPedidoManual($pedidoId, $cupomCodigo, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null, array $options = array())
     {
         if (trim((string) $justificativa) === '') {
             return array('ok' => false, 'errors' => array('Informe a justificativa para aplicar o cupom manualmente.'));
@@ -485,7 +485,41 @@ class CupomService
             $ipAddress,
             $userAgent,
             $justificativa,
-            true
+            true,
+            !empty($options['permitir_confirmado'])
+        );
+    }
+
+    public function prevalidarAplicacaoPedidoManual(array $pedido, $cupomCodigo)
+    {
+        $cupomCodigo = trim((string) $cupomCodigo);
+        if ($cupomCodigo === '') {
+            return array('ok' => false, 'errors' => array('Código do cupom é obrigatório.'));
+        }
+
+        $cupom = $this->cupomModel->findByCodigo($cupomCodigo);
+        if (!$cupom) {
+            return array('ok' => false, 'errors' => array('Cupom não encontrado.'));
+        }
+
+        if ($this->pedidoStatusBloqueadoParaCupom($pedido)) {
+            return array('ok' => false, 'errors' => array('Pedido não permite aplicação de cupom neste status.'));
+        }
+
+        $relacoes = $this->groupRelations($this->cupomRelacaoModel->forCupom($cupom['id']));
+        $errors = $this->validateCupomContext($cupom, $pedido, $relacoes);
+        if ($errors) {
+            return array('ok' => false, 'errors' => $errors);
+        }
+
+        $desconto = $this->calculateDiscount($cupom, $pedido);
+
+        return array(
+            'ok' => true,
+            'cupom' => $cupom,
+            'pedido' => $pedido,
+            'valor_desconto' => $desconto,
+            'subtotal' => (float) $pedido['subtotal_calculado'],
         );
     }
 
@@ -604,7 +638,7 @@ class CupomService
         }
     }
 
-    public function validarCupomNoPedido($pedidoId, $cupomCodigo = null)
+    public function validarCupomNoPedido($pedidoId, $cupomCodigo = null, array $options = array())
     {
         $pedido = $this->loadPedidoContext($pedidoId);
         if (!$pedido) {
@@ -621,7 +655,8 @@ class CupomService
             return array('ok' => false, 'errors' => array('Cupom nao encontrado.'));
         }
 
-        if ($this->pedidoStatusBloqueadoParaCupom($pedido)) {
+        $permitirConfirmado = !empty($options['permitir_confirmado']);
+        if ($this->pedidoStatusBloqueadoParaCupom($pedido, $permitirConfirmado)) {
             return array('ok' => false, 'errors' => array('Pedido nao permite aplicacao de cupom neste status.'));
         }
 
@@ -642,9 +677,11 @@ class CupomService
         );
     }
 
-    private function persistirAplicacao($pedidoId, $cupomCodigo, $eventoAuditoria, $acaoHistorico, $actorUserId = null, $ipAddress = null, $userAgent = null, $justificativa = null, $permitirSubstituicao = false)
+    private function persistirAplicacao($pedidoId, $cupomCodigo, $eventoAuditoria, $acaoHistorico, $actorUserId = null, $ipAddress = null, $userAgent = null, $justificativa = null, $permitirSubstituicao = false, $permitirConfirmado = false)
     {
-        $validacao = $this->validarCupomNoPedido($pedidoId, $cupomCodigo);
+        $validacao = $this->validarCupomNoPedido($pedidoId, $cupomCodigo, array(
+            'permitir_confirmado' => $permitirConfirmado,
+        ));
         if (empty($validacao['ok'])) {
             return array('ok' => false, 'errors' => isset($validacao['errors']) ? $validacao['errors'] : array('Cupom invalido.'));
         }
@@ -652,6 +689,8 @@ class CupomService
         $pedidoCupomAtual = $this->pedidoCupomModel->findByPedido($pedidoId);
         $cupomAnteriorCodigo = null;
         $cupomAnteriorId = null;
+        $descontoAnterior = 0.00;
+        $totalAnterior = 0.00;
         if ($pedidoCupomAtual && strtoupper((string) $pedidoCupomAtual['cupom_codigo']) !== strtoupper((string) $cupomCodigo) && !$permitirSubstituicao) {
             return array('ok' => false, 'errors' => array('Pedido ja possui outro cupom aplicado.'));
         }
@@ -662,14 +701,65 @@ class CupomService
 
         $pedido = $validacao['pedido'];
         $cupom = $validacao['cupom'];
+        $statusPedido = isset($pedido['status']) ? (string) $pedido['status'] : '';
+        $aplicacaoPosAprovacao = in_array($statusPedido, array('aprovado', 'pago'), true);
+        if ($aplicacaoPosAprovacao && $permitirConfirmado) {
+            $bloqueio = $this->competenciaFinanceiraBloqueada($pedido);
+            if (!empty($bloqueio['bloqueada'])) {
+                return array(
+                    'ok' => false,
+                    'errors' => array('Não é possível alterar cupom deste pedido porque a competência financeira ' . $bloqueio['competencia'] . ' já está fechada ou paga.'),
+                );
+            }
+        }
         $desconto = round((float) $validacao['valor_desconto'], 2);
         $subtotal = round((float) $validacao['subtotal'], 2);
-        $total = max(0, round($subtotal - $desconto, 2));
+        $subtotalBase = round((float) ($pedido['subtotal'] ?? 0), 2);
+        if ($subtotalBase <= 0) {
+            $subtotalBase = $subtotal;
+        }
+        if ($subtotalBase <= 0 && !empty($pedido['itens']) && is_array($pedido['itens'])) {
+            foreach ($pedido['itens'] as $itemSubtotal) {
+                $subtotalBase += round((float) ($itemSubtotal['valor_total'] ?? 0), 2);
+            }
+        }
+        if ($subtotalBase <= 0) {
+            return array(
+                'ok' => false,
+                'errors' => array('Não foi possível calcular o subtotal do pedido para aplicar o cupom.'),
+            );
+        }
+        $total = max(0, round($subtotalBase - $desconto, 2));
+        Logger::info('pedido.cupom.manual_calculo', array(
+            'pedido_id' => $pedidoId,
+            'cupom_codigo' => $cupom['codigo'],
+            'subtotal' => $subtotalBase,
+            'desconto' => $desconto,
+            'total_calculado' => $total,
+            'status_pedido' => $statusPedido,
+        ));
+        $descontoAnterior = isset($pedido['desconto_total']) ? (float) $pedido['desconto_total'] : 0.00;
+        $totalAnterior = isset($pedido['total']) ? (float) $pedido['total'] : 0.00;
 
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
         try {
+            $alteracao = array(
+                'pedido_id' => $pedidoId,
+                'cupom_codigo' => $cupom['codigo'],
+                'subtotal' => $subtotal,
+                'desconto_anterior' => $descontoAnterior,
+                'total_anterior' => $totalAnterior,
+                'desconto_novo' => $desconto,
+                'total_novo' => $total,
+                'status_pedido' => $statusPedido,
+                'aplicacao_pos_aprovacao' => $aplicacaoPosAprovacao,
+                'justificativa' => $justificativa,
+                'cupom_anterior' => $cupomAnteriorCodigo,
+                'cupom_anterior_id' => $cupomAnteriorId,
+            );
+
             $pedidoCupomId = $this->pedidoCupomModel->upsert(array(
                 'pedido_id' => $pedidoId,
                 'cupom_id' => $cupom['id'],
@@ -690,7 +780,56 @@ class CupomService
                 'valor_desconto' => $desconto,
             ));
 
-            $this->pedidoModel->updateCupom($pedidoId, $cupom['codigo'], $desconto, $total);
+            if ($desconto <= 0) {
+                Logger::warning('pedido.cupom.desconto_zero', array(
+                    'pedido_id' => $pedidoId,
+                    'cupom_codigo' => $cupom['codigo'],
+                    'subtotal' => $subtotalBase,
+                    'cupom_desconto_tipo' => isset($cupom['desconto_tipo']) ? $cupom['desconto_tipo'] : null,
+                    'cupom_valor_desconto' => isset($cupom['valor_desconto']) ? $cupom['valor_desconto'] : null,
+                ));
+
+                throw new \RuntimeException('O cupom foi localizado, mas o desconto calculado foi zero. Verifique o valor, tipo e regras do cupom.');
+            }
+
+            if (!$this->pedidoModel->updateCupom($pedidoId, $cupom['codigo'], $desconto, $total)) {
+                throw new \RuntimeException('Falha ao atualizar os valores financeiros do pedido.');
+            }
+
+            $pedidoAtualizado = $this->pedidoModel->findById($pedidoId);
+            if (!$pedidoAtualizado) {
+                throw new \RuntimeException('Pedido não encontrado após atualização do cupom.');
+            }
+
+            $descontoPersistido = round((float) ($pedidoAtualizado['desconto_total'] ?? 0), 2);
+            $totalPersistido = round((float) ($pedidoAtualizado['total'] ?? 0), 2);
+            $cupomPersistido = strtoupper(trim((string) ($pedidoAtualizado['cupom_codigo'] ?? '')));
+            $cupomEsperado = strtoupper(trim((string) $cupom['codigo']));
+
+            if ($cupomPersistido !== $cupomEsperado || $descontoPersistido !== $desconto || $totalPersistido !== $total) {
+                Logger::error('pedido.cupom.update_nao_persistiu', array(
+                    'pedido_id' => $pedidoId,
+                    'cupom_esperado' => $cupomEsperado,
+                    'cupom_persistido' => $cupomPersistido,
+                    'desconto_esperado' => $desconto,
+                    'desconto_persistido' => $descontoPersistido,
+                    'total_esperado' => $total,
+                    'total_persistido' => $totalPersistido,
+                ));
+
+                throw new \RuntimeException('O cupom foi processado, mas os valores financeiros do pedido não foram atualizados.');
+            }
+
+            if ($aplicacaoPosAprovacao) {
+                $observacaoHistorico = 'Cupom aplicado/substituído manualmente após aprovação. Total anterior: R$ ' . number_format($totalAnterior, 2, ',', '.') . '. Total novo: R$ ' . number_format($total, 2, ',', '.') . '. Justificativa: ' . ($justificativa !== null ? $justificativa : '');
+                $this->pedidoModel->addStatusHistory(
+                    $pedidoId,
+                    $statusPedido,
+                    $statusPedido,
+                    $observacaoHistorico,
+                    $actorUserId
+                );
+            }
 
             $this->cupomHistoricoModel->create(
                 $cupom['id'],
@@ -700,10 +839,13 @@ class CupomService
                     'pedido_id' => $pedidoId,
                     'cupom_codigo' => $cupom['codigo'],
                     'subtotal' => $subtotal,
-                    'valor_desconto' => $desconto,
-                    'total_final' => $total,
+                    'desconto_anterior' => $descontoAnterior,
+                    'total_anterior' => $totalAnterior,
+                    'desconto_novo' => $desconto,
+                    'total_novo' => $total,
+                    'status_pedido' => $statusPedido,
+                    'aplicacao_pos_aprovacao' => $aplicacaoPosAprovacao,
                     'justificativa' => $justificativa,
-                    'aplicacao_manual' => (bool) $permitirSubstituicao,
                     'cupom_anterior' => $cupomAnteriorCodigo,
                     'cupom_anterior_id' => $cupomAnteriorId,
                 ),
@@ -714,17 +856,7 @@ class CupomService
                 $eventoAuditoria,
                 'cupom',
                 $cupom['id'],
-                array(
-                    'pedido_id' => $pedidoId,
-                    'cupom_codigo' => $cupom['codigo'],
-                    'subtotal' => $subtotal,
-                    'valor_desconto' => $desconto,
-                    'total_final' => $total,
-                    'justificativa' => $justificativa,
-                    'aplicacao_manual' => (bool) $permitirSubstituicao,
-                    'cupom_anterior' => $cupomAnteriorCodigo,
-                    'cupom_anterior_id' => $cupomAnteriorId,
-                ),
+                $alteracao,
                 $actorUserId,
                 $ipAddress,
                 $userAgent
@@ -736,6 +868,38 @@ class CupomService
                 'valor_desconto' => $desconto,
             ));
 
+            if ($aplicacaoPosAprovacao) {
+                $comprovanteAtual = $this->comprovanteModel->findByPedido($pedidoId);
+                $valorComprovante = $comprovanteAtual && isset($comprovanteAtual['valor_informado']) ? (float) $comprovanteAtual['valor_informado'] : 0.00;
+                $alertaPagamentoMaior = $valorComprovante > 0 && $valorComprovante > $total;
+
+                Logger::info('pedido.cupom.pos_aprovacao_aplicado', array(
+                    'pedido_id' => $pedidoId,
+                    'cupom_codigo' => $cupom['codigo'],
+                    'desconto_anterior' => $descontoAnterior,
+                    'desconto_novo' => $desconto,
+                    'total_anterior' => $totalAnterior,
+                    'total_novo' => $total,
+                    'status_pedido' => $statusPedido,
+                    'justificativa' => $justificativa,
+                    'usuario_id' => $actorUserId,
+                    'valor_informado_comprovante' => $valorComprovante,
+                    'possivel_pagamento_a_maior' => $alertaPagamentoMaior ? 1 : 0,
+                ));
+
+                $alteracao['valor_informado_comprovante'] = $valorComprovante;
+                $alteracao['possivel_pagamento_a_maior'] = $alertaPagamentoMaior ? 1 : 0;
+                $this->auditService->record(
+                    'pedido.cupom.pos_aprovacao_aplicado',
+                    'pedido',
+                    $pedidoId,
+                    $alteracao,
+                    $actorUserId,
+                    $ipAddress,
+                    $userAgent
+                );
+            }
+
             $pdo->commit();
 
             return array(
@@ -744,6 +908,7 @@ class CupomService
                 'cupom_id' => $cupom['id'],
                 'valor_desconto' => $desconto,
                 'total_final' => $total,
+                'aplicacao_pos_aprovacao' => $aplicacaoPosAprovacao,
             );
         } catch (Exception $exception) {
             $pdo->rollBack();
@@ -757,20 +922,63 @@ class CupomService
         }
     }
 
-    private function pedidoStatusBloqueadoParaCupom(array $pedido)
+    private function pedidoStatusBloqueadoParaCupom(array $pedido, $permitirConfirmado = false)
     {
         $status = isset($pedido['status']) ? (string) $pedido['status'] : '';
 
-        return in_array($status, array(
+        if (in_array($status, array(
             'cancelado',
             'reembolsado',
             'expirado',
+        ), true)) {
+            return true;
+        }
+
+        if (!$permitirConfirmado && in_array($status, array(
             'pago',
             'aprovado',
             'confirmado',
             'concluido',
             'concluida',
-        ), true);
+        ), true)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function competenciaFinanceiraBloqueada(array $pedido)
+    {
+        $dataBase = null;
+        if (!empty($pedido['aprovado_em'])) {
+            $dataBase = $pedido['aprovado_em'];
+        } elseif (!empty($pedido['updated_at'])) {
+            $dataBase = $pedido['updated_at'];
+        } elseif (!empty($pedido['created_at'])) {
+            $dataBase = $pedido['created_at'];
+        }
+
+        if (!$dataBase) {
+            return array('bloqueada' => false, 'competencia' => null, 'apuracao' => null);
+        }
+
+        $competencia = date('Y-m', strtotime($dataBase));
+        $stmt = Database::connection()->prepare(
+            'SELECT id, status
+             FROM apuracoes_mensais
+             WHERE competencia = :competencia
+               AND status IN ("fechada", "paga")
+               AND deleted_at IS NULL
+             LIMIT 1'
+        );
+        $stmt->execute(array('competencia' => $competencia));
+        $apuracao = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return array(
+            'bloqueada' => (bool) $apuracao,
+            'competencia' => $competencia,
+            'apuracao' => $apuracao ?: null,
+        );
     }
 
     private function loadPedidoContext($pedidoId)

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Core\Database;
 use App\Core\Logger;
+use App\Core\Validator;
 use App\Models\CursoEvento;
 use App\Models\ComprovantePix;
 use App\Models\Inscricao;
@@ -29,6 +30,7 @@ class PedidoService
     private $cupomService;
     private $emailService;
     private $auditService;
+    private $inscricaoService;
     private $trashService;
     private $rbacService;
     private $usuarioModel;
@@ -47,6 +49,7 @@ class PedidoService
         $this->cupomService = new CupomService();
         $this->emailService = new EmailService();
         $this->auditService = new AuditService();
+        $this->inscricaoService = new InscricaoService();
         $this->trashService = new TrashService();
         $this->rbacService = new RbacService();
         $this->usuarioModel = new Usuario();
@@ -118,6 +121,228 @@ class PedidoService
             'pedido' => $this->pedidoModel->findById($resultado['pedido_id']),
             'curso' => $curso,
             'turma' => $turma,
+        );
+    }
+
+    public function dadosPedidoManual()
+    {
+        return array(
+            'cursos' => $this->cursoModel->allForSelect(array('ativo')),
+            'turmas' => $this->turmaModel->allForSelect(),
+        );
+    }
+
+    public function buscarAlunosPedidoManual($termo, $limit = 12)
+    {
+        return $this->usuarioModel->buscarAlunosParaPedidoManual($termo, $limit);
+    }
+
+    public function obterAlunoPedidoManual($alunoUsuarioId)
+    {
+        return $this->usuarioModel->findAlunoById((int) $alunoUsuarioId);
+    }
+
+    public function criarPedidoManual(array $dados, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $alunoUsuarioId = isset($dados['aluno_usuario_id']) ? (int) $dados['aluno_usuario_id'] : 0;
+        $cursoId = isset($dados['curso_evento_id']) ? (int) $dados['curso_evento_id'] : 0;
+        $turmaId = !empty($dados['turma_id']) ? (int) $dados['turma_id'] : null;
+        $cupomCodigo = trim((string) ($dados['cupom_codigo'] ?? ''));
+        $cupomJustificativa = trim((string) ($dados['cupom_justificativa'] ?? ''));
+        $observacoesInternas = trim((string) ($dados['observacoes_internas'] ?? ''));
+
+        if ($alunoUsuarioId <= 0) {
+            return array('ok' => false, 'message' => 'Selecione um aluno.');
+        }
+
+        $aluno = $this->usuarioModel->findAlunoById($alunoUsuarioId);
+        if (!$aluno) {
+            return array('ok' => false, 'message' => 'Aluno não encontrado ou inativo.');
+        }
+
+        if ($cursoId <= 0) {
+            return array('ok' => false, 'message' => 'Selecione um curso.');
+        }
+
+        $curso = $this->cursoModel->findAdminById($cursoId);
+        if (!$curso) {
+            return array('ok' => false, 'message' => 'Curso não encontrado.');
+        }
+
+        $turma = null;
+        if ($turmaId !== null) {
+            $turma = $this->turmaModel->findAdminById($turmaId);
+            if (!$turma || (int) $turma['curso_evento_id'] !== $cursoId) {
+                return array('ok' => false, 'message' => 'Turma inválida para o curso selecionado.');
+            }
+        }
+
+        if (!empty($curso['usar_turmas']) && $turmaId === null) {
+            return array('ok' => false, 'message' => 'Selecione uma turma para este curso.');
+        }
+
+        if ($turmaId !== null && $this->inscricaoModel->findByUsuarioTurma($alunoUsuarioId, $turmaId)) {
+            return array('ok' => false, 'message' => 'Este aluno já está inscrito nesta turma.');
+        }
+
+        $pagadorNome = trim((string) ($dados['pagador_nome'] ?? ''));
+        if ($pagadorNome === '') {
+            $pagadorNome = (string) ($aluno['nome'] ?? '');
+        }
+
+        $pagadorCpf = trim((string) ($dados['pagador_cpf'] ?? ''));
+        if ($pagadorCpf === '') {
+            $pagadorCpf = (string) ($aluno['cpf'] ?? '');
+        }
+
+        $pagadorEmail = trim((string) ($dados['pagador_email'] ?? ''));
+        if ($pagadorEmail === '') {
+            $pagadorEmail = (string) ($aluno['email'] ?? '');
+        }
+
+        $pagadorTelefone = trim((string) ($dados['pagador_telefone'] ?? ''));
+        if ($pagadorTelefone === '') {
+            $pagadorTelefone = (string) ($aluno['telefone'] ?? '');
+        }
+
+        $erros = array();
+        if ($pagadorNome === '') {
+            $erros[] = 'Informe o nome do pagador.';
+        }
+        if (!Validator::cpf($pagadorCpf)) {
+            $erros[] = 'Informe um CPF válido do pagador.';
+        }
+        if (!Validator::email($pagadorEmail)) {
+            $erros[] = 'Informe um e-mail válido do pagador.';
+        }
+        if ($pagadorTelefone === '') {
+            $erros[] = 'Informe o telefone do pagador.';
+        }
+        if ($cupomCodigo !== '' && $cupomJustificativa === '') {
+            $erros[] = 'Informe a justificativa para aplicar o cupom manualmente.';
+        }
+
+        if (!empty($erros)) {
+            return array('ok' => false, 'errors' => $erros);
+        }
+
+        $valorBaseCurso = (float) $this->cursoService->calcularValorEfetivoCurso($curso);
+        $valorUnitario = (float) ($turma && isset($turma['valor_override']) && $turma['valor_override'] !== null && $turma['valor_override'] !== ''
+            ? $turma['valor_override']
+            : $valorBaseCurso);
+        $subtotal = round($valorUnitario, 2);
+
+        $pedidoContexto = array(
+            'status' => 'aguardando_pagamento',
+            'subtotal_calculado' => $subtotal,
+            'quantidade_total' => 1,
+            'pagador_usuario_id' => $alunoUsuarioId,
+            'comprador_usuario_id' => $alunoUsuarioId,
+            'itens' => array(
+                array(
+                    'curso_evento_id' => $cursoId,
+                    'turma_id' => $turmaId,
+                    'quantidade' => 1,
+                    'valor_unitario' => $valorUnitario,
+                    'valor_total' => $subtotal,
+                    'status' => 'ativo',
+                    'curso_em_promocao' => !empty($curso['em_promocao']) ? 1 : 0,
+                    'curso_tipo' => isset($curso['tipo']) ? $curso['tipo'] : '',
+                ),
+            ),
+        );
+
+        if ($cupomCodigo !== '') {
+            $validacaoCupom = $this->cupomService->prevalidarAplicacaoPedidoManual($pedidoContexto, $cupomCodigo);
+            if (empty($validacaoCupom['ok'])) {
+                return array(
+                    'ok' => false,
+                    'errors' => isset($validacaoCupom['errors']) && is_array($validacaoCupom['errors'])
+                        ? $validacaoCupom['errors']
+                        : array(isset($validacaoCupom['message']) ? $validacaoCupom['message'] : 'Cupom inválido para este pedido.'),
+                );
+            }
+        }
+
+        $pedidoData = array(
+            'codigo' => 'PR-' . date('YmdHis') . '-' . strtoupper(substr(sha1(random_bytes(8)), 0, 6)),
+            'comprador_usuario_id' => $alunoUsuarioId,
+            'pagador_usuario_id' => $alunoUsuarioId,
+            'pagador_nome' => $pagadorNome,
+            'pagador_cpf' => $pagadorCpf,
+            'pagador_email' => $pagadorEmail,
+            'pagador_telefone' => $pagadorTelefone,
+            'tipo_pedido' => 'propria',
+            'status' => 'aguardando_pagamento',
+            'subtotal' => $subtotal,
+            'desconto_total' => 0,
+            'acrescimo_total' => 0,
+            'total' => $subtotal,
+            'observacoes_internas' => $observacoesInternas !== '' ? $observacoesInternas : null,
+            'observacoes_publicas' => null,
+            'canal_origem' => 'admin',
+        );
+
+        $itemData = array(
+            'curso_evento_id' => $cursoId,
+            'turma_id' => $turmaId,
+            'quantidade' => 1,
+            'valor_unitario' => $valorUnitario,
+            'valor_total' => $subtotal,
+            'status' => 'ativo',
+            'participantes' => array(
+                array(
+                    'usuario_id' => $alunoUsuarioId,
+                    'nome' => $pagadorNome,
+                    'cpf' => $pagadorCpf,
+                    'email' => $pagadorEmail,
+                    'telefone' => $pagadorTelefone,
+                    'status' => 'ativo',
+                    'ordem' => 1,
+                ),
+            ),
+        );
+
+        $pedidoCriado = $this->createPedido($pedidoData, array($itemData), array(), $actorUserId, $ipAddress, $userAgent);
+        if (empty($pedidoCriado['ok'])) {
+            return $pedidoCriado;
+        }
+
+        $pedidoId = (int) $pedidoCriado['pedido_id'];
+
+        if ($cupomCodigo !== '') {
+            $aplicacaoCupom = $this->aplicarCupomManualAoPedido(
+                $pedidoId,
+                $cupomCodigo,
+                $cupomJustificativa,
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            if (empty($aplicacaoCupom['ok'])) {
+                return array(
+                    'ok' => false,
+                    'message' => isset($aplicacaoCupom['message']) ? $aplicacaoCupom['message'] : 'Não foi possível aplicar o cupom manualmente.',
+                    'pedido_id' => $pedidoId,
+                );
+            }
+        }
+
+        $resultadoInscricoes = $this->inscricaoService->gerarDoPedido($pedidoId, $actorUserId, $ipAddress, $userAgent);
+        if (empty($resultadoInscricoes['ok'])) {
+            return array(
+                'ok' => false,
+                'message' => isset($resultadoInscricoes['message']) ? $resultadoInscricoes['message'] : 'Não foi possível gerar as inscrições do pedido.',
+                'pedido_id' => $pedidoId,
+            );
+        }
+
+        return array(
+            'ok' => true,
+            'pedido_id' => $pedidoId,
+            'status_novo' => 'aguardando_pagamento',
+            'cupom_aplicado' => $cupomCodigo !== '',
         );
     }
 
@@ -688,6 +913,235 @@ class PedidoService
         }
     }
 
+    public function reverterCancelamento($pedidoId, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
+            $this->registrarAcessoNegado('pedido.reverter_cancelamento_sem_permissao', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Você nao tem permissao para reverter este cancelamento.');
+        }
+
+        $avaliacao = $this->avaliarReversaoCancelamentoPedido($pedidoId, $pedido);
+        if (empty($avaliacao['ok'])) {
+            $this->auditService->record(
+                'pedido.cancelamento_reversao_bloqueada',
+                'pedido',
+                $pedidoId,
+                array(
+                    'motivos' => isset($avaliacao['motivos']) ? $avaliacao['motivos'] : array(),
+                    'status' => $pedido['status'],
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('pedido.cancelamento_reversao_bloqueada', array(
+                'pedido_id' => $pedidoId,
+                'motivos' => isset($avaliacao['motivos']) ? $avaliacao['motivos'] : array(),
+            ));
+
+            return array(
+                'ok' => false,
+                'message' => isset($avaliacao['motivos_texto']) ? $avaliacao['motivos_texto'] : 'Não foi possível reverter o cancelamento do pedido.',
+            );
+        }
+
+        $justificativa = trim((string) $justificativa);
+        if ($justificativa === '') {
+            return array('ok' => false, 'message' => 'Informe a justificativa da reversão do cancelamento.');
+        }
+
+        $statusAnterior = $avaliacao['status_anterior'];
+        $observacao = 'Cancelamento revertido pelo administrador. Motivo: ' . $justificativa . '. Status restaurado: ' . $statusAnterior . '.';
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $this->pedidoModel->updateStatus($pedidoId, $statusAnterior);
+            $this->pedidoModel->addStatusHistory($pedidoId, 'cancelado', $statusAnterior, $observacao, $actorUserId);
+
+            $this->auditService->record(
+                'pedido.cancelamento.revertido',
+                'pedido',
+                $pedidoId,
+                array(
+                    'status_anterior' => 'cancelado',
+                    'status_restaurado' => $statusAnterior,
+                    'justificativa' => $justificativa,
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('pedido.cancelamento.revertido', array(
+                'pedido_id' => $pedidoId,
+                'status_restaurado' => $statusAnterior,
+                'usuario_id' => $actorUserId,
+            ));
+
+            if (in_array($statusAnterior, array('aprovado', 'pago'), true)) {
+                $this->sincronizarInscricoesAprovadas($pedidoId, $actorUserId);
+            }
+
+            $pdo->commit();
+
+            return array(
+                'ok' => true,
+                'status_restaurado' => $statusAnterior,
+            );
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('pedido.cancelamento.reverter_falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
+    }
+
+    public function reabrirCanceladoComoAguardandoPagamento($pedidoId, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
+            $this->registrarAcessoNegado('pedido.reabrir_aguardando_pagamento_sem_permissao', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Você nao tem permissao para reabrir este pedido.');
+        }
+
+        if ((string) $pedido['status'] !== 'cancelado') {
+            return array('ok' => false, 'message' => 'Somente pedidos cancelados podem ser reabertos como aguardando pagamento.');
+        }
+
+        $justificativa = trim((string) $justificativa);
+        if ($justificativa === '') {
+            return array('ok' => false, 'message' => 'Informe a justificativa da reabertura do pedido.');
+        }
+
+        $observacao = 'Pedido cancelado reaberto pelo administrador. Motivo: ' . $justificativa . '. Status restaurado: aguardando_pagamento.';
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $this->pedidoModel->updateStatus($pedidoId, 'aguardando_pagamento');
+            $this->pedidoModel->addStatusHistory($pedidoId, 'cancelado', 'aguardando_pagamento', $observacao, $actorUserId);
+
+            $this->auditService->record(
+                'pedido.reaberto_aguardando_pagamento',
+                'pedido',
+                $pedidoId,
+                array(
+                    'status_anterior' => 'cancelado',
+                    'status_restaurado' => 'aguardando_pagamento',
+                    'justificativa' => $justificativa,
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('pedido.reaberto_aguardando_pagamento', array(
+                'pedido_id' => $pedidoId,
+                'usuario_id' => $actorUserId,
+            ));
+
+            $pdo->commit();
+
+            return array(
+                'ok' => true,
+                'status_restaurado' => 'aguardando_pagamento',
+            );
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('pedido.reabrir_aguardando_pagamento_falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
+    }
+
+    public function marcarRascunhoComoAguardandoPagamento($pedidoId, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
+        }
+
+        if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
+            $this->registrarAcessoNegado('pedido.rascunho_aguardando_pagamento_sem_permissao', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Você não tem permissão para alterar este pedido.');
+        }
+
+        if ((string) $pedido['status'] !== 'rascunho') {
+            return array('ok' => false, 'message' => 'Somente pedidos em rascunho podem ser movidos para aguardando pagamento.');
+        }
+
+        $justificativa = trim((string) $justificativa);
+        if ($justificativa === '') {
+            return array('ok' => false, 'message' => 'Informe a justificativa da alteração de status.');
+        }
+
+        $observacao = 'Pedido movido manualmente de rascunho para aguardando pagamento pelo administrador. Motivo: ' . $justificativa . '.';
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $this->pedidoModel->updateStatus($pedidoId, 'aguardando_pagamento');
+            $this->pedidoModel->addStatusHistory($pedidoId, 'rascunho', 'aguardando_pagamento', $observacao, $actorUserId);
+
+            $this->auditService->record(
+                'pedido.ajustado_aguardando_pagamento',
+                'pedido',
+                $pedidoId,
+                array(
+                    'status_anterior' => 'rascunho',
+                    'status_restaurado' => 'aguardando_pagamento',
+                    'justificativa' => $justificativa,
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('pedido.ajustado_aguardando_pagamento', array(
+                'pedido_id' => $pedidoId,
+                'usuario_id' => $actorUserId,
+            ));
+
+            $pdo->commit();
+
+            return array(
+                'ok' => true,
+                'status_restaurado' => 'aguardando_pagamento',
+            );
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('pedido.ajustar_aguardando_pagamento_falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
+    }
+
     public function excluir($pedidoId, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
@@ -947,7 +1401,7 @@ class PedidoService
             $statusNovoPedido = $comprovanteAtual ? 'pago' : 'aprovado';
 
             if ($statusNovoPedido === 'pago') {
-                $this->pedidoModel->updateStatus($pedidoId, 'pago');
+                $this->pedidoModel->markPaid($pedidoId, $actorUserId);
             } else {
                 $this->pedidoModel->markApproved($pedidoId, $actorUserId);
             }
@@ -1061,11 +1515,20 @@ class PedidoService
             return array('ok' => false, 'message' => 'Você nao tem permissao para aplicar cupom manualmente neste pedido.');
         }
 
-        if ($this->pedidoStatusBloqueadoParaCupom($pedido)) {
-            return array('ok' => false, 'message' => 'Não é possível aplicar cupom em pedido já confirmado.');
+        $status = isset($pedido['status']) ? (string) $pedido['status'] : '';
+        if (in_array($status, array('cancelado', 'reembolsado', 'expirado'), true)) {
+            return array('ok' => false, 'message' => 'Não é possível aplicar cupom neste pedido porque ele está cancelado, reembolsado ou expirado.');
         }
 
-        return $this->cupomService->aplicarAoPedidoManual($pedidoId, $cupomCodigo, $justificativa, $actorUserId, $ipAddress, $userAgent);
+        return $this->cupomService->aplicarAoPedidoManual(
+            $pedidoId,
+            $cupomCodigo,
+            $justificativa,
+            $actorUserId,
+            $ipAddress,
+            $userAgent,
+            array('permitir_confirmado' => true)
+        );
     }
 
     public function removerCupomManualDoPedido($pedidoId, $justificativa, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -1271,6 +1734,72 @@ class PedidoService
         );
     }
 
+    public function avaliarReversaoCancelamentoPedido($pedidoId, ?array $pedido = null)
+    {
+        if ($pedido === null) {
+            $pedido = $this->pedidoModel->findById($pedidoId);
+        }
+
+        if (!$pedido) {
+            return array(
+                'ok' => false,
+                'motivos' => array('pedido_nao_encontrado'),
+                'motivos_texto' => 'Pedido não encontrado.',
+            );
+        }
+
+        $statusAtual = isset($pedido['status']) ? (string) $pedido['status'] : '';
+        if ($statusAtual !== 'cancelado') {
+            return array(
+                'ok' => false,
+                'motivos' => array('status_nao_cancelado'),
+                'motivos_texto' => 'Somente pedidos cancelados podem ter a reversão administrada nesta tela.',
+            );
+        }
+
+        $historicoCancelamento = $this->pedidoModel->latestStatusHistoryForStatus($pedidoId, 'cancelado');
+        $statusAnterior = !empty($historicoCancelamento) && isset($historicoCancelamento['status_anterior'])
+            ? trim((string) $historicoCancelamento['status_anterior'])
+            : '';
+
+        if ($statusAnterior === '' || $statusAnterior === 'cancelado') {
+            return array(
+                'ok' => false,
+                'motivos' => array('status_anterior_indisponivel'),
+                'motivos_texto' => 'Não foi possível identificar o status anterior para reverter este cancelamento.',
+            );
+        }
+
+        $statusValidos = array(
+            'rascunho',
+            'pendencia',
+            'aguardando_pagamento',
+            'aguardando_reenvio',
+            'comprovante_enviado',
+            'em_analise',
+            'aprovado',
+            'pago',
+            'reembolsado',
+            'expirado',
+        );
+
+        if (!in_array($statusAnterior, $statusValidos, true)) {
+            return array(
+                'ok' => false,
+                'motivos' => array('status_anterior_invalido'),
+                'motivos_texto' => 'O status anterior registrado para este cancelamento é inválido para reversão.',
+            );
+        }
+
+        return array(
+            'ok' => true,
+            'motivos' => array(),
+            'motivos_texto' => '',
+            'status_anterior' => $statusAnterior,
+            'historico_cancelamento' => $historicoCancelamento,
+        );
+    }
+
     private function pedidoPossuiComprovanteAprovado($pedidoId)
     {
         $stmt = Database::connection()->prepare(
@@ -1334,20 +1863,29 @@ class PedidoService
         );
     }
 
-    private function pedidoStatusBloqueadoParaCupom(array $pedido)
+    private function pedidoStatusBloqueadoParaCupom(array $pedido, $permitirConfirmado = false)
     {
         $status = isset($pedido['status']) ? (string) $pedido['status'] : '';
 
-        return in_array($status, array(
+        if (in_array($status, array(
             'cancelado',
             'reembolsado',
             'expirado',
+        ), true)) {
+            return true;
+        }
+
+        if (!$permitirConfirmado && in_array($status, array(
             'pago',
             'aprovado',
             'confirmado',
             'concluido',
             'concluida',
-        ), true);
+        ), true)) {
+            return true;
+        }
+
+        return false;
     }
 
     private function avaliarCupomManualPedido(array $pedido)
@@ -1360,24 +1898,54 @@ class PedidoService
             );
         }
 
-        if (!$this->pedidoStatusBloqueadoParaCupom($pedido)) {
-            return array(
+        $status = isset($pedido['status']) ? (string) $pedido['status'] : '';
+        $statusConfirmado = in_array($status, array('aprovado', 'pago'), true);
+        $statusPermitido = in_array($status, array(
+            'rascunho',
+            'pendencia',
+            'aguardando_pagamento',
+            'aguardando_reenvio',
+            'comprovante_enviado',
+            'em_analise',
+            'aprovado',
+            'pago',
+        ), true);
+
+        if ($statusPermitido && !in_array($status, array('cancelado', 'reembolsado', 'expirado'), true)) {
+            $resposta = array(
                 'ok' => true,
                 'motivos' => array(),
                 'motivos_texto' => '',
+                'pedido_confirmado' => $statusConfirmado,
+                'pode_remover' => !$statusConfirmado,
+                'pode_aplicar' => true,
+            );
+
+            if ($statusConfirmado) {
+                $resposta['alerta_texto'] = 'Este pedido já está confirmado. A aplicação do cupom será registrada como ajuste financeiro pós-aprovação e não mudará o status do pedido.';
+            }
+
+            return $resposta;
+        }
+
+        if (in_array($status, array('cancelado', 'reembolsado', 'expirado'), true)) {
+            return array(
+                'ok' => false,
+                'motivos' => array('pedido_bloqueado'),
+                'motivos_texto' => 'Não é possível aplicar cupom neste pedido porque ele está cancelado, reembolsado ou expirado.',
+                'pedido_confirmado' => false,
+                'pode_remover' => false,
+                'pode_aplicar' => false,
             );
         }
 
-        $status = isset($pedido['status']) ? (string) $pedido['status'] : '';
-        $statusConfirmado = array('aprovado', 'pago', 'confirmado', 'concluido', 'concluida');
-        $mensagem = in_array($status, $statusConfirmado, true)
-            ? 'Não é possível aplicar ou remover cupom em pedido já confirmado.'
-            : 'Não é possível aplicar ou remover cupom neste pedido.';
-
         return array(
             'ok' => false,
-            'motivos' => array('pedido_confirmado'),
-            'motivos_texto' => $mensagem,
+            'motivos' => array('status_nao_permitido'),
+            'motivos_texto' => 'Não é possível aplicar cupom neste pedido neste status.',
+            'pedido_confirmado' => false,
+            'pode_remover' => false,
+            'pode_aplicar' => false,
         );
     }
 

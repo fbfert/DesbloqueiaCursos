@@ -3,7 +3,9 @@
 namespace App\Controllers\Admin;
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Core\Request;
+use App\Core\Response;
 use App\Core\Session;
 use App\Services\FinanceiroService;
 
@@ -18,13 +20,65 @@ class FinanceiroController extends Controller
 
     public function index(Request $request)
     {
+        $payload = array();
+        try {
+            $payload = $this->financeiroService->painelAdmin($request->queryAll());
+        } catch (\Throwable $throwable) {
+            Logger::error('admin.financeiro.index_falha', array(
+                'message' => $throwable->getMessage(),
+            ));
+            Session::flash('errors', array('Não foi possível carregar os dados financeiros. Exibindo visão resumida.'));
+            $payload = array(
+                'configuracao_financeira' => array(),
+                'apuracoes' => array(),
+                'repasses' => array(),
+                'professores_fiscal' => array(),
+                'professores' => array(),
+                'filtros_entradas' => array(),
+                'entradas_resumo' => array(),
+                'entradas_mensais' => array(),
+                'entradas_por_curso' => array(),
+                'entradas_pedidos' => array(),
+                'financeiro_options' => array(
+                    'anos' => array((int) date('Y')),
+                    'meses' => array(),
+                    'cursos' => array(),
+                    'turmas' => array(),
+                    'categorias' => array(),
+                ),
+            );
+        }
+
         return $this->view('admin/financeiro/index', array_merge(
             array(
                 'title' => 'Financeiro',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
             ),
-            $this->financeiroService->painelAdmin()
+            $payload
+        ));
+    }
+
+    public function exportarEntradas(Request $request)
+    {
+        try {
+            $resultado = $this->financeiroService->exportarEntradasCsv($request->queryAll());
+        } catch (\Throwable $throwable) {
+            Logger::error('admin.financeiro.exportar_falha', array(
+                'message' => $throwable->getMessage(),
+            ));
+            Session::flash('errors', array('Não foi possível exportar as entradas financeiras.'));
+            return $this->redirect('/admin/financeiro');
+        }
+
+        if (empty($resultado['ok'])) {
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível exportar as entradas.'));
+            return $this->redirect('/admin/financeiro');
+        }
+
+        return new Response($resultado['content'], 200, array(
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $resultado['filename'] . '"',
         ));
     }
 

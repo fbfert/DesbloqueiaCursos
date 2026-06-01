@@ -386,6 +386,27 @@ class Pedido
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function latestStatusHistoryForStatus($pedidoId, $statusNovo)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM status_pedidos_historico
+             WHERE pedido_id = :pedido_id
+               AND status_novo = :status_novo
+             ORDER BY id DESC
+             LIMIT 1'
+        );
+
+        $stmt->execute(array(
+            'pedido_id' => (int) $pedidoId,
+            'status_novo' => $statusNovo,
+        ));
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(
@@ -462,6 +483,8 @@ class Pedido
             'total' => $total,
             'id' => $pedidoId,
         ));
+
+        return $stmt->rowCount() >= 0;
     }
 
     public function markApproved($pedidoId, $usuarioId)
@@ -471,6 +494,23 @@ class Pedido
              SET status = "aprovado",
                  aprovado_por_usuario_id = :aprovado_por_usuario_id,
                  aprovado_em = NOW(),
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array(
+            'aprovado_por_usuario_id' => $usuarioId,
+            'id' => $pedidoId,
+        ));
+    }
+
+    public function markPaid($pedidoId, $usuarioId = null)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE pedidos
+             SET status = "pago",
+                 aprovado_por_usuario_id = COALESCE(aprovado_por_usuario_id, :aprovado_por_usuario_id),
+                 aprovado_em = COALESCE(aprovado_em, NOW()),
                  updated_at = NOW()
              WHERE id = :id'
         );

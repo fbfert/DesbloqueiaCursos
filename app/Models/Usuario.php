@@ -76,6 +76,28 @@ class Usuario
         return $usuario ?: null;
     }
 
+    public function findAlunoById($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT u.*,
+                    COALESCE(GROUP_CONCAT(DISTINCT p.nome ORDER BY p.nome SEPARATOR ", "), "") AS perfis
+             FROM usuarios u
+             INNER JOIN usuario_perfis up ON up.usuario_id = u.id
+             INNER JOIN perfis p ON p.id = up.perfil_id
+             WHERE u.deleted_at IS NULL
+               AND u.status = "ativo"
+               AND u.id = :id
+               AND p.slug = "aluno"
+             GROUP BY u.id
+             LIMIT 1'
+        );
+        $stmt->execute(array('id' => (int) $id));
+
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $usuario ?: null;
+    }
+
     public function findByLogin($login)
     {
         $login = trim((string) $login);
@@ -121,6 +143,45 @@ class Usuario
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $usuario ?: null;
+    }
+
+    public function buscarAlunosParaPedidoManual($termo, $limit = 12)
+    {
+        $termo = trim((string) $termo);
+        $limit = (int) $limit;
+        if ($limit < 1 || $limit > 30) {
+            $limit = 12;
+        }
+
+        $where = array(
+            'u.deleted_at IS NULL',
+            'u.status = "ativo"',
+            'p.slug = "aluno"',
+        );
+        $params = array();
+
+        if ($termo !== '') {
+            $where[] = '(u.nome LIKE :q OR u.email LIKE :q OR u.cpf LIKE :q)';
+            $params['q'] = '%' . $termo . '%';
+        }
+
+        $sql = 'SELECT u.id,
+                       u.nome,
+                       u.email,
+                       u.cpf,
+                       u.telefone
+                FROM usuarios u
+                INNER JOIN usuario_perfis up ON up.usuario_id = u.id
+                INNER JOIN perfis p ON p.id = up.perfil_id
+                WHERE ' . implode(' AND ', $where) . '
+                GROUP BY u.id
+                ORDER BY u.nome ASC
+                LIMIT ' . $limit;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function findByRecoveryToken($token)

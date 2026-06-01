@@ -7,15 +7,18 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Response;
 use App\Core\View;
+use App\Services\ComprovantePixService;
 use App\Services\PedidoService;
 
 class PedidosController extends Controller
 {
     private $pedidoService;
+    private $comprovanteService;
 
     public function __construct()
     {
         $this->pedidoService = new PedidoService();
+        $this->comprovanteService = new ComprovantePixService();
     }
 
     public function index(Request $request)
@@ -48,6 +51,49 @@ class PedidosController extends Controller
         ));
     }
 
+    public function criar(Request $request)
+    {
+        if ($request->method() === 'POST') {
+            return $this->salvarPedidoManual($request);
+        }
+
+        return $this->viewPedidoManual(array(
+            'title' => 'Criar pedido manualmente',
+            'success' => Session::pullFlash('success'),
+            'errors' => Session::pullFlash('errors', array()),
+            'form_data' => array(),
+            'aluno_selecionado' => null,
+        ));
+    }
+
+    public function alunos(Request $request)
+    {
+        $termo = trim((string) $request->query('q', ''));
+        $limit = (int) $request->query('limit', 12);
+        $alunos = $this->pedidoService->buscarAlunosPedidoManual($termo, $limit);
+
+        $itens = array();
+        foreach ($alunos as $aluno) {
+            $itens[] = array(
+                'id' => (int) $aluno['id'],
+                'nome' => isset($aluno['nome']) ? (string) $aluno['nome'] : '',
+                'email' => isset($aluno['email']) ? (string) $aluno['email'] : '',
+                'cpf' => isset($aluno['cpf']) ? (string) $aluno['cpf'] : '',
+                'telefone' => isset($aluno['telefone']) ? (string) $aluno['telefone'] : '',
+                'label' => trim(
+                    (string) ($aluno['nome'] ?? '') .
+                    (!empty($aluno['email']) ? ' · ' . $aluno['email'] : '') .
+                    (!empty($aluno['cpf']) ? ' · CPF ' . $aluno['cpf'] : '')
+                ),
+            );
+        }
+
+        return Response::json(array(
+            'ok' => true,
+            'alunos' => $itens,
+        ));
+    }
+
     public function excluidos(Request $request)
     {
         $filters = array(
@@ -70,7 +116,7 @@ class PedidosController extends Controller
 
     public function show(Request $request)
     {
-        $pedidoId = (int) $request->query('pedido_id', 0);
+        $pedidoId = (int) $request->query('pedido_id', (int) $request->query('id', 0));
         $detalhe = $this->pedidoService->detalharBackoffice($pedidoId, Session::get('usuario_id'));
 
         if (empty($detalhe['pedido'])) {
@@ -113,6 +159,102 @@ class PedidosController extends Controller
 
         Session::flash('success', 'Pedido excluído com sucesso.');
         return $this->redirect('/admin/pedidos');
+    }
+
+    public function reverterCancelamento(Request $request)
+    {
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        $justificativa = trim((string) $request->input('justificativa', ''));
+
+        if ($pedidoId <= 0) {
+            Session::flash('errors', array('Pedido inválido.'));
+            return $this->redirect('/admin/pedidos');
+        }
+
+        if ($justificativa === '') {
+            Session::flash('errors', array('Informe a justificativa da reversão do cancelamento.'));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#acoes-pedido');
+        }
+
+        $result = $this->pedidoService->reverterCancelamento(
+            $pedidoId,
+            $justificativa,
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', array($result['message']));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#acoes-pedido');
+        }
+
+        Session::flash('success', 'Cancelamento revertido com sucesso. O pedido voltou para o status anterior.');
+        return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#acoes-pedido');
+    }
+
+    public function reabrirComoAguardandoPagamento(Request $request)
+    {
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        $justificativa = trim((string) $request->input('justificativa', ''));
+
+        if ($pedidoId <= 0) {
+            Session::flash('errors', array('Pedido inválido.'));
+            return $this->redirect('/admin/pedidos');
+        }
+
+        if ($justificativa === '') {
+            Session::flash('errors', array('Informe a justificativa da reabertura do pedido.'));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#acoes-pedido');
+        }
+
+        $result = $this->pedidoService->reabrirCanceladoComoAguardandoPagamento(
+            $pedidoId,
+            $justificativa,
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', array($result['message']));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#acoes-pedido');
+        }
+
+        Session::flash('success', 'Pedido reaberto com sucesso. O status voltou para aguardando pagamento.');
+        return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#acoes-pedido');
+    }
+
+    public function marcarRascunhoComoAguardandoPagamento(Request $request)
+    {
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        $justificativa = trim((string) $request->input('justificativa', ''));
+
+        if ($pedidoId <= 0) {
+            Session::flash('errors', array('Pedido inválido.'));
+            return $this->redirect('/admin/pedidos');
+        }
+
+        if ($justificativa === '') {
+            Session::flash('errors', array('Informe a justificativa da alteração de status.'));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#acoes-pedido');
+        }
+
+        $result = $this->pedidoService->marcarRascunhoComoAguardandoPagamento(
+            $pedidoId,
+            $justificativa,
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', array($result['message']));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#acoes-pedido');
+        }
+
+        Session::flash('success', 'Pedido atualizado com sucesso. O status agora é aguardando pagamento.');
+        return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#acoes-pedido');
     }
 
     public function excluirEmLote(Request $request)
@@ -183,8 +325,18 @@ class PedidosController extends Controller
 
         if ($acao === 'remover') {
             Session::flash('success', 'Cupom removido manualmente do pedido.');
+        } elseif (!empty($result['aplicacao_pos_aprovacao'])) {
+            if (!empty($result['total_final'])) {
+                Session::flash('success', 'Cupom aplicado como ajuste pós-aprovação. Novo total do pedido: R$ ' . number_format((float) $result['total_final'], 2, ',', '.'));
+            } else {
+                Session::flash('success', 'Cupom aplicado como ajuste pós-aprovação. O status do pedido foi mantido e o financeiro foi atualizado.');
+            }
         } else {
-            Session::flash('success', 'Cupom aplicado manualmente ao pedido. Revise o comprovante antes de aprovar o pagamento.');
+            if (!empty($result['total_final'])) {
+                Session::flash('success', 'Cupom aplicado. Novo total do pedido: R$ ' . number_format((float) $result['total_final'], 2, ',', '.'));
+            } else {
+                Session::flash('success', 'Cupom aplicado manualmente ao pedido. Revise o comprovante antes de aprovar o pagamento.');
+            }
         }
 
         return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#cupom-manual');
@@ -260,6 +412,119 @@ class PedidosController extends Controller
 
         Session::flash('success', 'Reenvio de comprovante solicitado.');
         return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId);
+    }
+
+    private function salvarPedidoManual(Request $request)
+    {
+        $formData = $this->normalizarFormPedidoManual($request);
+        $resultado = $this->pedidoService->criarPedidoManual(
+            $formData,
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($resultado['ok'])) {
+            if (!empty($resultado['pedido_id'])) {
+                Session::flash('errors', isset($resultado['errors']) && is_array($resultado['errors'])
+                    ? $resultado['errors']
+                    : array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível concluir a criação deste pedido manual.'));
+                return $this->redirect('/admin/pedidos/show?pedido_id=' . (int) $resultado['pedido_id'] . '#comprovante-manual');
+            }
+
+            return $this->viewPedidoManual(array(
+                'title' => 'Criar pedido manualmente',
+                'errors' => isset($resultado['errors']) && is_array($resultado['errors'])
+                    ? $resultado['errors']
+                    : array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível criar o pedido manualmente.'),
+                'form_data' => $formData,
+                'aluno_selecionado' => !empty($formData['aluno_usuario_id'])
+                    ? $this->pedidoService->obterAlunoPedidoManual((int) $formData['aluno_usuario_id'])
+                    : null,
+            ));
+        }
+
+        Session::flash('success', 'Pedido manual criado com sucesso. O status inicial é aguardando pagamento.');
+        return $this->redirect('/admin/pedidos/show?pedido_id=' . (int) $resultado['pedido_id'] . '#comprovante-manual');
+    }
+
+    private function viewPedidoManual(array $data = array())
+    {
+        $base = $this->pedidoService->dadosPedidoManual();
+        $formData = isset($data['form_data']) && is_array($data['form_data']) ? $data['form_data'] : array();
+        $alunoSelecionado = null;
+        if (!empty($formData['aluno_usuario_id'])) {
+            $alunoSelecionado = $this->pedidoService->obterAlunoPedidoManual((int) $formData['aluno_usuario_id']);
+        } elseif (!empty($data['aluno_selecionado']) && is_array($data['aluno_selecionado'])) {
+            $alunoSelecionado = $data['aluno_selecionado'];
+        }
+
+        return $this->view('admin/pedidos/criar', array_merge(
+            array(
+                'title' => 'Criar pedido manualmente',
+                'success' => Session::pullFlash('success'),
+                'errors' => Session::pullFlash('errors', array()),
+                'form_data' => $formData,
+                'aluno_selecionado' => $alunoSelecionado,
+            ),
+            $base,
+            $data
+        ));
+    }
+
+    private function normalizarFormPedidoManual(Request $request)
+    {
+        return array(
+            'aluno_usuario_id' => (int) $request->input('aluno_usuario_id', 0),
+            'pagador_nome' => trim((string) $request->input('pagador_nome', '')),
+            'pagador_cpf' => trim((string) $request->input('pagador_cpf', '')),
+            'pagador_email' => trim((string) $request->input('pagador_email', '')),
+            'pagador_telefone' => trim((string) $request->input('pagador_telefone', '')),
+            'curso_evento_id' => (int) $request->input('curso_evento_id', 0),
+            'turma_id' => (int) $request->input('turma_id', 0),
+            'cupom_codigo' => trim((string) $request->input('cupom_codigo', '')),
+            'cupom_justificativa' => trim((string) $request->input('cupom_justificativa', '')),
+            'observacoes_internas' => trim((string) $request->input('observacoes_internas', '')),
+        );
+    }
+
+    public function anexarComprovante(Request $request)
+    {
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        if ($pedidoId <= 0) {
+            Session::flash('errors', array('Pedido inválido.'));
+            return $this->redirect('/admin/pedidos');
+        }
+
+        if (empty($_FILES['comprovante']) || empty($_FILES['comprovante']['tmp_name'])) {
+            Session::flash('errors', array('Selecione um arquivo de comprovante.'));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#comprovante-manual');
+        }
+
+        if ((int) $_FILES['comprovante']['size'] <= 0) {
+            Session::flash('errors', array('O arquivo enviado não é válido.'));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#comprovante-manual');
+        }
+
+        $resultado = $this->comprovanteService->enviarUpload(
+            $pedidoId,
+            $_FILES['comprovante'],
+            array(
+                'valor_informado' => $request->input('valor_informado'),
+                'motivo_reenvio' => $request->input('motivo_reenvio'),
+            ),
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($resultado['ok'])) {
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível enviar o comprovante.'));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#comprovante-manual');
+        }
+
+        Session::flash('success', 'Comprovante enviado com sucesso.');
+        return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#comprovante-manual');
     }
 
     public function comprovante(Request $request)

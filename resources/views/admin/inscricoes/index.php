@@ -211,25 +211,7 @@ $to = $total > 0 ? min($page * $perPage, $total) : 0;
                             <td><?php echo Helpers::e((string) $inscricao['pedido_status']); ?></td>
                             <td><?php echo Helpers::e((string) $inscricao['created_at']); ?></td>
                             <td>
-                                <form method="post" action="/admin/inscricoes/status" class="admin-form">
-                                    <input type="hidden" name="inscricao_id" value="<?php echo (int) $inscricao['id']; ?>">
-                                    <select name="status">
-                                        <option value="pendente" <?php echo $inscricao['status'] === 'pendente' ? 'selected' : ''; ?>>Pendente</option>
-                                        <option value="ativa" <?php echo $inscricao['status'] === 'ativa' ? 'selected' : ''; ?>>Ativa</option>
-                                        <option value="em_andamento" <?php echo $inscricao['status'] === 'em_andamento' ? 'selected' : ''; ?>>Em andamento</option>
-                                        <option value="com_pendencia" <?php echo $inscricao['status'] === 'com_pendencia' ? 'selected' : ''; ?>>Com pendência</option>
-                                        <option value="cancelada" <?php echo $inscricao['status'] === 'cancelada' ? 'selected' : ''; ?>>Cancelada</option>
-                                        <option value="reprovada" <?php echo $inscricao['status'] === 'reprovada' ? 'selected' : ''; ?>>Reprovada</option>
-                                        <option value="concluida" <?php echo $inscricao['status'] === 'concluida' ? 'selected' : ''; ?>>Concluída</option>
-                                        <option value="concluida_sem_certificado" <?php echo $inscricao['status'] === 'concluida_sem_certificado' ? 'selected' : ''; ?>>Concluída sem certificado</option>
-                                        <option value="certificado_emitido" <?php echo $inscricao['status'] === 'certificado_emitido' ? 'selected' : ''; ?>>Certificado emitido</option>
-                                    </select>
-                                    <input type="text" name="observacao" placeholder="Observação">
-                                    <div class="cta-group">
-                                        <button type="submit" class="button-link button-link--primary">Salvar</button>
-                                        <a class="button-link button-link--ghost" href="/admin/inscricoes">Cancelar</a>
-                                    </div>
-                                </form>
+                                <a class="button-link button-link--ghost" href="/admin/pedidos/show?pedido_id=<?php echo (int) $inscricao['pedido_id']; ?>">Ver Pedido</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

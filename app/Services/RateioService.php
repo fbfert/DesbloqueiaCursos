@@ -592,13 +592,28 @@ class RateioService
     private function carregarPedidosFechados($dataInicio, $dataFim)
     {
         $sql = 'SELECT p.id, p.codigo, p.total, p.subtotal, p.desconto_total, p.aprovado_em,
+                       cp.pix_aprovado_em,
+                       sh.confirmado_em,
                        pi.id AS pedido_item_id, pi.curso_evento_id, pi.turma_id, pi.valor_total, pi.quantidade
                 FROM pedidos p
                 INNER JOIN pedido_itens pi ON pi.pedido_id = p.id AND pi.deleted_at IS NULL
+                LEFT JOIN (
+                    SELECT pedido_id, MAX(analisado_em) AS pix_aprovado_em
+                    FROM comprovantes_pix
+                    WHERE deleted_at IS NULL
+                      AND status = "aprovado"
+                    GROUP BY pedido_id
+                ) cp ON cp.pedido_id = p.id
+                LEFT JOIN (
+                    SELECT pedido_id, MAX(created_at) AS confirmado_em
+                    FROM status_pedidos_historico
+                    WHERE status_novo IN ("aprovado", "pago")
+                    GROUP BY pedido_id
+                ) sh ON sh.pedido_id = p.id
                 WHERE p.deleted_at IS NULL
-                  AND p.status = "aprovado"
+                  AND p.status IN ("aprovado", "pago")
                   AND COALESCE(p.is_presente, 0) = 0
-                  AND DATE(COALESCE(p.aprovado_em, p.created_at)) BETWEEN :data_inicio AND :data_fim
+                  AND COALESCE(p.aprovado_em, cp.pix_aprovado_em, sh.confirmado_em, p.updated_at, p.created_at) BETWEEN :data_inicio AND :data_fim
                 ORDER BY p.id ASC, pi.id ASC';
 
         $stmt = Database::connection()->prepare($sql);

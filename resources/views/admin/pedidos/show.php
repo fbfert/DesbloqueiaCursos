@@ -47,6 +47,8 @@ $telefonePagador = $formatarTelefone($telefonePagador);
 <?php
 $cupomAtual = !empty($pedido['cupom']) && is_array($pedido['cupom']) ? $pedido['cupom'] : null;
 $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual']) ? $pedido['cupom_manual'] : array('ok' => false, 'motivos_texto' => 'Não é possível aplicar cupom neste pedido.');
+$podeReceberComprovante = in_array((string) $pedido['status'], array('aguardando_pagamento', 'comprovante_enviado', 'pendencia', 'aguardando_reenvio'), true);
+$exigeMotivoReenvioComprovante = !empty($pedido['comprovantes']);
 ?>
 
 <section class="admin-pedido-show__top">
@@ -81,9 +83,15 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
                 <strong>Desconto:</strong> R$ <?php echo number_format((float) $pedido['desconto_total'], 2, ',', '.'); ?><br>
                 <strong>Total ajustado:</strong> R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?>
             </p>
-        <?php else: ?>
-            <p><strong>Cupom atual:</strong> Nenhum cupom aplicado.</p>
-        <?php endif; ?>
+            <?php else: ?>
+                <p><strong>Cupom atual:</strong> Nenhum cupom aplicado.</p>
+            <?php endif; ?>
+            <?php if ((string) $pedido['status'] === 'cancelado'): ?>
+                <p>
+                    <strong>Cancelamento:</strong> Este pedido foi cancelado pelo aluno.
+                    A reversão administrativa exige justificativa e restaura o status anterior do pedido.
+                </p>
+            <?php endif; ?>
         <?php if (!empty($can_see_pix) && !empty($pedido['comprovante_atual'])): ?>
             <p>
                 <strong>Comprovante atual:</strong>
@@ -126,20 +134,63 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
             <p>Nenhum comprovante enviado para este pedido.</p>
         <?php endif; ?>
     </article>
+
+    <article class="status-card admin-pedido-comprovante-card" id="comprovante-manual">
+        <strong>Enviar comprovante de pagamento</strong>
+        <?php if (!empty($can_see_pix)): ?>
+            <?php if ($podeReceberComprovante): ?>
+                <p>Use este formulário para anexar manualmente um comprovante de pagamento ao pedido.</p>
+
+                <form method="post" action="/admin/pedidos/comprovante" enctype="multipart/form-data" class="admin-form">
+                    <?php echo $csrfField; ?>
+                    <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+
+                    <label for="comprovante_manual_arquivo">Arquivo do comprovante</label>
+                    <input id="comprovante_manual_arquivo" type="file" name="comprovante" accept="image/*,application/pdf" required>
+
+                    <label for="comprovante_manual_valor">Valor informado</label>
+                    <input id="comprovante_manual_valor" type="text" name="valor_informado" value="<?php echo htmlspecialchars((string) $pedido['total'], ENT_QUOTES, 'UTF-8'); ?>">
+
+                    <?php if ($exigeMotivoReenvioComprovante): ?>
+                        <label for="comprovante_manual_motivo">Motivo do reenvio</label>
+                        <textarea id="comprovante_manual_motivo" name="motivo_reenvio" rows="4" required placeholder="Explique por que este comprovante está sendo reenviado."></textarea>
+                    <?php endif; ?>
+
+                    <button type="submit" class="button-link button-link--primary">Enviar comprovante</button>
+                </form>
+            <?php else: ?>
+                <p>Este pedido não aceita comprovante neste status. O envio manual fica disponível quando o pedido está em aguardando pagamento, pendência, aguardando reenvio ou comprovante enviado.</p>
+            <?php endif; ?>
+        <?php else: ?>
+            <p>Você não tem permissão para enviar comprovantes neste pedido.</p>
+        <?php endif; ?>
+    </article>
 </section>
 
 <section class="status-card admin-pedido-cupom-card" id="cupom-manual">
     <strong>Cupom do pedido</strong>
     <?php if (!empty($can_manage_pedidos)): ?>
+        <?php if (!empty($pedido['cupom_codigo'])): ?>
+            <div class="alert-info admin-pedido-cupom-card__current">
+                Cupom aplicado no pedido: <?php echo htmlspecialchars((string) $pedido['cupom_codigo'], ENT_QUOTES, 'UTF-8'); ?>.
+                Desconto atual: R$ <?php echo number_format((float) $pedido['desconto_total'], 2, ',', '.'); ?>.
+                Total atual: R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?>.
+            </div>
+        <?php endif; ?>
         <?php if (!empty($cupomManual['ok'])): ?>
+            <?php if (!empty($cupomManual['pedido_confirmado'])): ?>
+                <div class="alert-warning admin-pedido-cupom-card__warning">
+                    <?php echo htmlspecialchars((string) ($cupomManual['alerta_texto'] ?? 'Este pedido já está aprovado/pago. A aplicação do cupom será registrada como ajuste financeiro pós-aprovação, alterará o total do pedido e não mudará o status.'), ENT_QUOTES, 'UTF-8'); ?>
+                </div>
+            <?php endif; ?>
             <?php if (!empty($pedido['comprovante_atual']) && !in_array((string) $pedido['comprovante_atual']['status'], array('aprovado', 'reprovado'), true)): ?>
                 <div class="alert-warning admin-pedido-cupom-card__warning">
-                    Há um comprovante PIX enviado para este pedido. Após o ajuste do cupom, confira se o valor pago corresponde ao novo total antes de aprovar.
+                    Este pedido já possui comprovante PIX. Confira se o valor pago corresponde ao novo total.
                 </div>
             <?php endif; ?>
 
             <details class="admin-pedidos__actions-details admin-pedido-cupom-card__details">
-                <summary>Aplicar cupom manualmente</summary>
+                <summary><?php echo !empty($cupomManual['pedido_confirmado']) ? 'Aplicar cupom pós-aprovação' : 'Aplicar cupom manualmente'; ?></summary>
                 <div class="admin-pedidos__actions-body">
                     <?php if ($cupomAtual): ?>
                         <div class="alert-info admin-pedido-cupom-card__current">
@@ -162,13 +213,17 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
                         <textarea id="cupom_justificativa_manual" name="justificativa" rows="3" required placeholder="Cliente não conseguiu aplicar o cupom no checkout e enviou comprovante com valor descontado."></textarea>
 
                         <div class="admin-pedido-cupom-card__help">
-                            Se já existir um cupom ativo, ele será substituído pelo código informado após a validação.
+                            <?php if (!empty($cupomManual['pedido_confirmado'])): ?>
+                                A aplicação será registrada como ajuste financeiro pós-aprovação sem alteração do status do pedido.
+                            <?php else: ?>
+                                Se já existir um cupom ativo, ele será substituído pelo código informado após a validação.
+                            <?php endif; ?>
                         </div>
 
-                        <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'APLICAR', pergunta: 'Você conferiu a aplicação manual deste cupom?' });">Aplicar cupom manualmente</button>
+                        <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'APLICAR', pergunta: 'Você conferiu a aplicação manual deste cupom?' });"><?php echo !empty($cupomManual['pedido_confirmado']) ? ($cupomAtual ? 'Substituir cupom pós-aprovação' : 'Aplicar cupom pós-aprovação') : 'Aplicar cupom manualmente'; ?></button>
                     </form>
 
-                    <?php if ($cupomAtual): ?>
+                    <?php if ($cupomAtual && empty($cupomManual['pedido_confirmado'])): ?>
                         <form method="post" action="/admin/pedidos/cupom-manual" class="admin-form admin-pedido-cupom-card__form admin-pedido-cupom-card__remove-form">
                             <?php echo $csrfField; ?>
                             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
@@ -179,6 +234,8 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
 
                             <button type="submit" class="button-link button-link--danger" onclick="return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a remoção do cupom aplicado deste pedido?' });">Remover cupom aplicado</button>
                         </form>
+                    <?php elseif ($cupomAtual): ?>
+                        <p class="muted">A remoção simples de cupom em pedido confirmado está bloqueada para evitar aumento retroativo do valor. Para trocar o cupom, informe o novo código acima.</p>
                     <?php endif; ?>
                 </div>
             </details>
@@ -192,9 +249,18 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
     <?php endif; ?>
 </section>
 
-<section class="status-card">
+<section class="status-card" id="acoes-pedido">
     <strong>Ações do pedido</strong>
     <div class="grid-forms">
+        <?php if (!empty($can_manage_pedidos) && (string) $pedido['status'] === 'rascunho'): ?>
+            <form method="post" action="/admin/pedidos/rascunho-aguardando-pagamento" class="admin-form">
+                <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+                <label for="rascunho_aguardando_pagamento_justificativa">Justificativa da alteração</label>
+                <textarea id="rascunho_aguardando_pagamento_justificativa" name="justificativa" rows="3" required placeholder="Informe a justificativa para mover este pedido de rascunho para aguardando pagamento."></textarea>
+                <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'ALTERAR', pergunta: 'Você conferiu a mudança deste pedido para aguardando pagamento?' });">Mover para aguardando pagamento</button>
+            </form>
+        <?php endif; ?>
+
         <form method="post" action="/admin/pedidos/aprovar" class="admin-form">
             <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
             <label>Observação</label>
@@ -215,6 +281,22 @@ $cupomManual = !empty($pedido['cupom_manual']) && is_array($pedido['cupom_manual
             <textarea name="observacao" rows="3"></textarea>
             <button type="submit" class="button-link button-link--primary">Solicitar reenvio PIX</button>
         </form>
+
+        <?php if (!empty($can_manage_pedidos) && (string) $pedido['status'] === 'cancelado'): ?>
+            <form method="post" action="/admin/pedidos/reverter-cancelamento" class="admin-form">
+                <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+                <label for="reverter_cancelamento_justificativa">Justificativa da reversão</label>
+                <textarea id="reverter_cancelamento_justificativa" name="justificativa" rows="3" required placeholder="Informe a justificativa para restaurar este pedido ao status anterior."></textarea>
+                <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'REVERTER', pergunta: 'Você conferiu a reversão deste cancelamento?' });">Reverter cancelamento</button>
+            </form>
+
+            <form method="post" action="/admin/pedidos/reabrir-aguardando-pagamento" class="admin-form">
+                <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+                <label for="reabrir_justificativa">Justificativa da reabertura</label>
+                <textarea id="reabrir_justificativa" name="justificativa" rows="3" required placeholder="Informe a justificativa para reabrir este pedido como aguardando pagamento."></textarea>
+                <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'REABRIR', pergunta: 'Você conferiu a reabertura deste pedido como aguardando pagamento?' });">Reabrir como aguardando pagamento</button>
+            </form>
+        <?php endif; ?>
 
         <?php if (!empty($can_manage_pedidos)): ?>
             <form method="post" action="/admin/pedidos/excluir" class="admin-form admin-pedidos__delete-form">

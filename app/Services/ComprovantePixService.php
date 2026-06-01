@@ -203,7 +203,7 @@ class ComprovantePixService
                 $agora
             );
 
-            $this->pedidoModel->updateStatus($pedido['id'], 'pago');
+            $this->pedidoModel->markPaid($pedido['id'], $actorUserId);
             $this->pedidoModel->addStatusHistory(
                 $pedido['id'],
                 $pedido['status'],
