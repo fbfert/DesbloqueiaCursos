@@ -23,7 +23,7 @@ class ConfiguracoesPagamentoController extends Controller
     public function index(Request $request)
     {
         return $this->view('admin/configuracoes-pagamento/index', array(
-            'title' => 'Configurações de Pagamento',
+            'title' => 'ConfiguraÃ§Ãµes de Pagamento',
             'configuracao' => $this->configModel->toSafeArray(),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
@@ -56,7 +56,12 @@ class ConfiguracoesPagamentoController extends Controller
             $request->userAgent()
         );
 
-        Session::flash('success', 'Configurações de pagamento atualizadas com sucesso.');
+        $mensagem = 'Configurações de pagamento atualizadas com sucesso.';
+        if (!empty($resultado['warnings']) && is_array($resultado['warnings'])) {
+            $mensagem .= ' ' . implode(' ', array_map('strval', $resultado['warnings']));
+        }
+
+        Session::flash('success', $mensagem);
         return $this->redirect('/admin/configuracoes-pagamento');
     }
 
@@ -65,18 +70,18 @@ class ConfiguracoesPagamentoController extends Controller
         $config = $this->configModel->runtimeAbacatePayConfig();
 
         if (empty($config['enabled'])) {
-            $this->registrarTeste('erro', 'O gateway AbacatePay está desativado.', Session::get('usuario_id'), $request);
-            Session::flash('errors', array('O gateway AbacatePay está desativado.'));
+            $this->registrarTeste('erro', 'O gateway AbacatePay estÃ¡ desativado.', Session::get('usuario_id'), $request);
+            Session::flash('errors', array('O gateway AbacatePay estÃ¡ desativado.'));
             return $this->redirect('/admin/configuracoes-pagamento');
         }
 
         if (trim((string) ($config['api_key'] ?? '')) === '') {
-            $this->registrarTeste('erro', 'Configuração sem API Key.', Session::get('usuario_id'), $request);
-            Session::flash('errors', array('Configuração incompleta: a API Key não está disponível no banco nem no .env.'));
+            $this->registrarTeste('erro', 'ConfiguraÃ§Ã£o sem API Key.', Session::get('usuario_id'), $request);
+            Session::flash('errors', array('ConfiguraÃ§Ã£o incompleta: a API Key nÃ£o estÃ¡ disponÃ­vel no banco nem no .env.'));
             return $this->redirect('/admin/configuracoes-pagamento');
         }
 
-        $mensagem = 'Configuração salva. Não foi executado teste remoto porque o service atual não possui endpoint não destrutivo de validação.';
+        $mensagem = 'ConfiguraÃ§Ã£o salva. NÃ£o foi executado teste remoto porque o service atual nÃ£o possui endpoint nÃ£o destrutivo de validaÃ§Ã£o.';
         $this->configModel->registrarUltimoTeste('ok', $mensagem, Session::get('usuario_id'));
         $this->auditService->record(
             'pagamento_gateway_configuracoes.teste',
@@ -100,7 +105,7 @@ class ConfiguracoesPagamentoController extends Controller
     {
         $novoSecret = $this->gerarSecretSeguro();
         if ($novoSecret === '') {
-            Session::flash('errors', array('Não foi possível gerar um novo secret.'));
+            Session::flash('errors', array('NÃ£o foi possÃ­vel gerar um novo secret.'));
             return $this->redirect('/admin/configuracoes-pagamento');
         }
 
@@ -156,7 +161,7 @@ class ConfiguracoesPagamentoController extends Controller
         }
 
         if (empty($errors)) {
-            $errors[] = 'Não foi possível salvar as configurações de pagamento.';
+            $errors[] = 'NÃ£o foi possÃ­vel salvar as configuraÃ§Ãµes de pagamento.';
         }
 
         Session::flash('errors', $errors);
@@ -188,10 +193,11 @@ class ConfiguracoesPagamentoController extends Controller
     private function normalizeAmbiente($value)
     {
         $value = strtolower(trim((string) $value));
-        if (in_array($value, array('producao', 'produção', 'production', 'prod'), true)) {
+        if (in_array($value, array('producao', 'produÃ§Ã£o', 'production', 'prod'), true)) {
             return 'producao';
         }
 
         return 'sandbox';
     }
 }
+

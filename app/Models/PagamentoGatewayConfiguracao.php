@@ -42,21 +42,18 @@ class PagamentoGatewayConfiguracao
         $apiKeyInput = isset($dados['api_key']) ? trim((string) $dados['api_key']) : '';
         $webhookHmacInput = isset($dados['webhook_hmac_secret']) ? trim((string) $dados['webhook_hmac_secret']) : '';
         $webhookUrlInput = isset($dados['webhook_url_secret']) ? trim((string) $dados['webhook_url_secret']) : '';
-
-        if (($apiKeyInput !== '' || $webhookHmacInput !== '' || $webhookUrlInput !== '') && !$appKeyAvailable) {
-            return array(
-                'ok' => false,
-                'errors' => array('Configure a APP_KEY no .env para salvar segredos criptografados.'),
-            );
+        $warnings = array();
+        if (!$appKeyAvailable && ($apiKeyInput !== '' || $webhookHmacInput !== '' || $webhookUrlInput !== '')) {
+            $warnings[] = 'APP_KEY ausente: os segredos informados não foram salvos. Configure a APP_KEY no .env para persistir API Key e secrets criptografados.';
         }
 
         $payload = array(
             'gateway' => 'abacatepay',
             'ativo' => !empty($dados['ativo']) ? 1 : 0,
             'ambiente' => $this->normalizarAmbiente(isset($dados['ambiente']) ? $dados['ambiente'] : 'sandbox'),
-            'api_key_encrypted' => $this->resolveEncryptedValue($apiKeyInput, $current, 'api_key_encrypted'),
-            'webhook_hmac_secret_encrypted' => $this->resolveEncryptedValue($webhookHmacInput, $current, 'webhook_hmac_secret_encrypted'),
-            'webhook_url_secret_encrypted' => $this->resolveEncryptedValue($webhookUrlInput, $current, 'webhook_url_secret_encrypted'),
+            'api_key_encrypted' => $this->resolveEncryptedValue($apiKeyInput, $current, 'api_key_encrypted', $appKeyAvailable),
+            'webhook_hmac_secret_encrypted' => $this->resolveEncryptedValue($webhookHmacInput, $current, 'webhook_hmac_secret_encrypted', $appKeyAvailable),
+            'webhook_url_secret_encrypted' => $this->resolveEncryptedValue($webhookUrlInput, $current, 'webhook_url_secret_encrypted', $appKeyAvailable),
             'webhook_url_publica' => $this->resolveWebhookUrlPublica($webhookUrlInput, $current),
             'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
         );
@@ -79,7 +76,7 @@ class PagamentoGatewayConfiguracao
             $stmt->execute($payload);
             $this->current = $this->buscarAbacatePay();
 
-            return array('ok' => true, 'id' => (int) $current['id']);
+            return array('ok' => true, 'id' => (int) $current['id'], 'warnings' => $warnings);
         }
 
         $stmt = Database::connection()->prepare(
@@ -92,7 +89,7 @@ class PagamentoGatewayConfiguracao
         $stmt->execute($payload);
         $this->current = $this->buscarAbacatePay();
 
-        return array('ok' => true, 'id' => (int) Database::connection()->lastInsertId());
+        return array('ok' => true, 'id' => (int) Database::connection()->lastInsertId(), 'warnings' => $warnings);
     }
 
     public function registrarUltimoTeste($status, $mensagem, $usuarioId = null)
@@ -292,10 +289,18 @@ class PagamentoGatewayConfiguracao
         return Helpers::url('webhooks/abacatepay') . '?webhookSecret=' . rawurlencode($secret);
     }
 
-    private function resolveEncryptedValue($input, array $current = null, $field = null)
+    private function resolveEncryptedValue($input, array $current = null, $field = null, $canEncrypt = true)
     {
         $input = trim((string) $input);
         if ($input !== '') {
+            if (!$canEncrypt) {
+                if ($current && isset($current[$field])) {
+                    return $current[$field];
+                }
+
+                return null;
+            }
+
             return Crypto::encrypt($input);
         }
 
