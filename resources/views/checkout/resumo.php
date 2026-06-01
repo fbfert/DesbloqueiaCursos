@@ -139,7 +139,7 @@ $abacatepayPodeGerarCheckout = !empty($abacatepayEnabled)
                     <form class="admin-form checkout-abacatepay-form" method="post" action="/aluno/pedidos/pagar/abacatepay">
                         <?php echo $csrfField; ?>
                         <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
-                        <button type="submit" class="button-link button-link--primary">Pagar agora</button>
+                        <button type="submit" class="button-link button-link--primary">Pagar com Abacate Pay</button>
                     </form>
                 <?php endif; ?>
             <?php endif; ?>
@@ -153,18 +153,7 @@ $abacatepayPodeGerarCheckout = !empty($abacatepayEnabled)
                         <a class="button-link button-link--primary" href="/checkout/comprovante?pedido_id=<?php echo (int) $pedido['id']; ?>">Prosseguir para pagamento</a>
                         <a class="button-link button-link--ghost" href="/meus-cursos">Ir para Meus Cursos</a>
                     <?php elseif (!empty($abacatepayPodeGerarCheckout)): ?>
-                        <?php if (!empty($pedidoTemCheckoutOnline) && !empty($pedido['payment_provider_payment_url'])): ?>
-                            <a class="button-link button-link--primary" href="<?php echo Helpers::e($pedido['payment_provider_payment_url']); ?>" target="_blank" rel="noopener">Continuar no pagamento online</a>
-                        <?php else: ?>
-                            <form class="admin-form checkout-abacatepay-form" method="post" action="/aluno/pedidos/pagar/abacatepay">
-                                <?php echo $csrfField; ?>
-                                <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
-                                <button type="submit" class="button-link button-link--primary">Pagar agora</button>
-                            </form>
-                        <?php endif; ?>
-                        <?php if ($pedidoGateway === 'pix_manual'): ?>
-                            <a class="button-link button-link--ghost" href="/checkout/comprovante?pedido_id=<?php echo (int) $pedido['id']; ?>">Pagamento manual</a>
-                        <?php endif; ?>
+                        <a class="button-link button-link--primary" href="/checkout/comprovante?pedido_id=<?php echo (int) $pedido['id']; ?>">Pagar com Pix</a>
                         <a class="button-link button-link--ghost" href="/meus-cursos">Ir para Meus Cursos</a>
                     <?php else: ?>
                         <a class="button-link button-link--ghost" href="/meus-cursos">Ir para Meus Cursos</a>
