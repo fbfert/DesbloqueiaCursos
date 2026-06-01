@@ -56,9 +56,7 @@ $ultimoTesteEm = isset($configuracao['ultimo_teste_em']) ? (string) $configuraca
             <label>
                 Ambiente
                 <select name="ambiente">
-                    <?php
-                    foreach (array('sandbox' => 'Sandbox / teste', 'producao' => 'Produção') as $value => $label):
-                    ?>
+                    <?php foreach (array('sandbox' => 'Sandbox / teste', 'producao' => 'Produção') as $value => $label): ?>
                         <option value="<?php echo htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $ambienteSelecionado === $value ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>
                         </option>
