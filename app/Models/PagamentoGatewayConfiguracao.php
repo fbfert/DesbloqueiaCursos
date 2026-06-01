@@ -47,18 +47,18 @@ class PagamentoGatewayConfiguracao
             $warnings[] = 'APP_KEY ausente: os segredos informados não foram salvos. Configure a APP_KEY no .env para persistir API Key e secrets criptografados.';
         }
 
-        $payload = array(
-            'gateway' => 'abacatepay',
-            'ativo' => !empty($dados['ativo']) ? 1 : 0,
-            'ambiente' => $this->normalizarAmbiente(isset($dados['ambiente']) ? $dados['ambiente'] : 'sandbox'),
-            'api_key_encrypted' => $this->resolveEncryptedValue($apiKeyInput, $current, 'api_key_encrypted', $appKeyAvailable),
-            'webhook_hmac_secret_encrypted' => $this->resolveEncryptedValue($webhookHmacInput, $current, 'webhook_hmac_secret_encrypted', $appKeyAvailable),
-            'webhook_url_secret_encrypted' => $this->resolveEncryptedValue($webhookUrlInput, $current, 'webhook_url_secret_encrypted', $appKeyAvailable),
-            'webhook_url_publica' => $this->resolveWebhookUrlPublica($webhookUrlInput, $current),
-            'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
-        );
-
         if ($current) {
+            $updatePayload = array(
+                'ativo' => $this->normalizarBool($dados, 'ativo'),
+                'ambiente' => $this->normalizarAmbiente(isset($dados['ambiente']) ? $dados['ambiente'] : 'sandbox'),
+                'api_key_encrypted' => $this->resolveEncryptedValue($apiKeyInput, $current, 'api_key_encrypted', $appKeyAvailable),
+                'webhook_hmac_secret_encrypted' => $this->resolveEncryptedValue($webhookHmacInput, $current, 'webhook_hmac_secret_encrypted', $appKeyAvailable),
+                'webhook_url_secret_encrypted' => $this->resolveEncryptedValue($webhookUrlInput, $current, 'webhook_url_secret_encrypted', $appKeyAvailable),
+                'webhook_url_publica' => $this->resolveWebhookUrlPublica($webhookUrlInput, $current),
+                'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
+                'id' => (int) $current['id'],
+            );
+
             $stmt = Database::connection()->prepare(
                 'UPDATE pagamento_gateway_configuracoes
                  SET ativo = :ativo,
@@ -72,12 +72,22 @@ class PagamentoGatewayConfiguracao
                  WHERE id = :id'
             );
 
-            $payload['id'] = (int) $current['id'];
-            $stmt->execute($payload);
+            $stmt->execute($updatePayload);
             $this->current = $this->buscarAbacatePay();
 
             return array('ok' => true, 'id' => (int) $current['id'], 'warnings' => $warnings);
         }
+
+        $insertPayload = array(
+            'gateway' => 'abacatepay',
+            'ativo' => $this->normalizarBool($dados, 'ativo'),
+            'ambiente' => $this->normalizarAmbiente(isset($dados['ambiente']) ? $dados['ambiente'] : 'sandbox'),
+            'api_key_encrypted' => $this->resolveEncryptedValue($apiKeyInput, $current, 'api_key_encrypted', $appKeyAvailable),
+            'webhook_hmac_secret_encrypted' => $this->resolveEncryptedValue($webhookHmacInput, $current, 'webhook_hmac_secret_encrypted', $appKeyAvailable),
+            'webhook_url_secret_encrypted' => $this->resolveEncryptedValue($webhookUrlInput, $current, 'webhook_url_secret_encrypted', $appKeyAvailable),
+            'webhook_url_publica' => $this->resolveWebhookUrlPublica($webhookUrlInput, $current),
+            'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
+        );
 
         $stmt = Database::connection()->prepare(
             'INSERT INTO pagamento_gateway_configuracoes
@@ -86,7 +96,7 @@ class PagamentoGatewayConfiguracao
              (:gateway, :ativo, :ambiente, :api_key_encrypted, :webhook_hmac_secret_encrypted, :webhook_url_secret_encrypted, :webhook_url_publica, :atualizado_por, NOW(), NOW())'
         );
 
-        $stmt->execute($payload);
+        $stmt->execute($insertPayload);
         $this->current = $this->buscarAbacatePay();
 
         return array('ok' => true, 'id' => (int) Database::connection()->lastInsertId(), 'warnings' => $warnings);
@@ -357,5 +367,24 @@ class PagamentoGatewayConfiguracao
         );
 
         return isset($map[$ambiente]) ? $map[$ambiente] : 'sandbox';
+    }
+
+    private function normalizarBool(array $dados, $key)
+    {
+        if (!array_key_exists($key, $dados)) {
+            return 0;
+        }
+
+        $value = $dados[$key];
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return 0;
+        }
+
+        return in_array($value, array('1', 'true', 'on', 'sim', 'yes'), true) ? 1 : 0;
     }
 }
