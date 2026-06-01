@@ -13,23 +13,35 @@
     <?php endif; ?>
 
     <?php if (!empty($errors)): ?>
-        <?php if (empty($inscricaoDuplicada)): ?>
-            <section class="auth-message auth-message-error front-section">
-                <?php foreach ($errors as $error): ?>
-                    <p><?php echo Helpers::e($error); ?></p>
-                <?php endforeach; ?>
-            </section>
-        <?php endif; ?>
+        <section class="auth-message auth-message-error front-section">
+            <?php foreach ($errors as $error): ?>
+                <p><?php echo Helpers::e($error); ?></p>
+            <?php endforeach; ?>
+        </section>
     <?php endif; ?>
 
     <div class="front-card-section front-section">
-    <?php if (!empty($inscricaoDuplicada)): ?>
-        <section class="checkout-panel checkout-status-alert checkout-status-alert--warning front-card">
-            <strong class="checkout-status-alert__title">Você já está inscrito nesta turma.</strong>
-            <p class="checkout-status-alert__text">Não é necessário concluir uma nova inscrição para esta turma.</p>
+    <?php $statusFluxo = isset($situacaoInscricao['status_fluxo']) ? (string) $situacaoInscricao['status_fluxo'] : 'nao_inscrito'; ?>
+    <?php if ($statusFluxo === 'matriculado'): ?>
+        <section class="checkout-panel checkout-status-alert checkout-status-alert--success front-card">
+            <strong class="checkout-status-alert__title">Você já está matriculado neste curso.</strong>
+            <p class="checkout-status-alert__text">Seu acesso já foi liberado. Acompanhe o conteúdo na área do aluno.</p>
             <div class="cta-group">
-                <a class="button-link" href="/minha-pagina">Acessar minha página</a>
+                <a class="button-link" href="/minha-pagina">Acessar curso</a>
             </div>
+        </section>
+    <?php elseif ($statusFluxo === 'pendente_pagamento'): ?>
+        <section class="checkout-panel checkout-status-alert checkout-status-alert--warning front-card">
+            <strong class="checkout-status-alert__title">Você possui uma inscrição pendente para este curso.</strong>
+            <p class="checkout-status-alert__text">Continue o pagamento para concluir sua matrícula.</p>
+            <div class="cta-group">
+                <a class="button-link" href="<?php echo Helpers::e(!empty($situacaoInscricao['checkout_url']) ? $situacaoInscricao['checkout_url'] : '/checkout/resumo?pedido_id=' . (int) ($situacaoInscricao['pedido_id'] ?? 0)); ?>">Continuar pagamento</a>
+            </div>
+        </section>
+    <?php elseif (in_array($statusFluxo, array('cancelado', 'expirado', 'falhou', 'reprovado'), true)): ?>
+        <section class="checkout-panel checkout-status-alert checkout-status-alert--info front-card">
+            <strong class="checkout-status-alert__title">Você pode se inscrever novamente neste curso.</strong>
+            <p class="checkout-status-alert__text">O pedido anterior não está ativo e não bloqueia uma nova inscrição.</p>
         </section>
     <?php endif; ?>
 
@@ -44,7 +56,7 @@
         </section>
     <?php endif; ?>
 
-    <?php if (!empty($loggedIn) && empty($inscricaoDuplicada)): ?>
+    <?php if (!empty($loggedIn) && !in_array($statusFluxo, array('matriculado', 'pendente_pagamento'), true)): ?>
         <section class="checkout-panel front-card">
             <h2>Resumo da inscrição</h2>
             <dl class="summary-list">
@@ -130,7 +142,7 @@
 </div>
 </div>
 
-<?php if (!empty($loggedIn) && empty($inscricaoDuplicada)): ?>
+<?php if (!empty($loggedIn) && !in_array($statusFluxo, array('matriculado', 'pendente_pagamento'), true)): ?>
 <script>
 (function () {
     var estadoSelect = document.getElementById('inscricao-estado');

@@ -81,4 +81,15 @@ class Request
     {
         return isset($this->server['HTTP_USER_AGENT']) ? $this->server['HTTP_USER_AGENT'] : null;
     }
+
+    public function header($name, $default = null)
+    {
+        $normalized = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+
+        if (array_key_exists($normalized, $this->server)) {
+            return $this->server[$normalized];
+        }
+
+        return $default;
+    }
 }

@@ -82,6 +82,10 @@ class Pedido
         $statusPendentes = array(
             'rascunho',
             'aguardando_pagamento',
+            'aguardando_pix',
+            'checkout_criado',
+            'em_aberto',
+            'pending',
             'pendencia',
             'aguardando_reenvio',
             'comprovante_enviado',
@@ -124,6 +128,109 @@ class Pedido
         $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findPedidoPendenteDoAlunoCurso($usuarioId, $cursoId, $turmaId = null)
+    {
+        $statusPendentes = array(
+            'rascunho',
+            'aguardando_pagamento',
+            'aguardando_pix',
+            'checkout_criado',
+            'em_aberto',
+            'pending',
+            'pendencia',
+            'aguardando_reenvio',
+            'comprovante_enviado',
+            'em_analise',
+        );
+
+        $placeholders = array();
+        $params = array(
+            'usuario_id' => (int) $usuarioId,
+            'curso_evento_id' => (int) $cursoId,
+        );
+
+        foreach ($statusPendentes as $idx => $status) {
+            $key = 'status_' . $idx;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $status;
+        }
+
+        $sql = 'SELECT p.*,
+                       pi.curso_evento_id,
+                       pi.turma_id,
+                       ce.nome AS curso_nome,
+                       t.nome AS turma_nome
+                FROM pedidos p
+                INNER JOIN pedido_itens pi
+                    ON pi.pedido_id = p.id
+                   AND pi.deleted_at IS NULL
+                INNER JOIN cursos_eventos ce
+                    ON ce.id = pi.curso_evento_id
+                   AND ce.deleted_at IS NULL
+                LEFT JOIN turmas t
+                    ON t.id = pi.turma_id
+                   AND t.deleted_at IS NULL
+                WHERE p.deleted_at IS NULL
+                  AND (p.comprador_usuario_id = :usuario_id OR p.pagador_usuario_id = :usuario_id)
+                  AND pi.curso_evento_id = :curso_evento_id
+                  AND p.status IN (' . implode(', ', $placeholders) . ')';
+
+        if ($turmaId !== null && (int) $turmaId > 0) {
+            $sql .= ' AND pi.turma_id = :turma_id';
+            $params['turma_id'] = (int) $turmaId;
+        }
+
+        $sql .= ' ORDER BY p.id DESC
+                  LIMIT 1';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function findUltimoDoAlunoCurso($usuarioId, $cursoId, $turmaId = null)
+    {
+        $params = array(
+            'usuario_id' => (int) $usuarioId,
+            'curso_evento_id' => (int) $cursoId,
+        );
+
+        $sql = 'SELECT p.*,
+                       pi.curso_evento_id,
+                       pi.turma_id,
+                       ce.nome AS curso_nome,
+                       t.nome AS turma_nome
+                FROM pedidos p
+                INNER JOIN pedido_itens pi
+                    ON pi.pedido_id = p.id
+                   AND pi.deleted_at IS NULL
+                INNER JOIN cursos_eventos ce
+                    ON ce.id = pi.curso_evento_id
+                   AND ce.deleted_at IS NULL
+                LEFT JOIN turmas t
+                    ON t.id = pi.turma_id
+                   AND t.deleted_at IS NULL
+                WHERE p.deleted_at IS NULL
+                  AND (p.comprador_usuario_id = :usuario_id OR p.pagador_usuario_id = :usuario_id)
+                  AND pi.curso_evento_id = :curso_evento_id';
+
+        if ($turmaId !== null && (int) $turmaId > 0) {
+            $sql .= ' AND pi.turma_id = :turma_id';
+            $params['turma_id'] = (int) $turmaId;
+        }
+
+        $sql .= ' ORDER BY p.id DESC
+                  LIMIT 1';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 
     public function findById($id)
@@ -407,6 +514,52 @@ class Pedido
         return $row ?: null;
     }
 
+    public function findByPaymentGatewayExternalId($gateway, $externalId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT pedidos.*,
+                    pc.titulo AS presente_campanha_titulo
+             FROM pedidos
+             LEFT JOIN presentes_campanhas pc ON pc.id = pedidos.presente_campanha_id
+             WHERE pedidos.payment_gateway = :payment_gateway
+               AND pedidos.payment_external_id = :payment_external_id
+               AND pedidos.deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array(
+            'payment_gateway' => $gateway,
+            'payment_external_id' => $externalId,
+        ));
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function findByPaymentGatewayCheckoutId($gateway, $checkoutId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT pedidos.*,
+                    pc.titulo AS presente_campanha_titulo
+             FROM pedidos
+             LEFT JOIN presentes_campanhas pc ON pc.id = pedidos.presente_campanha_id
+             WHERE pedidos.payment_gateway = :payment_gateway
+               AND pedidos.payment_provider_checkout_id = :payment_provider_checkout_id
+               AND pedidos.deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array(
+            'payment_gateway' => $gateway,
+            'payment_provider_checkout_id' => $checkoutId,
+        ));
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(
@@ -414,12 +567,20 @@ class Pedido
              (codigo, comprador_usuario_id, pagador_usuario_id, pagador_nome, pagador_cpf, pagador_email, pagador_telefone,
               tipo_pedido, status, subtotal, desconto_total, acrescimo_total, total,
               observacoes_internas, observacoes_publicas, canal_origem, is_presente, presente_campanha_id, presente_titulo,
-              presente_justificativa, presente_concedido_em, aprovado_por_usuario_id, aprovado_em, created_at, updated_at, deleted_at)
+              presente_justificativa, presente_concedido_em, aprovado_por_usuario_id, aprovado_em,
+              payment_gateway, payment_external_id, payment_provider_checkout_id, payment_provider_product_id,
+              payment_provider_product_external_id, payment_provider_payment_url, payment_provider_receipt_url,
+              payment_provider_status, payment_provider_amount, payment_provider_paid_amount, payment_provider_method,
+              payment_provider_payload, payment_provider_updated_at, created_at, updated_at, deleted_at)
              VALUES
              (:codigo, :comprador_usuario_id, :pagador_usuario_id, :pagador_nome, :pagador_cpf, :pagador_email, :pagador_telefone,
               :tipo_pedido, :status, :subtotal, :desconto_total, :acrescimo_total, :total,
               :observacoes_internas, :observacoes_publicas, :canal_origem, :is_presente, :presente_campanha_id, :presente_titulo,
-              :presente_justificativa, :presente_concedido_em, :aprovado_por_usuario_id, :aprovado_em, NOW(), NOW(), NULL)'
+              :presente_justificativa, :presente_concedido_em, :aprovado_por_usuario_id, :aprovado_em,
+              :payment_gateway, :payment_external_id, :payment_provider_checkout_id, :payment_provider_product_id,
+              :payment_provider_product_external_id, :payment_provider_payment_url, :payment_provider_receipt_url,
+              :payment_provider_status, :payment_provider_amount, :payment_provider_paid_amount, :payment_provider_method,
+              :payment_provider_payload, :payment_provider_updated_at, NOW(), NOW(), NULL)'
         );
 
         $stmt->execute(array(
@@ -446,6 +607,19 @@ class Pedido
             'presente_concedido_em' => isset($data['presente_concedido_em']) ? $data['presente_concedido_em'] : null,
             'aprovado_por_usuario_id' => isset($data['aprovado_por_usuario_id']) ? $data['aprovado_por_usuario_id'] : null,
             'aprovado_em' => isset($data['aprovado_em']) ? $data['aprovado_em'] : null,
+            'payment_gateway' => isset($data['payment_gateway']) ? $data['payment_gateway'] : null,
+            'payment_external_id' => isset($data['payment_external_id']) ? $data['payment_external_id'] : null,
+            'payment_provider_checkout_id' => isset($data['payment_provider_checkout_id']) ? $data['payment_provider_checkout_id'] : null,
+            'payment_provider_product_id' => isset($data['payment_provider_product_id']) ? $data['payment_provider_product_id'] : null,
+            'payment_provider_product_external_id' => isset($data['payment_provider_product_external_id']) ? $data['payment_provider_product_external_id'] : null,
+            'payment_provider_payment_url' => isset($data['payment_provider_payment_url']) ? $data['payment_provider_payment_url'] : null,
+            'payment_provider_receipt_url' => isset($data['payment_provider_receipt_url']) ? $data['payment_provider_receipt_url'] : null,
+            'payment_provider_status' => isset($data['payment_provider_status']) ? $data['payment_provider_status'] : null,
+            'payment_provider_amount' => isset($data['payment_provider_amount']) ? $data['payment_provider_amount'] : null,
+            'payment_provider_paid_amount' => isset($data['payment_provider_paid_amount']) ? $data['payment_provider_paid_amount'] : null,
+            'payment_provider_method' => isset($data['payment_provider_method']) ? $data['payment_provider_method'] : null,
+            'payment_provider_payload' => isset($data['payment_provider_payload']) ? $data['payment_provider_payload'] : null,
+            'payment_provider_updated_at' => isset($data['payment_provider_updated_at']) ? $data['payment_provider_updated_at'] : null,
         ));
 
         return (int) Database::connection()->lastInsertId();
@@ -481,6 +655,47 @@ class Pedido
             'cupom_codigo' => $cupomCodigo,
             'desconto_total' => $descontoTotal,
             'total' => $total,
+            'id' => $pedidoId,
+        ));
+
+        return $stmt->rowCount() >= 0;
+    }
+
+    public function updatePaymentGatewayData($pedidoId, array $data)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE pedidos
+             SET payment_gateway = :payment_gateway,
+                 payment_external_id = :payment_external_id,
+                 payment_provider_checkout_id = :payment_provider_checkout_id,
+                 payment_provider_product_id = :payment_provider_product_id,
+                 payment_provider_product_external_id = :payment_provider_product_external_id,
+                 payment_provider_payment_url = :payment_provider_payment_url,
+                 payment_provider_receipt_url = :payment_provider_receipt_url,
+                 payment_provider_status = :payment_provider_status,
+                 payment_provider_amount = :payment_provider_amount,
+                 payment_provider_paid_amount = :payment_provider_paid_amount,
+                 payment_provider_method = :payment_provider_method,
+                 payment_provider_payload = :payment_provider_payload,
+                 payment_provider_updated_at = :payment_provider_updated_at,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array(
+            'payment_gateway' => isset($data['payment_gateway']) ? $data['payment_gateway'] : null,
+            'payment_external_id' => isset($data['payment_external_id']) ? $data['payment_external_id'] : null,
+            'payment_provider_checkout_id' => isset($data['payment_provider_checkout_id']) ? $data['payment_provider_checkout_id'] : null,
+            'payment_provider_product_id' => isset($data['payment_provider_product_id']) ? $data['payment_provider_product_id'] : null,
+            'payment_provider_product_external_id' => isset($data['payment_provider_product_external_id']) ? $data['payment_provider_product_external_id'] : null,
+            'payment_provider_payment_url' => isset($data['payment_provider_payment_url']) ? $data['payment_provider_payment_url'] : null,
+            'payment_provider_receipt_url' => isset($data['payment_provider_receipt_url']) ? $data['payment_provider_receipt_url'] : null,
+            'payment_provider_status' => isset($data['payment_provider_status']) ? $data['payment_provider_status'] : null,
+            'payment_provider_amount' => isset($data['payment_provider_amount']) ? $data['payment_provider_amount'] : null,
+            'payment_provider_paid_amount' => isset($data['payment_provider_paid_amount']) ? $data['payment_provider_paid_amount'] : null,
+            'payment_provider_method' => isset($data['payment_provider_method']) ? $data['payment_provider_method'] : null,
+            'payment_provider_payload' => isset($data['payment_provider_payload']) ? $data['payment_provider_payload'] : null,
+            'payment_provider_updated_at' => isset($data['payment_provider_updated_at']) ? $data['payment_provider_updated_at'] : null,
             'id' => $pedidoId,
         ));
 

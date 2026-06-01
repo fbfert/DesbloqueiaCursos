@@ -429,8 +429,8 @@ class PresenteCampanhaService
         }
 
         $turmaId = !empty($dados['turma_id']) ? (int) $dados['turma_id'] : null;
-        if ($turmaId && $this->inscricaoModel->findByUsuarioTurma($usuarioId, $turmaId)) {
-            return array('ok' => false, 'message' => 'Usuário já está inscrito nesta turma.');
+        if ($turmaId && $this->inscricaoModel->findAcessoAtivoPorUsuarioTurma($usuarioId, $turmaId)) {
+            return array('ok' => false, 'message' => 'Usuário já está matriculado neste curso.');
         }
 
         $pedidoData = array(

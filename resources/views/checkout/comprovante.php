@@ -1,6 +1,8 @@
 <?php use App\Core\Helpers; ?>
 <?php
 $pixKey = 'cpeducacursos@gmail.com';
+$pedidoGateway = strtolower(trim((string) ($pedido['payment_gateway'] ?? '')));
+$pedidoUsaPagamentoOnline = $pedidoGateway === 'abacatepay' || !empty($pedido['payment_provider_payment_url']) || !empty($pedido['payment_provider_checkout_id']);
 $mostraMotivoReenvio = !empty($pedido['comprovantes']);
 if (!$mostraMotivoReenvio) {
     $statusPedido = isset($pedido['status']) ? (string) $pedido['status'] : '';
@@ -12,6 +14,9 @@ if (!$mostraMotivoReenvio) {
     <section class="page-header front-section">
         <h1>Enviar comprovante PIX</h1>
         <p>Pedido <?php echo Helpers::e($pedido['codigo']); ?></p>
+        <?php if (!empty($pedidoUsaPagamentoOnline)): ?>
+            <p class="muted">Este pedido está configurado para pagamento online; use o comprovante manual apenas se o atendimento orientar.</p>
+        <?php endif; ?>
     </section>
 
     <div class="front-card-section front-section">

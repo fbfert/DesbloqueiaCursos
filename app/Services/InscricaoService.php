@@ -74,12 +74,12 @@ class InscricaoService
                     $usuarioIdParticipante = !empty($participante['usuario_id']) ? (int) $participante['usuario_id'] : null;
 
                     if ($usuarioIdParticipante && $turmaId) {
-                        $inscricaoExistente = $this->inscricaoModel->findByUsuarioTurma($usuarioIdParticipante, $turmaId);
+                        $inscricaoExistente = $this->inscricaoModel->findAcessoAtivoPorUsuarioTurma($usuarioIdParticipante, $turmaId);
                         if ($inscricaoExistente) {
                             $pdo->rollBack();
                             return array(
                                 'ok' => false,
-                                'message' => 'Você já está inscrito nesta turma.',
+                                'message' => 'Você já está matriculado neste curso.',
                             );
                         }
                     }
@@ -143,9 +143,9 @@ class InscricaoService
         $usuarioId = isset($data['usuario_id']) ? (int) $data['usuario_id'] : 0;
         $turmaId = isset($data['turma_id']) ? (int) $data['turma_id'] : 0;
         if ($usuarioId > 0 && $turmaId > 0) {
-            $inscricaoExistente = $this->inscricaoModel->findByUsuarioTurma($usuarioId, $turmaId);
+            $inscricaoExistente = $this->inscricaoModel->findAcessoAtivoPorUsuarioTurma($usuarioId, $turmaId);
             if ($inscricaoExistente) {
-                return array('ok' => false, 'message' => 'Você já está inscrito nesta turma.');
+                return array('ok' => false, 'message' => 'Você já está matriculado neste curso.');
             }
         }
 
@@ -381,7 +381,97 @@ class InscricaoService
 
     public function usuarioPossuiInscricaoNaTurma($usuarioId, $turmaId)
     {
-        return !empty($this->inscricaoModel->findByUsuarioTurma($usuarioId, $turmaId));
+        return !empty($this->inscricaoModel->findAcessoAtivoPorUsuarioTurma($usuarioId, $turmaId));
+    }
+
+    public function situacaoAlunoNoCurso($usuarioId, $cursoId, $turmaId = null)
+    {
+        $usuarioId = (int) $usuarioId;
+        $cursoId = (int) $cursoId;
+        $turmaId = $turmaId !== null && (int) $turmaId > 0 ? (int) $turmaId : null;
+
+        $situacao = array(
+            'status_fluxo' => 'nao_inscrito',
+            'bloquear_nova_inscricao' => false,
+            'permitir_nova_inscricao' => true,
+            'permitir_continuar_pagamento' => false,
+            'pedido_id' => null,
+            'checkout_url' => null,
+            'pedido_status' => null,
+            'inscricao_status' => null,
+            'inscricao_id' => null,
+            'curso_id' => $cursoId,
+            'turma_id' => $turmaId,
+        );
+
+        if ($usuarioId <= 0 || $cursoId <= 0) {
+            return $situacao;
+        }
+
+        $inscricaoAtiva = $turmaId !== null
+            ? $this->inscricaoModel->findAcessoAtivoPorUsuarioTurma($usuarioId, $turmaId)
+            : $this->inscricaoModel->findAcessoAtivoPorUsuarioCurso($usuarioId, $cursoId);
+
+        if ($inscricaoAtiva) {
+            $situacao['status_fluxo'] = 'matriculado';
+            $situacao['bloquear_nova_inscricao'] = true;
+            $situacao['permitir_nova_inscricao'] = false;
+            $situacao['inscricao_id'] = isset($inscricaoAtiva['id']) ? (int) $inscricaoAtiva['id'] : null;
+            $situacao['inscricao_status'] = isset($inscricaoAtiva['status']) ? (string) $inscricaoAtiva['status'] : null;
+            $situacao['pedido_id'] = isset($inscricaoAtiva['pedido_id']) ? (int) $inscricaoAtiva['pedido_id'] : null;
+            $situacao['pedido_status'] = isset($inscricaoAtiva['pedido_status']) ? (string) $inscricaoAtiva['pedido_status'] : null;
+
+            return $situacao;
+        }
+
+        $pedidoPendente = $this->pedidoModel->findPedidoPendenteDoAlunoCurso($usuarioId, $cursoId, $turmaId);
+        if ($pedidoPendente) {
+            $situacao['status_fluxo'] = 'pendente_pagamento';
+            $situacao['bloquear_nova_inscricao'] = false;
+            $situacao['permitir_nova_inscricao'] = false;
+            $situacao['permitir_continuar_pagamento'] = true;
+            $situacao['pedido_id'] = isset($pedidoPendente['id']) ? (int) $pedidoPendente['id'] : null;
+            $situacao['pedido_status'] = isset($pedidoPendente['status']) ? (string) $pedidoPendente['status'] : null;
+            $situacao['checkout_url'] = !empty($pedidoPendente['payment_provider_payment_url'])
+                ? (string) $pedidoPendente['payment_provider_payment_url']
+                : '/checkout/resumo?pedido_id=' . (int) $pedidoPendente['id'];
+            $situacao['turma_id'] = !empty($pedidoPendente['turma_id']) ? (int) $pedidoPendente['turma_id'] : $situacao['turma_id'];
+
+            return $situacao;
+        }
+
+        $pedidoHistorico = $this->pedidoModel->findUltimoDoAlunoCurso($usuarioId, $cursoId, $turmaId);
+        $inscricaoHistorica = $this->inscricaoModel->findUltimaPorUsuarioCurso($usuarioId, $cursoId, $turmaId);
+        $registroMaisRecente = $this->selecionarRegistroMaisRecenteFluxo($pedidoHistorico, $inscricaoHistorica);
+
+        if (!$registroMaisRecente) {
+            return $situacao;
+        }
+
+        $statusFluxo = $this->mapearStatusFluxoInscricao(isset($registroMaisRecente['status_original']) ? $registroMaisRecente['status_original'] : '');
+        $pedidoStatusRegistro = strtolower(trim((string) ($registroMaisRecente['pedido_status'] ?? '')));
+        if ($statusFluxo === 'pendente_pagamento' && in_array($pedidoStatusRegistro, array('cancelado', 'cancelada', 'cancelled', 'expirado', 'vencido', 'expired', 'falhou', 'failed', 'recusado', 'reprovado'), true)) {
+            if (in_array($pedidoStatusRegistro, array('cancelado', 'cancelada', 'cancelled'), true)) {
+                $statusFluxo = 'cancelado';
+            } elseif (in_array($pedidoStatusRegistro, array('expirado', 'vencido', 'expired'), true)) {
+                $statusFluxo = 'expirado';
+            } else {
+                $statusFluxo = 'falhou';
+            }
+            $registroMaisRecente['status_original'] = $pedidoStatusRegistro;
+        }
+        if ($statusFluxo !== 'nao_inscrito') {
+            $situacao['status_fluxo'] = $statusFluxo;
+            $situacao['permitir_nova_inscricao'] = true;
+            $situacao['bloquear_nova_inscricao'] = false;
+            $situacao['pedido_id'] = !empty($registroMaisRecente['pedido_id']) ? (int) $registroMaisRecente['pedido_id'] : null;
+            $situacao['pedido_status'] = !empty($registroMaisRecente['pedido_status']) ? (string) $registroMaisRecente['pedido_status'] : null;
+            $situacao['inscricao_id'] = !empty($registroMaisRecente['inscricao_id']) ? (int) $registroMaisRecente['inscricao_id'] : null;
+            $situacao['inscricao_status'] = !empty($registroMaisRecente['inscricao_status']) ? (string) $registroMaisRecente['inscricao_status'] : null;
+            $situacao['turma_id'] = !empty($registroMaisRecente['turma_id']) ? (int) $registroMaisRecente['turma_id'] : $situacao['turma_id'];
+        }
+
+        return $situacao;
     }
 
     private function envelopeInscricaoParaEmail(?array $inscricao = null)
@@ -475,6 +565,105 @@ class InscricaoService
         }
 
         return $this->pedidoPodeSerAcessadoPor($pedido, $usuarioId);
+    }
+
+    private function selecionarRegistroMaisRecenteFluxo(?array $pedido = null, ?array $inscricao = null)
+    {
+        $pedidoData = null;
+        if (!empty($pedido)) {
+            $pedidoData = array(
+                'origem' => 'pedido',
+                'id' => isset($pedido['id']) ? (int) $pedido['id'] : null,
+                'pedido_id' => isset($pedido['id']) ? (int) $pedido['id'] : null,
+                'inscricao_id' => null,
+                'status_original' => isset($pedido['status']) ? (string) $pedido['status'] : '',
+                'pedido_status' => isset($pedido['status']) ? (string) $pedido['status'] : null,
+                'inscricao_status' => null,
+                'turma_id' => isset($pedido['turma_id']) ? (int) $pedido['turma_id'] : null,
+                'created_at' => isset($pedido['created_at']) ? (string) $pedido['created_at'] : null,
+            );
+        }
+
+        $inscricaoData = null;
+        if (!empty($inscricao)) {
+            $inscricaoData = array(
+                'origem' => 'inscricao',
+                'id' => isset($inscricao['id']) ? (int) $inscricao['id'] : null,
+                'pedido_id' => isset($inscricao['pedido_id']) ? (int) $inscricao['pedido_id'] : null,
+                'inscricao_id' => isset($inscricao['id']) ? (int) $inscricao['id'] : null,
+                'status_original' => isset($inscricao['status']) ? (string) $inscricao['status'] : '',
+                'pedido_status' => isset($inscricao['pedido_status']) ? (string) $inscricao['pedido_status'] : null,
+                'inscricao_status' => isset($inscricao['status']) ? (string) $inscricao['status'] : null,
+                'turma_id' => isset($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null,
+                'created_at' => isset($inscricao['created_at']) ? (string) $inscricao['created_at'] : null,
+            );
+        }
+
+        if (!$pedidoData) {
+            return $inscricaoData;
+        }
+
+        if (!$inscricaoData) {
+            return $pedidoData;
+        }
+
+        $pedidoTimestamp = !empty($pedidoData['created_at']) ? strtotime($pedidoData['created_at']) : 0;
+        $inscricaoTimestamp = !empty($inscricaoData['created_at']) ? strtotime($inscricaoData['created_at']) : 0;
+
+        if ($pedidoTimestamp === $inscricaoTimestamp) {
+            return $pedidoData['id'] >= $inscricaoData['id'] ? $pedidoData : $inscricaoData;
+        }
+
+        return $pedidoTimestamp >= $inscricaoTimestamp ? $pedidoData : $inscricaoData;
+    }
+
+    private function mapearStatusFluxoInscricao($status)
+    {
+        $status = strtolower(trim((string) $status));
+
+        $statusAtivos = array('pago', 'aprovado', 'confirmado', 'ativo', 'concluido', 'matriculado');
+        if (in_array($status, $statusAtivos, true)) {
+            return 'matriculado';
+        }
+
+        $statusPendentes = array(
+            'pendente',
+            'aguardando_pagamento',
+            'aguardando_pix',
+            'checkout_criado',
+            'em_aberto',
+            'pending',
+            'rascunho',
+            'pendencia',
+            'aguardando_reenvio',
+            'comprovante_enviado',
+            'em_analise',
+        );
+        if (in_array($status, $statusPendentes, true)) {
+            return 'pendente_pagamento';
+        }
+
+        $statusCancelados = array('cancelado', 'cancelada', 'cancelled');
+        if (in_array($status, $statusCancelados, true)) {
+            return 'cancelado';
+        }
+
+        $statusExpirados = array('expirado', 'vencido', 'expired');
+        if (in_array($status, $statusExpirados, true)) {
+            return 'expirado';
+        }
+
+        $statusFalhas = array('falhou', 'failed');
+        if (in_array($status, $statusFalhas, true)) {
+            return 'falhou';
+        }
+
+        $statusReprovados = array('recusado', 'reprovado');
+        if (in_array($status, $statusReprovados, true)) {
+            return 'reprovado';
+        }
+
+        return 'nao_inscrito';
     }
 
     private function registrarAcessoNegado($evento, $inscricaoId, $usuarioId, $ipAddress = null, $userAgent = null)

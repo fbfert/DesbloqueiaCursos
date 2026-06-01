@@ -275,7 +275,9 @@ class CursoService
             'metodologia' => $metodologia,
             'produto_final' => $produtoFinal,
             'avaliacao' => $avaliacao,
-            'em_promocao' => !empty($data['em_promocao']) ? 1 : 0,
+            'em_promocao' => ($valorPromocional !== null && $valorPromocional < $valor)
+                ? 1
+                : (!empty($data['em_promocao']) ? 1 : 0),
             'destaque' => !empty($data['destaque']) ? 1 : 0,
             'ordem' => $ordem,
             'status' => $status,

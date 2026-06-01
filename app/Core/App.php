@@ -25,6 +25,11 @@ class App
         $this->router->post($path, $handler, $middleware);
     }
 
+    public function postWithoutCsrf($path, $handler, array $middleware = array())
+    {
+        $this->router->postWithoutCsrf($path, $handler, $middleware);
+    }
+
     public function run()
     {
         $request = Request::capture();

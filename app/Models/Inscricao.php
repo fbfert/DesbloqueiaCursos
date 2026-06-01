@@ -239,6 +239,38 @@ class Inscricao
         return $row ?: null;
     }
 
+    public function findAcessoAtivoPorUsuarioTurma($usuarioId, $turmaId)
+    {
+        if ((int) $usuarioId <= 0 || (int) $turmaId <= 0) {
+            return null;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT i.*,
+                    p.status AS pedido_status,
+                    cp.status AS comprovante_status
+             FROM inscricoes i
+             INNER JOIN pedidos p ON p.id = i.pedido_id
+             LEFT JOIN comprovantes_pix cp ON cp.pedido_id = i.pedido_id AND cp.is_atual = 1 AND cp.deleted_at IS NULL
+             WHERE i.deleted_at IS NULL
+               AND i.usuario_id = :usuario_id
+               AND i.turma_id = :turma_id
+               AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+               AND (i.acesso_expira_em IS NULL OR i.acesso_expira_em >= NOW())
+               AND (p.status IN ("aprovado", "pago", "confirmado", "ativo", "concluido") OR cp.status = "aprovado")
+             ORDER BY i.id DESC
+             LIMIT 1'
+        );
+
+        $stmt->execute(array(
+            'usuario_id' => (int) $usuarioId,
+            'turma_id' => (int) $turmaId,
+        ));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     private function backofficeBaseSql(array $filters, array &$params)
     {
         $sql = ' FROM inscricoes i
@@ -526,6 +558,45 @@ class Inscricao
             'usuario_id' => (int) $usuarioId,
             'curso_evento_id' => (int) $cursoId,
         ));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function findUltimaPorUsuarioCurso($usuarioId, $cursoId, $turmaId = null)
+    {
+        $sql = 'SELECT i.*,
+                       p.status AS pedido_status,
+                       p.payment_gateway,
+                       p.payment_external_id,
+                       p.payment_provider_checkout_id,
+                       p.payment_provider_payment_url,
+                       p.payment_provider_status,
+                       p.payment_provider_amount,
+                       p.payment_provider_paid_amount,
+                       p.payment_provider_method,
+                       cp.status AS comprovante_status
+                FROM inscricoes i
+                INNER JOIN pedidos p ON p.id = i.pedido_id
+                LEFT JOIN comprovantes_pix cp ON cp.pedido_id = i.pedido_id AND cp.is_atual = 1 AND cp.deleted_at IS NULL
+                WHERE i.deleted_at IS NULL
+                  AND i.usuario_id = :usuario_id
+                  AND i.curso_evento_id = :curso_evento_id';
+
+        $params = array(
+            'usuario_id' => (int) $usuarioId,
+            'curso_evento_id' => (int) $cursoId,
+        );
+
+        if ($turmaId !== null && (int) $turmaId > 0) {
+            $sql .= ' AND i.turma_id = :turma_id';
+            $params['turma_id'] = (int) $turmaId;
+        }
+
+        $sql .= ' ORDER BY i.id DESC LIMIT 1';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;

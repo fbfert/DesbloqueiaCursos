@@ -11,6 +11,8 @@ use App\Models\Inscricao;
 use App\Models\PedidoCupom;
 use App\Models\Pedido;
 use App\Models\PedidoItem;
+use App\Models\PagamentoGatewayLog;
+use App\Models\PagamentoGatewayTransacao;
 use App\Models\ParticipantePedido;
 use App\Models\Usuario;
 use App\Models\Turma;
@@ -27,6 +29,8 @@ class PedidoService
     private $cursoService;
     private $turmaModel;
     private $pedidoCupomModel;
+    private $gatewayLogModel;
+    private $gatewayTransacaoModel;
     private $cupomService;
     private $emailService;
     private $auditService;
@@ -46,6 +50,8 @@ class PedidoService
         $this->cursoService = new CursoService();
         $this->turmaModel = new Turma();
         $this->pedidoCupomModel = new PedidoCupom();
+        $this->gatewayLogModel = new PagamentoGatewayLog();
+        $this->gatewayTransacaoModel = new PagamentoGatewayTransacao();
         $this->cupomService = new CupomService();
         $this->emailService = new EmailService();
         $this->auditService = new AuditService();
@@ -181,8 +187,8 @@ class PedidoService
             return array('ok' => false, 'message' => 'Selecione uma turma para este curso.');
         }
 
-        if ($turmaId !== null && $this->inscricaoModel->findByUsuarioTurma($alunoUsuarioId, $turmaId)) {
-            return array('ok' => false, 'message' => 'Este aluno já está inscrito nesta turma.');
+        if ($turmaId !== null && $this->inscricaoModel->findAcessoAtivoPorUsuarioTurma($alunoUsuarioId, $turmaId)) {
+            return array('ok' => false, 'message' => 'Este aluno já está matriculado neste curso.');
         }
 
         $pagadorNome = trim((string) ($dados['pagador_nome'] ?? ''));
@@ -634,6 +640,129 @@ class PedidoService
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('checkout.finalizar_falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+            ));
+
+            throw $exception;
+        }
+    }
+
+    public function registrarCheckoutGateway($pedidoId, array $dadosGateway, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
+            $this->registrarAcessoNegado('pedido.gateway.checkout_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Você nao tem permissao para iniciar este pagamento.');
+        }
+
+        $this->pedidoModel->updatePaymentGatewayData($pedidoId, $dadosGateway);
+
+        $this->auditService->record(
+            'pedido.gateway.checkout_registrado',
+            'pedido',
+            $pedidoId,
+            array(
+                'payment_gateway' => isset($dadosGateway['payment_gateway']) ? $dadosGateway['payment_gateway'] : null,
+                'payment_external_id' => isset($dadosGateway['payment_external_id']) ? $dadosGateway['payment_external_id'] : null,
+                'payment_provider_checkout_id' => isset($dadosGateway['payment_provider_checkout_id']) ? $dadosGateway['payment_provider_checkout_id'] : null,
+            ),
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::info('pedido.gateway.checkout_registrado', array(
+            'pedido_id' => $pedidoId,
+            'payment_gateway' => isset($dadosGateway['payment_gateway']) ? $dadosGateway['payment_gateway'] : null,
+        ));
+
+        return array('ok' => true);
+    }
+
+    public function confirmarPagamentoGateway($pedidoId, array $dados = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+        }
+
+        if ((string) $pedido['status'] === 'pago') {
+            return array('ok' => true, 'status_anterior' => 'pago', 'status_novo' => 'pago', 'already_paid' => true);
+        }
+
+        $statusAtual = isset($pedido['status']) ? (string) $pedido['status'] : '';
+        if (in_array($statusAtual, array('cancelado', 'reembolsado'), true)) {
+            return array('ok' => false, 'message' => 'Pedido nao pode ser confirmado neste status.');
+        }
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $pedidoAtualizado = $this->pedidoModel->findById($pedidoId);
+            if (!$pedidoAtualizado) {
+                $pdo->rollBack();
+                return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            }
+
+            if ((string) $pedidoAtualizado['status'] !== 'pago') {
+                $this->pedidoModel->markPaid($pedidoId, $actorUserId);
+                $this->pedidoModel->addStatusHistory(
+                    $pedidoId,
+                    $pedidoAtualizado['status'],
+                    'pago',
+                    isset($dados['observacao']) ? $dados['observacao'] : 'Pagamento confirmado por gateway.',
+                    $actorUserId
+                );
+                $this->sincronizarInscricoesAprovadas($pedidoId, $actorUserId);
+            }
+
+            $this->auditService->record(
+                'pedido.pagamento_confirmado',
+                'pedido',
+                $pedidoId,
+                array(
+                    'status_anterior' => $pedidoAtualizado['status'],
+                    'status_novo' => 'pago',
+                    'gateway' => isset($dados['gateway']) ? $dados['gateway'] : null,
+                    'event_type' => isset($dados['event_type']) ? $dados['event_type'] : null,
+                    'event_id' => isset($dados['event_id']) ? $dados['event_id'] : null,
+                ),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('pedido.pagamento_confirmado', array(
+                'pedido_id' => $pedidoId,
+                'gateway' => isset($dados['gateway']) ? $dados['gateway'] : null,
+                'event_id' => isset($dados['event_id']) ? $dados['event_id'] : null,
+            ));
+
+            $pdo->commit();
+
+            $pedidoFinal = $this->pedidoModel->findById($pedidoId);
+            if ($pedidoFinal) {
+                $observacao = isset($dados['observacao']) ? $dados['observacao'] : 'Pagamento confirmado por gateway.';
+                try {
+                    $this->emailService->pedidoAprovado($pedidoFinal, $observacao, $actorUserId, $ipAddress, $userAgent);
+                } catch (Exception $emailException) {
+                    Logger::error('pedido.pagamento_confirmado.notificacao_falhou', array(
+                        'pedido_id' => $pedidoId,
+                        'message' => $emailException->getMessage(),
+                    ));
+                }
+            }
+
+            return array('ok' => true, 'status_anterior' => $statusAtual, 'status_novo' => 'pago');
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('pedido.pagamento_confirmado_falhou', array(
                 'pedido_id' => $pedidoId,
                 'message' => $exception->getMessage(),
             ));
@@ -1586,9 +1715,18 @@ class PedidoService
         $pedido['exclusao'] = $this->avaliarExclusaoPedido($pedidoId, $pedido);
         $pedido['cupom_manual'] = $this->avaliarCupomManualPedido($pedido);
         $pedido['usuario_pagador'] = null;
+        $pedido['pagamentos_gateway_transacoes'] = array();
+        $pedido['pagamentos_gateway_logs'] = array();
 
         if (!empty($pedido['pagador_usuario_id'])) {
             $pedido['usuario_pagador'] = $this->usuarioModel->findById((int) $pedido['pagador_usuario_id']);
+        }
+
+        if (!empty($pedido['payment_gateway'])) {
+            $pedido['pagamentos_gateway_transacoes'] = $this->gatewayTransacaoModel->listByPedido($pedidoId);
+            if ($canSeePix) {
+                $pedido['pagamentos_gateway_logs'] = $this->gatewayLogModel->listByPedido($pedidoId);
+            }
         }
 
         return array(

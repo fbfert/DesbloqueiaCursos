@@ -21,6 +21,11 @@ class Router
         $this->add('POST', $path, $handler, $middleware);
     }
 
+    public function postWithoutCsrf($path, $handler, array $middleware = array())
+    {
+        $this->add('POST', $path, $handler, $middleware);
+    }
+
     public function dispatch(Request $request)
     {
         if ($request->method() === 'GET') {

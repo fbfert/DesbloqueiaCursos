@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\Response;
 use App\Core\View;
+use App\Core\Logger;
 use App\Services\ComprovantePixService;
 use App\Services\PedidoService;
 
@@ -506,17 +507,28 @@ class PedidosController extends Controller
             return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#comprovante-manual');
         }
 
-        $resultado = $this->comprovanteService->enviarUpload(
-            $pedidoId,
-            $_FILES['comprovante'],
-            array(
-                'valor_informado' => $request->input('valor_informado'),
-                'motivo_reenvio' => $request->input('motivo_reenvio'),
-            ),
-            Session::get('usuario_id'),
-            $request->ip(),
-            $request->userAgent()
-        );
+        try {
+            $resultado = $this->comprovanteService->enviarUpload(
+                $pedidoId,
+                $_FILES['comprovante'],
+                array(
+                    'valor_informado' => $request->input('valor_informado'),
+                    'motivo_reenvio' => $request->input('motivo_reenvio'),
+                ),
+                Session::get('usuario_id'),
+                $request->ip(),
+                $request->userAgent()
+            );
+        } catch (\Throwable $exception) {
+            Logger::error('admin.pedido.comprovante_upload_falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ));
+            Session::flash('errors', array('Não foi possível salvar o comprovante. Verifique permissões do storage e tente novamente.'));
+            return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId . '#comprovante-manual');
+        }
 
         if (empty($resultado['ok'])) {
             Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível enviar o comprovante.'));

@@ -46,6 +46,7 @@ $menu = array(
         array('label' => 'Frontend · Módulos', 'href' => '/admin/frontend/modulos', 'icon' => '▦', 'permissions_any' => array('frontend.modulos.ver')),
         array('label' => 'Frontend · Menus', 'href' => '/admin/frontend/menus', 'icon' => '☷', 'permissions_any' => array('frontend.menus.ver')),
         array('label' => 'Globais', 'href' => '/admin/configuracoes-globais', 'icon' => '⚙', 'permissions_any' => array('configuracoes_globais.ver')),
+        array('label' => 'Pagamento', 'href' => '/admin/configuracoes-pagamento', 'icon' => '₿', 'permissions_any' => array('configuracoes_globais.gerenciar')),
         array('label' => 'Usuários', 'href' => '/admin/usuarios', 'icon' => '👤', 'permissions_any' => array('usuarios.ver')),
         array('label' => 'Permissões', 'href' => '/admin/permissoes', 'icon' => '🛡', 'permissions_any' => array('rbac.permissoes.ver')),
         array('label' => 'E-mails', 'href' => '/admin/emails', 'icon' => '✉', 'permissions_any' => array('emails.ver')),

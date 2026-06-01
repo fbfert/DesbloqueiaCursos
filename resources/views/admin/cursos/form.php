@@ -6,6 +6,16 @@
 <?php $professoresResponsaveisIds = isset($form_data['professores_responsaveis_ids']) ? (array) $form_data['professores_responsaveis_ids'] : array(); ?>
 <?php $professoresResponsaveisIdsSelecionados = array_map('intval', $professoresResponsaveisIds); ?>
 <?php $thumbnailsDisponiveis = isset($form_data['thumbnails_disponiveis']) ? $form_data['thumbnails_disponiveis'] : array(); ?>
+<?php $oldInput = isset($oldInput) && is_array($oldInput) ? $oldInput : array(); ?>
+<?php
+$inputValue = function ($key, $default = '') use ($oldInput, $curso) {
+    if (array_key_exists($key, $oldInput)) {
+        return $oldInput[$key];
+    }
+
+    return isset($curso[$key]) ? $curso[$key] : $default;
+};
+?>
 <?php
 $conteudoProgramaticoTipo = (string) ($curso['conteudo_programatico_tipo'] ?? 'texto');
 if ($conteudoProgramaticoTipo === '') $conteudoProgramaticoTipo = 'texto';
@@ -119,12 +129,13 @@ if (empty($modulosExistentes)) {
         <h2 class="full" style="margin:16px 0 8px;">Valores</h2>
         <label>
             Valor
-            <input id="curso-valor" type="number" step="0.01" min="0" name="valor" value="<?php echo Helpers::e((string) ($curso['valor'] ?? '0.00')); ?>">
+            <input id="curso-valor" type="number" step="0.01" min="0" name="valor" value="<?php echo Helpers::e((string) $inputValue('valor', '0.00')); ?>">
         </label>
         <label>
             Valor promocional (opcional)
-            <input id="curso-valor-promocional" type="number" step="0.01" min="0" name="valor_promocional" value="<?php echo Helpers::e((string) ($curso['valor_promocional'] ?? '')); ?>">
+            <input id="curso-valor-promocional" type="number" step="0.01" min="0" name="valor_promocional" value="<?php echo Helpers::e((string) $inputValue('valor_promocional', '')); ?>">
             <small class="muted" id="curso-preview-desconto" style="display:block;margin-top:6px;"></small>
+            <small class="muted" style="display:block;margin-top:6px;">Deixe em branco para manter o valor atual. Se informar um valor promocional válido, a promoção será aplicada automaticamente.</small>
         </label>
         <label>
             Carga horária
@@ -242,7 +253,7 @@ if (empty($modulosExistentes)) {
             </select>
         </label>
         <label class="checkbox">
-            <input type="checkbox" name="em_promocao" value="1" <?php echo !empty($curso['em_promocao']) ? 'checked' : ''; ?>>
+            <input type="checkbox" name="em_promocao" value="1" <?php echo !empty(array_key_exists('em_promocao', $oldInput) ? $oldInput['em_promocao'] : $curso['em_promocao']) ? 'checked' : ''; ?>>
             Em promoção
         </label>
         <label class="checkbox">

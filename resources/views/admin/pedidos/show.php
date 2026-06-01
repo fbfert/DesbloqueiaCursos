@@ -135,6 +135,34 @@ $exigeMotivoReenvioComprovante = !empty($pedido['comprovantes']);
         <?php endif; ?>
     </article>
 
+    <?php if (!empty($pedido['payment_gateway'])): ?>
+        <article class="status-card admin-pedido-comprovante-card admin-pedido-gateway-card">
+            <strong>Pagamento por gateway</strong>
+            <p>
+                <strong>Gateway:</strong> <?php echo htmlspecialchars((string) $pedido['payment_gateway'], ENT_QUOTES, 'UTF-8'); ?><br>
+                <strong>ID externo:</strong> <?php echo htmlspecialchars((string) ($pedido['payment_external_id'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?><br>
+                <strong>ID do checkout:</strong> <?php echo htmlspecialchars((string) ($pedido['payment_provider_checkout_id'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?><br>
+                <strong>ID do produto:</strong> <?php echo htmlspecialchars((string) ($pedido['payment_provider_product_id'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?><br>
+                <strong>Status do provedor:</strong> <?php echo htmlspecialchars((string) ($pedido['payment_provider_status'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?><br>
+                <strong>Método:</strong> <?php echo htmlspecialchars((string) ($pedido['payment_provider_method'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?><br>
+                <strong>Valor do provedor:</strong> R$ <?php echo number_format((float) ($pedido['payment_provider_amount'] ?? 0), 2, ',', '.'); ?><br>
+                <strong>Valor pago:</strong> <?php echo isset($pedido['payment_provider_paid_amount']) && $pedido['payment_provider_paid_amount'] !== null ? 'R$ ' . number_format((float) $pedido['payment_provider_paid_amount'], 2, ',', '.') : '-'; ?>
+            </p>
+            <?php if (!empty($pedido['payment_provider_payment_url'])): ?>
+                <p>
+                    <strong>Link do checkout:</strong>
+                    <a href="<?php echo htmlspecialchars((string) $pedido['payment_provider_payment_url'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">Abrir checkout</a>
+                </p>
+            <?php endif; ?>
+            <?php if (!empty($pedido['payment_provider_receipt_url'])): ?>
+                <p>
+                    <strong>Link do recibo:</strong>
+                    <a href="<?php echo htmlspecialchars((string) $pedido['payment_provider_receipt_url'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">Abrir recibo</a>
+                </p>
+            <?php endif; ?>
+        </article>
+    <?php endif; ?>
+
     <article class="status-card admin-pedido-comprovante-card" id="comprovante-manual">
         <strong>Enviar comprovante de pagamento</strong>
         <?php if (!empty($can_see_pix)): ?>
@@ -443,6 +471,65 @@ $exigeMotivoReenvioComprovante = !empty($pedido['comprovantes']);
     </div>
 </section>
 </div>
+
+<?php if (!empty($pedido['payment_gateway']) && (!empty($pedido['pagamentos_gateway_transacoes']) || !empty($pedido['pagamentos_gateway_logs']))): ?>
+<section class="status-card">
+    <strong>Eventos do gateway</strong>
+    <?php if (!empty($pedido['pagamentos_gateway_transacoes'])): ?>
+        <div class="table-wrap">
+            <table class="admin-table admin-table--pedido-gateway-transacoes">
+                <thead>
+                    <tr>
+                        <th>Evento</th>
+                        <th>Status</th>
+                        <th>Pedido</th>
+                        <th>Pagamento</th>
+                        <th>Método</th>
+                        <th>Criado em</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($pedido['pagamentos_gateway_transacoes'] as $transacao): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars((string) ($transacao['event_type'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?><br><small><?php echo htmlspecialchars((string) ($transacao['event_id'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></small></td>
+                            <td><?php echo htmlspecialchars((string) ($transacao['status'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($transacao['external_id'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?><br><small><?php echo htmlspecialchars((string) ($transacao['provider_id'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></small></td>
+                            <td>R$ <?php echo number_format((float) ($transacao['amount'] ?? 0), 2, ',', '.'); ?><br>Pago: <?php echo isset($transacao['paid_amount']) && $transacao['paid_amount'] !== null ? 'R$ ' . number_format((float) $transacao['paid_amount'], 2, ',', '.') : '-'; ?></td>
+                            <td><?php echo htmlspecialchars((string) ($transacao['payment_method'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($transacao['created_at'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($pedido['pagamentos_gateway_logs'])): ?>
+        <div class="table-wrap" style="margin-top: 16px;">
+            <table class="admin-table admin-table--pedido-gateway-logs">
+                <thead>
+                    <tr>
+                        <th>Evento</th>
+                        <th>Processado</th>
+                        <th>Mensagem</th>
+                        <th>Recebido em</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($pedido['pagamentos_gateway_logs'] as $log): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars((string) ($log['event_type'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?><br><small><?php echo htmlspecialchars((string) ($log['event_id'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></small></td>
+                            <td><?php echo !empty($log['processed']) ? 'Sim' : 'Não'; ?></td>
+                            <td><?php echo htmlspecialchars((string) ($log['error_message'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($log['created_at'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
 
 <script>
 (function () {

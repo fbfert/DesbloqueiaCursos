@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Core\Validator;
+use App\Core\Logger;
 use App\Models\InstrucoesCurso;
 use App\Models\Pedido;
 use App\Models\Cupom;
@@ -16,6 +17,7 @@ use App\Services\ComprovantePixService;
 use App\Services\InscricaoService;
 use App\Services\PedidoService;
 use App\Services\CursoService;
+use App\Services\Payments\AbacatePayService;
 
 class CheckoutController extends Controller
 {
@@ -27,6 +29,7 @@ class CheckoutController extends Controller
     private $usuarioModel;
     private $pedidoModel;
     private $cupomModel;
+    private $abacatePayService;
 
     public function __construct()
     {
@@ -38,6 +41,7 @@ class CheckoutController extends Controller
         $this->usuarioModel = new Usuario();
         $this->pedidoModel = new Pedido();
         $this->cupomModel = new Cupom();
+        $this->abacatePayService = new AbacatePayService();
     }
 
     public function inscricao(Request $request)
@@ -63,16 +67,16 @@ class CheckoutController extends Controller
 
         $usuarioId = (int) Session::get('usuario_id', 0);
         $turmaSelecionadaId = !empty($curso['curso']['turma_selecionada']['id']) ? (int) $curso['curso']['turma_selecionada']['id'] : 0;
-        if ($usuarioId > 0 && $turmaSelecionadaId > 0 && $this->inscricaoService->usuarioPossuiInscricaoNaTurma($usuarioId, $turmaSelecionadaId)) {
-            Session::flash('success', array(
-                'message' => 'Você já está inscrito nesta turma. Acesse sua página para acompanhar o acesso.',
-                'link' => array(
-                    'label' => 'Acessar minha página',
-                    'href' => '/minha-pagina',
-                ),
-            ));
-            return $this->redirect('/minha-pagina');
-        }
+        $situacaoInscricao = $usuarioId > 0
+            ? $this->inscricaoService->situacaoAlunoNoCurso($usuarioId, $cursoId, $turmaSelecionadaId ?: null)
+            : array(
+                'status_fluxo' => 'nao_inscrito',
+                'bloquear_nova_inscricao' => false,
+                'permitir_nova_inscricao' => true,
+                'permitir_continuar_pagamento' => false,
+                'pedido_id' => null,
+                'checkout_url' => null,
+            );
 
         $pagadorPrefill = $this->carregarPagadorPrefill($usuarioId);
         if (trim((string) $pagadorPrefill['cpf']) === '' && trim((string) Session::get('usuario_cpf', '')) !== '') {
@@ -81,13 +85,34 @@ class CheckoutController extends Controller
         if (trim((string) $pagadorPrefill['telefone']) === '' && trim((string) Session::get('usuario_telefone', '')) !== '') {
             $pagadorPrefill['telefone'] = (string) Session::get('usuario_telefone');
         }
+
+        $statusFluxo = (string) $situacaoInscricao['status_fluxo'];
+        if (in_array($statusFluxo, array('matriculado', 'pendente_pagamento'), true)) {
+            $errors = Session::pullFlash('errors', array());
+
+            return $this->view('checkout/inscricao', array(
+                'title' => 'Inscricao',
+                'curso' => $curso['curso'],
+                'loggedIn' => Session::get('usuario_id') !== null,
+                'usuarioNome' => Session::get('usuario_nome'),
+                'usuarioEmail' => Session::get('usuario_email'),
+                'pagadorPrefill' => $pagadorPrefill,
+                'errors' => $errors,
+                'inscricaoDuplicada' => false,
+                'situacaoInscricao' => $situacaoInscricao,
+                'inscricaoPendente' => $statusFluxo === 'pendente_pagamento',
+                'inscricaoMatriculada' => $statusFluxo === 'matriculado',
+                'success' => Session::pullFlash('success'),
+            ));
+        }
+
+
         if (trim((string) $pagadorPrefill['cpf']) === '' || trim((string) $pagadorPrefill['telefone']) === '') {
             Session::flash('errors', array('Atualize seu cadastro com CPF e telefone antes de iniciar a inscrição.'));
             return $this->redirect('/minha-conta');
         }
 
         $errors = Session::pullFlash('errors', array());
-        $inscricaoDuplicada = in_array('Você já está inscrito nesta turma.', $errors, true);
 
         return $this->view('checkout/inscricao', array(
             'title' => 'Inscricao',
@@ -97,7 +122,10 @@ class CheckoutController extends Controller
             'usuarioEmail' => Session::get('usuario_email'),
             'pagadorPrefill' => $pagadorPrefill,
             'errors' => $errors,
-            'inscricaoDuplicada' => $inscricaoDuplicada,
+            'inscricaoDuplicada' => false,
+            'situacaoInscricao' => $situacaoInscricao,
+            'inscricaoPendente' => false,
+            'inscricaoMatriculada' => false,
             'success' => Session::pullFlash('success'),
         ));
     }
@@ -185,13 +213,28 @@ class CheckoutController extends Controller
             )), 404);
         }
 
+        $pedidoGateway = strtolower(trim((string) ($pedido['pedido']['payment_gateway'] ?? '')));
+        $abacatepayAtivo = $this->abacatePayService->isEnabled();
+        $gatewayEscolhido = $abacatepayAtivo && $pedidoGateway !== 'pix_manual' ? 'abacatepay' : 'manual';
+
+        Logger::info('checkout.resumo.gateway', array(
+            'pedido_id' => $pedidoId,
+            'gateway_escolhido' => $gatewayEscolhido,
+            'abacatepay_ativo' => $abacatepayAtivo ? 1 : 0,
+            'pedido_gateway_atual' => $pedidoGateway !== '' ? $pedidoGateway : null,
+            'payment_provider_checkout_id' => isset($pedido['pedido']['payment_provider_checkout_id']) ? $pedido['pedido']['payment_provider_checkout_id'] : null,
+            'payment_provider_payment_url' => isset($pedido['pedido']['payment_provider_payment_url']) ? $pedido['pedido']['payment_provider_payment_url'] : null,
+        ));
+
         return $this->view('checkout/resumo', array(
             'title' => 'Resumo do pedido',
             'pedido' => $pedido['pedido'],
             'canSeePix' => !empty($pedido['can_see_pix']),
+            'abacatepayEnabled' => $abacatepayAtivo,
             'pedidoSemCobranca' => ((float) $pedido['pedido']['total'] <= 0.0),
             'comprovanteAguardandoAprovacao' => !empty($pedido['pedido']['comprovante_aguardando_aprovacao']),
             'pedidoPagoOuAprovado' => in_array((string) $pedido['pedido']['status'], array('aprovado', 'pago'), true),
+            'pedidoGateway' => $pedidoGateway,
             'loggedIn' => Session::get('usuario_id') !== null,
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
@@ -199,6 +242,103 @@ class CheckoutController extends Controller
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
         ));
+    }
+
+    public function pagarAbacatepay(Request $request)
+    {
+        if (!Session::get('usuario_id')) {
+            Session::flash('errors', array('auth' => 'Faça login para continuar.'));
+            return $this->redirect('/login');
+        }
+
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        if ($pedidoId <= 0) {
+            Session::flash('errors', array('pedido' => 'Pedido inválido.'));
+            return $this->redirect('/meus-cursos');
+        }
+
+        if (!$this->abacatePayService->isEnabled()) {
+            Session::flash('errors', array('pagamento' => 'O pagamento online está desativado no momento.'));
+            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+        }
+
+        $detalhe = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'), true);
+        if (empty($detalhe['pedido'])) {
+            Session::flash('errors', array('pedido' => 'Você não tem permissão para acessar este pedido.'));
+            return $this->redirect('/meus-cursos');
+        }
+
+        $pedido = $detalhe['pedido'];
+        if (strtolower(trim((string) ($pedido['payment_gateway'] ?? ''))) === 'abacatepay' && !empty($pedido['payment_provider_payment_url'])) {
+            Logger::info('checkout.abacatepay.reaproveitando_checkout', array(
+                'pedido_id' => $pedidoId,
+                'payment_provider_checkout_id' => isset($pedido['payment_provider_checkout_id']) ? $pedido['payment_provider_checkout_id'] : null,
+                'payment_provider_payment_url' => $pedido['payment_provider_payment_url'],
+            ));
+
+            return $this->redirect((string) $pedido['payment_provider_payment_url']);
+        }
+        if (in_array((string) $pedido['status'], array('pago', 'aprovado'), true)) {
+            Session::flash('success', 'Este pedido já está pago.');
+            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
+        }
+
+        if ((float) $pedido['total'] <= 0.0) {
+            Session::flash('success', 'Este pedido não possui cobrança. A liberação segue o fluxo gratuito.');
+            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
+        }
+
+        if ((string) $pedido['status'] === 'rascunho') {
+            $finalizacao = $this->pedidoService->finalizarCheckout($pedidoId, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            if (empty($finalizacao['ok'])) {
+                Session::flash('errors', array('pedido' => isset($finalizacao['message']) ? $finalizacao['message'] : 'Não foi possível preparar o pedido para pagamento.'));
+                return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            }
+
+            $detalhe = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'), true);
+            if (empty($detalhe['pedido'])) {
+                Session::flash('errors', array('pedido' => 'Não foi possível recarregar o pedido.'));
+                return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            }
+
+            $pedido = $detalhe['pedido'];
+        }
+
+        $aluno = array(
+            'id' => Session::get('usuario_id'),
+            'nome' => isset($pedido['pagador_nome']) && trim((string) $pedido['pagador_nome']) !== '' ? (string) $pedido['pagador_nome'] : (string) Session::get('usuario_nome'),
+            'email' => isset($pedido['pagador_email']) ? (string) $pedido['pagador_email'] : (string) Session::get('usuario_email'),
+            'cpf' => isset($pedido['pagador_cpf']) ? (string) $pedido['pagador_cpf'] : (string) Session::get('usuario_cpf'),
+            'telefone' => isset($pedido['pagador_telefone']) ? (string) $pedido['pagador_telefone'] : (string) Session::get('usuario_telefone'),
+            'cidade' => isset($pedido['pagador_cidade']) ? (string) $pedido['pagador_cidade'] : '',
+            'estado' => isset($pedido['pagador_estado']) ? (string) $pedido['pagador_estado'] : '',
+        );
+
+        $checkout = $this->abacatePayService->createCheckout($pedido, $aluno, isset($pedido['itens']) && is_array($pedido['itens']) ? $pedido['itens'] : array());
+        if (empty($checkout['ok'])) {
+            Session::flash('errors', array('pagamento' => isset($checkout['message']) ? $checkout['message'] : 'Não foi possível iniciar o checkout da AbacatePay.'));
+            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+        }
+
+        $registrado = $this->abacatePayService->registrarCheckoutNoPedido(
+            $pedido,
+            $checkout,
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($registrado['ok'])) {
+            Session::flash('errors', array('pagamento' => isset($registrado['message']) ? $registrado['message'] : 'Não foi possível registrar o checkout.'));
+            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+        }
+
+        if (empty($checkout['checkout']['url'])) {
+            Session::flash('errors', array('pagamento' => 'A URL de pagamento não foi retornada pela AbacatePay.'));
+            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+        }
+
+        return $this->redirect($checkout['checkout']['url']);
     }
 
     public function cupomPromocional(Request $request)
@@ -344,15 +484,27 @@ class CheckoutController extends Controller
 
         $cursoIdSolicitado = (int) $request->input('curso_evento_id', 0);
         $turmaIdSolicitada = (int) $request->input('turma_id', 0);
-        if ($cursoIdSolicitado > 0 && $turmaIdSolicitada > 0 && $this->inscricaoService->usuarioPossuiInscricaoNaTurma((int) Session::get('usuario_id'), $turmaIdSolicitada)) {
-            Session::flash('success', array(
-                'message' => 'Você já está inscrito nesta turma. Acesse sua página para acompanhar o acesso.',
-                'link' => array(
-                    'label' => 'Acessar minha página',
-                    'href' => '/minha-pagina',
-                ),
-            ));
+        $situacaoInscricao = $cursoIdSolicitado > 0
+            ? $this->inscricaoService->situacaoAlunoNoCurso((int) Session::get('usuario_id'), $cursoIdSolicitado, $turmaIdSolicitada ?: null)
+            : array(
+                'status_fluxo' => 'nao_inscrito',
+                'pedido_id' => null,
+                'checkout_url' => null,
+            );
+
+        if ((string) $situacaoInscricao['status_fluxo'] === 'matriculado') {
+            Session::flash('success', 'Você já está matriculado neste curso.');
             return $this->redirect('/minha-pagina');
+        }
+
+        if ((string) $situacaoInscricao['status_fluxo'] === 'pendente_pagamento') {
+            $destinoPagamento = !empty($situacaoInscricao['checkout_url'])
+                ? (string) $situacaoInscricao['checkout_url']
+                : '/checkout/resumo?pedido_id=' . (int) $situacaoInscricao['pedido_id'];
+
+            Session::flash('success', 'Você possui uma inscrição pendente para este curso. Continue o pagamento para concluir sua matrícula.');
+
+            return $this->redirect($destinoPagamento);
         }
 
         $errors = $this->validateInscricao($request);
@@ -504,7 +656,11 @@ class CheckoutController extends Controller
             return $this->redirect('/minha-pagina');
         }
 
-        Session::flash('success', 'Participantes salvos. Revise o pedido e siga para o comprovante PIX.');
+        if ($this->abacatePayService->isEnabled()) {
+            Session::flash('success', 'Participantes salvos. Agora siga para o pagamento online.');
+        } else {
+            Session::flash('success', 'Participantes salvos. Revise o pedido e siga para o comprovante PIX.');
+        }
         return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
     }
 
@@ -536,17 +692,28 @@ class CheckoutController extends Controller
             return $this->redirect('/checkout/comprovante?pedido_id=' . $pedidoId);
         }
 
-        $resultado = $this->comprovanteService->enviarUpload(
-            $pedidoId,
-            $_FILES['comprovante'],
-            array(
-                'valor_informado' => $request->input('valor_informado'),
-                'motivo_reenvio' => $request->input('motivo_reenvio'),
-            ),
-            Session::get('usuario_id'),
-            $request->ip(),
-            $request->userAgent()
-        );
+        try {
+            $resultado = $this->comprovanteService->enviarUpload(
+                $pedidoId,
+                $_FILES['comprovante'],
+                array(
+                    'valor_informado' => $request->input('valor_informado'),
+                    'motivo_reenvio' => $request->input('motivo_reenvio'),
+                ),
+                Session::get('usuario_id'),
+                $request->ip(),
+                $request->userAgent()
+            );
+        } catch (\Throwable $exception) {
+            Logger::error('checkout.comprovante_upload_falhou', array(
+                'pedido_id' => $pedidoId,
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ));
+            Session::flash('errors', array('Não foi possível salvar o comprovante. Verifique o arquivo enviado e tente novamente.'));
+            return $this->redirect('/checkout/comprovante?pedido_id=' . $pedidoId);
+        }
 
         if (empty($resultado['ok'])) {
             Session::flash('errors', array('comprovante' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel enviar o comprovante.'));

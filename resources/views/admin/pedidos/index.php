@@ -185,6 +185,7 @@ $statusAtual = (string) ($filters['status'] ?? '');
                     <th>Participantes</th>
                     <th><a href="<?php echo Helpers::e(pedidosSortUrl('total', $currentSortBy, $currentSortDir, pedidosQuery($queryBase, $currentSortBy, $currentSortDir))); ?>">Total</a></th>
                     <th><a href="<?php echo Helpers::e(pedidosSortUrl('status', $currentSortBy, $currentSortDir, pedidosQuery($queryBase, $currentSortBy, $currentSortDir))); ?>">Status</a></th>
+                    <th>Gateway</th>
                     <th>Comprovante</th>
                     <th><a href="<?php echo Helpers::e(pedidosSortUrl('created_at', $currentSortBy, $currentSortDir, pedidosQuery($queryBase, $currentSortBy, $currentSortDir))); ?>">Data</a></th>
                     <th>Ações</th>
@@ -193,7 +194,7 @@ $statusAtual = (string) ($filters['status'] ?? '');
             <tbody>
                 <?php if (empty($pedidos)): ?>
                     <tr>
-                        <td colspan="8">Nenhum pedido encontrado.</td>
+                        <td colspan="9">Nenhum pedido encontrado.</td>
                     </tr>
                 <?php endif; ?>
                     <?php foreach ($pedidos as $pedido): ?>
@@ -222,6 +223,12 @@ $statusAtual = (string) ($filters['status'] ?? '');
                         <td>R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?></td>
                         <td><?php echo htmlspecialchars($pedido['status'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
+                            <?php echo htmlspecialchars((string) ($pedido['payment_gateway'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>
+                            <?php if (!empty($pedido['payment_provider_status'])): ?>
+                                <br><small><?php echo htmlspecialchars((string) $pedido['payment_provider_status'], ENT_QUOTES, 'UTF-8'); ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td>
                             <?php if ($comprovante): ?>
                                 <?php echo htmlspecialchars($comprovante['status'], ENT_QUOTES, 'UTF-8'); ?>
                                 <br>
@@ -237,7 +244,7 @@ $statusAtual = (string) ($filters['status'] ?? '');
                     </tr>
                     <?php if (!empty($can_manage_pedidos)): ?>
                         <tr class="admin-pedidos__actions-row">
-                            <td colspan="8">
+                            <td colspan="9">
                                 <details class="admin-pedidos__actions-details">
                                     <summary>Mais opções</summary>
                                     <div class="admin-pedidos__actions-body">
