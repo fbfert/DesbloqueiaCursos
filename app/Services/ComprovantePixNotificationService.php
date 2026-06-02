@@ -56,8 +56,7 @@ class ComprovantePixNotificationService
                 return array('ok' => true, 'skipped' => true, 'message' => 'E-mail financeiro não configurado.');
             }
 
-            $usuarioId = $actorUserId ? (int) $actorUserId : (!empty($comprovante['usuario_id']) ? (int) $comprovante['usuario_id'] : null);
-            $aluno = $usuarioId ? $this->usuarioModel->findById($usuarioId) : null;
+            $aluno = $this->resolveAlunoDoPedido($pedido);
 
             $itens = $this->pedidoItemModel->forPedido((int) $pedido['id']);
             $primeiroItem = !empty($itens) ? $itens[0] : array();
@@ -81,9 +80,9 @@ class ComprovantePixNotificationService
             }
 
             $data = array(
-                'aluno_id' => $aluno ? (int) $aluno['id'] : '',
-                'aluno_nome' => $aluno ? (string) $aluno['nome'] : '',
-                'aluno_email' => $aluno ? (string) $aluno['email'] : '',
+                'aluno_id' => !empty($aluno['id']) ? (int) $aluno['id'] : '',
+                'aluno_nome' => !empty($aluno['nome']) ? (string) $aluno['nome'] : '',
+                'aluno_email' => !empty($aluno['email']) ? (string) $aluno['email'] : '',
 
                 'pedido_id' => (int) $pedido['id'],
                 'pedido_codigo' => (string) $pedido['codigo'],
@@ -169,5 +168,34 @@ class ComprovantePixNotificationService
         }
 
         return array_values(array_unique($emails));
+    }
+
+    private function resolveAlunoDoPedido(array $pedido)
+    {
+        $pedido = (array) $pedido;
+
+        $candidatos = array();
+        if (!empty($pedido['comprador_usuario_id'])) {
+            $candidatos[] = (int) $pedido['comprador_usuario_id'];
+        }
+        if (!empty($pedido['pagador_usuario_id'])) {
+            $candidatos[] = (int) $pedido['pagador_usuario_id'];
+        }
+
+        foreach ($candidatos as $usuarioId) {
+            if ($usuarioId <= 0) {
+                continue;
+            }
+            $usuario = $this->usuarioModel->findAlunoById($usuarioId);
+            if ($usuario) {
+                return $usuario;
+            }
+        }
+
+        return array(
+            'id' => !empty($pedido['comprador_usuario_id']) ? (int) $pedido['comprador_usuario_id'] : (!empty($pedido['pagador_usuario_id']) ? (int) $pedido['pagador_usuario_id'] : ''),
+            'nome' => !empty($pedido['pagador_nome']) ? (string) $pedido['pagador_nome'] : '',
+            'email' => !empty($pedido['pagador_email']) ? (string) $pedido['pagador_email'] : '',
+        );
     }
 }

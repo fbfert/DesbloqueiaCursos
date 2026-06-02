@@ -7,6 +7,20 @@ use PDO;
 
 class ConteudoModulo
 {
+    public function nextActiveOrderForCurso($cursoEventoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COALESCE(MAX(ordem), 0) + 1 AS proxima_ordem
+             FROM conteudo_modulos
+             WHERE curso_evento_id = :curso_evento_id
+               AND deleted_at IS NULL
+               AND status <> "arquivado"'
+        );
+        $stmt->execute(array('curso_evento_id' => (int) $cursoEventoId));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return !empty($row) ? (int) $row['proxima_ordem'] : 1;
+    }
+
     public function findById($id)
     {
         $stmt = Database::connection()->prepare(
@@ -41,6 +55,34 @@ class ConteudoModulo
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function listAtivosForCurso($cursoEventoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM conteudo_modulos
+             WHERE curso_evento_id = :curso_evento_id
+               AND deleted_at IS NULL
+               AND status <> "arquivado"
+             ORDER BY ordem ASC, id ASC'
+        );
+        $stmt->execute(array('curso_evento_id' => (int) $cursoEventoId));
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function listArquivadosForCurso($cursoEventoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM conteudo_modulos
+             WHERE curso_evento_id = :curso_evento_id
+               AND deleted_at IS NULL
+               AND status = "arquivado"
+             ORDER BY updated_at DESC, id DESC'
+        );
+        $stmt->execute(array('curso_evento_id' => (int) $cursoEventoId));
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(
@@ -55,7 +97,7 @@ class ConteudoModulo
             'titulo' => (string) $data['titulo'],
             'descricao' => isset($data['descricao']) ? $data['descricao'] : null,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 0,
-            'status' => isset($data['status']) ? (string) $data['status'] : 'rascunho',
+            'status' => isset($data['status']) && (string) $data['status'] !== '' ? (string) $data['status'] : 'publicado',
             'criado_por' => isset($data['criado_por']) ? (int) $data['criado_por'] : null,
             'atualizado_por' => isset($data['atualizado_por']) ? (int) $data['atualizado_por'] : null,
         ));
@@ -65,6 +107,11 @@ class ConteudoModulo
 
     public function update(array $data, $id)
     {
+        $statusAtual = $this->findById($id);
+        $status = isset($data['status']) && (string) $data['status'] !== ''
+            ? (string) $data['status']
+            : (!empty($statusAtual) && isset($statusAtual['status']) ? (string) $statusAtual['status'] : 'rascunho');
+
         $stmt = Database::connection()->prepare(
             'UPDATE conteudo_modulos
              SET titulo = :titulo,
@@ -81,7 +128,7 @@ class ConteudoModulo
             'titulo' => (string) $data['titulo'],
             'descricao' => isset($data['descricao']) ? $data['descricao'] : null,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 0,
-            'status' => isset($data['status']) ? (string) $data['status'] : 'rascunho',
+            'status' => $status,
             'criado_por' => isset($data['criado_por']) ? (int) $data['criado_por'] : null,
             'atualizado_por' => isset($data['atualizado_por']) ? (int) $data['atualizado_por'] : null,
             'id' => (int) $id,
@@ -97,6 +144,16 @@ class ConteudoModulo
              WHERE id = :id'
         );
         $stmt->execute(array('id' => (int) $id));
+    }
+
+    public function hardDelete($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'DELETE FROM conteudo_modulos
+             WHERE id = :id'
+        );
+        $stmt->execute(array('id' => (int) $id));
+        return $stmt->rowCount() > 0;
     }
 
     public function updateStatus($id, $status, $actorUserId = null)
@@ -117,4 +174,3 @@ class ConteudoModulo
         return $stmt->rowCount() > 0;
     }
 }
-

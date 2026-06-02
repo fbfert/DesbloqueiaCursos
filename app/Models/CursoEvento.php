@@ -7,6 +7,17 @@ use PDO;
 
 class CursoEvento
 {
+    private function existsTurmaAbertaSql()
+    {
+        return 'EXISTS (
+                    SELECT 1
+                    FROM turmas t_open
+                    WHERE t_open.curso_evento_id = ce.id
+                      AND t_open.deleted_at IS NULL
+                      AND t_open.status = "aberta"
+                )';
+    }
+
     public function allPublic()
     {
         $stmt = Database::connection()->query(
@@ -23,6 +34,7 @@ class CursoEvento
              ) t_total ON t_total.curso_evento_id = ce.id
              WHERE ce.deleted_at IS NULL
                AND ce.status = "ativo"
+               AND ' . $this->existsTurmaAbertaSql() . '
              ORDER BY ce.destaque DESC, ce.ordem ASC, ce.nome ASC'
         );
 
@@ -225,6 +237,7 @@ class CursoEvento
                 ) vendas ON vendas.curso_evento_id = ce.id
                 WHERE ce.deleted_at IS NULL
                   AND ce.status = "ativo"
+                  AND ' . $this->existsTurmaAbertaSql() . '
                 ORDER BY vendas.total_vendas DESC, vendas.receita_total DESC, ce.nome ASC
                 LIMIT ' . $limit;
 

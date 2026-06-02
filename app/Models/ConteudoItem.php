@@ -7,6 +7,20 @@ use PDO;
 
 class ConteudoItem
 {
+    public function nextActiveOrderForModulo($moduloId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COALESCE(MAX(ordem), 0) + 1 AS proxima_ordem
+             FROM conteudo_itens
+             WHERE modulo_id = :modulo_id
+               AND deleted_at IS NULL
+               AND status <> "arquivado"'
+        );
+        $stmt->execute(array('modulo_id' => (int) $moduloId));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return !empty($row) ? (int) $row['proxima_ordem'] : 1;
+    }
+
     public function findById($id)
     {
         $stmt = Database::connection()->prepare(
@@ -38,6 +52,34 @@ class ConteudoItem
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function listAtivosForModulo($moduloId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM conteudo_itens
+             WHERE modulo_id = :modulo_id
+               AND deleted_at IS NULL
+               AND status <> "arquivado"
+             ORDER BY ordem ASC, id ASC'
+        );
+        $stmt->execute(array('modulo_id' => (int) $moduloId));
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function listArquivadosForModulo($moduloId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM conteudo_itens
+             WHERE modulo_id = :modulo_id
+               AND deleted_at IS NULL
+               AND status = "arquivado"
+             ORDER BY updated_at DESC, id DESC'
+        );
+        $stmt->execute(array('modulo_id' => (int) $moduloId));
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -73,7 +115,7 @@ class ConteudoItem
             'descricao_curta' => isset($data['descricao_curta']) ? $data['descricao_curta'] : null,
             'obrigatorio' => !empty($data['obrigatorio']) ? 1 : 0,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 0,
-            'status' => isset($data['status']) ? (string) $data['status'] : 'rascunho',
+            'status' => isset($data['status']) && (string) $data['status'] !== '' ? (string) $data['status'] : 'publicado',
             'abre_em' => isset($data['abre_em']) && $data['abre_em'] !== '' ? (string) $data['abre_em'] : null,
             'criado_por' => isset($data['criado_por']) ? (int) $data['criado_por'] : null,
             'atualizado_por' => isset($data['atualizado_por']) ? (int) $data['atualizado_por'] : null,
@@ -84,6 +126,11 @@ class ConteudoItem
 
     public function update(array $data, $id)
     {
+        $statusAtual = $this->findById($id);
+        $status = isset($data['status']) && (string) $data['status'] !== ''
+            ? (string) $data['status']
+            : (!empty($statusAtual) && isset($statusAtual['status']) ? (string) $statusAtual['status'] : 'rascunho');
+
         $stmt = Database::connection()->prepare(
             'UPDATE conteudo_itens
              SET modulo_id = :modulo_id,
@@ -107,7 +154,7 @@ class ConteudoItem
             'descricao_curta' => isset($data['descricao_curta']) ? $data['descricao_curta'] : null,
             'obrigatorio' => !empty($data['obrigatorio']) ? 1 : 0,
             'ordem' => isset($data['ordem']) ? (int) $data['ordem'] : 0,
-            'status' => isset($data['status']) ? (string) $data['status'] : 'rascunho',
+            'status' => $status,
             'abre_em' => isset($data['abre_em']) && $data['abre_em'] !== '' ? (string) $data['abre_em'] : null,
             'criado_por' => isset($data['criado_por']) ? (int) $data['criado_por'] : null,
             'atualizado_por' => isset($data['atualizado_por']) ? (int) $data['atualizado_por'] : null,
@@ -124,6 +171,16 @@ class ConteudoItem
              WHERE id = :id'
         );
         $stmt->execute(array('id' => (int) $id));
+    }
+
+    public function hardDelete($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'DELETE FROM conteudo_itens
+             WHERE id = :id'
+        );
+        $stmt->execute(array('id' => (int) $id));
+        return $stmt->rowCount() > 0;
     }
 
     public function updateStatus($id, $status, $actorUserId = null)
@@ -162,4 +219,3 @@ class ConteudoItem
         return $stmt->rowCount() > 0;
     }
 }
-

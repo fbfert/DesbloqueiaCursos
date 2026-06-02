@@ -403,6 +403,107 @@
     line-height: 1.45;
 }
 
+.app-admin .admin-pedidos-page {
+    gap: 12px;
+}
+
+.app-admin .admin-pedidos-page .status-card,
+.app-admin .admin-pedidos-page .admin-section {
+    padding: 12px;
+}
+
+.app-admin .admin-pedidos-page .admin-page__metrics {
+    gap: 10px;
+}
+
+.app-admin .admin-pedidos-page .admin-page__metric {
+    gap: 3px;
+    padding: 11px 12px;
+}
+
+.app-admin .admin-pedidos-page .admin-page__metric-value {
+    font-size: 24px;
+}
+
+.app-admin .admin-pedidos-page .admin-page__metric-help {
+    line-height: 1.2;
+}
+
+.app-admin .admin-pedidos-page .quick-actions--dashboard {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.app-admin .admin-pedidos-page .quick-actions--dashboard .admin-shortcut {
+    min-height: 92px;
+    gap: 6px;
+    padding: 10px 11px;
+}
+
+.app-admin .admin-pedidos-page .quick-actions--dashboard .admin-shortcut span {
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.app-admin .admin-pedidos-page .quick-actions--dashboard .admin-shortcut small {
+    padding: 5px 8px;
+    line-height: 1.15;
+}
+
+.app-admin .admin-pedidos-page .admin-filters__row {
+    gap: 10px 12px;
+}
+
+.app-admin .admin-pedidos-page .admin-filters__row label {
+    gap: 4px;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__filter-actions,
+.app-admin .admin-pedidos-page .admin-pedidos__pagination-row {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__cell-stack {
+    display: grid;
+    gap: 2px;
+    line-height: 1.2;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__cell-stack small {
+    color: var(--admin-muted);
+    line-height: 1.15;
+}
+
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista th,
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    vertical-align: top;
+}
+
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(1),
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(2),
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(5),
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(6),
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(8) {
+    line-height: 1.2;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__actions-body {
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__delete-form {
+    gap: 6px;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__delete-form textarea {
+    min-height: 64px;
+}
+
 .app-admin .admin-turmas__details > summary {
     display: flex;
     align-items: center;
@@ -1425,6 +1526,246 @@
     line-height: 1.1;
 }
 
+.app-admin .admin-area-curso-conteudo-page {
+    display: grid;
+    gap: 12px;
+}
+
+.app-admin .admin-area-curso-conteudo-page__header {
+    align-items: flex-start;
+}
+
+.app-admin .admin-area-curso-conteudo-page__alert {
+    margin: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-page__empty {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+    border: 1px dashed var(--admin-border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.app-admin .admin-area-curso-conteudo__module-list {
+    display: grid;
+    gap: 12px;
+}
+
+.app-admin .admin-area-curso-conteudo-module {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.app-admin .admin-area-curso-conteudo-module.is-selected {
+    border-color: rgba(12, 91, 79, 0.28);
+    box-shadow: 0 0 0 1px rgba(12, 91, 79, 0.06);
+}
+
+.app-admin .admin-area-curso-conteudo-module__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.app-admin .admin-area-curso-conteudo-module__summary {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-module__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+}
+
+.app-admin .admin-area-curso-conteudo-module__description {
+    line-height: 1.35;
+}
+
+.app-admin .admin-area-curso-conteudo-module__order-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.app-admin .admin-area-curso-conteudo-module__items {
+    display: grid;
+    gap: 10px;
+}
+
+.app-admin .admin-area-curso-conteudo-module__items-header {
+    align-items: center;
+}
+
+.app-admin .admin-area-curso-conteudo-module__empty {
+    margin: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-module__footer {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived,
+.app-admin .admin-area-curso-conteudo__archived-modules,
+.app-admin .admin-area-curso-conteudo__delete-details {
+    display: grid;
+    gap: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived > summary,
+.app-admin .admin-area-curso-conteudo__archived-modules > summary,
+.app-admin .admin-area-curso-conteudo__delete-details > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    font-weight: 700;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived > summary::-webkit-details-marker,
+.app-admin .admin-area-curso-conteudo__archived-modules > summary::-webkit-details-marker,
+.app-admin .admin-area-curso-conteudo__delete-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived > summary::after,
+.app-admin .admin-area-curso-conteudo__archived-modules > summary::after,
+.app-admin .admin-area-curso-conteudo__delete-details > summary::after {
+    content: '▸';
+    color: var(--admin-primary);
+    font-size: 14px;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived[open] > summary::after,
+.app-admin .admin-area-curso-conteudo__archived-modules[open] > summary::after,
+.app-admin .admin-area-curso-conteudo__delete-details[open] > summary::after {
+    content: '▾';
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived-body,
+.app-admin .admin-area-curso-conteudo__archived-modules-body {
+    margin-top: 10px;
+}
+
+.app-admin .admin-area-curso-conteudo__toolbar,
+.app-admin .admin-area-curso-conteudo__bottom-toolbar {
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .button-link {
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.1;
+}
+
+.app-admin .admin-area-curso-conteudo-page .area-curso-conteudo-actions {
+    gap: 6px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .area-curso-conteudo-actions .button-link {
+    min-height: 32px;
+    padding: 5px 9px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .area-curso-conteudo-module__items .table-wrap,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados {
+    margin: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens th,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados th,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    vertical-align: top;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(1) {
+    min-width: 240px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(2) {
+    min-width: 150px;
+    max-width: 340px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(5),
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td:nth-child(4),
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td:nth-child(5) {
+    min-width: 300px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__cell-title {
+    display: block;
+    line-height: 1.2;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__cell-muted {
+    margin-top: 3px;
+    line-height: 1.25;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form {
+    display: inline-grid;
+    grid-template-columns: minmax(180px, 240px) auto;
+    gap: 6px;
+    align-items: end;
+    margin-top: 6px;
+    max-width: 380px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form label {
+    min-width: 180px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form small {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form .button-link {
+    min-height: 32px;
+    padding: 5px 9px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__order-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__delete-form {
+    display: grid;
+    gap: 6px;
+    min-width: 280px;
+    margin-top: 8px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__delete-form textarea {
+    min-height: 64px;
+}
+
 .app-admin .admin-area-curso__report-lists {
     display: grid;
     gap: 16px;
@@ -1526,6 +1867,63 @@
 .app-admin .history-list__meta {
     font-size: 12px;
     color: var(--admin-muted);
+}
+
+@media (max-width: 1600px) {
+    .app-admin .admin-pedidos-page .quick-actions--dashboard {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1400px) {
+    .app-admin .admin-pedidos-page .admin-page__metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-pedidos-page .quick-actions--dashboard {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form {
+        grid-template-columns: minmax(160px, 1fr) auto;
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-titulo {
+        width: 26%;
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-acoes {
+        width: 48%;
+    }
+}
+
+@media (max-width: 880px) {
+    .app-admin .admin-pedidos-page .admin-page__metrics,
+    .app-admin .admin-pedidos-page .quick-actions--dashboard {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-pedidos-page .admin-pedidos__pagination-row,
+    .app-admin .admin-pedidos-page .admin-pedidos__filter-actions {
+        justify-content: flex-start;
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-main,
+    .app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-move {
+        flex-wrap: wrap;
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(1),
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(2),
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(5),
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td:nth-child(4),
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td:nth-child(5) {
+        min-width: 0;
+    }
 }
 
 .app-admin .admin-area-curso__placeholder {
@@ -3125,4 +3523,120 @@
 
 .app-admin #aviso-aluno-resumo {
     overflow: hidden;
+}
+/* Conteúdo do curso: refinamentos compactos para a área administrativa */
+.app-admin .admin-area-curso-conteudo-page .admin-compact-toolbar {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 5px 8px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-icon-btn [aria-hidden="true"] {
+    line-height: 1;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-main {
+    flex-wrap: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-move {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    align-items: center;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-move label {
+    min-width: 160px;
+    max-width: 220px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-move select {
+    min-height: 32px;
+    padding: 4px 8px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table,
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-ordem {
+    width: 54px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-titulo {
+    width: 32%;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-tipo {
+    width: 13%;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-status {
+    width: 11%;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-acoes {
+    width: 42%;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table th,
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table td,
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table th,
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table td {
+    vertical-align: top;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table td:nth-child(1),
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table td:nth-child(1) {
+    width: 72px;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table td:nth-child(2),
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table td:nth-child(5),
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table td:nth-child(5) {
+    width: 42%;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__cell-title-text {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-archived-section {
+    margin-top: 10px;
 }

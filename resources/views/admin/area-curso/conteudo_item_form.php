@@ -117,7 +117,7 @@ $editorValue = function ($value) {
 
                 <label>
                     Status
-                    <?php $statusItem = (string) $value('status', 'rascunho'); ?>
+                    <?php $statusItem = (string) $value('status', 'publicado'); ?>
                     <select name="status">
                         <option value="rascunho" <?php echo $statusItem === 'rascunho' ? 'selected' : ''; ?>>Rascunho</option>
                         <option value="publicado" <?php echo $statusItem === 'publicado' ? 'selected' : ''; ?>>Publicado</option>

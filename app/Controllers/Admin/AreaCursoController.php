@@ -35,6 +35,7 @@ class AreaCursoController extends Controller
     private $criterioConclusaoService;
     private $conteudoService;
     private $conteudoAvaliacaoTextualService;
+    private $rbacService;
 
     public function __construct()
     {
@@ -48,6 +49,7 @@ class AreaCursoController extends Controller
         $this->criterioConclusaoService = new LmsCriterioConclusaoService();
         $this->conteudoService = new ConteudoCursoService();
         $this->conteudoAvaliacaoTextualService = new ConteudoAvaliacaoTextualService();
+        $this->rbacService = new RbacService();
     }
 
     public function index(Request $request)
@@ -108,49 +110,92 @@ class AreaCursoController extends Controller
 
         if (!empty($dados['curso'])) {
             $dados['can_manage_turmas'] = $aba === 'turmas'
-                ? (new RbacService())->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar')
+                ? $this->rbacService->userHasPermission(Session::get('usuario_id'), 'conteudo.gerenciar')
                 : false;
+            $dados['can_delete_conteudo_definitivo'] = $this->rbacService->isSuperAdmin(Session::get('usuario_id'));
 
             if ($aba === 'conteudo') {
                 $listar = $this->conteudoService->listarModulosComItens($cursoId);
                 if (!empty($listar['ok'])) {
-                    $dados['conteudo_modulos'] = $listar['modulos'];
+                    $dados['conteudo_modulos'] = isset($listar['modulos']) && is_array($listar['modulos']) ? $listar['modulos'] : array();
+                    $dados['conteudo_modulos_arquivados'] = isset($listar['modulos_arquivados']) && is_array($listar['modulos_arquivados']) ? $listar['modulos_arquivados'] : array();
                     $moduloSelecionadoId = (int) $request->query('modulo_id', $request->query('conteudo_modulo_id', 0));
                     $dados['conteudo_modulo_selecionado_id'] = $moduloSelecionadoId;
+                    $dados['conteudo_modo_modulo'] = $moduloSelecionadoId > 0;
                     $dados['conteudo_modulo_selecionado'] = null;
                     $dados['conteudo_modulo_itens'] = array();
+                    $dados['conteudo_modulo_itens_arquivados'] = array();
                     $dados['conteudo_modulo_erro'] = '';
+                    $dados['conteudo_modulo_arquivado_selecionado'] = false;
 
                     if ($moduloSelecionadoId > 0) {
-                        foreach ($listar['modulos'] as $modulo) {
+                        foreach ($dados['conteudo_modulos'] as $modulo) {
                             if ((int) ($modulo['id'] ?? 0) === $moduloSelecionadoId) {
                                 $dados['conteudo_modulo_selecionado'] = $modulo;
-                                $dados['conteudo_modulo_itens'] = isset($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array();
+                                $dados['conteudo_modulo_itens'] = isset($modulo['itens_ativos']) && is_array($modulo['itens_ativos']) ? $modulo['itens_ativos'] : (isset($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array());
+                                $dados['conteudo_modulo_itens_arquivados'] = isset($modulo['itens_arquivados']) && is_array($modulo['itens_arquivados']) ? $modulo['itens_arquivados'] : array();
                                 break;
                             }
                         }
 
+                        if (empty($dados['conteudo_modulo_selecionado'])) {
+                            foreach ($dados['conteudo_modulos_arquivados'] as $modulo) {
+                                if ((int) ($modulo['id'] ?? 0) === $moduloSelecionadoId) {
+                                    $dados['conteudo_modulo_arquivado_selecionado'] = true;
+                                    break;
+                                }
+                            }
+                        }
+
                         if (empty($dados['conteudo_modulo_selecionado']) && $moduloSelecionadoId > 0) {
-                            $detalheModulo = $this->conteudoService->detalharModulo($moduloSelecionadoId, $cursoId);
-                            if (!empty($detalheModulo['ok']) && !empty($detalheModulo['modulo']) && is_array($detalheModulo['modulo'])) {
-                                $dados['conteudo_modulo_selecionado'] = $detalheModulo['modulo'];
-                                $dados['conteudo_modulo_itens'] = isset($detalheModulo['modulo']['itens']) && is_array($detalheModulo['modulo']['itens'])
-                                    ? $detalheModulo['modulo']['itens']
-                                    : array();
+                            if (!empty($dados['conteudo_modulo_arquivado_selecionado'])) {
+                                $dados['conteudo_modulo_erro'] = '';
+                            } else {
+                                $detalheModulo = $this->conteudoService->detalharModulo($moduloSelecionadoId, $cursoId);
+                                if (!empty($detalheModulo['ok']) && !empty($detalheModulo['modulo']) && is_array($detalheModulo['modulo'])) {
+                                    $dados['conteudo_modulo_selecionado'] = $detalheModulo['modulo'];
+                                    $dados['conteudo_modulo_itens'] = isset($detalheModulo['modulo']['itens']) && is_array($detalheModulo['modulo']['itens'])
+                                        ? $detalheModulo['modulo']['itens']
+                                        : array();
+                                }
                             }
                         }
 
                         if (empty($dados['conteudo_modulo_selecionado'])) {
-                            $dados['conteudo_modulo_erro'] = 'O módulo selecionado não pertence a este curso.';
+                            if (empty($dados['conteudo_modulo_erro'])) {
+                                $dados['conteudo_modulo_erro'] = 'O módulo selecionado não pertence a este curso.';
+                            }
                         }
                     }
                 } else {
                     Session::flash('errors', array($listar['message'] ?? 'Não foi possível carregar o conteúdo do curso.'));
                     $dados['conteudo_modulos'] = array();
+                    $dados['conteudo_modulos_arquivados'] = array();
                     $dados['conteudo_modulo_selecionado_id'] = 0;
                     $dados['conteudo_modulo_selecionado'] = null;
                     $dados['conteudo_modulo_itens'] = array();
+                    $dados['conteudo_modulo_itens_arquivados'] = array();
                     $dados['conteudo_modulo_erro'] = '';
+                    $dados['conteudo_modulo_arquivado_selecionado'] = false;
+                }
+            }
+
+            $moduloSelecionadoQueryId = (int) $request->query('modulo_id', $request->query('conteudo_modulo_id', 0));
+            if ($aba === 'conteudo' && $moduloSelecionadoQueryId > 0 && empty($dados['conteudo_modulo_selecionado'])) {
+                $detalheModulo = $this->conteudoService->detalharModuloComItens($cursoId, $moduloSelecionadoQueryId);
+                if (!empty($detalheModulo['ok']) && !empty($detalheModulo['modulo']) && is_array($detalheModulo['modulo'])) {
+                    $dados['conteudo_modulo_selecionado'] = $detalheModulo['modulo'];
+                    $dados['conteudo_modulo_itens'] = isset($detalheModulo['modulo']['itens_ativos']) && is_array($detalheModulo['modulo']['itens_ativos'])
+                        ? $detalheModulo['modulo']['itens_ativos']
+                        : (isset($detalheModulo['modulo']['itens']) && is_array($detalheModulo['modulo']['itens']) ? $detalheModulo['modulo']['itens'] : array());
+                    $dados['conteudo_modulo_itens_arquivados'] = isset($detalheModulo['modulo']['itens_arquivados']) && is_array($detalheModulo['modulo']['itens_arquivados'])
+                        ? $detalheModulo['modulo']['itens_arquivados']
+                        : array();
+                    $dados['conteudo_modulo_arquivado_selecionado'] = (string) ($detalheModulo['modulo']['status'] ?? '') === 'arquivado';
+                    $dados['conteudo_modo_modulo'] = true;
+                } else {
+                    Session::flash('errors', array($detalheModulo['message'] ?? 'O módulo selecionado não pertence a este curso.'));
+                    return $this->redirect($this->redirectContexto($request, 'conteudo'));
                 }
             }
 
@@ -190,6 +235,10 @@ class AreaCursoController extends Controller
                     $dados['relatorios'] = array('ok' => false, 'message' => $relatorios['message'] ?? 'Relatório indisponível.');
                 }
             }
+        }
+
+        if ($aba === 'conteudo') {
+            $dados['conteudo_voltar_modulos_url'] = $this->conteudoIndexContextoUrl($request);
         }
 
         $dados['relatorios_filtros'] = $relatoriosFiltros;
@@ -254,7 +303,7 @@ class AreaCursoController extends Controller
         );
     }
 
-    public function salvarInstrução(Request $request)
+    public function salvarInstrucao(Request $request)
     {
         $resultado = $this->areaCursoService->salvarInstrução($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         return $this->respondForm(
@@ -263,6 +312,11 @@ class AreaCursoController extends Controller
             $this->redirectContexto($request, 'visao-geral'),
             $this->redirectContexto($request, 'visao-geral')
         );
+    }
+
+    public function salvarInstrução(Request $request)
+    {
+        return $this->salvarInstrucao($request);
     }
 
     public function salvarModulo(Request $request)
@@ -501,17 +555,50 @@ class AreaCursoController extends Controller
     public function arquivarConteudoItem(Request $request)
     {
         $resultado = $this->conteudoService->arquivarItem((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        $moduloId = (int) $request->input('modulo_id', 0);
         return $this->respondForm(
             $resultado,
             $request,
-            $this->redirectContexto($request, 'conteudo'),
-            $this->redirectContexto($request, 'conteudo')
+            $moduloId > 0 ? $this->conteudoModuloContextoUrl($request, $moduloId) : $this->redirectContexto($request, 'conteudo'),
+            $moduloId > 0 ? $this->conteudoModuloContextoUrl($request, $moduloId) : $this->redirectContexto($request, 'conteudo')
         );
     }
 
     public function duplicarConteudoItem(Request $request)
     {
         $resultado = $this->conteudoService->duplicarItem((int) $request->input('id', 0), (int) Session::get('usuario_id'));
+        $moduloId = (int) $request->input('modulo_id', 0);
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $moduloId > 0 ? $this->conteudoModuloContextoUrl($request, $moduloId) : $this->redirectContexto($request, 'conteudo'),
+            $moduloId > 0 ? $this->conteudoModuloContextoUrl($request, $moduloId) : $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function moverConteudoItem(Request $request)
+    {
+        $novoModuloId = (int) $request->input('novo_modulo_id', 0);
+        $resultado = $this->conteudoService->moverItemParaModulo((int) $request->input('item_id', 0), $novoModuloId, (int) Session::get('usuario_id'));
+        return $this->respondForm(
+            $resultado,
+            $request,
+            $novoModuloId > 0 ? $this->conteudoModuloContextoUrl($request, $novoModuloId) : $this->redirectContexto($request, 'conteudo'),
+            $novoModuloId > 0 ? $this->conteudoModuloContextoUrl($request, $novoModuloId) : $this->redirectContexto($request, 'conteudo')
+        );
+    }
+
+    public function excluirDefinitivamenteConteudoModulo(Request $request)
+    {
+        $resultado = $this->conteudoService->excluirDefinitivamenteModuloArquivado(
+            (int) $request->input('id', 0),
+            (int) $request->input('curso_evento_id', 0),
+            trim((string) $request->input('justificativa', '')),
+            (int) Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
         return $this->respondForm(
             $resultado,
             $request,
@@ -520,15 +607,33 @@ class AreaCursoController extends Controller
         );
     }
 
-    public function moverConteudoItem(Request $request)
+    public function excluirDefinitivamenteConteudoItem(Request $request)
     {
-        $resultado = $this->conteudoService->moverItemParaModulo((int) $request->input('item_id', 0), (int) $request->input('novo_modulo_id', 0), (int) Session::get('usuario_id'));
-        return $this->respondForm(
-            $resultado,
-            $request,
-            $this->redirectContexto($request, 'conteudo'),
-            $this->redirectContexto($request, 'conteudo')
+        $moduloId = (int) $request->input('modulo_id', 0);
+        $resultado = $this->conteudoService->excluirDefinitivamenteItemArquivado(
+            (int) $request->input('id', 0),
+            (int) $request->input('curso_evento_id', 0),
+            $moduloId,
+            trim((string) $request->input('justificativa', '')),
+            (int) Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
         );
+
+        if (empty($resultado['ok'])) {
+            return $this->respondForm(
+                $resultado,
+                $request,
+                $this->redirectContexto($request, 'conteudo'),
+                $this->redirectContexto($request, 'conteudo')
+            );
+        }
+
+        if ($moduloId > 0) {
+            return $this->redirect($this->conteudoModuloContextoUrl($request, $moduloId));
+        }
+
+        return $this->redirect($this->redirectContexto($request, 'conteudo'));
     }
 
     public function ordenarConteudoItens(Request $request)
@@ -581,8 +686,8 @@ class AreaCursoController extends Controller
         return $this->respondForm(
             $resultado,
             $request,
-            $this->redirectContexto($request, 'conteudo'),
-            $this->redirectContexto($request, 'conteudo')
+            $moduloId > 0 ? $this->conteudoModuloContextoUrl($request, $moduloId) : $this->redirectContexto($request, 'conteudo'),
+            $moduloId > 0 ? $this->conteudoModuloContextoUrl($request, $moduloId) : $this->redirectContexto($request, 'conteudo')
         );
     }
 
@@ -868,6 +973,18 @@ class AreaCursoController extends Controller
             : '/admin/area-curso/conteudo/itens/criar';
 
         return $route . '?' . http_build_query($params);
+    }
+
+    private function conteudoIndexContextoUrl(Request $request)
+    {
+        $cursoId = (int) $request->input('curso_evento_id', $request->input('curso_id', $request->query('curso_id', 0)));
+        $turmaId = (int) $request->input('turma_id', $request->query('turma_id', 0));
+        $params = array('curso_id' => $cursoId, 'aba' => 'conteudo');
+        if ($turmaId > 0) {
+            $params['turma_id'] = $turmaId;
+        }
+
+        return '/admin/area-curso?' . http_build_query($params);
     }
 
     private function renderConteudoModuloForm(Request $request, ?array $modulo)

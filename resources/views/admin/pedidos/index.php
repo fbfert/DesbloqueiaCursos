@@ -82,7 +82,7 @@ $to = $total > 0 ? min($page * $perPage, $total) : 0;
 $statusAtual = (string) ($filters['status'] ?? '');
 ?>
 
-<div class="admin-page">
+<div class="admin-page admin-pedidos-page">
     <section class="admin-page__header admin-page__header--with-metrics">
         <div class="admin-page__header-content">
             <h1 class="admin-page__title">Pedidos</h1>
@@ -129,9 +129,9 @@ $statusAtual = (string) ($filters['status'] ?? '');
         <div class="admin-section__header">
             <h2 class="admin-section__title">Pedidos</h2>
         </div>
-        <div class="status-card" style="margin-bottom:12px;">
+        <div class="status-card admin-pedidos-card">
             <form method="get" action="/admin/pedidos" class="admin-filters">
-                <div class="admin-filters__row">
+                <div class="admin-filters__row admin-pedidos__filters-row">
                     <label>Busca
                         <input type="text" name="q" value="<?php echo Helpers::e((string) ($filters['q'] ?? '')); ?>" placeholder="Código, pagador, e-mail, CPF ou curso">
                     </label>
@@ -152,7 +152,7 @@ $statusAtual = (string) ($filters['status'] ?? '');
                         <input type="text" name="curso" value="<?php echo Helpers::e((string) ($filters['curso'] ?? '')); ?>" placeholder="Nome do curso">
                     </label>
                 </div>
-                <div class="admin-filters__row" style="margin-top:12px;">
+                <div class="admin-filters__row admin-pedidos__filters-row">
                     <label>De
                         <input type="date" name="de" value="<?php echo Helpers::e((string) ($filters['de'] ?? '')); ?>">
                     </label>
@@ -170,7 +170,7 @@ $statusAtual = (string) ($filters['status'] ?? '');
                     <input type="hidden" name="sort_by" value="<?php echo Helpers::e($currentSortBy); ?>">
                     <input type="hidden" name="sort_dir" value="<?php echo Helpers::e($currentSortDir); ?>">
                 </div>
-                <div class="cta-group" style="margin-top:12px;">
+                <div class="cta-group admin-pedidos__filter-actions">
                     <button type="submit" class="button-link button-link--primary">Filtrar</button>
                     <a class="button-link button-link--ghost" href="/admin/pedidos">Limpar filtros</a>
                 </div>
@@ -204,38 +204,45 @@ $statusAtual = (string) ($filters['status'] ?? '');
                     ?>
                     <tr>
                         <td>
-                            <?php echo htmlspecialchars($pedido['codigo'], ENT_QUOTES, 'UTF-8'); ?>
-                            <?php if (!empty($pedido['is_presente'])): ?>
-                                <br><span class="badge badge--status badge--status-pendente">Presente</span>
-                                <?php if (!empty($pedido['presente_campanha_titulo'])): ?>
-                                    <br><small><?php echo htmlspecialchars((string) $pedido['presente_campanha_titulo'], ENT_QUOTES, 'UTF-8'); ?></small>
+                            <div class="admin-pedidos__cell-stack">
+                                <strong><?php echo htmlspecialchars($pedido['codigo'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                <?php if (!empty($pedido['is_presente'])): ?>
+                                    <span class="badge badge--status badge--status-pendente">Presente</span>
+                                    <?php if (!empty($pedido['presente_campanha_titulo'])): ?>
+                                        <small><?php echo htmlspecialchars((string) $pedido['presente_campanha_titulo'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                    <?php endif; ?>
                                 <?php endif; ?>
-                            <?php endif; ?>
+                            </div>
                         </td>
                         <td>
-                            <?php echo htmlspecialchars((string) $pedido['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
-                            <small><?php echo htmlspecialchars((string) $pedido['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>
-                            <?php if (!empty($pedido['pagador_telefone'])): ?>
-                                <br><small><?php echo htmlspecialchars(pedidosFormatarTelefone((string) $pedido['pagador_telefone']), ENT_QUOTES, 'UTF-8'); ?></small>
-                            <?php endif; ?>
+                            <div class="admin-pedidos__cell-stack">
+                                <strong><?php echo htmlspecialchars((string) $pedido['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                <small><?php echo htmlspecialchars((string) $pedido['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                <?php if (!empty($pedido['pagador_telefone'])): ?>
+                                    <small><?php echo htmlspecialchars(pedidosFormatarTelefone((string) $pedido['pagador_telefone']), ENT_QUOTES, 'UTF-8'); ?></small>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td><?php echo isset($pedido['quantidade_participantes']) ? (int) $pedido['quantidade_participantes'] : 0; ?></td>
                         <td>R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?></td>
                         <td><?php echo htmlspecialchars($pedido['status'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
-                            <?php echo htmlspecialchars((string) ($pedido['payment_gateway'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>
-                            <?php if (!empty($pedido['payment_provider_status'])): ?>
-                                <br><small><?php echo htmlspecialchars((string) $pedido['payment_provider_status'], ENT_QUOTES, 'UTF-8'); ?></small>
-                            <?php endif; ?>
+                            <div class="admin-pedidos__cell-stack">
+                                <strong><?php echo htmlspecialchars((string) ($pedido['payment_gateway'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></strong>
+                                <?php if (!empty($pedido['payment_provider_status'])): ?>
+                                    <small><?php echo htmlspecialchars((string) $pedido['payment_provider_status'], ENT_QUOTES, 'UTF-8'); ?></small>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td>
-                            <?php if ($comprovante): ?>
-                                <?php echo htmlspecialchars($comprovante['status'], ENT_QUOTES, 'UTF-8'); ?>
-                                <br>
-                                <small>v<?php echo (int) $comprovante['versao']; ?></small>
-                            <?php else: ?>
-                                -
-                            <?php endif; ?>
+                            <div class="admin-pedidos__cell-stack">
+                                <?php if ($comprovante): ?>
+                                    <strong><?php echo htmlspecialchars($comprovante['status'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                    <small>v<?php echo (int) $comprovante['versao']; ?></small>
+                                <?php else: ?>
+                                    <strong>-</strong>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td><?php echo htmlspecialchars((string) $pedido['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
@@ -275,8 +282,8 @@ $statusAtual = (string) ($filters['status'] ?? '');
     </section>
 
     <?php if ($pages > 1): ?>
-        <section class="status-card" style="margin-top:12px;">
-            <div class="cta-group" style="justify-content:space-between;align-items:center;flex-wrap:wrap;">
+        <section class="status-card admin-pedidos-card admin-pedidos-card--pagination">
+            <div class="cta-group admin-pedidos__pagination-row">
                 <small>Página <?php echo (int) $page; ?> de <?php echo (int) $pages; ?> — mostrando <?php echo (int) $from; ?> a <?php echo (int) $to; ?> de <?php echo (int) $total; ?> pedidos.</small>
                 <div class="cta-group">
                     <?php if ($page > 1): ?>
@@ -291,7 +298,7 @@ $statusAtual = (string) ($filters['status'] ?? '');
     <?php endif; ?>
 
     <?php if (!empty($can_manage_pedidos)): ?>
-        <section class="admin-section">
+        <section class="admin-section admin-pedidos-card admin-pedidos-card--bulk">
             <details class="admin-pedidos__actions-details">
                 <summary>Exclusão em lote</summary>
                 <div class="admin-pedidos__actions-body">

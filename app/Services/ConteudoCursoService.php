@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Core\Database;
 use App\Core\Logger;
+use App\Services\AuditService;
 use App\Models\ConteudoArquivo;
 use App\Models\ConteudoArquivoVersao;
 use App\Models\ConteudoAvaliacaoEntrega;
@@ -17,6 +18,8 @@ use App\Models\ConteudoProgressoAluno;
 use App\Models\ConteudoTexto;
 use App\Models\ConteudoVideo;
 use App\Models\Inscricao;
+use App\Services\TrashService;
+use App\Services\RbacService;
 use App\Support\HtmlSanitizer;
 use Exception;
 
@@ -24,6 +27,7 @@ class ConteudoCursoService
 {
     private const TIPOS_ITEM_VALIDOS = array('etiqueta', 'texto', 'arquivo', 'link', 'avaliacao_textual', 'video');
     private const STATUS_ITEM_VALIDOS = array('rascunho', 'publicado', 'oculto', 'arquivado');
+    private const STATUS_MODULO_VALIDOS = array('rascunho', 'publicado', 'oculto', 'arquivado');
     private const STATUS_PROGRESO_VALIDOS = array('nao_iniciado', 'acessado', 'em_andamento', 'concluido', 'pendente_correcao', 'reprovado');
     private const EXTENSOES_ARQUIVO_VALIDAS = array('pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx', 'odt', 'xls', 'xlsx', 'ods', 'ppt', 'pptx', 'odp', 'txt', 'csv');
     private const LIMITE_ARQUIVO_BYTES = 10485760;
@@ -41,6 +45,9 @@ class ConteudoCursoService
     private $progressoModel;
     private $logModel;
     private $inscricaoModel;
+    private $auditService;
+    private $trashService;
+    private $rbacService;
 
     public function __construct()
     {
@@ -57,6 +64,9 @@ class ConteudoCursoService
         $this->progressoModel = new ConteudoProgressoAluno();
         $this->logModel = new ConteudoLogAluno();
         $this->inscricaoModel = new Inscricao();
+        $this->auditService = new AuditService();
+        $this->trashService = new TrashService();
+        $this->rbacService = new RbacService();
     }
 
     public function listarModulosComItens($cursoEventoId)
@@ -66,19 +76,64 @@ class ConteudoCursoService
             return array('ok' => false, 'message' => 'Curso invÃ¡lido.');
         }
 
-        $modulos = $this->moduloModel->listForCurso($cursoEventoId);
-        foreach ($modulos as &$modulo) {
-            $modulo['itens'] = $this->itemModel->listForModulo((int) $modulo['id']);
-            foreach ($modulo['itens'] as &$item) {
-                if ((string) ($item['tipo'] ?? '') === 'arquivo') {
-                    $item['arquivo_detalhe'] = $this->arquivoModel->findByItemId((int) $item['id']);
-                }
-            }
-            unset($item);
+        $modulosAtivos = $this->moduloModel->listAtivosForCurso($cursoEventoId);
+        $modulosArquivados = $this->moduloModel->listArquivadosForCurso($cursoEventoId);
+
+        foreach ($modulosAtivos as &$modulo) {
+            $itensAtivos = $this->itemModel->listAtivosForModulo((int) $modulo['id']);
+            $itensArquivados = $this->itemModel->listArquivadosForModulo((int) $modulo['id']);
+            $this->anexarArquivoDetalheNosItens($itensAtivos);
+            $this->anexarArquivoDetalheNosItens($itensArquivados);
+
+            $modulo['itens'] = $itensAtivos;
+            $modulo['itens_ativos'] = $itensAtivos;
+            $modulo['itens_arquivados'] = $itensArquivados;
+            $modulo['total_itens_ativos'] = count($itensAtivos);
+            $modulo['total_itens_arquivados'] = count($itensArquivados);
         }
         unset($modulo);
 
-        return array('ok' => true, 'modulos' => $modulos);
+        foreach ($modulosArquivados as &$modulo) {
+            $modulo['itens'] = array();
+            $modulo['itens_ativos'] = array();
+            $modulo['itens_arquivados'] = array();
+            $modulo['total_itens_ativos'] = 0;
+            $modulo['total_itens_arquivados'] = 0;
+        }
+        unset($modulo);
+
+        return array(
+            'ok' => true,
+            'modulos' => $modulosAtivos,
+            'modulos_arquivados' => $modulosArquivados,
+        );
+    }
+
+    public function detalharModuloComItens($cursoEventoId, $moduloId)
+    {
+        $cursoEventoId = (int) $cursoEventoId;
+        $moduloId = (int) $moduloId;
+        if ($cursoEventoId <= 0 || $moduloId <= 0) {
+            return array('ok' => false, 'message' => 'Parâmetros inválidos.');
+        }
+
+        $modulo = $this->moduloModel->findById($moduloId);
+        if (!$modulo || (int) $modulo['curso_evento_id'] !== $cursoEventoId) {
+            return array('ok' => false, 'message' => 'O módulo selecionado não pertence a este curso.');
+        }
+
+        $itensAtivos = $this->itemModel->listAtivosForModulo($moduloId);
+        $itensArquivados = $this->itemModel->listArquivadosForModulo($moduloId);
+        $this->anexarArquivoDetalheNosItens($itensAtivos);
+        $this->anexarArquivoDetalheNosItens($itensArquivados);
+
+        $modulo['itens'] = $itensAtivos;
+        $modulo['itens_ativos'] = $itensAtivos;
+        $modulo['itens_arquivados'] = $itensArquivados;
+        $modulo['total_itens_ativos'] = count($itensAtivos);
+        $modulo['total_itens_arquivados'] = count($itensArquivados);
+
+        return array('ok' => true, 'modulo' => $modulo);
     }
 
     public function listarConteudoPublicadoAluno($cursoEventoId, $alunoId, $inscricaoId, $turmaId = null)
@@ -390,6 +445,7 @@ class ConteudoCursoService
             return $payload;
         }
 
+        $payload['data']['ordem'] = $this->moduloModel->nextActiveOrderForCurso((int) $payload['data']['curso_evento_id']);
         $id = $this->moduloModel->create($payload['data']);
         return array('ok' => true, 'id' => $id);
     }
@@ -422,6 +478,15 @@ class ConteudoCursoService
             return array('ok' => false, 'message' => 'Módulo inválido.');
         }
 
+        $modulo = $this->moduloModel->findById($id);
+        if (!$modulo) {
+            return array('ok' => false, 'message' => 'Módulo não encontrado.');
+        }
+
+        if ((string) ($modulo['status'] ?? '') === 'arquivado') {
+            return array('ok' => false, 'message' => 'Este módulo já está arquivado.');
+        }
+
         $ok = $this->moduloModel->updateStatus($id, 'arquivado', $usuarioId ? (int) $usuarioId : null);
         return array('ok' => $ok);
     }
@@ -444,7 +509,7 @@ class ConteudoCursoService
                 }
 
                 $modulo = $this->moduloModel->findById($moduloId);
-                if (!$modulo || (int) $modulo['curso_evento_id'] !== $cursoEventoId) {
+                if (!$modulo || (int) $modulo['curso_evento_id'] !== $cursoEventoId || (string) ($modulo['status'] ?? '') === 'arquivado') {
                     continue;
                 }
 
@@ -479,6 +544,10 @@ class ConteudoCursoService
             return array('ok' => false, 'message' => 'Módulo não encontrado.');
         }
 
+        if ((string) ($origem['status'] ?? '') === 'arquivado') {
+            return array('ok' => false, 'message' => 'Não é possível duplicar um módulo arquivado.');
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -487,13 +556,13 @@ class ConteudoCursoService
                 'curso_evento_id' => (int) $origem['curso_evento_id'],
                 'titulo' => 'CÃ³pia - ' . (string) $origem['titulo'],
                 'descricao' => $origem['descricao'],
-                'ordem' => (int) $origem['ordem'] + 1,
+                'ordem' => $this->moduloModel->nextActiveOrderForCurso((int) $origem['curso_evento_id']),
                 'status' => 'rascunho',
                 'criado_por' => $usuarioId ? (int) $usuarioId : null,
                 'atualizado_por' => $usuarioId ? (int) $usuarioId : null,
             ));
 
-            $itens = $this->itemModel->listForModulo($id);
+            $itens = $this->itemModel->listAtivosForModulo($id);
             foreach ($itens as $item) {
                 $novoItemId = $this->itemModel->create(array(
                     'curso_evento_id' => (int) $item['curso_evento_id'],
@@ -502,7 +571,7 @@ class ConteudoCursoService
                     'titulo' => (string) $item['titulo'],
                     'descricao_curta' => $item['descricao_curta'],
                     'obrigatorio' => (int) $item['obrigatorio'],
-                    'ordem' => (int) $item['ordem'],
+                    'ordem' => $this->itemModel->nextActiveOrderForModulo($novoModuloId),
                     'status' => 'rascunho',
                     'abre_em' => $item['abre_em'],
                     'criado_por' => $usuarioId ? (int) $usuarioId : null,
@@ -528,6 +597,7 @@ class ConteudoCursoService
             return $payload;
         }
 
+        $payload['data']['ordem'] = $this->itemModel->nextActiveOrderForModulo((int) $payload['data']['modulo_id']);
         $id = $this->itemModel->create($payload['data']);
         return array('ok' => true, 'id' => $id);
     }
@@ -560,6 +630,15 @@ class ConteudoCursoService
             return array('ok' => false, 'message' => 'Item invÃ¡lido.');
         }
 
+        $item = $this->itemModel->findById($id);
+        if (!$item) {
+            return array('ok' => false, 'message' => 'Item não encontrado.');
+        }
+
+        if ((string) ($item['status'] ?? '') === 'arquivado') {
+            return array('ok' => false, 'message' => 'Este item já está arquivado.');
+        }
+
         $ok = $this->itemModel->updateStatus($id, 'arquivado', $usuarioId ? (int) $usuarioId : null);
         return array('ok' => $ok);
     }
@@ -575,7 +654,11 @@ class ConteudoCursoService
         $item = $this->itemModel->findById($itemId);
         $modulo = $this->moduloModel->findById($novoModuloId);
         if (!$item || !$modulo) {
-            return array('ok' => false, 'message' => 'Item ou mÃ³dulo nÃ£o encontrado.');
+            return array('ok' => false, 'message' => 'Item ou módulo não encontrado.');
+        }
+
+        if ((string) ($item['status'] ?? '') === 'arquivado' || (string) ($modulo['status'] ?? '') === 'arquivado') {
+            return array('ok' => false, 'message' => 'Não é possível mover conteúdos arquivados ou para módulos arquivados.');
         }
 
         if ((int) $item['curso_evento_id'] !== (int) $modulo['curso_evento_id']) {
@@ -597,7 +680,7 @@ class ConteudoCursoService
         $pdo->beginTransaction();
 
         try {
-            $itens = $this->itemModel->listForModulo($moduloId);
+            $itens = $this->itemModel->listAtivosForModulo($moduloId);
             $mapa = array();
             foreach ($itens as $item) {
                 $mapa[(int) $item['id']] = $item;
@@ -646,6 +729,10 @@ class ConteudoCursoService
             return array('ok' => false, 'message' => 'Item nÃ£o encontrado.');
         }
 
+        if ((string) ($origem['status'] ?? '') === 'arquivado') {
+            return array('ok' => false, 'message' => 'Não é possível duplicar um item arquivado.');
+        }
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -657,7 +744,7 @@ class ConteudoCursoService
                 'titulo' => 'CÃ³pia - ' . (string) $origem['titulo'],
                 'descricao_curta' => $origem['descricao_curta'],
                 'obrigatorio' => (int) $origem['obrigatorio'],
-                'ordem' => (int) $origem['ordem'] + 1,
+                'ordem' => $this->itemModel->nextActiveOrderForModulo((int) $origem['modulo_id']),
                 'status' => 'rascunho',
                 'abre_em' => $origem['abre_em'],
                 'criado_por' => $usuarioId ? (int) $usuarioId : null,
@@ -671,6 +758,156 @@ class ConteudoCursoService
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('conteudo.itens.duplicar_falhou', array('message' => $exception->getMessage()));
+            throw $exception;
+        }
+    }
+
+    public function excluirDefinitivamenteModuloArquivado($id, $cursoEventoId, $justificativa, $usuarioId, $ipAddress = null, $userAgent = null)
+    {
+        $id = (int) $id;
+        $cursoEventoId = (int) $cursoEventoId;
+        if ($id <= 0) {
+            return array('ok' => false, 'message' => 'Módulo inválido.');
+        }
+
+        if ($cursoEventoId <= 0) {
+            return array('ok' => false, 'message' => 'Curso inválido.');
+        }
+
+        if (!$this->rbacService->isSuperAdmin($usuarioId)) {
+            return array('ok' => false, 'message' => 'Somente superadministrador pode excluir definitivamente módulos arquivados.');
+        }
+
+        $modulo = $this->moduloModel->findById($id);
+        if (!$modulo) {
+            return array('ok' => false, 'message' => 'Módulo não encontrado.');
+        }
+
+        if ((string) ($modulo['status'] ?? '') !== 'arquivado') {
+            return array('ok' => false, 'message' => 'O módulo precisa estar arquivado para exclusão definitiva.');
+        }
+
+        if ((int) $modulo['curso_evento_id'] !== $cursoEventoId) {
+            return array('ok' => false, 'message' => 'O módulo não pertence ao curso informado.');
+        }
+
+        $itens = $this->itemModel->listForModulo($id);
+        if ($this->moduloTemArquivoFisico($itens)) {
+            return array('ok' => false, 'message' => 'Este módulo possui conteúdos com arquivos enviados. A exclusão definitiva foi bloqueada para evitar perda indevida de arquivos físicos.');
+        }
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $snapshot = array(
+                'modulo' => $modulo,
+                'itens' => $itens,
+            );
+
+            $this->trashService->record('conteudo_modulo', $id, $justificativa, $snapshot, $usuarioId, $ipAddress, $userAgent);
+            $this->moduloModel->hardDelete($id);
+
+            $this->auditService->record(
+                'conteudo.modulo.excluido_definitivamente',
+                'conteudo_modulo',
+                $id,
+                array(
+                    'justificativa' => $justificativa,
+                    'snapshot' => $snapshot,
+                ),
+                $usuarioId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('conteudo.modulo.excluido_definitivamente', array(
+                'modulo_id' => $id,
+                'usuario_id' => $usuarioId,
+            ));
+
+            $pdo->commit();
+            return array('ok' => true);
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('conteudo.modulo.exclusao_definitiva_falhou', array('message' => $exception->getMessage()));
+            throw $exception;
+        }
+    }
+
+    public function excluirDefinitivamenteItemArquivado($id, $cursoEventoId, $moduloId, $justificativa, $usuarioId, $ipAddress = null, $userAgent = null)
+    {
+        $id = (int) $id;
+        $cursoEventoId = (int) $cursoEventoId;
+        $moduloId = (int) $moduloId;
+        if ($id <= 0) {
+            return array('ok' => false, 'message' => 'Item inválido.');
+        }
+
+        if ($cursoEventoId <= 0) {
+            return array('ok' => false, 'message' => 'Curso inválido.');
+        }
+
+        if ($moduloId <= 0) {
+            return array('ok' => false, 'message' => 'Módulo inválido.');
+        }
+
+        if (!$this->rbacService->isSuperAdmin($usuarioId)) {
+            return array('ok' => false, 'message' => 'Somente superadministrador pode excluir definitivamente conteúdos arquivados.');
+        }
+
+        $item = $this->itemModel->findById($id);
+        if (!$item) {
+            return array('ok' => false, 'message' => 'Item não encontrado.');
+        }
+
+        if ((string) ($item['status'] ?? '') !== 'arquivado') {
+            return array('ok' => false, 'message' => 'O conteúdo precisa estar arquivado para exclusão definitiva.');
+        }
+
+        if ((int) $item['curso_evento_id'] !== $cursoEventoId || (int) $item['modulo_id'] !== $moduloId) {
+            return array('ok' => false, 'message' => 'O conteúdo não pertence ao módulo ou curso informados.');
+        }
+
+        if ((string) ($item['tipo'] ?? '') === 'arquivo') {
+            return array('ok' => false, 'message' => 'Este conteúdo possui arquivo enviado e a exclusão definitiva foi bloqueada para evitar perda indevida de arquivos físicos.');
+        }
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+
+        try {
+            $snapshot = array(
+                'item' => $item,
+                'detalhe' => $this->carregarDetalhePorTipo((string) $item['tipo'], $id),
+            );
+
+            $this->trashService->record('conteudo_item', $id, $justificativa, $snapshot, $usuarioId, $ipAddress, $userAgent);
+            $this->itemModel->hardDelete($id);
+
+            $this->auditService->record(
+                'conteudo.item.excluido_definitivamente',
+                'conteudo_item',
+                $id,
+                array(
+                    'justificativa' => $justificativa,
+                    'snapshot' => $snapshot,
+                ),
+                $usuarioId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('conteudo.item.excluido_definitivamente', array(
+                'item_id' => $id,
+                'usuario_id' => $usuarioId,
+            ));
+
+            $pdo->commit();
+            return array('ok' => true);
+        } catch (Exception $exception) {
+            $pdo->rollBack();
+            Logger::error('conteudo.item.exclusao_definitiva_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
     }
@@ -850,8 +1087,11 @@ class ConteudoCursoService
             return array('ok' => false, 'message' => 'Informe o tÃ­tulo do mÃ³dulo.');
         }
 
-        $status = isset($dados['status']) ? (string) $dados['status'] : 'rascunho';
-        if (!in_array($status, self::STATUS_ITEM_VALIDOS, true)) {
+        $status = isset($dados['status']) ? trim((string) $dados['status']) : 'publicado';
+        if ($status === '') {
+            $status = 'publicado';
+        }
+        if (!in_array($status, self::STATUS_MODULO_VALIDOS, true)) {
             return array('ok' => false, 'message' => 'Status do mÃ³dulo invÃ¡lido.');
         }
 
@@ -903,7 +1143,10 @@ class ConteudoCursoService
             return array('ok' => false, 'message' => 'Informe o tÃ­tulo do item.');
         }
 
-        $status = isset($dados['status']) ? (string) $dados['status'] : 'rascunho';
+        $status = isset($dados['status']) ? trim((string) $dados['status']) : 'publicado';
+        if ($status === '') {
+            $status = 'publicado';
+        }
         if (!in_array($status, self::STATUS_ITEM_VALIDOS, true)) {
             return array('ok' => false, 'message' => 'Status do item invÃ¡lido.');
         }
@@ -926,6 +1169,16 @@ class ConteudoCursoService
                 'atualizado_por' => isset($dados['atualizado_por']) ? (int) $dados['atualizado_por'] : null,
             ),
         );
+    }
+
+    private function anexarArquivoDetalheNosItens(array &$itens)
+    {
+        foreach ($itens as &$item) {
+            if ((string) ($item['tipo'] ?? '') === 'arquivo') {
+                $item['arquivo_detalhe'] = $this->arquivoModel->findByItemId((int) $item['id']);
+            }
+        }
+        unset($item);
     }
 
     private function normalizarLogAlunoPayload(array $dados)
@@ -1104,6 +1357,17 @@ class ConteudoCursoService
             }
             return;
         }
+    }
+
+    private function moduloTemArquivoFisico(array $itens)
+    {
+        foreach ($itens as $item) {
+            if ((string) ($item['tipo'] ?? '') === 'arquivo') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function validarArquivoMeta(array $dados)

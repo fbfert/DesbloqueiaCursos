@@ -289,12 +289,14 @@ $app->post('/admin/area-curso/excluir', array(AdminAreaCursoController::class, '
 $app->post('/admin/area-curso/conteudo/modulo/salvar', array(AdminAreaCursoController::class, 'salvarConteudoModulo'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/modulo/arquivar', array(AdminAreaCursoController::class, 'arquivarConteudoModulo'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/modulo/duplicar', array(AdminAreaCursoController::class, 'duplicarConteudoModulo'), array('auth', 'permission:area_curso.gerenciar'));
+$app->post('/admin/area-curso/conteudo/modulo/excluir-definitivamente', array(AdminAreaCursoController::class, 'excluirDefinitivamenteConteudoModulo'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/modulos/ordenar', array(AdminAreaCursoController::class, 'ordenarConteudoModulos'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/modulos/criar', array(AdminAreaCursoController::class, 'criarConteudoModulo'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/modulos/editar', array(AdminAreaCursoController::class, 'editarConteudoModulo'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/item/salvar', array(AdminAreaCursoController::class, 'salvarConteudoItem'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/item/arquivar', array(AdminAreaCursoController::class, 'arquivarConteudoItem'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/item/duplicar', array(AdminAreaCursoController::class, 'duplicarConteudoItem'), array('auth', 'permission:area_curso.gerenciar'));
+$app->post('/admin/area-curso/conteudo/item/excluir-definitivamente', array(AdminAreaCursoController::class, 'excluirDefinitivamenteConteudoItem'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/item/mover', array(AdminAreaCursoController::class, 'moverConteudoItem'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/itens/ordenar', array(AdminAreaCursoController::class, 'ordenarConteudoItens'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/itens/criar', array(AdminAreaCursoController::class, 'criarConteudoItem'), array('auth', 'permission:area_curso.gerenciar'));
