@@ -9,14 +9,16 @@ class Request
     private $query;
     private $body;
     private $server;
+    private $routeParams;
 
-    public function __construct($method, $path, array $query, array $body, array $server = array())
+    public function __construct($method, $path, array $query, array $body, array $server = array(), array $routeParams = array())
     {
         $this->method = strtoupper($method);
         $this->path = '/' . trim($path, '/');
         $this->query = $query;
         $this->body = $body;
         $this->server = $server;
+        $this->routeParams = $routeParams;
 
         if ($this->path === '/') {
             $this->path = '/';
@@ -57,6 +59,16 @@ class Request
         return array_key_exists($key, $this->query) ? $this->query[$key] : $default;
     }
 
+    public function route($key, $default = null)
+    {
+        return array_key_exists($key, $this->routeParams) ? $this->routeParams[$key] : $default;
+    }
+
+    public function routeAll()
+    {
+        return $this->routeParams;
+    }
+
     public function all()
     {
         return $this->body;
@@ -91,5 +103,10 @@ class Request
         }
 
         return $default;
+    }
+
+    public function server()
+    {
+        return $this->server;
     }
 }

@@ -2214,6 +2214,326 @@ body.has-post-login-modal {
     resize: vertical;
 }
 
+.frontend-theme .aluno-curso-shell {
+    display: grid;
+    gap: 16px;
+}
+
+.frontend-theme .aluno-course-header,
+.frontend-theme .aluno-module-header,
+.frontend-theme .aluno-study-hero,
+.frontend-theme .aluno-study-content,
+.frontend-theme .aluno-study-completion,
+.frontend-theme .aluno-study-footer,
+.frontend-theme .aluno-empty-state {
+    display: grid;
+    gap: 14px;
+}
+
+.frontend-theme .aluno-course-header__top,
+.frontend-theme .aluno-module-header__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.frontend-theme .aluno-course-eyebrow {
+    margin: 0 0 4px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(75, 0, 142, 0.78);
+}
+
+.frontend-theme .aluno-course-header h1,
+.frontend-theme .aluno-module-header h1,
+.frontend-theme .aluno-study-hero h1 {
+    margin: 0;
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+.frontend-theme .aluno-course-header__subtitle,
+.frontend-theme .aluno-module-header__subtitle,
+.frontend-theme .aluno-study-hero__subtitle,
+.frontend-theme .aluno-study-hero__description {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+
+.frontend-theme .aluno-course-header__meta,
+.frontend-theme .aluno-module-header__actions,
+.frontend-theme .aluno-study-hero__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.frontend-theme .aluno-progress-chip {
+    display: inline-grid;
+    gap: 4px;
+    min-width: 170px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(75, 0, 142, 0.08), rgba(255, 255, 255, 0.88));
+    border: 1px solid rgba(75, 0, 142, 0.14);
+    box-shadow: 0 10px 26px rgba(17, 24, 39, 0.04);
+}
+
+.frontend-theme .aluno-progress-chip strong {
+    font-size: 1.18rem;
+    line-height: 1;
+    color: var(--color-purple);
+}
+
+.frontend-theme .aluno-progress-chip span {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1.3;
+}
+
+.frontend-theme .aluno-progress-chip--compact {
+    min-width: 132px;
+    padding: 10px 12px;
+}
+
+.frontend-theme .aluno-modulos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.frontend-theme .aluno-modulo-card,
+.frontend-theme .aluno-conteudo-card {
+    display: grid;
+    gap: 12px;
+}
+
+.frontend-theme .aluno-modulo-card__title,
+.frontend-theme .aluno-conteudo-card__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 1.02rem;
+    font-weight: 800;
+    line-height: 1.3;
+    color: var(--text-main);
+    text-decoration: none;
+}
+
+.frontend-theme .aluno-modulo-card__title:hover,
+.frontend-theme .aluno-conteudo-card__title:hover {
+    color: var(--color-purple);
+}
+
+.frontend-theme .aluno-modulo-card__meta,
+.frontend-theme .aluno-conteudo-card__badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.frontend-theme .aluno-modulo-card__footer,
+.frontend-theme .aluno-conteudo-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.frontend-theme .aluno-conteudos-list {
+    display: grid;
+    gap: 12px;
+}
+
+.frontend-theme .aluno-conteudo-card__top {
+    display: grid;
+    gap: 10px;
+}
+
+.frontend-theme .aluno-conteudo-card__description {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+
+.frontend-theme .aluno-study-mode {
+    display: grid;
+    gap: 16px;
+}
+
+.frontend-theme .aluno-study-hero,
+.frontend-theme .aluno-study-content,
+.frontend-theme .aluno-study-completion,
+.frontend-theme .aluno-study-footer {
+    padding: 18px;
+}
+
+.frontend-theme .aluno-study-hero {
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.frontend-theme .aluno-study-content,
+.frontend-theme .aluno-study-completion,
+.frontend-theme .aluno-study-footer {
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.frontend-theme .aluno-study-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.frontend-theme .aluno-study-nav__primary,
+.frontend-theme .aluno-study-nav__secondary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.frontend-theme .aluno-study-nav .button-link.is-disabled,
+.frontend-theme .aluno-study-nav .button-link--ghost.is-disabled {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.frontend-theme .aluno-study-hero__title {
+    display: grid;
+    gap: 8px;
+}
+
+.frontend-theme .aluno-study-hero__description {
+    max-width: 80ch;
+}
+
+.frontend-theme .aluno-empty-state strong {
+    font-size: 1.02rem;
+}
+
+.frontend-theme .aluno-empty-state span {
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+
+.frontend-theme .conteudo-item-rich--reading {
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+.frontend-theme .conteudo-item-rich--reading h1,
+.frontend-theme .conteudo-item-rich--reading h2,
+.frontend-theme .conteudo-item-rich--reading h3,
+.frontend-theme .conteudo-item-rich--reading h4 {
+    margin-top: 1.1em;
+}
+
+.frontend-theme .aluno-study-content .conteudo-item-file,
+.frontend-theme .aluno-study-content .conteudo-item-link,
+.frontend-theme .aluno-study-content .conteudo-item-video,
+.frontend-theme .aluno-study-content .conteudo-item-eval {
+    display: grid;
+    gap: 12px;
+}
+
+.frontend-theme .aluno-study-completion__status {
+    display: grid;
+    gap: 6px;
+}
+
+.frontend-theme .aluno-study-content .conteudo-item-actions,
+.frontend-theme .aluno-study-content .conteudo-item-concluir-form {
+    display: grid;
+    gap: 10px;
+}
+
+.frontend-theme .aluno-study-content .conteudo-item-concluir-form button[type="submit"],
+.frontend-theme .aluno-study-content .conteudo-item-actions .button-link {
+    width: fit-content;
+}
+
+.frontend-theme .aluno-study-content .conteudo-item-file__header,
+.frontend-theme .aluno-study-content .conteudo-item-link__meta,
+.frontend-theme .aluno-study-content .conteudo-item-video__meta,
+.frontend-theme .aluno-study-content .conteudo-item-eval__header,
+.frontend-theme .aluno-study-content .conteudo-item-feedback__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.frontend-theme .aluno-study-content .conteudo-item-note {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+
+@media (max-width: 860px) {
+    .frontend-theme .aluno-course-header__top,
+    .frontend-theme .aluno-module-header__top {
+        flex-direction: column;
+    }
+
+    .frontend-theme .aluno-progress-chip {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .frontend-theme .aluno-modulos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .frontend-theme .aluno-study-hero,
+    .frontend-theme .aluno-study-content,
+    .frontend-theme .aluno-study-completion,
+    .frontend-theme .aluno-study-footer {
+        padding: 14px;
+    }
+
+    .frontend-theme .aluno-study-nav {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .frontend-theme .aluno-study-nav__primary,
+    .frontend-theme .aluno-study-nav__secondary {
+        width: 100%;
+    }
+
+    .frontend-theme .aluno-study-nav__primary .button-link,
+    .frontend-theme .aluno-study-nav__secondary .button-link,
+    .frontend-theme .aluno-study-nav__secondary .button-link--ghost,
+    .frontend-theme .aluno-study-nav__secondary .is-disabled {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .frontend-theme .aluno-modulo-card__footer,
+    .frontend-theme .aluno-conteudo-card__footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .frontend-theme .aluno-modulo-card__footer .button-link,
+    .frontend-theme .aluno-conteudo-card__footer .button-link {
+        width: 100%;
+    }
+}
+
 .frontend-theme .conteudo-item-history__meta {
     margin: 10px 0 0;
 }

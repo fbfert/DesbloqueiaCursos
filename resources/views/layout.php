@@ -20,12 +20,16 @@ $frontendCssVersion = is_file($frontendCssPath) ? filemtime($frontendCssPath) : 
 $brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : (!empty($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos');
 $isAdmin = strpos($requestPath, '/admin') === 0;
 $isProfessor = strpos($requestPath, '/professor') === 0;
-$isAluno = in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true);
+$isAluno = in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true)
+    || strpos($requestPath, '/aluno/curso') === 0
+    || strpos($requestPath, '/aluno/cursos') === 0;
 $useFrontendTheme = !$isAdmin && !$isProfessor;
 $shouldLoadConteudoAudio = strpos($requestPath, '/aluno/cursos/conteudo/item') === 0
     || strpos($requestPath, '/area-curso/conteudo/item') === 0
+    || strpos($requestPath, '/aluno/curso/') === 0
     || (strpos($requestPath, '/aluno/cursos') === 0 && !empty($_GET['aula_id']))
     || (strpos($requestPath, '/area-curso') === 0 && !empty($_GET['aula_id']));
+$hidePublicChrome = !empty($hide_public_chrome) || !empty($hidePublicChrome);
 $scopeClass = $isAdmin ? 'app-admin' : ($isProfessor ? 'app-professor' : ($isAluno ? 'app-aluno' : 'app-public'));
 $publicMenu = array(
     array('label' => 'Início', 'href' => '/', 'active' => $requestPath === '/'),
@@ -121,14 +125,18 @@ if (!$isAdmin) {
         <?php require BASE_PATH . '/resources/views/admin/_shell.php'; ?>
     <?php else: ?>
         <div class="site-shell">
-            <?php require BASE_PATH . '/resources/views/partials/public/header.php'; ?>
+            <?php if (!$hidePublicChrome): ?>
+                <?php require BASE_PATH . '/resources/views/partials/public/header.php'; ?>
+            <?php endif; ?>
 
             <main class="site-main">
                 <?php echo $content; ?>
             </main>
 
-            <?php require BASE_PATH . '/resources/views/partials/public/pre_footer.php'; ?>
-            <?php require BASE_PATH . '/resources/views/partials/public/footer.php'; ?>
+            <?php if (!$hidePublicChrome): ?>
+                <?php require BASE_PATH . '/resources/views/partials/public/pre_footer.php'; ?>
+                <?php require BASE_PATH . '/resources/views/partials/public/footer.php'; ?>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 </body>

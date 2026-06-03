@@ -7,6 +7,7 @@ use App\Controllers\PaginasController;
 class Router
 {
     private $routes = array();
+    private $patternRoutes = array();
 
     public function get($path, $handler, array $middleware = array())
     {
@@ -38,6 +39,50 @@ class Router
         $key = $request->method() . ' ' . $request->path();
 
         if (!isset($this->routes[$key])) {
+            $matchedPatternRoute = $this->matchPatternRoute($request);
+            if ($matchedPatternRoute) {
+                $route = $matchedPatternRoute['route'];
+                $routeParams = $matchedPatternRoute['params'];
+                $request = new Request(
+                    $request->method(),
+                    $request->path(),
+                    $request->queryAll(),
+                    $request->all(),
+                    $request->server(),
+                    $routeParams
+                );
+                $handler = $route['handler'];
+                $middleware = $this->buildMiddlewareStack(isset($route['middleware']) ? $route['middleware'] : array());
+
+                $runner = function () use ($handler, $request) {
+                    if (is_array($handler)) {
+                        $controller = new $handler[0]();
+                        return call_user_func(array($controller, $handler[1]), $request);
+                    }
+
+                    return call_user_func($handler, $request);
+                };
+
+                try {
+                    return $this->executeMiddlewareStack($middleware, $request, $runner);
+                } catch (\Throwable $exception) {
+                    Logger::error('admin.route.error', array(
+                        'path' => $request->path(),
+                        'method' => $request->method(),
+                        'message' => $exception->getMessage(),
+                        'file' => $exception->getFile(),
+                        'line' => $exception->getLine(),
+                    ));
+
+                    if (strpos($request->path(), '/admin') === 0) {
+                        Session::flash('errors', array('Ocorreu um erro interno ao carregar a página administrativa.'));
+                        return Response::redirect('/admin/dashboard');
+                    }
+
+                    throw $exception;
+                }
+            }
+
             if ($request->method() === 'GET') {
                 $paginasController = new PaginasController();
                 $paginaResponse = $paginasController->showByRoute($request);
@@ -92,10 +137,54 @@ class Router
             $path = '/';
         }
 
+        if (strpos($path, '{') !== false && strpos($path, '}') !== false) {
+            $this->patternRoutes[] = array(
+                'method' => $method,
+                'path' => $path,
+                'regex' => $this->compilePattern($path),
+                'handler' => $handler,
+                'middleware' => $middleware,
+            );
+            return;
+        }
+
         $this->routes[$method . ' ' . $path] = array(
             'handler' => $handler,
             'middleware' => $middleware,
         );
+    }
+
+    private function matchPatternRoute(Request $request)
+    {
+        $path = $request->path();
+        foreach ($this->patternRoutes as $route) {
+            if ($route['method'] !== $request->method()) {
+                continue;
+            }
+
+            if (!preg_match($route['regex'], $path, $matches)) {
+                continue;
+            }
+
+            $params = array();
+            foreach ($matches as $key => $value) {
+                if (!is_string($key)) {
+                    continue;
+                }
+                $params[$key] = $value;
+            }
+
+            return array('route' => $route, 'params' => $params);
+        }
+
+        return null;
+    }
+
+    private function compilePattern($path)
+    {
+        $escaped = preg_quote($path, '#');
+        $escaped = preg_replace('#\\\\\{([a-zA-Z_][a-zA-Z0-9_]*)\\\\\}#', '(?P<$1>[^/]+)', $escaped);
+        return '#^' . $escaped . '$#';
     }
 
     private function buildMiddlewareStack(array $middlewareDefinitions)

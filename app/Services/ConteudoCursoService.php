@@ -1683,10 +1683,13 @@ class ConteudoCursoService
 
     private function urlDetalhesItemPublicoAluno(array $item, $cursoEventoId, $inscricaoId, $turmaId = null)
     {
-        $url = '/aluno/cursos/conteudo/item?id=' . (int) ($item['id'] ?? 0) . '&inscricao_id=' . (int) $inscricaoId . '&curso_id=' . (int) $cursoEventoId;
-        if ($turmaId !== null && (int) $turmaId > 0) {
-            $url .= '&turma_id=' . (int) $turmaId;
+        $moduloId = !empty($item['modulo_id']) ? (int) $item['modulo_id'] : 0;
+        $itemId = (int) ($item['id'] ?? 0);
+        $url = '/aluno/curso/' . (int) $inscricaoId . '/' . (int) $cursoEventoId . '/' . ($turmaId !== null ? (int) $turmaId : 0);
+        if ($moduloId > 0) {
+            $url .= '/modulo/' . $moduloId;
         }
+        $url .= '/conteudo/' . $itemId;
 
         return $url;
     }

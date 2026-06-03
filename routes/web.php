@@ -75,8 +75,10 @@ $app->get('/minha-conta', array(AuthController::class, 'showAccount'), array('au
 $app->post('/minha-conta', array(AuthController::class, 'updateAccount'), array('auth'));
 $app->get('/area-curso', array(AreaCursoController::class, 'index'), array('auth'));
 $app->get('/aluno/cursos', array(AreaCursoController::class, 'index'), array('auth'));
+$app->get('/aluno/curso/{inscricao_id}/{curso_id}/{turma_id}', array(AreaCursoController::class, 'index'), array('auth'));
 $app->get('/area-curso/modulo', array(AreaCursoController::class, 'modulo'), array('auth'));
 $app->get('/aluno/cursos/modulo', array(AreaCursoController::class, 'modulo'), array('auth'));
+$app->get('/aluno/curso/{inscricao_id}/{curso_id}/{turma_id}/modulo/{modulo_id}', array(AreaCursoController::class, 'modulo'), array('auth'));
 $app->post('/area-curso/modulo/concluir-aula', array(AreaCursoController::class, 'concluirAula'), array('auth'));
 $app->post('/aluno/cursos/modulo/concluir-aula', array(AreaCursoController::class, 'concluirAula'), array('auth'));
 $app->post('/area-curso/modulo/concluir-modulo', array(AreaCursoController::class, 'concluirModulo'), array('auth'));
@@ -85,6 +87,7 @@ $app->get('/area-curso/material', array(AreaCursoController::class, 'material'),
 $app->get('/aluno/cursos/material', array(AreaCursoController::class, 'material'), array('auth'));
 $app->get('/area-curso/conteudo/item', array(AreaCursoController::class, 'conteudoItem'), array('auth'));
 $app->get('/aluno/cursos/conteudo/item', array(AreaCursoController::class, 'conteudoItem'), array('auth'));
+$app->get('/aluno/curso/{inscricao_id}/{curso_id}/{turma_id}/modulo/{modulo_id}/conteudo/{conteudo_id}', array(AreaCursoController::class, 'conteudoItem'), array('auth'));
 $app->post('/area-curso/conteudo/item/concluir', array(AreaCursoController::class, 'concluirConteudoItem'), array('auth'));
 $app->post('/aluno/cursos/conteudo/item/concluir', array(AreaCursoController::class, 'concluirConteudoItem'), array('auth'));
 $app->post('/area-curso/conteudo/avaliacao/enviar', array(AreaCursoController::class, 'enviarConteudoAvaliacao'), array('auth'));
