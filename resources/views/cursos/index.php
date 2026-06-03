@@ -85,7 +85,11 @@ if (!function_exists('curso_professores_publico_texto')) {
                         </div>
                         <div class="cta-group">
                             <a class="button-link button-link--ghost" href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>">Ver detalhes</a>
-                            <?php if (!empty($curso['turmas_abertas'][0]['id'])): ?>
+                            <?php if (!empty($curso['cta_aluno']['href'])): ?>
+                                <a class="<?php echo Helpers::e($curso['cta_aluno']['classe']); ?>" href="<?php echo Helpers::e($curso['cta_aluno']['href']); ?>">
+                                    <?php echo Helpers::e($curso['cta_aluno']['label']); ?>
+                                </a>
+                            <?php elseif (!empty($curso['turmas_abertas'][0]['id'])): ?>
                                 <a class="button-link" href="/inscricao?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo (int) $curso['turmas_abertas'][0]['id']; ?>">Inscreva-se já</a>
                             <?php endif; ?>
                         </div>

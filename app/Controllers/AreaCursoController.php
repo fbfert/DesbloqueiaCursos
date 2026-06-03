@@ -215,6 +215,7 @@ class AreaCursoController extends Controller
             'conteudo_resumo' => !empty($conteudoAluno['resumo']) ? $conteudoAluno['resumo'] : array(),
             'conteudo_modulos' => !empty($conteudoAluno['modulos']) ? $conteudoAluno['modulos'] : array(),
             'conteudo_geral_url' => $this->urlCursoAluno((int) $inscricao['id'], $cursoId, $turmaId),
+            'hide_pre_footer_menu' => true,
         ));
     }
 
@@ -271,6 +272,7 @@ class AreaCursoController extends Controller
             'conteudo_resumo' => !empty($conteudoAluno['resumo']) ? $conteudoAluno['resumo'] : array(),
             'conteudo_geral_url' => $this->urlCursoAluno((int) $inscricao['id'], $cursoId, $turmaId),
             'conteudo_modulo_url' => $this->urlModuloAluno((int) $inscricao['id'], $cursoId, $turmaId, $moduloId),
+            'hide_pre_footer_menu' => true,
         ));
     }
 
@@ -537,6 +539,7 @@ class AreaCursoController extends Controller
             'conteudo_proximo_url' => $navegacao['proximo_url'],
             'conteudo_proximo_label' => $navegacao['proximo_label'],
             'hide_public_chrome' => true,
+            'hide_pre_footer_menu' => true,
         ));
     }
 

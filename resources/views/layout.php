@@ -30,6 +30,7 @@ $shouldLoadConteudoAudio = strpos($requestPath, '/aluno/cursos/conteudo/item') =
     || (strpos($requestPath, '/aluno/cursos') === 0 && !empty($_GET['aula_id']))
     || (strpos($requestPath, '/area-curso') === 0 && !empty($_GET['aula_id']));
 $hidePublicChrome = !empty($hide_public_chrome) || !empty($hidePublicChrome);
+$hidePreFooterMenu = !empty($hide_pre_footer_menu) || !empty($hidePreFooterMenu);
 $scopeClass = $isAdmin ? 'app-admin' : ($isProfessor ? 'app-professor' : ($isAluno ? 'app-aluno' : 'app-public'));
 $publicMenu = array(
     array('label' => 'Início', 'href' => '/', 'active' => $requestPath === '/'),
@@ -133,8 +134,10 @@ if (!$isAdmin) {
                 <?php echo $content; ?>
             </main>
 
-            <?php if (!$hidePublicChrome): ?>
+            <?php if (!$hidePublicChrome && !$hidePreFooterMenu): ?>
                 <?php require BASE_PATH . '/resources/views/partials/public/pre_footer.php'; ?>
+            <?php endif; ?>
+            <?php if (!$hidePublicChrome): ?>
                 <?php require BASE_PATH . '/resources/views/partials/public/footer.php'; ?>
             <?php endif; ?>
         </div>

@@ -12,10 +12,7 @@ $modulos = isset($conteudo_modulos) && is_array($conteudo_modulos) ? $conteudo_m
 $totalConteudos = (int) ($resumo['total_itens'] ?? 0);
 $concluidosConteudos = (int) ($resumo['concluidos_itens'] ?? 0);
 $percentual = (float) ($resumo['percentual'] ?? ($resumo['percentual_progresso'] ?? 0));
-$totalModulos = count($modulos);
-$inscricaoStatus = isset($inscricao['status']) ? (string) $inscricao['status'] : '';
 $progressoTexto = $totalConteudos > 0 ? $concluidosConteudos . '/' . $totalConteudos . ' conteúdos concluídos' : 'Sem conteúdos publicados';
-$turmaTexto = $turmaNome !== '' ? 'Turma: ' . $turmaNome : 'Sem turma informada';
 ?>
 
 <section class="aluno-curso-shell">
@@ -35,13 +32,6 @@ $turmaTexto = $turmaNome !== '' ? 'Turma: ' . $turmaNome : 'Sem turma informada'
             </div>
         </div>
 
-        <div class="aluno-course-header__meta">
-            <span class="pill pill--neutral"><?php echo Helpers::e($turmaTexto); ?></span>
-            <span class="pill pill--neutral"><?php echo (int) $totalModulos; ?> módulos publicados</span>
-            <?php if ($inscricaoStatus !== ''): ?>
-                <span class="pill pill--info"><?php echo Helpers::e(Helpers::statusLms($inscricaoStatus)); ?></span>
-            <?php endif; ?>
-        </div>
     </section>
 
     <?php if (!empty($success)): ?>

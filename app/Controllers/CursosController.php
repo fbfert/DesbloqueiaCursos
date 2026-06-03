@@ -23,13 +23,19 @@ class CursosController extends Controller
 
     public function index(Request $request)
     {
+        $contexto = $this->cursoService->listPublic();
+        $usuarioId = (int) Session::get('usuario_id', 0);
+        if ($usuarioId > 0 && !empty($contexto['cursos']) && is_array($contexto['cursos'])) {
+            $contexto['cursos'] = $this->anexarAcessosDoAlunoAoCatalogo($contexto['cursos'], $usuarioId);
+        }
+
         return $this->view('cursos/index', array_merge(
             array(
                 'title' => 'Cursos e eventos',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
             ),
-            $this->cursoService->listPublic()
+            $contexto
         ));
     }
 
@@ -132,5 +138,48 @@ class CursosController extends Controller
             'href' => $baseUrl,
             'classe' => 'button-link',
         );
+    }
+
+    private function anexarAcessosDoAlunoAoCatalogo(array $cursos, $usuarioId)
+    {
+        $resultado = $this->inscricaoService->listarAprovadasDoUsuario($usuarioId);
+        $inscricoes = !empty($resultado['inscricoes']) && is_array($resultado['inscricoes']) ? $resultado['inscricoes'] : array();
+        $mapa = array();
+
+        foreach ($inscricoes as $inscricao) {
+            $cursoId = isset($inscricao['curso_evento_id']) ? (int) $inscricao['curso_evento_id'] : 0;
+            $inscricaoId = isset($inscricao['id']) ? (int) $inscricao['id'] : 0;
+            if ($cursoId <= 0 || $inscricaoId <= 0 || isset($mapa[$cursoId])) {
+                continue;
+            }
+
+            $turmaId = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : 0;
+            $mapa[$cursoId] = array(
+                'inscricao_id' => $inscricaoId,
+                'curso_id' => $cursoId,
+                'turma_id' => $turmaId,
+                'status' => isset($inscricao['status']) ? (string) $inscricao['status'] : '',
+                'href' => $this->montarUrlAcessoAluno($inscricaoId, $cursoId, $turmaId),
+                'label' => 'Você já tem esse curso, acesse aqui!',
+                'classe' => 'button-link button-link--primary',
+            );
+        }
+
+        foreach ($cursos as &$curso) {
+            $cursoId = isset($curso['id']) ? (int) $curso['id'] : 0;
+            if ($cursoId > 0 && isset($mapa[$cursoId])) {
+                $curso['cta_aluno'] = $mapa[$cursoId];
+            } else {
+                $curso['cta_aluno'] = null;
+            }
+        }
+        unset($curso);
+
+        return $cursos;
+    }
+
+    private function montarUrlAcessoAluno($inscricaoId, $cursoId, $turmaId = 0)
+    {
+        return '/aluno/curso/' . (int) $inscricaoId . '/' . (int) $cursoId . '/' . (int) $turmaId;
     }
 }
