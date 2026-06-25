@@ -8,7 +8,10 @@ $topCursosModulo = isset($topCursosModulo) && is_array($topCursosModulo) ? $topC
 $topAvaliacoesModulo = isset($topAvaliacoesModulo) && is_array($topAvaliacoesModulo) ? $topAvaliacoesModulo : array();
 $depoimentosModulo = isset($depoimentosModulo) && is_array($depoimentosModulo) ? $depoimentosModulo : array();
 $depoimentosCapa = isset($depoimentosCapa) && is_array($depoimentosCapa) ? $depoimentosCapa : array();
+$categoriasDestaque = isset($categoriasDestaque) && is_array($categoriasDestaque) ? $categoriasDestaque : array();
 $postLoginChoiceModal = isset($postLoginChoiceModal) && is_array($postLoginChoiceModal) ? $postLoginChoiceModal : array();
+$frontendTemplateRaw = isset($frontend_template) ? (string) $frontend_template : 'v1';
+$frontendTemplate = in_array($frontendTemplateRaw, array('v2', 'v3', 'v4-claude'), true) ? $frontendTemplateRaw : 'v1';
 $loggedIn = !empty($loggedIn);
 $textoModulo = function (array $modulo) {
     if (!empty($modulo['conteudo'])) {
@@ -26,56 +29,225 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
     $alt = !empty($modulo['imagem_alt']) ? (string) $modulo['imagem_alt'] : (!empty($modulo['titulo']) ? (string) $modulo['titulo'] : 'Imagem do módulo');
     echo '<div class="' . Helpers::e($classe) . '"><img src="' . Helpers::e((string) $modulo['imagem_caminho']) . '" alt="' . Helpers::e($alt) . '"></div>';
 };
+
+// ===== Helpers visuais do template V4 (dc-) =====
+$cursos = isset($cursos) && is_array($cursos) ? $cursos : array();
+$credibilidade = isset($credibilidade) && is_array($credibilidade) ? $credibilidade : array();
+$usuarioNome = isset($usuarioNome) ? (string) $usuarioNome : '';
+
+// Cores de thumb por índice (cicla)
+$dcCores = array('#fff4ec', '#f0e8ff', '#d1faf5', '#eaf3de', '#faeeda', '#ffe4ea');
+$dcCor = fn(int $i): string => $dcCores[$i % count($dcCores)];
+
+// Cores de ícone por índice
+$dcIconCores = array('#FF6A00', '#4B008E', '#007a6a', '#3B6D11', '#854F0B', '#c00030');
+$dcIconCor = fn(int $i): string => $dcIconCores[$i % count($dcIconCores)];
+
+// Ícones por categoria (fallback genérico)
+$dcIcones = array('ti-chart-bar', 'ti-scale', 'ti-coin', 'ti-bulb', 'ti-speakerphone', 'ti-code');
+$dcIcone = fn(int $i): string => $dcIcones[$i % count($dcIcones)];
+
+// Preço (array; valor_efetivo é o valor final já com promoção)
+$dcPreco = function (array $curso): string {
+    $val = isset($curso['valor_efetivo']) ? (float) $curso['valor_efetivo'] : (isset($curso['valor']) ? (float) $curso['valor'] : 0.0);
+    if ($val <= 0) {
+        return 'Grátis';
+    }
+    return 'R$ ' . number_format($val, 2, ',', '.');
+};
+
+// Stats reais do hero (a partir de $credibilidade)
+$statAlunos = isset($credibilidade['alunos']) ? (int) $credibilidade['alunos'] : 0;
+$statCursos = isset($credibilidade['cursos']) ? (int) $credibilidade['cursos'] : 0;
+$statCertificados = isset($credibilidade['certificados']) ? (int) $credibilidade['certificados'] : 0;
 ?>
 
 <div class="front-page-stack home-page-stack">
-<?php if ($loggedIn): ?>
-<section class="home-greeting front-section">
-    <strong><?php echo Helpers::e('Bem-vindo' . (!empty($usuarioNome) ? ' ' . $usuarioNome : ' usuário')); ?></strong>
-</section>
-<?php endif; ?>
+    <?php require BASE_PATH . '/resources/views/components/orientacao_novo_usuario.php'; ?>
 
-<?php if ($loggedIn): ?>
-    <?php require BASE_PATH . '/resources/views/partials/public/avisos.php'; ?>
-<?php endif; ?>
-
-<?php if (!empty($chamadaPrincipalCapa)): ?>
-<section class="hero hero--public front-section">
-    <div class="hero__content">
-        <?php $imagemModulo($chamadaPrincipalCapa, 'module-public-image module-public-image--hero'); ?>
-        <?php if (!empty($chamadaPrincipalCapa['titulo'])): ?>
-            <h1><?php echo Helpers::e($chamadaPrincipalCapa['titulo']); ?></h1>
-        <?php endif; ?>
-        <?php $textoChamada = $textoModulo($chamadaPrincipalCapa); ?>
-        <?php if ($textoChamada !== ''): ?>
-            <p><?php echo nl2br(Helpers::e($textoChamada)); ?></p>
-        <?php endif; ?>
-    </div>
-</section>
-<?php endif; ?>
+    <?php if ($loggedIn): ?>
+        <?php require BASE_PATH . '/resources/views/partials/public/avisos.php'; ?>
+    <?php endif; ?>
 
 <div class="home-public-stack front-section-stack">
+<?php if ($frontendTemplate === 'v4-claude'): ?>
+
+<?php if (!empty($success)): ?>
+<div class="dc-container">
+  <div class="dc-callout dc-callout-success" style="margin-top:16px;">
+    <i class="ti ti-circle-check"></i><span><?php echo Helpers::e($success); ?></span>
+  </div>
+</div>
+<?php endif; ?>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="dc-hero">
+  <div class="dc-container">
+    <div class="dc-hero-inner">
+      <div class="dc-hero-text">
+        <div class="dc-hero-tag"><i class="ti ti-bolt"></i> Sua próxima fase começa aqui.</div>
+        <h1 class="dc-hero-title">Quando aprende de verdade,<br><em>desbloqueia.</em></h1>
+        <p class="dc-hero-sub">Cursos com certificado, quizzes e acompanhamento.<br>Online e presencial.</p>
+        <div class="dc-hero-actions">
+          <a href="/cursos" class="dc-btn dc-btn-primary"><i class="ti ti-search"></i> Explorar cursos</a>
+          <?php if ($loggedIn): ?>
+            <a href="/meus-cursos" class="dc-btn dc-btn-ghost">Minha área <i class="ti ti-arrow-right"></i></a>
+          <?php else: ?>
+            <a href="/cadastro" class="dc-btn dc-btn-ghost">Criar conta <i class="ti ti-arrow-right"></i></a>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php if ($statAlunos > 0 || $statCursos > 0 || $statCertificados > 0): ?>
+      <div class="dc-stats">
+        <?php if ($statAlunos > 0): ?>
+        <div class="dc-stat"><div class="dc-stat-n"><?php echo number_format($statAlunos, 0, ',', '.'); ?>+</div><div class="dc-stat-l">alunos</div></div>
+        <?php endif; ?>
+        <?php if ($statCursos > 0): ?>
+        <div class="dc-stat"><div class="dc-stat-n"><?php echo number_format($statCursos, 0, ',', '.'); ?></div><div class="dc-stat-l">cursos</div></div>
+        <?php endif; ?>
+        <?php if ($statCertificados > 0): ?>
+        <div class="dc-stat"><div class="dc-stat-n"><?php echo number_format($statCertificados, 0, ',', '.'); ?></div><div class="dc-stat-l">certificados</div></div>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CHIPS DE CATEGORIA ══════════════ -->
+<?php if (!empty($categoriasDestaque)): ?>
+<div class="dc-chips-row" role="list" aria-label="Filtrar por categoria">
+  <a href="/cursos" class="dc-chip on" role="listitem">Todos</a>
+  <?php foreach ($categoriasDestaque as $cat): ?>
+    <a href="/categorias/<?php echo Helpers::e($cat['slug'] ?? ''); ?>/cursos" class="dc-chip" role="listitem"><?php echo Helpers::e($cat['nome'] ?? ''); ?></a>
+  <?php endforeach; ?>
+</div>
+<?php endif; ?>
+
+<!-- ══════════════ EM DESTAQUE ══════════════ -->
+<?php if (!empty($cursos)): ?>
+<section class="dc-section">
+  <div class="dc-container">
+    <div class="dc-section-header">
+      <h2 class="dc-section-title">Em destaque</h2>
+      <a href="/cursos" class="dc-section-link">Ver todos <i class="ti ti-arrow-right"></i></a>
+    </div>
+    <div class="dc-course-list">
+      <?php foreach ($cursos as $i => $curso): ?>
+      <a href="/cursos/detalhe?curso_id=<?php echo (int) ($curso['id'] ?? 0); ?>" class="dc-card" aria-label="<?php echo Helpers::e($curso['nome'] ?? ''); ?>">
+        <div class="dc-thumb" style="background:<?php echo $dcCor((int) $i); ?>;">
+          <?php if (!empty($curso['thumbnail'])): ?>
+            <img src="<?php echo Helpers::e($curso['thumbnail']); ?>" alt="<?php echo Helpers::e($curso['nome'] ?? ''); ?>" class="dc-thumb-img">
+          <?php else: ?>
+            <i class="ti <?php echo $dcIcone((int) $i); ?>" style="color:<?php echo $dcIconCor((int) $i); ?>;"></i>
+          <?php endif; ?>
+        </div>
+        <div class="dc-card-body">
+          <?php if (!empty($curso['destaque'])): ?>
+            <span class="dc-badge dc-badge-destaque"><i class="ti ti-flame"></i> Destaque</span>
+          <?php endif; ?>
+          <?php if (!empty($curso['categoria_nome'])): ?>
+            <div class="dc-card-cat"><?php echo Helpers::e($curso['categoria_nome']); ?></div>
+          <?php endif; ?>
+          <div class="dc-card-title"><?php echo Helpers::e($curso['nome'] ?? ''); ?></div>
+          <div class="dc-card-foot">
+            <div class="dc-card-meta">
+              <?php if (!empty($curso['carga_horaria'])): ?>
+                <span><i class="ti ti-clock"></i><?php echo (int) $curso['carga_horaria']; ?>h</span>
+              <?php endif; ?>
+              <?php if (!empty($curso['certificado_previsto'])): ?>
+                <span><i class="ti ti-certificate"></i>Cert.</span>
+              <?php endif; ?>
+            </div>
+            <?php $preco = $dcPreco($curso); ?>
+            <?php if ($preco === 'Grátis'): ?>
+              <span class="dc-price-free">Gratuito</span>
+            <?php else: ?>
+              <span class="dc-price-val"><?php echo Helpers::e($preco); ?></span>
+            <?php endif; ?>
+          </div>
+        </div>
+      </a>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<!-- ══════════════ CATEGORIAS ══════════════ -->
+<?php if (!empty($categoriasDestaque)): ?>
+<section class="dc-section dc-section-alt">
+  <div class="dc-container">
+    <div class="dc-section-header">
+      <h2 class="dc-section-title">Categorias</h2>
+      <a href="/categorias" class="dc-section-link">Ver todas <i class="ti ti-arrow-right"></i></a>
+    </div>
+    <div class="dc-cats-grid">
+      <?php foreach ($categoriasDestaque as $i => $cat): ?>
+      <a href="/categorias/<?php echo Helpers::e($cat['slug'] ?? ''); ?>/cursos" class="dc-cat-card">
+        <div class="dc-cat-thumb" style="background:<?php echo $dcCor((int) $i); ?>;">
+          <?php if (!empty($cat['thumbnail'])): ?>
+            <img src="<?php echo Helpers::e($cat['thumbnail']); ?>" alt="<?php echo Helpers::e($cat['nome'] ?? ''); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
+          <?php else: ?>
+            <i class="ti <?php echo $dcIcone((int) $i); ?>" style="color:<?php echo $dcIconCor((int) $i); ?>;font-size:26px;"></i>
+          <?php endif; ?>
+        </div>
+        <span class="dc-cat-nome"><?php echo Helpers::e($cat['nome'] ?? ''); ?></span>
+        <?php if (!empty($cat['total_cursos'])): $totalCat = (int) $cat['total_cursos']; ?>
+          <span class="dc-cat-count"><?php echo $totalCat . ' ' . ($totalCat === 1 ? 'curso' : 'cursos'); ?></span>
+        <?php endif; ?>
+      </a>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<!-- ══════════════ TOP CURSOS (scroll horizontal) ══════════════ -->
+<?php if (!empty($topCursos)): ?>
+<section class="dc-section">
+  <div class="dc-container">
+    <div class="dc-section-header"><h2 class="dc-section-title">Top cursos</h2></div>
+  </div>
+  <div class="dc-scroll-wrap">
+    <div class="dc-scroll-row">
+      <?php foreach ($topCursos as $i => $curso): ?>
+      <a href="/cursos/detalhe?curso_id=<?php echo (int) ($curso['id'] ?? 0); ?>" class="dc-card dc-card-scroll">
+        <div class="dc-thumb" style="background:<?php echo $dcCor((int) $i); ?>;">
+          <?php if (!empty($curso['thumbnail'])): ?>
+            <img src="<?php echo Helpers::e($curso['thumbnail']); ?>" alt="" class="dc-thumb-img">
+          <?php else: ?>
+            <i class="ti ti-star" style="color:<?php echo $dcIconCor((int) $i); ?>;"></i>
+          <?php endif; ?>
+        </div>
+        <div class="dc-card-body">
+          <div class="dc-card-title"><?php echo Helpers::e($curso['nome'] ?? ''); ?></div>
+          <div class="dc-price-val"><?php echo Helpers::e($dcPreco($curso)); ?></div>
+        </div>
+      </a>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<?php else: ?>
+<?php if ($frontendTemplate === 'v3'): ?>
+    <?php require BASE_PATH . '/resources/views/components/hero_home_v3.php'; ?>
+    <?php require BASE_PATH . '/resources/views/components/credibilidade_home_v3.php'; ?>
+    <?php require BASE_PATH . '/resources/views/components/destaques_home_v3.php'; ?>
+    <?php require BASE_PATH . '/resources/views/components/categorias_home_v3.php'; ?>
+    <?php require BASE_PATH . '/resources/views/components/como_funciona_home_v3.php'; ?>
+    <?php require BASE_PATH . '/resources/views/components/diferenciais_home_v3.php'; ?>
+    <?php require BASE_PATH . '/resources/views/components/quem_somos_home_v3.php'; ?>
+    <?php require BASE_PATH . '/resources/views/components/depoimentos_home_v3.php'; ?>
+    <?php require BASE_PATH . '/resources/views/components/faq_home_v3.php'; ?>
+    <?php require BASE_PATH . '/resources/views/components/cta_final_home_v3.php'; ?>
+<?php endif; ?>
 <?php if (!empty($success)): ?>
 <section class="status-card front-card front-section">
     <strong>Estado</strong>
     <span><?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></span>
-</section>
-<?php endif; ?>
-
-<?php if (!empty($modulosCapaStatus)): ?>
-<section class="status-grid front-card-grid front-section" aria-label="Módulos da capa">
-    <?php foreach ($modulosCapaStatus as $moduloCapa): ?>
-        <?php $textoStatus = $textoModulo($moduloCapa); ?>
-        <article class="status-card front-card">
-            <?php $imagemModulo($moduloCapa, 'module-public-image module-public-image--card'); ?>
-            <?php if (!empty($moduloCapa['titulo'])): ?>
-                <strong><?php echo Helpers::e($moduloCapa['titulo']); ?></strong>
-            <?php endif; ?>
-            <?php if ($textoStatus !== ''): ?>
-                <span><?php echo nl2br(Helpers::e($textoStatus)); ?></span>
-            <?php endif; ?>
-        </article>
-    <?php endforeach; ?>
 </section>
 <?php endif; ?>
 
@@ -92,39 +264,60 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
             </article>
         <?php else: ?>
             <?php foreach ($cursos as $curso): ?>
-                <article class="course-card home-destaques-grid__card front-card">
+                <article class="course-card course-card--image-only home-destaques-grid__card front-card">
                     <?php if (!empty($curso['thumbnail'])): ?>
-                        <div class="course-card__image">
-                            <a href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>">
+                        <div class="course-card__image course-card__image--only">
+                            <a class="course-card__image-link" href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>" aria-label="Ver detalhes do curso <?php echo Helpers::e($curso['nome']); ?>">
                                 <img src="<?php echo Helpers::e($curso['thumbnail']); ?>" alt="<?php echo Helpers::e($curso['nome']); ?>">
                             </a>
                         </div>
+                    <?php else: ?>
+                        <div class="course-card__image course-card__image--only">
+                            <a class="course-card__image-link" href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>" aria-label="Ver detalhes do curso <?php echo Helpers::e($curso['nome']); ?>">
+                                <span class="home-top-course-card__placeholder" aria-hidden="true"></span>
+                            </a>
+                        </div>
                     <?php endif; ?>
-                    <div class="course-card__media">
-                        <strong><?php echo Helpers::e($curso['nome']); ?></strong>
-                        <span><?php echo Helpers::e($curso['categoria_nome'] ?: 'Sem categoria'); ?></span>
-                    </div>
-                    <div class="course-card__body">
-                        <div class="pill-row">
-                            <span class="pill"><?php echo Helpers::e($curso['tipo']); ?></span>
-                            <span class="pill"><?php echo Helpers::e($curso['modalidade']); ?></span>
-                            <span class="pill"><?php echo (int) $curso['total_turmas_abertas']; ?> turma(s) aberta(s)</span>
-                        </div>
-                        <p><?php echo Helpers::e($curso['descricao_curta']); ?></p>
-                        <div class="cta-group">
-                            <a class="button-link button-link--ghost" href="/cursos/detalhe?curso_id=<?php echo (int) $curso['id']; ?>">Ver detalhes</a>
-                            <?php if (!empty($curso['turmas_abertas'][0]['id'])): ?>
-                                <a class="button-link" href="/inscricao?curso_id=<?php echo (int) $curso['id']; ?>&turma_id=<?php echo (int) $curso['turmas_abertas'][0]['id']; ?>">Inscreva-se já</a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+                </article>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+
+<div class="home-destaques-card__footer">
+        <a class="button-link" href="/cursos">Ver todos os cursos</a>
+    </div>
+</section>
+
+<section class="status-card front-card home-categorias-card front-section">
+    <header class="home-destaques-card__header">
+        <h2>Categorias</h2>
+    </header>
+
+    <div class="destaques-grid home-categorias-grid front-card-grid">
+        <?php if (empty($categoriasDestaque)): ?>
+            <article class="status-card front-card">
+                <strong>Nenhuma categoria pública disponível</strong>
+                <span>As categorias ativas com cursos públicos aparecerão aqui.</span>
+            </article>
+        <?php else: ?>
+            <?php foreach ($categoriasDestaque as $categoria): ?>
+                <?php $categoriaNome = isset($categoria['nome']) ? (string) $categoria['nome'] : ''; ?>
+                <?php $categoriaSlug = isset($categoria['slug']) ? (string) $categoria['slug'] : ''; ?>
+                <article class="category-card category-card--image-only home-categorias-grid__card front-card">
+                    <a class="category-card__image-link" href="/categorias/<?php echo Helpers::e($categoriaSlug); ?>/cursos" aria-label="Ver cursos da categoria <?php echo Helpers::e($categoriaNome); ?>">
+                        <?php if (!empty($categoria['thumbnail'])): ?>
+                            <img src="<?php echo Helpers::e($categoria['thumbnail']); ?>" alt="<?php echo Helpers::e($categoriaNome); ?>" loading="lazy">
+                        <?php else: ?>
+                            <span class="category-card__placeholder" aria-hidden="true"></span>
+                        <?php endif; ?>
+                    </a>
                 </article>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
 
     <div class="home-destaques-card__footer">
-        <a class="button-link" href="https://polorainbow.com.br/cursos">Ver todos os cursos</a>
+        <a class="button-link" href="/categorias">Mais categorias</a>
     </div>
 </section>
 
@@ -145,30 +338,41 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
             <span>Quando houver cursos publicados com turmas abertas, os cinco destaques aparecerão aqui automaticamente.</span>
         </article>
     <?php else: ?>
-        <ol class="home-ranking-list front-card-list" aria-label="Top 5 cursos em destaque">
-            <?php foreach ($topCursos as $indice => $cursoTop): ?>
-                <li class="home-ranking-item front-card">
-                    <span class="home-ranking-item__position">#<?php echo (int) ($indice + 1); ?></span>
-                    <?php if (!empty($cursoTop['thumbnail'])): ?>
-                        <a class="home-ranking-item__image" href="/cursos/detalhe?curso_id=<?php echo (int) $cursoTop['id']; ?>">
+        <div class="home-top-courses-grid front-card-grid" aria-label="Top 5 cursos em destaque">
+            <?php foreach ($topCursos as $cursoTop): ?>
+                <article class="home-top-course-card home-top-course-card--image-only front-card">
+                    <a
+                        class="home-top-course-card__link"
+                        href="/cursos/detalhe?curso_id=<?php echo (int) $cursoTop['id']; ?>"
+                        aria-label="Ver curso <?php echo Helpers::e($cursoTop['nome']); ?>"
+                    >
+                        <?php if (!empty($cursoTop['thumbnail'])): ?>
                             <img src="<?php echo Helpers::e($cursoTop['thumbnail']); ?>" alt="<?php echo Helpers::e($cursoTop['nome']); ?>">
-                        </a>
-                    <?php else: ?>
-                        <span class="home-ranking-item__image home-ranking-item__image--empty" aria-hidden="true"></span>
-                    <?php endif; ?>
-                    <div class="home-ranking-item__content">
-                        <strong><?php echo Helpers::e($cursoTop['nome']); ?></strong>
-                        <span><?php echo Helpers::e($cursoTop['categoria_nome'] ?: 'Sem categoria'); ?></span>
-                        <div class="pill-row">
-                            <span class="pill"><?php echo Helpers::e('Modalidade: ' . (ucfirst(trim((string) ($cursoTop['modalidade'] ?? ''))) !== '' ? ucfirst(trim((string) ($cursoTop['modalidade'] ?? ''))) : '-')); ?></span>
-                            <span class="pill"><?php echo (int) ($cursoTop['total_turmas_abertas'] ?? 0) > 0 ? ((int) $cursoTop['total_turmas_abertas'] . ' turma(s) aberta(s)') : 'Nenhuma turma aberta no momento'; ?></span>
-                        </div>
-                    </div>
-                    <a class="button-link button-link--ghost" href="/cursos/detalhe?curso_id=<?php echo (int) $cursoTop['id']; ?>">Ver curso</a>
-                </li>
+                        <?php else: ?>
+                            <span class="home-top-course-card__placeholder" aria-hidden="true"></span>
+                        <?php endif; ?>
+                    </a>
+                </article>
             <?php endforeach; ?>
-        </ol>
+        </div>
     <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php if (!$loggedIn && !empty($modulosCapaStatus)): ?>
+<section class="status-grid front-card-grid front-section" aria-label="Módulos da capa">
+    <?php foreach ($modulosCapaStatus as $moduloCapa): ?>
+        <?php $textoStatus = $textoModulo($moduloCapa); ?>
+        <article class="status-card front-card">
+            <?php $imagemModulo($moduloCapa, 'module-public-image module-public-image--card'); ?>
+            <?php if (!empty($moduloCapa['titulo'])): ?>
+                <strong><?php echo Helpers::e($moduloCapa['titulo']); ?></strong>
+            <?php endif; ?>
+            <?php if ($textoStatus !== ''): ?>
+                <span><?php echo nl2br(Helpers::e($textoStatus)); ?></span>
+            <?php endif; ?>
+        </article>
+    <?php endforeach; ?>
 </section>
 <?php endif; ?>
 
@@ -236,6 +440,20 @@ $imagemModulo = function (array $modulo, $classe = 'module-public-image') {
 </section>
 <?php endif; ?>
 
+<?php if ($frontendTemplate === 'v2'): ?>
+<section class="dbc-v2-final-cta front-section">
+    <div class="dbc-v2-final-cta__content">
+        <strong>Aprenda no seu ritmo, com uma experiência que valoriza cada conquista.</strong>
+        <span>Explore o catálogo, encontre uma turma aberta e siga para a sala virtual sem distrações.</span>
+    </div>
+    <div class="dbc-v2-final-cta__actions">
+        <a class="dbc-v2-btn dbc-v2-btn--primary" href="/cursos">Explorar cursos</a>
+        <a class="dbc-v2-btn dbc-v2-btn--secondary" href="<?php echo $loggedIn ? '/minha-pagina' : '/login'; ?>"><?php echo $loggedIn ? 'Minha Página' : 'Entrar'; ?></a>
+    </div>
+</section>
+<?php endif; ?>
+
+<?php endif; /* fim da ramificação de template (v4-claude | demais) */ ?>
 </div>
 </div>
 <?php if (!empty($postLoginChoiceModal)): ?>

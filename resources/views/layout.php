@@ -5,6 +5,7 @@ use App\Services\ConfiguracaoGlobalService;
 use App\Services\FrontendModuloService;
 use App\Services\FrontendMenuService;
 use App\Services\PlaceholderService;
+use App\Services\TutorVirtualService;
 
 $appConfig = require BASE_PATH . '/config/app.php';
 $pageTitle = isset($title) ? $title : (!empty($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos');
@@ -12,18 +13,56 @@ $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $requestPath = $requestPath ?: '/';
 $globalConfigService = new ConfiguracaoGlobalService();
 $institucional = $globalConfigService->institucional();
+$faviconPublico = $globalConfigService->faviconPublico();
 $frontend = $globalConfigService->frontend();
+$frontendTemplate = $globalConfigService->templateVisualPortal();
 $frontendCardGap = $globalConfigService->frontendCardGap();
 $frontendSectionGap = $globalConfigService->frontendSectionGap();
 $frontendCssPath = BASE_PATH . '/public_html/assets/css/frontend.css';
 $frontendCssVersion = is_file($frontendCssPath) ? filemtime($frontendCssPath) : null;
+$frontendV2CssPath = BASE_PATH . '/public_html/assets/css/frontend-v2.css';
+$frontendV2CssVersion = is_file($frontendV2CssPath) ? filemtime($frontendV2CssPath) : null;
+$homeV3CssPath = BASE_PATH . '/public_html/assets/css/home-v3.css';
+$homeV3CssVersion = is_file($homeV3CssPath) ? filemtime($homeV3CssPath) : null;
+$orientacaoUsuarioCssPath = BASE_PATH . '/public_html/assets/css/orientacao-usuario.css';
+$orientacaoUsuarioCssVersion = is_file($orientacaoUsuarioCssPath) ? filemtime($orientacaoUsuarioCssPath) : null;
+$tutorNorminhaCssPath = BASE_PATH . '/public_html/assets/css/tutor-norminha.css';
+$tutorNorminhaCssVersion = is_file($tutorNorminhaCssPath) ? filemtime($tutorNorminhaCssPath) : null;
+$tutorNorminhaJsPath = BASE_PATH . '/public_html/assets/js/tutor-norminha.js';
+$tutorNorminhaJsVersion = is_file($tutorNorminhaJsPath) ? filemtime($tutorNorminhaJsPath) : null;
+$v4ClaudeCssPath = BASE_PATH . '/public_html/assets/css/v4-claude.css';
+$v4ClaudeCssVersion = is_file($v4ClaudeCssPath) ? filemtime($v4ClaudeCssPath) : null;
+$v4ClaudeJsPath = BASE_PATH . '/public_html/assets/js/v4-claude.js';
+$v4ClaudeJsVersion = is_file($v4ClaudeJsPath) ? filemtime($v4ClaudeJsPath) : null;
 $brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : (!empty($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos');
 $isAdmin = strpos($requestPath, '/admin') === 0;
 $isProfessor = strpos($requestPath, '/professor') === 0;
 $isAluno = in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true)
     || strpos($requestPath, '/aluno/curso') === 0
     || strpos($requestPath, '/aluno/cursos') === 0;
+$isPublicHome = !$isAdmin && !$isProfessor && !$isAluno && $requestPath === '/';
 $useFrontendTheme = !$isAdmin && !$isProfessor;
+$isV4Theme = $useFrontendTheme && $frontendTemplate === 'v4-claude';
+$frontendTemplateAllowedRoutes = array('/login', '/cadastro', '/recuperar-senha', '/inscricao', '/checkout', '/logout');
+$frontendTemplateIsPublic = !$isAdmin && !$isProfessor && !$isAluno;
+$frontendTemplateIsAllowed = $frontendTemplateIsPublic;
+foreach ($frontendTemplateAllowedRoutes as $routePrefix) {
+    if ($requestPath === $routePrefix || strpos($requestPath, rtrim($routePrefix, '/') . '/') === 0) {
+        $frontendTemplateIsAllowed = false;
+        break;
+    }
+}
+if ($frontendTemplateIsAllowed && $frontendTemplate === 'v4-claude') {
+    $frontendTemplateVersion = 'v4-claude';
+} elseif ($frontendTemplateIsAllowed && $frontendTemplate === 'v2') {
+    $frontendTemplateVersion = 'v2';
+} else {
+    $frontendTemplateVersion = 'v1';
+}
+$v4ClaudeCssPath = BASE_PATH . '/public_html/assets/css/v4-claude.css';
+$v4ClaudeCssVersion = is_file($v4ClaudeCssPath) ? filemtime($v4ClaudeCssPath) : null;
+$v4ClaudeJsPath = BASE_PATH . '/public_html/assets/js/v4-claude.js';
+$v4ClaudeJsVersion = is_file($v4ClaudeJsPath) ? filemtime($v4ClaudeJsPath) : null;
 $shouldLoadConteudoAudio = strpos($requestPath, '/aluno/cursos/conteudo/item') === 0
     || strpos($requestPath, '/area-curso/conteudo/item') === 0
     || strpos($requestPath, '/aluno/curso/') === 0
@@ -54,12 +93,25 @@ $footerModulo = null;
 $footerText = '';
 $headerMenu = array('menu' => null, 'itens' => $publicMenu, 'from_fallback' => true);
 $brandModulo = null;
+$tutorNorminha = null;
+$tutorNorminhaTtlHoras = 24;
+$loadOrientationUiAssets = $useFrontendTheme && !$isAdmin && !$isProfessor && !$isAluno && (
+    $requestPath === '/'
+    || strpos($requestPath, '/cursos') === 0
+    || strpos($requestPath, '/cadastro') === 0
+    || strpos($requestPath, '/login') === 0
+    || strpos($requestPath, '/recuperar-senha') === 0
+    || strpos($requestPath, '/esqueci-minha-senha') === 0
+    || strpos($requestPath, '/inscricao') === 0
+    || strpos($requestPath, '/checkout') === 0
+);
 
 if (!$isAdmin) {
     try {
         $frontendModuloService = new FrontendModuloService();
         $frontendMenuService = new FrontendMenuService();
         $placeholderService = new PlaceholderService();
+        $tutorVirtualService = new TutorVirtualService();
 
         $brandModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('topo_site', 'topo_site');
         $preFooterModulo = $frontendModuloService->buscarAtivoPorPosicaoOuCodigo('antes_rodape', 'antes_rodape');
@@ -73,6 +125,11 @@ if (!$isAdmin) {
         if ($footerModulo && !empty($footerModulo['conteudo'])) {
             $footerText = $placeholderService->render((string) $footerModulo['conteudo']);
         }
+
+        $tutorConfiguracoes = $tutorVirtualService->configuracoes();
+        $tutorNorminhaTtlHoras = isset($tutorConfiguracoes['tutor_ttl_fechamento_horas']) ? (int) $tutorConfiguracoes['tutor_ttl_fechamento_horas'] : 24;
+
+        $tutorNorminha = $tutorVirtualService->componenteParaLayout($requestPath, $_GET);
     } catch (\Throwable $exception) {
         $brandModulo = null;
         $preFooterModulo = null;
@@ -80,6 +137,7 @@ if (!$isAdmin) {
         $footerModulo = null;
         $footerText = '';
         $headerMenu = array('menu' => null, 'itens' => $publicMenu, 'from_fallback' => true);
+        $tutorNorminha = null;
     }
 }
 ?>
@@ -89,9 +147,61 @@ if (!$isAdmin) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
+    <?php if (!empty($faviconPublico['href'])): ?>
+        <link rel="icon" href="<?php echo Helpers::e($faviconPublico['href']); ?>" type="<?php echo Helpers::e($faviconPublico['mime']); ?>" sizes="any">
+        <link rel="shortcut icon" href="<?php echo Helpers::e($faviconPublico['href']); ?>">
+    <?php endif; ?>
+    <?php if ($useFrontendTheme): ?>
+        <script>
+        (function () {
+            var storageKey = 'norminha_tutor_minimized_v1';
+            var legacyKeys = ['norminha_tutor_closed_until', 'norminha_tutor_closed_v2', 'norminha_tutor_closed'];
+            var ttlHours = <?php echo (int) ($tutorNorminhaTtlHoras > 0 ? $tutorNorminhaTtlHoras : 24); ?>;
+            if (!ttlHours || ttlHours < 1 || ttlHours > 168) {
+                ttlHours = 24;
+            }
+            var isMinimized = false;
+
+            try {
+                if (window.localStorage) {
+                    isMinimized = window.localStorage.getItem(storageKey) === '1';
+                    for (var i = 0; i < legacyKeys.length; i += 1) {
+                        window.localStorage.removeItem(legacyKeys[i]);
+                    }
+                }
+
+                if (isMinimized) {
+                    document.documentElement.classList.add('norminha-tutor-minimized');
+                } else {
+                    document.documentElement.classList.remove('norminha-tutor-minimized');
+                }
+            } catch (error) {
+                // Falha de storage não impede o carregamento do site.
+            }
+        })();
+        </script>
+    <?php endif; ?>
     <link rel="stylesheet" href="/assets/css/app.css">
     <?php if ($useFrontendTheme): ?>
         <link rel="stylesheet" href="/assets/css/frontend.css<?php echo $frontendCssVersion ? '?v=' . (int) $frontendCssVersion : ''; ?>">
+        <?php if ($frontendTemplateVersion === 'v2'): ?>
+            <link rel="stylesheet" href="/assets/css/frontend-v2.css<?php echo $frontendV2CssVersion ? '?v=' . (int) $frontendV2CssVersion : ''; ?>">
+        <?php endif; ?>
+        <?php if ($loadOrientationUiAssets): ?>
+        <link rel="stylesheet" href="/assets/css/orientacao-usuario.css<?php echo $orientacaoUsuarioCssVersion ? '?v=' . (int) $orientacaoUsuarioCssVersion : ''; ?>">
+        <?php endif; ?>
+        <link rel="stylesheet" href="/assets/css/tutor-norminha.css?v=20260610-4<?php echo $tutorNorminhaCssVersion ? '&amp;f=' . (int) $tutorNorminhaCssVersion : ''; ?>">
+        <?php if ($isPublicHome && $frontendTemplate === 'v3'): ?>
+            <link rel="stylesheet" href="/assets/css/home-v3.css<?php echo $homeV3CssVersion ? '?v=' . (int) $homeV3CssVersion : ''; ?>">
+        <?php endif; ?>
+        <?php if ($isV4Theme): ?>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="/public_html/assets/css/v4-claude.css<?php echo $v4ClaudeCssVersion ? '?v=' . (int) $v4ClaudeCssVersion : ''; ?>">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+            <link rel="stylesheet" href="/public_html/assets/css/dc-main.css?v=<?php echo $v4ClaudeCssVersion ?? time(); ?>">
+        <?php endif; ?>
     <?php if ($shouldLoadConteudoAudio): ?>
         <link rel="stylesheet" href="/assets/css/conteudo-audio.css?v=20260529">
     <?php endif; ?>
@@ -108,6 +218,12 @@ if (!$isAdmin) {
     <?php if ($useFrontendTheme && $shouldLoadConteudoAudio): ?>
         <script src="/assets/js/conteudo-audio.js?v=20260529" defer></script>
     <?php endif; ?>
+    <?php if ($useFrontendTheme): ?>
+        <script src="/assets/js/tutor-norminha.js?v=20260610-4<?php echo $tutorNorminhaJsVersion ? '&amp;f=' . (int) $tutorNorminhaJsVersion : ''; ?>" defer></script>
+    <?php endif; ?>
+    <?php if ($isV4Theme): ?>
+        <script src="/public_html/assets/js/v4-claude.js<?php echo $v4ClaudeJsVersion ? '?v=' . (int) $v4ClaudeJsVersion : ''; ?>" defer></script>
+    <?php endif; ?>
     <?php if ($useFrontendTheme && $scopeClass === 'app-public'): ?>
         <style>
             <?php
@@ -121,26 +237,103 @@ if (!$isAdmin) {
         </style>
     <?php endif; ?>
 </head>
-<body class="<?php echo Helpers::e($scopeClass); ?><?php echo $useFrontendTheme ? ' frontend-theme' : ''; ?> theme-<?php echo htmlspecialchars((string) (isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
+<body class="<?php echo Helpers::e($scopeClass); ?><?php echo $useFrontendTheme ? ' frontend-theme frontend-template-' . Helpers::e($frontendTemplateVersion) : ''; ?> theme-<?php echo Helpers::e($frontendTemplateVersion); ?><?php echo $isV4Theme ? ' theme-v4-claude dc-v4' : ''; ?>">
     <?php if ($isAdmin): ?>
         <?php require BASE_PATH . '/resources/views/admin/_shell.php'; ?>
     <?php else: ?>
         <div class="site-shell">
-            <?php if (!$hidePublicChrome): ?>
-                <?php require BASE_PATH . '/resources/views/partials/public/header.php'; ?>
-            <?php endif; ?>
+            <?php if ($isV4Theme): ?>
+                <?php // ===== Chrome V4 (navbar desktop + footer + bottom nav mobile) ===== ?>
+                <?php
+                    $v4UsuarioNome = (string) (Session::get('usuario_nome') ?? '');
+                    $v4Inicial = $v4UsuarioNome !== '' ? mb_strtoupper(mb_substr($v4UsuarioNome, 0, 1)) : 'U';
+                    $v4AtivoCursos = strpos($requestPath, '/cursos') === 0;
+                    $v4AtivoCategorias = strpos($requestPath, '/categorias') === 0;
+                    $v4AtivoComo = $requestPath === '/como-funciona';
+                ?>
+                <?php if (!$hidePublicChrome): ?>
+                <nav class="dc-navbar" role="navigation" aria-label="Menu principal">
+                    <div class="dc-container dc-navbar-inner">
+                        <a href="/" class="dc-logo" aria-label="<?php echo Helpers::e($brandName); ?> — início">
+                            <span class="dc-logo-fallback">
+                                <span class="dc-logo-dot"><i class="ti ti-lock-open"></i></span>
+                                <?php echo Helpers::e($brandName); ?>
+                            </span>
+                        </a>
+                        <div class="dc-navbar-links">
+                            <a href="/cursos" class="dc-navbar-link<?php echo $v4AtivoCursos ? ' dc-nav-active' : ''; ?>">Cursos</a>
+                            <a href="/categorias" class="dc-navbar-link<?php echo $v4AtivoCategorias ? ' dc-nav-active' : ''; ?>">Categorias</a>
+                            <a href="/como-funciona" class="dc-navbar-link<?php echo $v4AtivoComo ? ' dc-nav-active' : ''; ?>">Como funciona</a>
+                        </div>
+                        <div class="dc-navbar-actions">
+                            <?php if ($isAuthenticated): ?>
+                                <a href="/meus-cursos" class="dc-btn dc-btn-ghost dc-btn-sm"><i class="ti ti-book"></i> Minha área</a>
+                                <a href="/minha-conta" class="dc-avatar" aria-label="Perfil"><?php echo Helpers::e($v4Inicial); ?></a>
+                            <?php else: ?>
+                                <a href="/login" class="dc-btn dc-btn-ghost dc-btn-sm">Entrar</a>
+                                <a href="/cadastro" class="dc-btn dc-btn-primary dc-btn-sm">Cadastrar</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </nav>
+                <?php endif; ?>
 
-            <main class="site-main">
-                <?php echo $content; ?>
-            </main>
+                <main class="dc-main" id="dc-main">
+                    <?php echo $content; ?>
+                </main>
 
-            <?php if (!$hidePublicChrome && !$hidePreFooterMenu): ?>
-                <?php require BASE_PATH . '/resources/views/partials/public/pre_footer.php'; ?>
-            <?php endif; ?>
-            <?php if (!$hidePublicChrome): ?>
-                <?php require BASE_PATH . '/resources/views/partials/public/footer.php'; ?>
+                <?php if (!$hidePublicChrome): ?>
+                <footer class="dc-footer">
+                    <div class="dc-container">
+                        <div class="dc-footer-grid">
+                            <div class="dc-footer-brand">
+                                <span class="dc-footer-logo"><?php echo Helpers::e($brandName); ?></span>
+                                <p>Quando aprende de verdade, desbloqueia.</p>
+                            </div>
+                            <div class="dc-footer-links">
+                                <a href="/cursos">Cursos</a>
+                                <a href="/como-funciona">Como funciona</a>
+                                <a href="/sobre">Sobre</a>
+                                <a href="/contato">Contato</a>
+                                <a href="/certificados/validar">Validar certificado</a>
+                            </div>
+                        </div>
+                        <div class="dc-footer-bottom">
+                            <p>&copy; <?php echo date('Y'); ?> <?php echo Helpers::e($brandName); ?><?php echo !empty($institucional['razao_social']) ? ' — ' . Helpers::e($institucional['razao_social']) : ''; ?><?php echo !empty($institucional['cnpj']) ? ' — CNPJ ' . Helpers::e($institucional['cnpj']) : ''; ?></p>
+                        </div>
+                    </div>
+                </footer>
+                <?php endif; ?>
+
+                <?php if ($useFrontendTheme && !empty($tutorNorminha)): ?>
+                    <?php require BASE_PATH . '/resources/views/components/tutor_norminha.php'; ?>
+                <?php endif; ?>
+                <?php if (!$hidePublicChrome): ?>
+                    <?php require BASE_PATH . '/resources/views/partials/public/bottom_nav_v4.php'; ?>
+                <?php endif; ?>
+            <?php else: ?>
+                <?php if (!$hidePublicChrome): ?>
+                    <?php require BASE_PATH . '/resources/views/partials/public/header.php'; ?>
+                <?php endif; ?>
+
+                <main class="site-main">
+                    <?php echo $content; ?>
+                </main>
+
+                <?php if (!$hidePublicChrome && !$hidePreFooterMenu): ?>
+                    <?php require BASE_PATH . '/resources/views/partials/public/pre_footer.php'; ?>
+                <?php endif; ?>
+                <?php if (!$hidePublicChrome): ?>
+                    <?php require BASE_PATH . '/resources/views/partials/public/footer.php'; ?>
+                <?php endif; ?>
+                <?php if ($useFrontendTheme && !empty($tutorNorminha)): ?>
+                    <?php require BASE_PATH . '/resources/views/components/tutor_norminha.php'; ?>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
+    <?php endif; ?>
+    <?php if ($isV4Theme): ?>
+        <script src="/public_html/assets/js/dc-main.js?v=<?php echo $v4ClaudeJsVersion ?? time(); ?>"></script>
     <?php endif; ?>
 </body>
 <script>

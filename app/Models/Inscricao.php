@@ -173,6 +173,23 @@ class Inscricao
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function forTurmaMatriculados($turmaId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT i.*, u.nome, u.email, u.cpf
+             FROM inscricoes i
+             JOIN usuarios u ON u.id = i.usuario_id
+             WHERE i.turma_id = :turma_id
+               AND i.deleted_at IS NULL
+               AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+             ORDER BY u.nome ASC'
+        );
+
+        $stmt->execute(array('turma_id' => (int) $turmaId));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function countAtivasPorCurso($cursoId)
     {
         $stmt = Database::connection()->prepare(
@@ -398,7 +415,8 @@ class Inscricao
     {
         $stmt = Database::connection()->query(
             'SELECT i.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.total AS pedido_total,
-                    p.status AS pedido_status, pp.nome AS participante_nome, pp.cpf AS participante_cpf,
+                    p.status AS pedido_status, cp.status AS comprovante_status,
+                    pp.nome AS participante_nome, pp.cpf AS participante_cpf,
                     ce.nome AS curso_nome, t.nome AS turma_nome,
                     c.id AS certificado_id, c.codigo AS certificado_codigo, c.status AS certificado_status
              FROM inscricoes i
@@ -406,10 +424,40 @@ class Inscricao
              INNER JOIN participantes_pedido pp ON pp.id = i.participante_pedido_id
              INNER JOIN cursos_eventos ce ON ce.id = i.curso_evento_id
              LEFT JOIN turmas t ON t.id = i.turma_id
+             LEFT JOIN comprovantes_pix cp ON cp.pedido_id = i.pedido_id AND cp.is_atual = 1 AND cp.deleted_at IS NULL
              LEFT JOIN certificados c ON c.inscricao_id = i.id AND c.deleted_at IS NULL AND c.status = "emitido"
              WHERE i.deleted_at IS NULL
              ORDER BY i.id DESC'
         );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function forAlunoBackoffice($usuarioId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT i.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.total AS pedido_total,
+                    p.status AS pedido_status, cp.status AS comprovante_status,
+                    pp.nome AS participante_nome, pp.cpf AS participante_cpf,
+                    u.id AS aluno_id, u.nome AS aluno_nome, u.email AS aluno_email, u.cpf AS aluno_cpf,
+                    ce.nome AS curso_nome, ce.modalidade AS curso_modalidade, ce.tipo AS curso_tipo,
+                    t.nome AS turma_nome, t.codigo AS turma_codigo, t.periodo AS turma_periodo, t.horario AS turma_horario,
+                    c.id AS certificado_id, c.codigo AS certificado_codigo, c.status AS certificado_status,
+                    c.emitido_em AS certificado_emitido_em
+             FROM inscricoes i
+             INNER JOIN pedidos p ON p.id = i.pedido_id
+             INNER JOIN participantes_pedido pp ON pp.id = i.participante_pedido_id
+             INNER JOIN cursos_eventos ce ON ce.id = i.curso_evento_id
+             LEFT JOIN turmas t ON t.id = i.turma_id
+             LEFT JOIN usuarios u ON u.id = COALESCE(i.usuario_id, pp.usuario_id)
+             LEFT JOIN comprovantes_pix cp ON cp.pedido_id = i.pedido_id AND cp.is_atual = 1 AND cp.deleted_at IS NULL
+             LEFT JOIN certificados c ON c.inscricao_id = i.id AND c.deleted_at IS NULL AND c.status = "emitido"
+             WHERE i.deleted_at IS NULL
+               AND COALESCE(i.usuario_id, pp.usuario_id) = :usuario_id
+             ORDER BY i.id DESC'
+        );
+
+        $stmt->execute(array('usuario_id' => (int) $usuarioId));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

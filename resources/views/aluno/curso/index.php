@@ -1,5 +1,7 @@
 <?php use App\Core\Helpers; ?>
 <?php
+if (!isset($frontend_template)) { try { $frontend_template = (new \App\Services\ConfiguracaoGlobalService())->templateVisualPortal(); } catch (\Throwable $e) { $frontend_template = 'v1'; } }
+if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resources/views/v4-claude/aluno/curso/index.php'; return; }
 $inscricaoId = isset($inscricao['id']) ? (int) $inscricao['id'] : 0;
 $cursoId = isset($inscricao['curso_evento_id']) ? (int) $inscricao['curso_evento_id'] : 0;
 $turmaId = isset($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : 0;
@@ -48,46 +50,40 @@ $progressoTexto = $totalConteudos > 0 ? $concluidosConteudos . '/' . $totalConte
         </section>
     <?php endif; ?>
 
-    <?php if (empty($modulos)): ?>
-        <section class="status-card aluno-empty-state">
-            <strong>Nenhum módulo publicado foi encontrado.</strong>
-            <span>Quando houver módulos publicados nesta turma, eles aparecerão aqui em cartões compactos.</span>
-            <p><a class="button-link button-link--ghost" href="/aluno/meus-cursos">Voltar aos meus cursos</a></p>
-        </section>
-    <?php else: ?>
-        <section class="aluno-modulos-grid" aria-label="Lista de módulos publicados">
-            <?php foreach ($modulos as $modulo): ?>
-                <?php
-                $moduloId = (int) ($modulo['id'] ?? 0);
-                $moduloTitulo = Helpers::normalizarTextoLms((string) ($modulo['titulo'] ?? 'Módulo'));
-                $moduloUrl = '/aluno/curso/' . $inscricaoId . '/' . $cursoId . '/' . $turmaId . '/modulo/' . $moduloId;
-                $moduloTotal = (int) ($modulo['total_itens'] ?? 0);
-                $moduloConcluidos = (int) ($modulo['concluidos_itens'] ?? 0);
-                $moduloPercentual = (float) ($modulo['percentual_conclusao'] ?? 0);
-                $moduloStatus = isset($modulo['status_label']) ? (string) $modulo['status_label'] : 'Publicado';
-                $moduloStatusClass = isset($modulo['status_class']) ? (string) $modulo['status_class'] : 'pill--neutral';
-                ?>
-                <article class="status-card aluno-modulo-card">
-                    <a class="aluno-modulo-card__title" href="<?php echo Helpers::e($moduloUrl); ?>">
-                        <?php echo Helpers::e($moduloTitulo); ?>
-                    </a>
+    <?php
+    $cards = array();
+    foreach ($modulos as $modulo) {
+        $moduloId = (int) ($modulo['id'] ?? 0);
+        $moduloUrl = '/aluno/curso/' . $inscricaoId . '/' . $cursoId . '/' . $turmaId . '/modulo/' . $moduloId;
+        $moduloTotal = (int) ($modulo['total_itens'] ?? 0);
+        $moduloConcluidos = (int) ($modulo['concluidos_itens'] ?? 0);
+        $moduloPercentual = (float) ($modulo['percentual_conclusao'] ?? 0);
+        $moduloStatus = isset($modulo['status_label']) ? (string) $modulo['status_label'] : 'Publicado';
+        $moduloStatusClass = isset($modulo['status_class']) ? (string) $modulo['status_class'] : 'pill--neutral';
 
-                    <div class="aluno-modulo-card__meta">
-                        <span class="pill pill--neutral"><?php echo (int) $moduloTotal; ?> conteúdos</span>
-                        <span class="pill pill--neutral"><?php echo (int) $moduloConcluidos; ?>/<?php echo (int) $moduloTotal; ?> concluídos</span>
-                        <span class="pill <?php echo Helpers::e($moduloStatusClass); ?>"><?php echo Helpers::e($moduloStatus); ?></span>
-                    </div>
+        $cards[] = array(
+            'titulo' => Helpers::normalizarTextoLms((string) ($modulo['titulo'] ?? 'Módulo')),
+            'url' => $moduloUrl,
+            'meta' => array(
+                array('label' => $moduloTotal . ' conteúdos', 'class' => 'pill--neutral'),
+                array('label' => $moduloConcluidos . '/' . $moduloTotal . ' concluídos', 'class' => 'pill--neutral'),
+                array('label' => $moduloStatus, 'class' => $moduloStatusClass),
+            ),
+            'percentual' => $moduloPercentual,
+            'progresso_texto' => $moduloConcluidos . '/' . $moduloTotal,
+            'progresso_label' => 'Progresso do módulo',
+            'acao_label' => 'Abrir módulo',
+            'acao_class' => 'button-link--ghost',
+        );
+    }
 
-                    <div class="aluno-modulo-card__footer">
-                        <div class="aluno-progress-chip aluno-progress-chip--compact" aria-label="Progresso do módulo">
-                            <strong><?php echo Helpers::e(number_format(max(0, min(100, $moduloPercentual)), 2, ',', '.')); ?>%</strong>
-                            <span><?php echo (int) $moduloConcluidos; ?>/<?php echo (int) $moduloTotal; ?></span>
-                        </div>
-
-                        <a class="button-link button-link--ghost" href="<?php echo Helpers::e($moduloUrl); ?>">Abrir módulo</a>
-                    </div>
-                </article>
-            <?php endforeach; ?>
-        </section>
-    <?php endif; ?>
+    echo \App\Core\View::render('aluno/curso/_conteudo_cards', array(
+        'cards' => $cards,
+        'lista_label' => 'Lista de módulos publicados',
+        'empty_message' => 'Nenhum módulo publicado foi encontrado.',
+        'empty_description' => 'Quando houver módulos publicados nesta turma, eles aparecerão aqui em cartões compactos.',
+        'empty_action_url' => '/aluno/meus-cursos',
+        'empty_action_label' => 'Voltar aos meus cursos',
+    ), false);
+    ?>
 </section>

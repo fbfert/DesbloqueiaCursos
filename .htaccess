@@ -1,9 +1,15 @@
 Options -Indexes
 
+# Bloqueia acesso a metadados de versionamento e arquivos sensíveis
+RedirectMatch 404 /\.git
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    RewriteRule ^assets/(.*)$ public_html/assets/$1 [L]
+    RewriteRule ^assets/(.*)$ assets/$1 [L]
 
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

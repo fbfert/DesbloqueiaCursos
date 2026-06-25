@@ -1,4 +1,8 @@
 <?php use App\Core\Helpers; ?>
+<?php
+if (!isset($frontend_template)) { try { $frontend_template = (new \App\Services\ConfiguracaoGlobalService())->templateVisualPortal(); } catch (\Throwable $e) { $frontend_template = 'v1'; } }
+if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resources/views/v4-claude/checkout/participantes.php'; return; }
+?>
 
 <div class="front-section-stack">
     <section class="page-header front-section">

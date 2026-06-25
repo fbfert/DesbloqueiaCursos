@@ -1,5 +1,7 @@
 <?php use App\Core\Helpers; ?>
 <?php
+if (!isset($frontend_template)) { try { $frontend_template = (new \App\Services\ConfiguracaoGlobalService())->templateVisualPortal(); } catch (\Throwable $e) { $frontend_template = 'v1'; } }
+if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resources/views/v4-claude/aluno/curso/modulo.php'; return; }
 $inscricaoId = isset($inscricao['id']) ? (int) $inscricao['id'] : 0;
 $cursoId = isset($inscricao['curso_evento_id']) ? (int) $inscricao['curso_evento_id'] : 0;
 $turmaId = isset($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : 0;
@@ -20,7 +22,7 @@ $statusClass = isset($modulo['status_class']) ? (string) $modulo['status_class']
 $progressoTexto = $totalItens > 0 ? $concluidosItens . '/' . $totalItens . ' concluídos' : 'Sem conteúdos publicados';
 ?>
 
-<section class="aluno-curso-shell">
+<div class="student-module-page aluno-curso-shell">
     <?php if (!empty($success)): ?>
         <section class="auth-message auth-message-success" aria-live="polite">
             <p><?php echo Helpers::e($success); ?></p>
@@ -35,7 +37,7 @@ $progressoTexto = $totalItens > 0 ? $concluidosItens . '/' . $totalItens . ' con
         </section>
     <?php endif; ?>
 
-    <section class="status-card aluno-module-header">
+    <section class="status-card aluno-module-header student-module-shell student-module-hero">
         <div class="aluno-module-header__top">
             <div>
                 <p class="aluno-course-eyebrow">Conteúdos do módulo</p>
@@ -56,52 +58,43 @@ $progressoTexto = $totalItens > 0 ? $concluidosItens . '/' . $totalItens . ' con
         </div>
     </section>
 
-    <?php if (empty($itens)): ?>
-        <section class="status-card aluno-empty-state">
-            <strong>Este módulo ainda não possui conteúdos publicados.</strong>
-            <span>Quando houver conteúdos publicados, eles aparecerão nesta lista.</span>
-            <p><a class="button-link button-link--ghost" href="<?php echo Helpers::e($cursoUrl); ?>">Voltar aos módulos</a></p>
-        </section>
-    <?php else: ?>
-        <section class="aluno-conteudos-list" aria-label="Lista de conteúdos publicados">
-            <?php foreach ($itens as $item): ?>
-                <?php
-                $itemId = (int) ($item['id'] ?? 0);
-                $itemTitulo = Helpers::normalizarTextoLms((string) ($item['titulo'] ?? 'Conteúdo'));
-                $itemUrl = !empty($item['detalhes_url']) ? (string) $item['detalhes_url'] : $moduloUrl . '/conteudo/' . $itemId;
-                $itemTipo = isset($item['tipo_label']) ? (string) $item['tipo_label'] : 'Conteúdo';
-                $itemStatus = isset($item['status_label']) ? (string) $item['status_label'] : 'Pendente';
-                $itemStatusClass = isset($item['status_class']) ? (string) $item['status_class'] : 'pill--neutral';
-                $itemConcluido = !empty($item['concluido_aluno']);
-                $itemDescricao = !empty($item['descricao_curta']) ? trim((string) $item['descricao_curta']) : '';
-                ?>
-                <article class="status-card aluno-conteudo-card">
-                    <div class="aluno-conteudo-card__top">
-                        <a class="aluno-conteudo-card__title" href="<?php echo Helpers::e($itemUrl); ?>">
-                            <?php echo Helpers::e($itemTitulo); ?>
-                        </a>
-                        <div class="aluno-conteudo-card__badges">
-                            <span class="pill pill--neutral"><?php echo Helpers::e($itemTipo); ?></span>
-                            <span class="pill <?php echo Helpers::e($itemStatusClass); ?>"><?php echo Helpers::e($itemStatus); ?></span>
-                            <?php if ($itemConcluido): ?>
-                                <span class="pill pill--success">Concluído</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+    <section class="student-module-shell student-module-content">
+    <?php
+    $cards = array();
+    foreach ($itens as $item) {
+        $itemId = (int) ($item['id'] ?? 0);
+        $itemUrl = !empty($item['detalhes_url']) ? (string) $item['detalhes_url'] : $moduloUrl . '/conteudo/' . $itemId;
+        $itemTipo = isset($item['tipo_label']) ? (string) $item['tipo_label'] : 'Conteúdo';
+        $itemStatus = isset($item['status_label']) ? (string) $item['status_label'] : 'Pendente';
+        $itemStatusClass = isset($item['status_class']) ? (string) $item['status_class'] : 'pill--neutral';
+        $itemConcluido = !empty($item['concluido_aluno']);
+        $itemDescricao = !empty($item['descricao_curta']) ? trim((string) $item['descricao_curta']) : '';
 
-                    <?php if ($itemDescricao !== ''): ?>
-                        <p class="aluno-conteudo-card__description"><?php echo Helpers::e($itemDescricao); ?></p>
-                    <?php endif; ?>
+        $cards[] = array(
+            'titulo' => Helpers::normalizarTextoLms((string) ($item['titulo'] ?? 'Conteúdo')),
+            'url' => $itemUrl,
+            'meta' => array(
+                array('label' => $itemTipo, 'class' => 'pill--neutral'),
+                array('label' => $itemStatus, 'class' => $itemStatusClass),
+                $itemConcluido ? array('label' => 'Concluído', 'class' => 'pill--success') : null,
+            ),
+            'percentual' => $itemConcluido ? 100 : 0,
+            'progresso_texto' => $itemConcluido ? 'Concluído' : 'Pendente',
+            'progresso_label' => 'Status do conteúdo',
+            'acao_label' => isset($item['acao_label']) && $item['acao_label'] !== '' ? (string) $item['acao_label'] : 'Abrir conteúdo',
+            'acao_class' => 'button-link--ghost',
+            'descricao' => $itemDescricao,
+        );
+    }
 
-                    <div class="aluno-conteudo-card__footer">
-                        <span class="aluno-progress-chip aluno-progress-chip--compact" aria-label="Status do conteúdo">
-                            <strong><?php echo $itemConcluido ? '100%' : '0%'; ?></strong>
-                            <span><?php echo $itemConcluido ? 'Concluído' : 'Pendente'; ?></span>
-                        </span>
-                        <a class="button-link" href="<?php echo Helpers::e($itemUrl); ?>"><?php echo Helpers::e(isset($item['acao_label']) && $item['acao_label'] !== '' ? (string) $item['acao_label'] : 'Abrir conteúdo'); ?></a>
-                    </div>
-                </article>
-            <?php endforeach; ?>
-        </section>
-    <?php endif; ?>
-</section>
+    echo \App\Core\View::render('aluno/curso/_conteudo_cards', array(
+        'cards' => $cards,
+        'lista_label' => 'Lista de conteúdos publicados',
+        'empty_message' => 'Este módulo ainda não possui conteúdos publicados.',
+        'empty_description' => 'Quando houver conteúdos publicados, eles aparecerão nesta lista.',
+        'empty_action_url' => $cursoUrl,
+        'empty_action_label' => 'Voltar aos módulos',
+    ), false);
+    ?>
+    </section>
+</div>
