@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout — Desbloqueia Cursos</title>
+  <meta name="description" content="Checkout demonstrativo da Desbloqueia Cursos (V2): inscrição, participantes, resumo e pagamento PIX. Ambiente de demonstração, sem cobrança real.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
+  <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
+</head>
+<body class="v2-app">
+
+  <!-- Navbar desktop -->
+  <nav class="v2-navbar" aria-label="Menu principal">
+    <div class="v2-container v2-navbar-inner">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+      <div class="v2-nav-links">
+        <a href="/v2/" class="v2-nav-link">Início</a>
+        <a href="/v2/catalogo/" class="v2-nav-link">Cursos</a>
+        <a href="/v2/eventos/" class="v2-nav-link">Eventos</a>
+        <a href="/v2/categorias/" class="v2-nav-link">Categorias</a>
+      </div>
+      <div class="v2-nav-actions">
+        <a href="/v2/login/" class="v2-btn v2-btn-ghost v2-btn-sm">Entrar</a>
+        <a href="/v2/cadastro/" class="v2-btn v2-btn-primary v2-btn-sm">Criar conta</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Topbar mobile -->
+  <div class="v2-topbar">
+    <div class="v2-container" style="display:flex;align-items:center;gap:10px;width:100%">
+      <a href="/v2/catalogo/" id="v2-co-back" class="v2-iconbtn" aria-label="Voltar ao curso"><i class="ti ti-arrow-left"></i></a>
+      <strong style="font-size:.9rem;">Finalizar inscrição</strong>
+    </div>
+  </div>
+
+  <main class="v2-main v2-co-area">
+    <div class="v2-container">
+
+      <!-- Estado vazio: curso inexistente -->
+      <div class="v2-empty" id="v2-co-empty" style="display:none;">
+        <i class="ti ti-shopping-cart-off"></i>
+        <p>Não encontramos este curso na demonstração. O endereço pode estar incorreto ou o curso pode não fazer parte desta V2.</p>
+        <a href="/v2/catalogo/" class="v2-btn v2-btn-primary"><i class="ti ti-arrow-left"></i> Voltar ao catálogo</a>
+      </div>
+
+      <!-- Checkout (preenchido via JS) -->
+      <div id="v2-checkout-v2" style="display:none;">
+
+        <!-- Stepper -->
+        <nav class="v2-stepper" id="v2-co-stepper" aria-label="Etapas do checkout">
+          <button type="button" class="v2-step is-active" data-step="1" aria-current="step">
+            <span class="v2-step-dot">1</span><span class="v2-step-label">Inscrição</span>
+          </button>
+          <span class="v2-step-line"></span>
+          <button type="button" class="v2-step" data-step="2">
+            <span class="v2-step-dot">2</span><span class="v2-step-label">Participantes</span>
+          </button>
+          <span class="v2-step-line"></span>
+          <button type="button" class="v2-step" data-step="3">
+            <span class="v2-step-dot">3</span><span class="v2-step-label">Resumo</span>
+          </button>
+          <span class="v2-step-line"></span>
+          <button type="button" class="v2-step" data-step="4">
+            <span class="v2-step-dot">4</span><span class="v2-step-label">Pagamento</span>
+          </button>
+        </nav>
+        <p class="v2-co-stepinfo" id="v2-co-stepinfo" aria-live="polite"></p>
+
+        <div class="v2-co-layout">
+          <!-- Coluna principal: etapas -->
+          <div class="v2-co-main">
+            <div class="v2-panel is-active" data-panel="1" id="v2-co-p1"></div>
+            <div class="v2-panel" data-panel="2" id="v2-co-p2"></div>
+            <div class="v2-panel" data-panel="3" id="v2-co-p3"></div>
+            <div class="v2-panel" data-panel="4" id="v2-co-p4"></div>
+            <div class="v2-panel" data-panel="done" id="v2-co-done"></div>
+          </div>
+
+          <!-- Resumo do pedido (sticky no desktop, recolhível no mobile) -->
+          <aside class="v2-co-aside" id="v2-co-aside" aria-label="Resumo do pedido">
+            <div class="v2-co-summary" id="v2-co-summary">
+              <button type="button" class="v2-co-summary-head" id="v2-co-sum-head" aria-expanded="false" aria-controls="v2-co-sum-body">
+                <span><i class="ti ti-receipt"></i> Resumo do pedido</span>
+                <span class="v2-co-summary-total" id="v2-co-sum-total"></span>
+                <i class="ti ti-chevron-down v2-co-sum-chev" aria-hidden="true"></i>
+              </button>
+              <div class="v2-co-summary-body" id="v2-co-sum-body"></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="v2-footer">
+    <div class="v2-container">
+      <div class="v2-footer-grid">
+        <div class="v2-footer-brand">
+          <span class="v2-h3" style="color:#fff">Desbloqueia <span style="color:#FF6A00">Cursos</span></span>
+          <p>Quando aprende de verdade, desbloqueia. Cursos práticos com certificado para você evoluir na carreira.</p>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Plataforma</h4>
+          <a href="/v2/catalogo/">Cursos</a>
+          <a href="/v2/categorias/">Categorias</a>
+          <a href="/v2/login/">Entrar</a>
+          <a href="/v2/cadastro/">Criar conta</a>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Institucional</h4>
+          <a href="/v2/quem-somos/">Quem somos</a>
+          <a href="/v2/contato/">Contato</a>
+          <a href="/v2/onde-estamos/">Onde estamos</a>
+          <a href="/v2/politica-de-privacidade/">Política de privacidade</a>
+          <a href="/v2/termos-de-uso/">Termos de uso</a>
+          <a href="/v2/certificados/validar/">Validar certificado</a>
+        </div>
+      </div>
+      <div class="v2-footer-bottom">
+        <span>© 2026 Desbloqueia Cursos — demonstração visual V2</span>
+        <span>Feito com carinho 🧡</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bottom nav mobile -->
+  <nav class="v2-bnav" aria-label="Navegação rápida">
+    <a href="/v2/" class="v2-bnav-item"><i class="ti ti-home"></i><span>Início</span></a>
+    <a href="/v2/catalogo/" class="v2-bnav-item"><i class="ti ti-compass"></i><span>Explorar</span></a>
+    <a href="/v2/aluno/" class="v2-bnav-item"><i class="ti ti-book"></i><span>Meus cursos</span></a>
+    <a href="/v2/login/" class="v2-bnav-item"><i class="ti ti-user"></i><span>Perfil</span></a>
+  </nav>
+
+  <script src="/v2/data/cursos.js"></script>
+  <script src="/v2/assets/js/v2-main.js"></script>
+</body>
+</html>

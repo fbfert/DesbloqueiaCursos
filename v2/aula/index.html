@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aula — Desbloqueia Cursos</title>
+  <meta name="description" content="Ambiente de aprendizagem (demonstração V2): player, conteúdo, módulos, materiais e quiz. Sem dados ou progresso reais.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
+  <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
+</head>
+<body class="v2-app">
+
+  <!-- Navbar desktop -->
+  <nav class="v2-navbar" aria-label="Menu principal">
+    <div class="v2-container v2-navbar-inner">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+      <div class="v2-nav-links"></div>
+      <div class="v2-nav-actions"><a href="/v2/aluno/" class="v2-btn v2-btn-ghost v2-btn-sm"><i class="ti ti-arrow-left"></i> Minha área</a></div>
+    </div>
+  </nav>
+
+  <main class="v2-main v2-lms-area">
+    <!-- Estado vazio: curso inexistente -->
+    <div class="v2-container">
+      <div class="v2-empty" id="v2-lms-empty" style="display:none;">
+        <i class="ti ti-player-track-next"></i>
+        <p id="v2-lms-empty-msg">Não encontramos esta aula na demonstração. O endereço pode estar incorreto ou o curso pode não fazer parte desta V2.</p>
+        <a href="/v2/aluno/" class="v2-btn v2-btn-primary"><i class="ti ti-arrow-left"></i> Voltar à minha área</a>
+      </div>
+    </div>
+
+    <!-- LMS (preenchido via JS) -->
+    <div id="v2-lms" style="display:none;">
+      <!-- Topbar da aula -->
+      <div class="v2-lms-top">
+        <div class="v2-container v2-lms-top-inner">
+          <a href="/v2/aluno/" class="v2-iconbtn" aria-label="Voltar à minha área"><i class="ti ti-arrow-left"></i></a>
+          <div class="v2-lms-top-body">
+            <div class="v2-lms-curso" id="v2-lms-curso"></div>
+            <div class="v2-lms-aula" id="v2-lms-modulo"></div>
+          </div>
+          <div class="v2-lms-top-prog" aria-hidden="true">
+            <span class="v2-lms-top-pct" id="v2-lms-top-pct">0%</span>
+          </div>
+          <button type="button" class="v2-iconbtn" id="v2-lms-more" aria-label="Mais opções"><i class="ti ti-dots-vertical"></i></button>
+        </div>
+        <div class="v2-container">
+          <div class="v2-progress-track v2-lms-topbar-track"><div class="v2-progress-fill" id="v2-lms-top-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="v2-container">
+        <div class="v2-lms-layout">
+          <!-- Coluna principal -->
+          <div class="v2-lms-main">
+            <div id="v2-lms-stage"></div>
+
+            <div class="v2-lms-tabs" id="v2-lms-tabs" role="tablist" aria-label="Conteúdo e módulos">
+              <button class="v2-lms-tab is-on" data-tab="conteudo" role="tab" aria-selected="true" id="v2-lms-tabbtn-conteudo" aria-controls="v2-lms-pane-conteudo">Conteúdo</button>
+              <button class="v2-lms-tab" data-tab="modulos" role="tab" aria-selected="false" id="v2-lms-tabbtn-modulos" aria-controls="v2-lms-pane-modulos">Módulos</button>
+            </div>
+
+            <div class="v2-lms-pane" id="v2-lms-pane-conteudo" role="tabpanel" aria-labelledby="v2-lms-tabbtn-conteudo"></div>
+            <div class="v2-lms-pane" id="v2-lms-pane-modulos" role="tabpanel" aria-labelledby="v2-lms-tabbtn-modulos" hidden></div>
+          </div>
+
+          <!-- Sidebar: estrutura do curso (desktop) -->
+          <aside class="v2-lms-aside" aria-label="Estrutura do curso">
+            <div class="v2-lms-aside-head">Conteúdo do curso</div>
+            <div id="v2-lms-tree"></div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal demonstrativo (materiais / opções) -->
+  <div class="v2-modal-overlay" id="v2-lms-modal-overlay">
+    <div class="v2-modal" role="dialog" aria-modal="true" aria-labelledby="v2-lms-modal-title" id="v2-lms-modal">
+      <div class="v2-modal-head">
+        <strong id="v2-lms-modal-title"></strong>
+        <button type="button" class="v2-iconbtn" id="v2-lms-modal-x" aria-label="Fechar"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="v2-modal-body" id="v2-lms-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Bottom nav mobile -->
+  <nav class="v2-bnav" aria-label="Navegação rápida">
+    <a href="/v2/" class="v2-bnav-item"><i class="ti ti-home"></i><span>Início</span></a>
+    <a href="/v2/catalogo/" class="v2-bnav-item"><i class="ti ti-compass"></i><span>Cursos</span></a>
+    <a href="/v2/aluno/" class="v2-bnav-item is-active"><i class="ti ti-book"></i><span>Estudos</span></a>
+    <a href="/v2/aluno/?aba=perfil" class="v2-bnav-item"><i class="ti ti-user"></i><span>Perfil</span></a>
+  </nav>
+
+  <script src="/v2/data/cursos.js"></script>
+  <script src="/v2/assets/js/v2-main.js"></script>
+</body>
+</html>

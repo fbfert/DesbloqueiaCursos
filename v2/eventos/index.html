@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eventos — Desbloqueia Cursos</title>
+  <meta name="description" content="Eventos e experiências ao vivo (demonstração V2): oficinas, workshops e imersões. Programação demonstrativa.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://desbloqueiacursos.com.br/v2/eventos/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
+  <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
+</head>
+<body class="v2-app">
+
+  <nav class="v2-navbar" aria-label="Menu principal">
+    <div class="v2-container v2-navbar-inner">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+      <div class="v2-nav-links">
+        <a href="/v2/" class="v2-nav-link">Início</a>
+        <a href="/v2/catalogo/" class="v2-nav-link">Cursos</a>
+        <a href="/v2/eventos/" class="v2-nav-link is-active">Eventos</a>
+        <a href="/v2/categorias/" class="v2-nav-link">Categorias</a>
+      </div>
+      <div class="v2-nav-actions">
+        <a href="/v2/login/" class="v2-btn v2-btn-ghost v2-btn-sm">Entrar</a>
+        <a href="/v2/cadastro/" class="v2-btn v2-btn-primary v2-btn-sm">Criar conta</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="v2-topbar">
+    <div class="v2-container" style="display:flex;align-items:center;gap:10px;width:100%">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+    </div>
+  </div>
+
+  <main class="v2-main v2-ev-area">
+    <div class="v2-searchbar">
+      <div class="v2-container">
+        <div class="v2-search-row">
+          <div class="v2-search-wrap">
+            <i class="ti ti-search"></i>
+            <input type="search" id="v2-ev-search" class="v2-input v2-search-input" placeholder="Buscar eventos por nome, categoria ou tema…" aria-label="Buscar eventos" autocomplete="off">
+          </div>
+          <button type="button" class="v2-btn v2-btn-ghost v2-btn-filters" data-open-filters-e aria-label="Abrir filtros">
+            <i class="ti ti-adjustments-horizontal"></i><span class="v2-hide-mobile">Filtros</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="v2-container">
+      <nav class="v2-breadcrumb" aria-label="Caminho">
+        <a href="/v2/">Início</a>
+        <i class="ti ti-chevron-right" aria-hidden="true"></i>
+        <span aria-current="page">Eventos</span>
+      </nav>
+      <header class="v2-catalog-header">
+        <h1 class="v2-h1">Eventos e experiências ao vivo</h1>
+        <p class="v2-muted">Encontros, oficinas e formações para aprender com mais prática.</p>
+        <div class="v2-callout v2-callout-info v2-ev-note"><i class="ti ti-info-circle"></i><span>Programação demonstrativa da V2. Consulte a plataforma oficial para informações reais.</span></div>
+      </header>
+
+      <!-- Evento em destaque (preenchido via JS) -->
+      <div id="v2-ev-destaque"></div>
+
+      <div class="v2-catalog">
+        <div class="v2-overlay" id="v2-ev-overlay" data-close-filters-e></div>
+        <aside class="v2-filters" id="v2-ev-filters" aria-label="Filtros de eventos">
+          <div class="v2-filters-head">
+            <strong>Filtros</strong>
+            <button type="button" class="v2-iconbtn" data-close-filters-e aria-label="Fechar filtros"><i class="ti ti-x"></i></button>
+          </div>
+
+          <div class="v2-fgroup">
+            <div class="v2-flabel">Categoria</div>
+            <div id="v2-ev-categorias"></div>
+          </div>
+          <div class="v2-fgroup">
+            <div class="v2-flabel">Modalidade</div>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-mod" value="" checked> Todas</label>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-mod" value="online"> Online</label>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-mod" value="presencial"> Presencial</label>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-mod" value="híbrido"> Híbrido</label>
+          </div>
+          <div class="v2-fgroup">
+            <div class="v2-flabel">Período</div>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-periodo" value="" checked> Todos</label>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-periodo" value="proximos"> Próximos eventos</label>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-periodo" value="embreve"> Em breve</label>
+          </div>
+          <div class="v2-fgroup">
+            <div class="v2-flabel">Status</div>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-status" value="" checked> Todos</label>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-status" value="abertas"> Inscrições abertas</label>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-status" value="ultimas"> Últimas vagas</label>
+            <label class="v2-fopt"><input type="radio" name="v2-ev-status" value="encerrado"> Encerrado</label>
+          </div>
+
+          <button type="button" class="v2-btn v2-btn-ghost v2-btn-block" data-clear-filters-e><i class="ti ti-rotate"></i> Limpar filtros</button>
+          <button type="button" class="v2-btn v2-btn-primary v2-btn-block" data-close-filters-e style="margin-top:8px;">Ver resultados</button>
+        </aside>
+
+        <div class="v2-catalog-main">
+          <div class="v2-catalog-bar">
+            <span class="v2-muted v2-sm" id="v2-ev-count" aria-live="polite">Carregando…</span>
+            <label class="v2-sm v2-muted" style="display:flex;align-items:center;gap:8px;">
+              Ordenar
+              <select id="v2-ev-order" class="v2-select" style="width:auto;min-width:170px;" aria-label="Ordenar eventos">
+                <option value="relevancia">Mais relevantes</option>
+                <option value="preco-asc">Menor preço</option>
+                <option value="preco-desc">Maior preço</option>
+                <option value="alfabetica">Ordem alfabética</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="v2-grid" id="v2-ev-grid"></div>
+
+          <div class="v2-empty" id="v2-ev-empty" style="display:none;">
+            <i class="ti ti-calendar-off"></i>
+            <p>Nenhum evento encontrado para a busca e os filtros selecionados.</p>
+            <button type="button" class="v2-btn v2-btn-outline" data-clear-filters-e><i class="ti ti-rotate"></i> Limpar filtros</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="v2-footer">
+    <div class="v2-container">
+      <div class="v2-footer-grid">
+        <div class="v2-footer-brand">
+          <span class="v2-h3" style="color:#fff">Desbloqueia <span style="color:#FF6A00">Cursos</span></span>
+          <p>Quando aprende de verdade, desbloqueia. Cursos práticos com certificado para você evoluir na carreira.</p>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Plataforma</h4>
+          <a href="/v2/catalogo/">Cursos</a>
+          <a href="/v2/eventos/">Eventos</a>
+          <a href="/v2/categorias/">Categorias</a>
+          <a href="/v2/login/">Entrar</a>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Institucional</h4>
+          <a href="/v2/quem-somos/">Quem somos</a>
+          <a href="/v2/contato/">Contato</a>
+          <a href="/v2/onde-estamos/">Onde estamos</a>
+          <a href="/v2/politica-de-privacidade/">Política de privacidade</a>
+          <a href="/v2/termos-de-uso/">Termos de uso</a>
+          <a href="/v2/certificados/validar/">Validar certificado</a>
+        </div>
+      </div>
+      <div class="v2-footer-bottom">
+        <span>© 2026 Desbloqueia Cursos — demonstração visual V2. Programação demonstrativa.</span>
+        <span>Feito com carinho 🧡</span>
+      </div>
+    </div>
+  </footer>
+
+  <nav class="v2-bnav" aria-label="Navegação rápida">
+    <a href="/v2/" class="v2-bnav-item"><i class="ti ti-home"></i><span>Início</span></a>
+    <a href="/v2/catalogo/" class="v2-bnav-item"><i class="ti ti-compass"></i><span>Cursos</span></a>
+    <a href="/v2/eventos/" class="v2-bnav-item is-active"><i class="ti ti-calendar-event"></i><span>Eventos</span></a>
+    <a href="/v2/categorias/" class="v2-bnav-item"><i class="ti ti-category"></i><span>Categorias</span></a>
+  </nav>
+
+  <script src="/v2/data/cursos.js"></script>
+  <script src="/v2/assets/js/v2-main.js"></script>
+</body>
+</html>

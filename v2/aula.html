@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aula — Desbloqueia Cursos</title>
+  <meta name="description" content="A aula da V2 foi movida para /v2/aula/.">
+  <link rel="canonical" href="https://desbloqueiacursos.com.br/v2/aula/">
+  <meta name="robots" content="noindex, follow">
+  <!-- Redireciona preservando a query string (?curso=, ?aula=) -->
+  <script>
+    (function () {
+      try { location.replace("/v2/aula/" + (location.search || "")); }
+      catch (e) { location.href = "/v2/aula/"; }
+    })();
+  </script>
+  <noscript><meta http-equiv="refresh" content="0; url=/v2/aula/"></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="assets/css/v2-main.css">
+  <link rel="icon" href="assets/img/logo-v2.svg" type="image/svg+xml">
+</head>
+<body class="v2-app">
+  <main class="v2-main">
+    <div class="v2-container">
+      <div class="v2-block v2-center" style="max-width:520px;margin:48px auto;background:linear-gradient(135deg,#fff4ec,#f0e8ff);">
+        <i class="ti ti-player-play" style="font-size:44px;color:var(--v2-laranja);display:block;margin-bottom:10px;"></i>
+        <h1 class="v2-h2">A aula foi atualizada</h1>
+        <p class="v2-muted" style="margin:8px 0 18px;">Estamos levando você para a nova experiência de aula. Se nada acontecer, use o botão abaixo.</p>
+        <a href="/v2/aula/" class="v2-btn v2-btn-primary"><i class="ti ti-arrow-right"></i> Ir para a aula</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

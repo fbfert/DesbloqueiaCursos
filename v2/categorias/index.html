@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Categorias — Desbloqueia Cursos</title>
+  <meta name="description" content="Explore as áreas de conhecimento da Desbloqueia Cursos (demonstração V2): cursos e eventos organizados por categoria.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://desbloqueiacursos.com.br/v2/categorias/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
+  <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
+</head>
+<body class="v2-app">
+
+  <nav class="v2-navbar" aria-label="Menu principal">
+    <div class="v2-container v2-navbar-inner">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+      <div class="v2-nav-links">
+        <a href="/v2/" class="v2-nav-link">Início</a>
+        <a href="/v2/catalogo/" class="v2-nav-link">Cursos</a>
+        <a href="/v2/eventos/" class="v2-nav-link">Eventos</a>
+        <a href="/v2/categorias/" class="v2-nav-link is-active">Categorias</a>
+      </div>
+      <div class="v2-nav-actions">
+        <a href="/v2/login/" class="v2-btn v2-btn-ghost v2-btn-sm">Entrar</a>
+        <a href="/v2/cadastro/" class="v2-btn v2-btn-primary v2-btn-sm">Criar conta</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="v2-topbar">
+    <div class="v2-container" style="display:flex;align-items:center;gap:10px;width:100%">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+    </div>
+  </div>
+
+  <main class="v2-main v2-cats-area">
+    <div class="v2-container">
+      <nav class="v2-breadcrumb" id="v2-cat-breadcrumb" aria-label="Caminho">
+        <a href="/v2/">Início</a>
+        <i class="ti ti-chevron-right" aria-hidden="true"></i>
+        <span aria-current="page">Categorias</span>
+      </nav>
+
+      <!-- Conteúdo (hub OU detalhe) preenchido via JS -->
+      <div id="v2-cat-root"></div>
+
+      <!-- Estado vazio: categoria inexistente -->
+      <div class="v2-empty" id="v2-cat-empty" style="display:none;">
+        <i class="ti ti-category-2"></i>
+        <p>Não encontramos esta categoria na demonstração.</p>
+        <a href="/v2/categorias/" class="v2-btn v2-btn-primary"><i class="ti ti-arrow-left"></i> Ver todas as categorias</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="v2-footer">
+    <div class="v2-container">
+      <div class="v2-footer-grid">
+        <div class="v2-footer-brand">
+          <span class="v2-h3" style="color:#fff">Desbloqueia <span style="color:#FF6A00">Cursos</span></span>
+          <p>Quando aprende de verdade, desbloqueia. Cursos práticos com certificado para você evoluir na carreira.</p>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Plataforma</h4>
+          <a href="/v2/catalogo/">Cursos</a>
+          <a href="/v2/eventos/">Eventos</a>
+          <a href="/v2/categorias/">Categorias</a>
+          <a href="/v2/login/">Entrar</a>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Institucional</h4>
+          <a href="/v2/quem-somos/">Quem somos</a>
+          <a href="/v2/contato/">Contato</a>
+          <a href="/v2/onde-estamos/">Onde estamos</a>
+          <a href="/v2/politica-de-privacidade/">Política de privacidade</a>
+          <a href="/v2/termos-de-uso/">Termos de uso</a>
+          <a href="/v2/certificados/validar/">Validar certificado</a>
+        </div>
+      </div>
+      <div class="v2-footer-bottom">
+        <span>© 2026 Desbloqueia Cursos — demonstração visual V2. Conteúdo demonstrativo.</span>
+        <span>Feito com carinho 🧡</span>
+      </div>
+    </div>
+  </footer>
+
+  <nav class="v2-bnav" aria-label="Navegação rápida">
+    <a href="/v2/" class="v2-bnav-item"><i class="ti ti-home"></i><span>Início</span></a>
+    <a href="/v2/catalogo/" class="v2-bnav-item"><i class="ti ti-compass"></i><span>Cursos</span></a>
+    <a href="/v2/eventos/" class="v2-bnav-item"><i class="ti ti-calendar-event"></i><span>Eventos</span></a>
+    <a href="/v2/categorias/" class="v2-bnav-item is-active"><i class="ti ti-category"></i><span>Categorias</span></a>
+  </nav>
+
+  <script src="/v2/data/cursos.js"></script>
+  <script src="/v2/assets/js/v2-main.js"></script>
+</body>
+</html>
