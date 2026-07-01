@@ -25,7 +25,7 @@ class FrontendModuloService
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->imagemDirectoryPublic = '/assets/uploads/modulos';
-        $this->imagemDirectoryAbsolute = BASE_PATH . '/public_html' . $this->imagemDirectoryPublic;
+        $this->imagemDirectoryAbsolute = BASE_PATH . $this->imagemDirectoryPublic;
     }
 
     public function listAdmin()

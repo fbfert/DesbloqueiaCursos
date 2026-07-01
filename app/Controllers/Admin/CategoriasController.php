@@ -45,7 +45,7 @@ class CategoriasController extends Controller
         $input = $request->all();
 
         if ($action === 'save_copy') {
-            $result = $this->categoriaService->duplicar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            $result = $this->categoriaService->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
             if (empty($result['ok'])) {
                 Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar a categoria.'));
                 Session::flash('old', $input);
@@ -56,7 +56,7 @@ class CategoriasController extends Controller
             return $this->redirect('/admin/categorias/editar?categoria_id=' . (int) $result['id']);
         }
 
-        $result = $this->categoriaService->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->categoriaService->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar a categoria.'));
@@ -98,7 +98,7 @@ class CategoriasController extends Controller
         $action = $this->submitAction($request, 'save_exit');
 
         if ($action === 'save_copy') {
-            $result = $this->categoriaService->duplicar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+            $result = $this->categoriaService->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
             if (empty($result['ok'])) {
                 Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel criar a cópia da categoria.'));
                 Session::flash('old', $input);
@@ -109,7 +109,7 @@ class CategoriasController extends Controller
             return $this->redirect('/admin/categorias/editar?categoria_id=' . (int) $result['id']);
         }
 
-        $result = $this->categoriaService->salvar($input, Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->categoriaService->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
             Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar a categoria.'));

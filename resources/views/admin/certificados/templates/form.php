@@ -3,6 +3,7 @@ use App\Core\Helpers;
 
 $template = isset($form_data) && is_array($form_data) ? $form_data : array();
 $old = isset($old) && is_array($old) ? $old : array();
+$assinaturaPreview = trim((string) ($preview_signature_url ?? ($template['assinatura_url'] ?? '')));
 
 $value = function ($field, $default = '') use ($old, $template) {
     if (array_key_exists($field, $old)) {
@@ -21,7 +22,7 @@ $isEdit = !empty($template['id']);
     <header class="admin-page__header">
         <div>
             <h1 class="admin-page__title"><?php echo Helpers::e($title); ?></h1>
-            <p class="admin-page__subtitle">Use placeholders para montar o texto/HTML do certificado.</p>
+            <p class="admin-page__subtitle">Use os placeholders para montar o texto/HTML do certificado.</p>
         </div>
         <div class="admin-page__actions">
             <a class="button-link button-link--ghost" href="/admin/certificados/templates">Voltar</a>
@@ -35,7 +36,7 @@ $isEdit = !empty($template['id']);
     <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
     <section class="status-card">
-        <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form">
+        <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form" enctype="multipart/form-data">
             <input type="hidden" name="id" value="<?php echo (int) $value('id', 0); ?>">
 
             <div class="form-grid">
@@ -151,17 +152,63 @@ $isEdit = !empty($template['id']);
                 <label>
                     Imagem de fundo (URL/caminho)
                     <input type="text" name="imagem_fundo" value="<?php echo Helpers::e($value('imagem_fundo')); ?>">
+                    <input type="file" name="imagem_fundo_upload" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="margin-top:8px;">
+                    <small class="muted">Você pode informar uma URL/caminho manualmente ou enviar um arquivo. Ao enviar um arquivo, o caminho será salvo automaticamente.</small>
+                    <small class="muted">Upload opcional. A imagem de fundo vale apenas para este template e deve considerar A4 horizontal.</small>
+                    <?php if (trim((string) $value('imagem_fundo')) !== ''): ?>
+                        <div style="margin-top:10px;">
+                            <div class="muted" style="margin-bottom:6px;">Imagem de fundo atual</div>
+                            <img src="<?php echo Helpers::e($value('imagem_fundo')); ?>" alt="Imagem de fundo do template" style="max-width:220px;max-height:120px;display:block;border:1px solid rgba(0,0,0,.08);">
+                        </div>
+                    <?php else: ?>
+                        <small class="muted">Sem imagem de fundo definida.</small>
+                    <?php endif; ?>
                 </label>
 
                 <label>
                     Logo (URL/caminho)
                     <input type="text" name="logo" value="<?php echo Helpers::e($value('logo')); ?>">
+                    <input type="file" name="logo_upload" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="margin-top:8px;">
+                    <small class="muted">Você pode informar uma URL/caminho manualmente ou enviar um arquivo. Ao enviar um arquivo, o caminho será salvo automaticamente.</small>
+                    <small class="muted">Logo própria do template. Se estiver vazia, o sistema usa a logo específica dos certificados e depois a institucional/global.</small>
+                    <small class="muted">A logo do template tem prioridade máxima sobre qualquer fallback global.</small>
+                    <?php if (trim((string) $value('logo')) !== ''): ?>
+                        <div style="margin-top:10px;">
+                            <div class="muted" style="margin-bottom:6px;">Logo própria do template</div>
+                            <img src="<?php echo Helpers::e($value('logo')); ?>" alt="Logo do template" style="max-width:180px;max-height:80px;display:block;">
+                        </div>
+                    <?php else: ?>
+                        <small class="muted">Usando logo institucional/global.</small>
+                    <?php endif; ?>
+                </label>
+
+                <label>
+                    Imagem da assinatura
+                    <input type="text" value="<?php echo Helpers::e($value('assinatura_url')); ?>" readonly>
+                    <input type="file" name="assinatura_upload" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif" style="margin-top:8px;">
+                    <small class="muted">Use preferencialmente PNG com fundo transparente. O placeholder {assinatura} insere esta imagem no certificado.</small>
+                      <small class="muted">Ao enviar uma nova assinatura, o arquivo é salvo na pasta pública do template e o caminho web relativo é mantido no banco.</small>
+                    <?php if ($assinaturaPreview !== ''): ?>
+                        <div style="margin-top:10px;">
+                            <div class="muted" style="margin-bottom:6px;">Assinatura atual</div>
+                            <img src="<?php echo Helpers::e($assinaturaPreview); ?>" alt="Assinatura do template" style="max-width:220px;max-height:120px;display:block;border:1px solid rgba(0,0,0,.08);background:transparent;">
+                        </div>
+                    <?php else: ?>
+                        <small class="muted">Nenhuma assinatura cadastrada.</small>
+                    <?php endif; ?>
                 </label>
 
                 <label style="grid-column:1/-1;">
                     Conteúdo HTML do certificado
                     <textarea name="corpo_html" rows="16" style="font-family:Consolas, monospace;"><?php echo Helpers::e($value('corpo_html')); ?></textarea>
-                    <small class="muted">Por enquanto o PDF do sistema segue o gerador atual; este conteúdo já fica pronto para evolução.</small>
+                    <small class="muted">Evite caminhos físicos no HTML. Use placeholders ou URLs públicas quando precisar de imagens.</small>
+                </label>
+
+                <label style="grid-column:1/-1;">
+                    HTML da segunda página
+                    <textarea name="html_segunda_pagina" rows="16" style="font-family:Consolas, monospace;"><?php echo Helpers::e($value('html_segunda_pagina')); ?></textarea>
+                    <small class="muted">Este HTML será usado na segunda página informativa do certificado. Use os placeholders disponíveis para exibir conteúdo programático, módulos e conteúdos do curso.</small>
+                    <small class="muted">Se este campo ficar vazio, o PDF mantém a segunda página automática atual para não quebrar templates existentes.</small>
                 </label>
 
                 <label style="grid-column:1/-1;">
@@ -195,6 +242,7 @@ $isEdit = !empty($template['id']);
                         </tbody>
                     </table>
                 </div>
+                <p class="muted" style="margin:8px 0 0 0;">{certificado_qrcode} gera um QR Code para validação pública do certificado.</p>
             </div>
 
             <?php
@@ -209,4 +257,3 @@ $isEdit = !empty($template['id']);
         </form>
     </section>
 </section>
-

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Database;
 use App\Core\Helpers;
 use App\Core\Logger;
+use App\Models\Categoria;
 use App\Models\Aula;
 use App\Models\Atividade;
 use App\Models\Certificado;
@@ -22,6 +23,7 @@ use Exception;
 class AreaCursoService
 {
     private $inscricaoModel;
+    private $categoriaModel;
     private $cursoModel;
     private $turmaModel;
     private $instrucoesModel;
@@ -47,6 +49,7 @@ class AreaCursoService
     public function __construct()
     {
         $this->inscricaoModel = new Inscricao();
+        $this->categoriaModel = new Categoria();
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
         $this->instrucoesModel = new InstrucoesCurso();
@@ -206,12 +209,35 @@ class AreaCursoService
         $entregaSelecionada = $entregaId > 0 ? $this->atividadeService->detalharEntrega(1, $entregaId, 'admin') : null;
         $entregaStatusFiltro = !empty($selecionados['entrega_status']) ? (string) $selecionados['entrega_status'] : '';
         $entregasAtividadeTodas = $atividadeSelecionada ? $this->atividadeService->listarEntregasPorAtividade((int) $atividadeSelecionada['id']) : array();
+        $cursosFiltros = !empty($selecionados['cursos_filtros']) && is_array($selecionados['cursos_filtros'])
+            ? $selecionados['cursos_filtros']
+            : array();
+        $cursosPage = !empty($selecionados['cursos_page']) ? (int) $selecionados['cursos_page'] : 1;
+        $cursosPaginados = $this->cursoModel->paginateAdmin($cursosFiltros, $cursosPage, 20);
+        $turmasFiltros = !empty($selecionados['turmas_filtros']) && is_array($selecionados['turmas_filtros'])
+            ? $selecionados['turmas_filtros']
+            : array(
+                'curso_id' => $cursoId,
+            );
+        if (empty($turmasFiltros['curso_id']) && $cursoId) {
+            $turmasFiltros['curso_id'] = $cursoId;
+        }
+        $turmasPage = !empty($selecionados['turmas_page']) ? (int) $selecionados['turmas_page'] : 1;
+        $turmasPaginadas = $cursoId ? $this->turmaModel->paginateAdmin($turmasFiltros, $turmasPage, 20) : array('items' => array(), 'pagination' => array('total' => 0, 'page' => 1, 'per_page' => 20, 'pages' => 1), 'status_totals' => array());
 
         return array_merge($contexto, array(
-            'cursos' => $this->cursoModel->allWithCategoryAndCounts(),
+            'cursos' => isset($cursosPaginados['items']) && is_array($cursosPaginados['items']) ? $cursosPaginados['items'] : array(),
+            'cursos_pagination' => isset($cursosPaginados['pagination']) && is_array($cursosPaginados['pagination']) ? $cursosPaginados['pagination'] : array('total' => 0, 'page' => 1, 'per_page' => 20, 'pages' => 1),
+            'cursos_status_totals' => isset($cursosPaginados['status_totals']) && is_array($cursosPaginados['status_totals']) ? $cursosPaginados['status_totals'] : array(),
+            'cursos_filtros' => $cursosFiltros,
+            'categorias' => $this->categoriaModel->allWithCounts(),
             'curso' => $curso,
             'turma' => $turma,
             'turmas' => $turmas,
+            'turmas_listadas' => isset($turmasPaginadas['items']) && is_array($turmasPaginadas['items']) ? $turmasPaginadas['items'] : array(),
+            'turmas_pagination' => isset($turmasPaginadas['pagination']) && is_array($turmasPaginadas['pagination']) ? $turmasPaginadas['pagination'] : array('total' => 0, 'page' => 1, 'per_page' => 20, 'pages' => 1),
+            'turmas_status_totals' => isset($turmasPaginadas['status_totals']) && is_array($turmasPaginadas['status_totals']) ? $turmasPaginadas['status_totals'] : array(),
+            'turmas_filtros' => $turmasFiltros,
             'turmas_inscritos' => $cursoId ? $this->inscricaoModel->countAtivasPorCurso($cursoId) : array(),
             'selected_tab' => $aba,
             'tabs' => $this->abasLms(),
@@ -594,16 +620,16 @@ class AreaCursoService
 
         foreach ($inscricoes as $inscricao) {
             if (!empty($filtros['busca'])) {
-                $busca = mb_strtolower((string) $filtros['busca']);
+                $busca = $this->textoLowerSeguro((string) $filtros['busca']);
                 $camposBusca = array(
-                    mb_strtolower((string) ($inscricao['aluno_nome'] ?? $inscricao['participante_nome'] ?? '')),
-                    mb_strtolower((string) ($inscricao['aluno_email'] ?? $inscricao['participante_email'] ?? '')),
-                    mb_strtolower((string) ($inscricao['aluno_cpf'] ?? $inscricao['participante_cpf'] ?? '')),
-                    mb_strtolower((string) ($inscricao['turma_nome'] ?? '')),
+                    $this->textoLowerSeguro((string) ($inscricao['aluno_nome'] ?? $inscricao['participante_nome'] ?? '')),
+                    $this->textoLowerSeguro((string) ($inscricao['aluno_email'] ?? $inscricao['participante_email'] ?? '')),
+                    $this->textoLowerSeguro((string) ($inscricao['aluno_cpf'] ?? $inscricao['participante_cpf'] ?? '')),
+                    $this->textoLowerSeguro((string) ($inscricao['turma_nome'] ?? '')),
                 );
                 $encontrado = false;
                 foreach ($camposBusca as $campo) {
-                    if ($campo !== '' && mb_strpos($campo, $busca) !== false) {
+                    if ($campo !== '' && $this->textoContainsSeguro($campo, $busca)) {
                         $encontrado = true;
                         break;
                     }
@@ -740,7 +766,7 @@ class AreaCursoService
             return true;
         }
 
-        $termo = mb_strtolower($busca);
+        $termo = $this->textoLowerSeguro($busca);
         $campos = array(
             isset($inscricao['participante_nome']) ? $inscricao['participante_nome'] : '',
             isset($inscricao['participante_cpf']) ? $inscricao['participante_cpf'] : '',
@@ -751,7 +777,7 @@ class AreaCursoService
         );
 
         foreach ($campos as $campo) {
-            if ($campo !== '' && mb_strpos(mb_strtolower((string) $campo), $termo) !== false) {
+            if ($campo !== '' && $this->textoContainsSeguro($this->textoLowerSeguro((string) $campo), $termo)) {
                 return true;
             }
         }
@@ -766,7 +792,7 @@ class AreaCursoService
             return true;
         }
 
-        $termo = mb_strtolower($busca);
+        $termo = $this->textoLowerSeguro($busca);
         $campos = array(
             isset($certificado['codigo']) ? $certificado['codigo'] : '',
             isset($certificado['participante_nome']) ? $certificado['participante_nome'] : '',
@@ -777,7 +803,7 @@ class AreaCursoService
         );
 
         foreach ($campos as $campo) {
-            if ($campo !== '' && mb_strpos(mb_strtolower((string) $campo), $termo) !== false) {
+            if ($campo !== '' && $this->textoContainsSeguro($this->textoLowerSeguro((string) $campo), $termo)) {
                 return true;
             }
         }
@@ -899,6 +925,33 @@ class AreaCursoService
         }
 
         return $material;
+    }
+
+    private function textoLowerSeguro($texto)
+    {
+        $texto = (string) $texto;
+
+        if (function_exists('mb_strtolower')) {
+            return mb_strtolower($texto);
+        }
+
+        return strtolower($texto);
+    }
+
+    private function textoContainsSeguro($texto, $termo)
+    {
+        $texto = (string) $texto;
+        $termo = (string) $termo;
+
+        if ($termo === '') {
+            return true;
+        }
+
+        if (function_exists('mb_strpos')) {
+            return mb_strpos($texto, $termo) !== false;
+        }
+
+        return strpos($texto, $termo) !== false;
     }
 
     public function prepararAcessoMaterial(array $material)

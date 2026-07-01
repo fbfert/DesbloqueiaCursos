@@ -17,7 +17,7 @@ $show_save_as_copy = !empty((int) $value('id', 0));
             <label>Slug<input type="text" name="slug" value="<?php echo Helpers::e($value('slug')); ?>" required></label>
             <label>Nome<input type="text" name="nome" value="<?php echo Helpers::e($value('nome')); ?>" required></label>
             <label>Descrição<textarea name="descricao" rows="3"><?php echo Helpers::e($value('descricao')); ?></textarea></label>
-            <?php $cancelUrl = '/admin/permissoes'; ?>
+            <?php $cancel_url = '/admin/permissoes'; ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>

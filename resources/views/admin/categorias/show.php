@@ -14,6 +14,17 @@
         <dt>Slug</dt><dd><?php echo Helpers::e($categoria['slug']); ?></dd>
         <dt>Status</dt><dd><?php echo Helpers::e($categoria['status']); ?></dd>
         <dt>Ordem</dt><dd><?php echo (int) $categoria['ordem']; ?></dd>
+        <dt>Imagem</dt>
+        <dd>
+            <?php if (!empty($categoria['thumbnail'])): ?>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <img src="<?php echo Helpers::e($categoria['thumbnail']); ?>" alt="<?php echo Helpers::e($categoria['nome']); ?>" style="max-width:180px;border-radius:12px;display:block;">
+                    <span><?php echo Helpers::e($categoria['thumbnail']); ?></span>
+                </div>
+            <?php else: ?>
+                <span class="muted">Sem imagem</span>
+            <?php endif; ?>
+        </dd>
         <dt>Descrição</dt><dd><?php echo Helpers::e($categoria['descricao'] ?? ''); ?></dd>
     </dl>
 </section>

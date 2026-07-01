@@ -18,13 +18,23 @@ class CursosController extends Controller
 
     public function index(Request $request)
     {
+        $filters = array(
+            'busca' => trim((string) $request->query('busca', '')),
+            'categoria_id' => (int) $request->query('categoria_id', 0),
+            'status' => trim((string) $request->query('status', '')),
+            'tipo' => trim((string) $request->query('tipo', '')),
+            'modalidade' => trim((string) $request->query('modalidade', '')),
+        );
+        $page = (int) $request->query('page', 1);
+
         return $this->view('admin/cursos/index', array_merge(
             array(
                 'title' => 'Cursos e eventos',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
+                'filters' => $filters,
             ),
-            $this->cursoService->listAdmin()
+            $this->cursoService->listAdmin($filters, $page, 20)
         ));
     }
 

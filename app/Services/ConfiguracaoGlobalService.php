@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use App\Core\Logger;
 use App\Core\Helpers;
 use App\Core\Validator;
@@ -15,6 +16,7 @@ class ConfiguracaoGlobalService
 {
     const FRONTEND_CARD_GAP_DEFAULT = 'clamp(16px, 2vw, 24px)';
     const FRONTEND_SECTION_GAP_DEFAULT = 'clamp(24px, 3vw, 40px)';
+    const FRONTEND_TEMPLATE_DEFAULT = 'v1';
 
     private $globalModel;
     private $certificadoModel;
@@ -48,7 +50,7 @@ class ConfiguracaoGlobalService
     {
         $current = $this->globalModel->current();
 
-        return $current ?: array(
+        $institucional = $current ?: array(
             'nome_fantasia' => 'Desbloqueia Cursos',
             'razao_social' => null,
             'cnpj' => null,
@@ -60,6 +62,26 @@ class ConfiguracaoGlobalService
             'email_certificados' => null,
             'telefone' => null,
             'logo_caminho' => null,
+            'favicon_caminho' => null,
+        );
+
+        $faviconCaminho = isset($institucional['favicon_caminho']) ? trim((string) $institucional['favicon_caminho']) : '';
+        $faviconResolvido = $this->resolverArquivoPublicoComVersao($faviconCaminho, '/favicon.svg');
+        $institucional['favicon_url'] = $faviconResolvido['url'];
+        $institucional['favicon_mime'] = $faviconResolvido['mime'];
+        $institucional['favicon_version'] = $faviconResolvido['version'];
+
+        return $institucional;
+    }
+
+    public function faviconPublico()
+    {
+        $institucional = $this->institucional();
+
+        return array(
+            'href' => isset($institucional['favicon_url']) && $institucional['favicon_url'] !== '' ? $institucional['favicon_url'] : '/favicon.svg',
+            'mime' => isset($institucional['favicon_mime']) && $institucional['favicon_mime'] !== '' ? $institucional['favicon_mime'] : 'image/svg+xml',
+            'version' => isset($institucional['favicon_version']) ? $institucional['favicon_version'] : null,
         );
     }
 
@@ -198,13 +220,14 @@ class ConfiguracaoGlobalService
         $current = $this->frontendModel->current();
 
         $defaults = array(
-            'template_visual_portal' => 'padrao',
+            'template_visual_portal' => self::FRONTEND_TEMPLATE_DEFAULT,
             'cor_primaria' => null,
             'cor_secundaria' => null,
             'logo_caminho' => null,
             'banner_caminho' => null,
             'descricao_home' => null,
             'home_destaques_limite' => 6,
+            'home_categorias_limite' => 6,
             'frontend_card_gap' => self::FRONTEND_CARD_GAP_DEFAULT,
             'frontend_section_gap' => self::FRONTEND_SECTION_GAP_DEFAULT,
         );
@@ -214,6 +237,9 @@ class ConfiguracaoGlobalService
         }
 
         $frontend = array_merge($defaults, $current);
+        $frontend['template_visual_portal'] = $this->normalizeFrontendTemplate(
+            isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : null
+        );
         $frontend['frontend_card_gap'] = Helpers::sanitizeCssSpacingValue(
             isset($frontend['frontend_card_gap']) ? $frontend['frontend_card_gap'] : null,
             self::FRONTEND_CARD_GAP_DEFAULT
@@ -221,6 +247,9 @@ class ConfiguracaoGlobalService
         $frontend['frontend_section_gap'] = Helpers::sanitizeCssSpacingValue(
             isset($frontend['frontend_section_gap']) ? $frontend['frontend_section_gap'] : null,
             self::FRONTEND_SECTION_GAP_DEFAULT
+        );
+        $frontend['home_categorias_limite'] = $this->normalizeHomeCategoriasLimite(
+            isset($frontend['home_categorias_limite']) ? $frontend['home_categorias_limite'] : null
         );
 
         return $frontend;
@@ -255,6 +284,8 @@ class ConfiguracaoGlobalService
             'validade_reset_senha_minutos' => 60,
             'max_tentativas_login' => 5,
             'tempo_bloqueio_login_minutos' => 15,
+            'recuperacao_pedidos_automatica_ativa' => 0,
+            'recuperacao_pedidos_processamento_limite' => 50,
         );
     }
 
@@ -276,8 +307,14 @@ class ConfiguracaoGlobalService
         return !empty($certificados['prefixo_certificado']) ? $certificados['prefixo_certificado'] : 'PRC';
     }
 
-    public function saveInstitucional(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function saveInstitucional(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null, array $files = array())
     {
+        $current = $this->globalModel->current();
+        $faviconAtual = $current && isset($current['favicon_caminho']) ? trim((string) $current['favicon_caminho']) : null;
+        if ($faviconAtual === '') {
+            $faviconAtual = null;
+        }
+
         $payload = array(
             'nome_fantasia' => trim((string) (isset($data['nome_fantasia']) ? $data['nome_fantasia'] : '')),
             'razao_social' => isset($data['razao_social']) ? trim((string) $data['razao_social']) : null,
@@ -289,18 +326,387 @@ class ConfiguracaoGlobalService
             'email_suporte' => isset($data['email_suporte']) ? trim((string) $data['email_suporte']) : null,
             'email_certificados' => isset($data['email_certificados']) ? trim((string) $data['email_certificados']) : null,
             'telefone' => isset($data['telefone']) ? trim((string) $data['telefone']) : null,
-            'logo_caminho' => isset($data['logo_caminho']) ? trim((string) $data['logo_caminho']) : null,
+            'logo_caminho' => $this->normalizarLogoCaminho(isset($data['logo_caminho']) ? $data['logo_caminho'] : null),
+            'favicon_caminho' => $this->normalizarFaviconCaminho(isset($data['favicon_caminho']) ? $data['favicon_caminho'] : null, $faviconAtual),
         );
+
+        if (isset($files['logo_upload']) && !empty($files['logo_upload']['tmp_name'])) {
+            $resultadoUpload = $this->salvarLogoUpload($files['logo_upload']);
+
+            if (empty($resultadoUpload['ok'])) {
+                return array(
+                    'ok' => false,
+                    'errors' => array(
+                        'logo_upload' => isset($resultadoUpload['message']) ? $resultadoUpload['message'] : 'Não foi possível enviar a logo.',
+                    ),
+                );
+            }
+
+            $payload['logo_caminho'] = $resultadoUpload['path'];
+        }
+
+        if (isset($files['favicon_upload']) && !empty($files['favicon_upload']['tmp_name'])) {
+            $resultadoUpload = $this->salvarFaviconUpload($files['favicon_upload']);
+
+            if (empty($resultadoUpload['ok'])) {
+                Logger::error('configuracoes_globais.favicon_upload.falhou', array(
+                    'message' => isset($resultadoUpload['message']) ? $resultadoUpload['message'] : 'Falha desconhecida no upload do favicon.',
+                    'ip_address' => $ipAddress,
+                    'user_id' => $actorUserId,
+                ));
+                return array(
+                    'ok' => false,
+                    'errors' => array(
+                        'favicon_upload' => isset($resultadoUpload['message']) ? $resultadoUpload['message'] : 'Não foi possível enviar o favicon.',
+                    ),
+                );
+            }
+
+            $payload['favicon_caminho'] = $resultadoUpload['path'];
+            Logger::info('configuracoes_globais.favicon_upload.sucesso', array(
+                'path' => $resultadoUpload['path'],
+                'ip_address' => $ipAddress,
+                'user_id' => $actorUserId,
+            ));
+        }
+
+        $faviconNovo = isset($payload['favicon_caminho']) ? trim((string) $payload['favicon_caminho']) : null;
+        if ($faviconNovo === '') {
+            $faviconNovo = null;
+        }
+        $faviconAnterior = $faviconAtual;
 
         $errors = $this->validateInstitucional($payload);
         if ($errors) {
+            if (!empty($faviconNovo)) {
+                $this->removerArquivoPublicoSeguro($faviconNovo, '/assets/uploads/favicons');
+            }
             return array('ok' => false, 'errors' => $errors);
         }
 
-        $id = $this->globalModel->save($payload);
+        try {
+            $id = $this->globalModel->save($payload);
+        } catch (\Throwable $exception) {
+            if (!empty($faviconNovo)) {
+                $this->removerArquivoPublicoSeguro($faviconNovo, '/assets/uploads/favicons');
+            }
+
+            Logger::error('configuracoes_globais.favicon.salvar_falha', array(
+                'exception' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString(),
+            ));
+
+            return array(
+                'ok' => false,
+                'message' => 'Não foi possível salvar as configurações globais.',
+            );
+        }
+
         $this->auditSave('configuracoes_globais', $id, 'configuracoes_globais.atualizada', $payload, $actorUserId, $ipAddress, $userAgent);
 
+        if (!empty($faviconNovo) && !empty($faviconAnterior) && $faviconAnterior !== $faviconNovo) {
+            if (!$this->removerArquivoPublicoSeguro($faviconAnterior, '/assets/uploads/favicons')) {
+                Logger::warning('configuracoes_globais.favicon.antigo_nao_removido', array(
+                    'path' => $faviconAnterior,
+                ));
+            }
+        }
+
         return array('ok' => true, 'id' => $id);
+    }
+
+    private function normalizarLogoCaminho($valor)
+    {
+        $valor = trim((string) $valor);
+        return $valor !== '' ? $valor : null;
+    }
+
+    private function normalizarFaviconCaminho($valor, $fallbackAtual = null)
+    {
+        $valor = trim((string) $valor);
+        if ($valor !== '') {
+            return $valor;
+        }
+
+        $fallbackAtual = trim((string) $fallbackAtual);
+        return $fallbackAtual !== '' ? $fallbackAtual : null;
+    }
+
+    private function resolverArquivoPublicoComVersao($caminho, $fallback)
+    {
+        $caminho = trim((string) $caminho);
+        if ($caminho === '') {
+            $caminho = $fallback;
+        }
+
+        $url = $caminho;
+        if (strpos($url, 'data:') !== 0 && !preg_match('#^https?://#i', $url) && strpos($url, '//') !== 0) {
+            $url = '/' . ltrim($url, '/');
+        }
+
+        $mime = $this->mimeTypeFromPath($url);
+        $version = $this->versaoArquivoPublico($url);
+        if ($version !== null) {
+            $url = $this->adicionarVersaoUrl($url, $version);
+        }
+
+        return array(
+            'url' => $url,
+            'mime' => $mime,
+            'version' => $version,
+        );
+    }
+
+    private function mimeTypeFromPath($path)
+    {
+        $path = (string) $path;
+        $path = parse_url($path, PHP_URL_PATH) ?: $path;
+        $extensao = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        switch ($extensao) {
+            case 'ico':
+                return 'image/x-icon';
+            case 'svg':
+                return 'image/svg+xml';
+            case 'webp':
+                return 'image/webp';
+            case 'png':
+            default:
+                return 'image/png';
+        }
+    }
+
+    private function versaoArquivoPublico($url)
+    {
+        if (preg_match('#^https?://#i', $url) || strpos($url, 'data:') === 0 || strpos($url, '//') === 0) {
+            return null;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH) ?: $url;
+        $absolutePath = BASE_PATH . '/public_html/' . ltrim($path, '/');
+
+        if (is_file($absolutePath)) {
+            return (int) filemtime($absolutePath);
+        }
+
+        return null;
+    }
+
+    private function adicionarVersaoUrl($url, $version)
+    {
+        if ($version === null || $version === '') {
+            return $url;
+        }
+
+        $separator = strpos($url, '?') !== false ? '&' : '?';
+        return $url . $separator . 'v=' . rawurlencode((string) $version);
+    }
+
+    private function salvarLogoUpload(array $arquivo)
+    {
+        return $this->salvarImagemInstitucionalUpload(
+            $arquivo,
+            'logo',
+            'logos',
+            array('jpg', 'jpeg', 'png', 'webp', 'gif'),
+            array('image/jpeg', 'image/png', 'image/webp', 'image/gif'),
+            5 * 1024 * 1024,
+            'logo'
+        );
+    }
+
+    private function salvarImagemInstitucionalUpload(array $arquivo, $tipo, $subdiretorio, array $extensoesPermitidas, array $mimesPermitidos, $maxBytes, $prefixo)
+    {
+        $rotulo = $tipo === 'favicon' ? 'favicon' : 'logo';
+
+        if (!isset($arquivo['error']) || (int) $arquivo['error'] !== UPLOAD_ERR_OK) {
+            return array('ok' => false, 'message' => 'Não foi possível enviar o ' . $rotulo . '.');
+        }
+
+        if (empty($arquivo['tmp_name']) || !is_uploaded_file($arquivo['tmp_name'])) {
+            return array('ok' => false, 'message' => 'Arquivo de ' . $rotulo . ' inválido.');
+        }
+
+        if (!isset($arquivo['size']) || (int) $arquivo['size'] <= 0) {
+            return array('ok' => false, 'message' => 'Arquivo de ' . $rotulo . ' inválido.');
+        }
+
+        if ((int) $arquivo['size'] > (int) $maxBytes) {
+            return array('ok' => false, 'message' => 'O ' . $rotulo . ' enviado excede o tamanho máximo permitido.');
+        }
+
+        $nomeOriginal = isset($arquivo['name']) ? (string) $arquivo['name'] : '';
+        $extensao = strtolower(pathinfo($nomeOriginal, PATHINFO_EXTENSION));
+        if (!in_array($extensao, $extensoesPermitidas, true)) {
+            return array('ok' => false, 'message' => 'Formato de ' . $rotulo . ' não permitido.');
+        }
+
+        $mime = $this->detectarMimeType($arquivo['tmp_name']);
+        if ($mime === null || !in_array($mime, $mimesPermitidos, true)) {
+            return array('ok' => false, 'message' => 'Formato de ' . $rotulo . ' não permitido.');
+        }
+
+        $diretorioAbsoluto = BASE_PATH . '/public_html/assets/uploads/' . $subdiretorio;
+        if (!is_dir($diretorioAbsoluto) && !@mkdir($diretorioAbsoluto, 0775, true) && !is_dir($diretorioAbsoluto)) {
+            return array('ok' => false, 'message' => 'Não foi possível preparar a pasta de envio do ' . $rotulo . '.');
+        }
+
+        $random = bin2hex(random_bytes(3));
+        $nomeFinal = $prefixo . '-' . date('YmdHis') . '-' . $random . '.' . $extensao;
+        $destinoAbsoluto = $diretorioAbsoluto . '/' . $nomeFinal;
+
+        if (!move_uploaded_file($arquivo['tmp_name'], $destinoAbsoluto)) {
+            return array('ok' => false, 'message' => 'Não foi possível salvar o ' . $rotulo . ' enviado.');
+        }
+
+        return array(
+            'ok' => true,
+            'path' => '/assets/uploads/' . $subdiretorio . '/' . $nomeFinal,
+        );
+    }
+
+    private function salvarFaviconUpload(array $arquivo)
+    {
+        if (!isset($arquivo['error']) || (int) $arquivo['error'] !== UPLOAD_ERR_OK) {
+            return array('ok' => false, 'message' => 'Não foi possível enviar o favicon.');
+        }
+
+        if (empty($arquivo['tmp_name']) || !is_uploaded_file($arquivo['tmp_name'])) {
+            return array('ok' => false, 'message' => 'Arquivo de favicon inválido.');
+        }
+
+        if (!isset($arquivo['size']) || (int) $arquivo['size'] <= 0) {
+            return array('ok' => false, 'message' => 'Arquivo de favicon inválido.');
+        }
+
+        $maxBytes = 1024 * 1024;
+        if ((int) $arquivo['size'] > $maxBytes) {
+            return array('ok' => false, 'message' => 'O favicon enviado excede o tamanho máximo de 1 MB.');
+        }
+
+        $nomeOriginal = isset($arquivo['name']) ? (string) $arquivo['name'] : '';
+        $extensao = strtolower(pathinfo($nomeOriginal, PATHINFO_EXTENSION));
+        $extensoesPermitidas = array('ico', 'png');
+        if (!in_array($extensao, $extensoesPermitidas, true)) {
+            return array('ok' => false, 'message' => 'Formato de favicon não permitido.');
+        }
+
+        $mime = $this->detectarMimeType($arquivo['tmp_name']);
+        if ($extensao === 'png') {
+            if ($mime !== 'image/png') {
+                return array('ok' => false, 'message' => 'Formato de favicon não permitido.');
+            }
+        } elseif ($extensao === 'ico') {
+            $mimesPermitidos = array(
+                'image/x-icon',
+                'image/vnd.microsoft.icon',
+                'image/ico',
+            );
+            $pareceIco = $this->arquivoPareceIco($arquivo['tmp_name']);
+            if ($mime !== null && $mime !== 'application/octet-stream' && !in_array($mime, $mimesPermitidos, true)) {
+                return array('ok' => false, 'message' => 'Formato de favicon não permitido.');
+            }
+            if (($mime === null || $mime === 'application/octet-stream') && !$pareceIco) {
+                return array('ok' => false, 'message' => 'Formato de favicon não permitido.');
+            }
+        }
+
+        $diretorioAbsoluto = BASE_PATH . '/public_html/assets/uploads/favicons';
+        if (!is_dir($diretorioAbsoluto) && !@mkdir($diretorioAbsoluto, 0775, true) && !is_dir($diretorioAbsoluto)) {
+            return array('ok' => false, 'message' => 'Não foi possível preparar a pasta do favicon.');
+        }
+
+        $random = bin2hex(random_bytes(3));
+        $nomeFinal = 'favicon-' . date('YmdHis') . '-' . $random . '.' . $extensao;
+        $destinoAbsoluto = $diretorioAbsoluto . '/' . $nomeFinal;
+
+        if (!move_uploaded_file($arquivo['tmp_name'], $destinoAbsoluto)) {
+            return array('ok' => false, 'message' => 'Não foi possível salvar o favicon enviado.');
+        }
+
+        return array(
+            'ok' => true,
+            'path' => '/assets/uploads/favicons/' . $nomeFinal,
+        );
+    }
+
+    private function arquivoPareceIco($arquivoTmp)
+    {
+        if (!is_file($arquivoTmp) || !is_readable($arquivoTmp)) {
+            return false;
+        }
+
+        $handle = @fopen($arquivoTmp, 'rb');
+        if (!$handle) {
+            return false;
+        }
+
+        $bytes = @fread($handle, 4);
+        @fclose($handle);
+
+        return is_string($bytes) && strlen($bytes) === 4 && substr($bytes, 0, 4) === "\x00\x00\x01\x00";
+    }
+
+    private function normalizarArquivoPublicoCaminho($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return null;
+        }
+
+        if (strpos($valor, '/') !== 0) {
+            $valor = '/' . ltrim($valor, '/');
+        }
+
+        return $valor;
+    }
+
+    private function removerArquivoPublicoSeguro($caminhoRelativo, $prefixoPermitido)
+    {
+        $caminhoRelativo = $this->normalizarArquivoPublicoCaminho($caminhoRelativo);
+        $prefixoPermitido = $this->normalizarArquivoPublicoCaminho($prefixoPermitido);
+
+        if (empty($caminhoRelativo) || empty($prefixoPermitido)) {
+            return false;
+        }
+
+        if (strpos($caminhoRelativo, $prefixoPermitido) !== 0) {
+            return false;
+        }
+
+        $caminhoAbsoluto = BASE_PATH . '/public_html' . $caminhoRelativo;
+        if (!is_file($caminhoAbsoluto)) {
+            return true;
+        }
+
+        return @unlink($caminhoAbsoluto);
+    }
+
+    private function detectarMimeType($arquivoTmp)
+    {
+        if (!is_file($arquivoTmp)) {
+            return null;
+        }
+
+        if (function_exists('finfo_open')) {
+            $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $mime = @finfo_file($finfo, $arquivoTmp);
+                @finfo_close($finfo);
+                if (is_string($mime) && $mime !== '') {
+                    return $mime;
+                }
+            }
+        }
+
+        if (function_exists('mime_content_type')) {
+            $mime = @mime_content_type($arquivoTmp);
+            if (is_string($mime) && $mime !== '') {
+                return $mime;
+            }
+        }
+
+        return null;
     }
 
     public function saveCertificados(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -445,6 +851,12 @@ class ConfiguracaoGlobalService
 
     public function saveFrontend(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        $templateVisualPortal = isset($data['template_visual_portal']) ? trim((string) $data['template_visual_portal']) : '';
+        if ($templateVisualPortal === '') {
+            $templateVisualPortal = self::FRONTEND_TEMPLATE_DEFAULT;
+        }
+        $templateVisualPortal = $this->normalizeFrontendTemplate($templateVisualPortal);
+
         $frontendCardGap = isset($data['frontend_card_gap']) ? trim((string) $data['frontend_card_gap']) : '';
         if ($frontendCardGap === '') {
             $frontendCardGap = self::FRONTEND_CARD_GAP_DEFAULT;
@@ -470,13 +882,14 @@ class ConfiguracaoGlobalService
         }
 
         $payload = array(
-            'template_visual_portal' => isset($data['template_visual_portal']) ? trim((string) $data['template_visual_portal']) : 'padrao',
+            'template_visual_portal' => $templateVisualPortal,
             'cor_primaria' => isset($data['cor_primaria']) ? trim((string) $data['cor_primaria']) : null,
             'cor_secundaria' => isset($data['cor_secundaria']) ? trim((string) $data['cor_secundaria']) : null,
             'logo_caminho' => isset($data['logo_caminho']) ? trim((string) $data['logo_caminho']) : null,
             'banner_caminho' => isset($data['banner_caminho']) ? trim((string) $data['banner_caminho']) : null,
             'descricao_home' => isset($data['descricao_home']) ? trim((string) $data['descricao_home']) : null,
             'home_destaques_limite' => $this->normalizeHomeDestaquesLimite(isset($data['home_destaques_limite']) ? $data['home_destaques_limite'] : null),
+            'home_categorias_limite' => $this->normalizeHomeCategoriasLimite(isset($data['home_categorias_limite']) ? $data['home_categorias_limite'] : null),
             'frontend_card_gap' => $frontendCardGap,
             'frontend_section_gap' => $frontendSectionGap,
         );
@@ -499,6 +912,8 @@ class ConfiguracaoGlobalService
             'validade_reset_senha_minutos' => isset($data['validade_reset_senha_minutos']) ? (int) $data['validade_reset_senha_minutos'] : 60,
             'max_tentativas_login' => isset($data['max_tentativas_login']) ? (int) $data['max_tentativas_login'] : 5,
             'tempo_bloqueio_login_minutos' => isset($data['tempo_bloqueio_login_minutos']) ? (int) $data['tempo_bloqueio_login_minutos'] : 15,
+            'recuperacao_pedidos_automatica_ativa' => !empty($data['recuperacao_pedidos_automatica_ativa']) ? 1 : 0,
+            'recuperacao_pedidos_processamento_limite' => isset($data['recuperacao_pedidos_processamento_limite']) ? (int) $data['recuperacao_pedidos_processamento_limite'] : 50,
         );
 
         $errors = $this->validateSeguranca($payload);
@@ -515,13 +930,19 @@ class ConfiguracaoGlobalService
     public function templateVisualPortal()
     {
         $frontend = $this->frontend();
-        return $frontend['template_visual_portal'];
+        return $this->normalizeFrontendTemplate(isset($frontend['template_visual_portal']) ? $frontend['template_visual_portal'] : null);
     }
 
     public function homeDestaquesLimite()
     {
         $frontend = $this->frontend();
         return $this->normalizeHomeDestaquesLimite(isset($frontend['home_destaques_limite']) ? $frontend['home_destaques_limite'] : null);
+    }
+
+    public function homeCategoriasLimite()
+    {
+        $frontend = $this->frontend();
+        return $this->normalizeHomeCategoriasLimite(isset($frontend['home_categorias_limite']) ? $frontend['home_categorias_limite'] : null);
     }
 
     private function auditSave($entityType, $entityId, $action, array $metadata, $actorUserId, $ipAddress, $userAgent)
@@ -619,8 +1040,8 @@ class ConfiguracaoGlobalService
     {
         $errors = array();
 
-        if ($payload['template_visual_portal'] === '') {
-            $errors['template_visual_portal'] = 'Informe o template visual do portal.';
+        if (!in_array($payload['template_visual_portal'], array('v1', 'v2', 'v3', 'v4-claude'), true)) {
+            $errors['template_visual_portal'] = 'Selecione um template visual válido.';
         }
 
         if (!empty($payload['frontend_card_gap']) && !Helpers::isValidCssSpacingValue($payload['frontend_card_gap'])) {
@@ -655,6 +1076,10 @@ class ConfiguracaoGlobalService
             $errors['tempo_bloqueio_login_minutos'] = 'O tempo de bloqueio deve ser maior que zero.';
         }
 
+        if ($payload['recuperacao_pedidos_processamento_limite'] <= 0) {
+            $errors['recuperacao_pedidos_processamento_limite'] = 'O limite de processamento deve ser maior que zero.';
+        }
+
         return $errors;
     }
 
@@ -675,6 +1100,44 @@ class ConfiguracaoGlobalService
         }
 
         return $limite;
+    }
+
+    private function normalizeHomeCategoriasLimite($value)
+    {
+        if ($value === null) {
+            return 6;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !preg_match('/^\d+$/', $value)) {
+            return 6;
+        }
+
+        $limite = (int) $value;
+        if ($limite < 1 || $limite > 12) {
+            return 6;
+        }
+
+        return $limite;
+    }
+
+    private function normalizeFrontendTemplate($value)
+    {
+        $value = strtolower(trim((string) $value));
+
+        if ($value === 'v2') {
+            return 'v2';
+        }
+
+        if ($value === 'v3') {
+            return 'v3';
+        }
+
+        if ($value === 'v4-claude') {
+            return 'v4-claude';
+        }
+
+        return self::FRONTEND_TEMPLATE_DEFAULT;
     }
 }
 

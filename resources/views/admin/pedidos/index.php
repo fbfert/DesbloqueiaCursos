@@ -59,6 +59,19 @@ if (!function_exists('pedidosFormatarTelefone')) {
     }
 }
 
+if (!function_exists('pedidosCursoNome')) {
+    function pedidosCursoNome($cursoNome)
+    {
+        $cursoNome = trim((string) $cursoNome);
+
+        if ($cursoNome === '') {
+            return 'Curso não informado';
+        }
+
+        return $cursoNome;
+    }
+}
+
 $totalPedidos = is_array($pedidos) ? count($pedidos) : 0;
 $pendentes = 0;
 $comPix = 0;
@@ -87,6 +100,9 @@ $statusAtual = (string) ($filters['status'] ?? '');
         <div class="admin-page__header-content">
             <h1 class="admin-page__title">Pedidos</h1>
             <p class="admin-page__subtitle">Listagem administrativa de pedidos, participantes e comprovantes PIX.</p>
+            <?php if (!empty($recuperacao_ativa)): ?>
+                <p class="admin-page__subtitle">Exibindo pedidos incompletos elegíveis para recuperação manual.</p>
+            <?php endif; ?>
         </div>
         <div class="admin-page__metrics">
             <article class="admin-page__metric">
@@ -116,6 +132,7 @@ $statusAtual = (string) ($filters['status'] ?? '');
                 <a class="card-link admin-shortcut" href="/admin/pedidos/criar"><span>Criar pedido manualmente</span><small>Selecionar aluno, curso, turma e cupom</small></a>
             <?php endif; ?>
             <a class="card-link admin-shortcut" href="/admin/comprovantes-pix"><span>Comprovantes PIX</span><small>Fila de análise e aprovação</small></a>
+            <a class="card-link admin-shortcut" href="/admin/pedidos/recuperacao"><span>Recuperação Manual por e-mail</span><small>Pedidos incompletos elegíveis</small></a>
             <a class="card-link admin-shortcut" href="/admin/inscricoes"><span>Inscrições</span><small>Acompanhar status de alunos</small></a>
             <a class="card-link admin-shortcut" href="/admin/pedidos/excluidos"><span>Pedidos excluídos</span><small>Consultar a lixeira de pedidos</small></a>
             <a class="card-link admin-shortcut" href="/admin/dashboard"><span>Dashboard</span><small>Voltar ao painel executivo</small></a>
@@ -144,6 +161,7 @@ $statusAtual = (string) ($filters['status'] ?? '');
                             <option value="em_analise" <?php echo $statusAtual === 'em_analise' ? 'selected' : ''; ?>>Em análise</option>
                             <option value="pendencia" <?php echo $statusAtual === 'pendencia' ? 'selected' : ''; ?>>Pendência</option>
                             <option value="aguardando_reenvio" <?php echo $statusAtual === 'aguardando_reenvio' ? 'selected' : ''; ?>>Aguardando reenvio</option>
+                            <option value="pedido_incompleto" <?php echo $statusAtual === 'pedido_incompleto' ? 'selected' : ''; ?>>Pedidos incompletos</option>
                             <option value="aprovado" <?php echo $statusAtual === 'aprovado' ? 'selected' : ''; ?>>Aprovado</option>
                             <option value="cancelado" <?php echo $statusAtual === 'cancelado' ? 'selected' : ''; ?>>Cancelado</option>
                         </select>
@@ -188,24 +206,27 @@ $statusAtual = (string) ($filters['status'] ?? '');
                     <th>Gateway</th>
                     <th>Comprovante</th>
                     <th><a href="<?php echo Helpers::e(pedidosSortUrl('created_at', $currentSortBy, $currentSortDir, pedidosQuery($queryBase, $currentSortBy, $currentSortDir))); ?>">Data</a></th>
+                    <th>Recuperação</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($pedidos)): ?>
                     <tr>
-                        <td colspan="9">Nenhum pedido encontrado.</td>
+                        <td colspan="10">Nenhum pedido encontrado.</td>
                     </tr>
                 <?php endif; ?>
                     <?php foreach ($pedidos as $pedido): ?>
                     <?php
                     $comprovante = isset($pedido['comprovante_pix']) ? $pedido['comprovante_pix'] : null;
                     $exclusao = isset($pedido['exclusao']) && is_array($pedido['exclusao']) ? $pedido['exclusao'] : array('ok' => false, 'motivos_texto' => 'Este pedido não pode ser excluído.');
+                    $ehRecuperavel = in_array((string) $pedido['status'], array('rascunho', 'aguardando_pagamento', 'aguardando_reenvio', 'pendencia'), true);
                     ?>
                     <tr>
                         <td>
                             <div class="admin-pedidos__cell-stack">
                                 <strong><?php echo htmlspecialchars($pedido['codigo'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                <small class="muted text-muted">Curso: <?php echo htmlspecialchars(pedidosCursoNome(isset($pedido['cursos_nome']) ? $pedido['cursos_nome'] : ''), ENT_QUOTES, 'UTF-8'); ?></small>
                                 <?php if (!empty($pedido['is_presente'])): ?>
                                     <span class="badge badge--status badge--status-pendente">Presente</span>
                                     <?php if (!empty($pedido['presente_campanha_titulo'])): ?>
@@ -246,15 +267,42 @@ $statusAtual = (string) ($filters['status'] ?? '');
                         </td>
                         <td><?php echo htmlspecialchars((string) $pedido['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
+                            <div class="admin-pedidos__cell-stack">
+                                <?php if (!empty($pedido['ultimo_envio_em'])): ?>
+                                    <strong><?php echo htmlspecialchars((string) $pedido['ultimo_envio_em'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                                    <small>Total: <?php echo (int) ($pedido['total_envios'] ?? 0); ?> | Manuais: <?php echo (int) ($pedido['envios_manuais'] ?? 0); ?> | Automáticos: <?php echo (int) ($pedido['envios_automaticos'] ?? 0); ?></small>
+                                <?php else: ?>
+                                    <strong>-</strong>
+                                <?php endif; ?>
+                                <?php if (!empty($pedido['optout_ativo'])): ?>
+                                    <small>Opt-out ativo</small>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td>
                             <a class="button-link button-link--ghost" href="/admin/pedidos/show?pedido_id=<?php echo (int) $pedido['id']; ?>">Abrir</a>
                         </td>
                     </tr>
                     <?php if (!empty($can_manage_pedidos)): ?>
                         <tr class="admin-pedidos__actions-row">
-                            <td colspan="9">
+                            <td colspan="10">
                                 <details class="admin-pedidos__actions-details">
                                     <summary>Mais opções</summary>
                                     <div class="admin-pedidos__actions-body">
+                                        <?php if ($ehRecuperavel || !empty($recuperacao_ativa)): ?>
+                                            <form method="post" action="/admin/pedidos/recuperacao/enviar" class="admin-form admin-pedidos__delete-form">
+                                                <?php echo $csrfField; ?>
+                                                <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+                                                <input type="hidden" name="modelo_chave" value="pedido_recuperacao_primeiro_lembrete">
+                                                <label>Cupom manual</label>
+                                                <input type="text" name="cupom_codigo" placeholder="Opcional">
+                                                <label class="checkbox" style="margin-top:8px;">
+                                                    <input type="checkbox" name="confirmar_envio" value="1">
+                                                    Confirmar envio mesmo com lembrete recente
+                                                </label>
+                                                <button type="submit" class="button-link button-link--primary">Enviar recuperação</button>
+                                            </form>
+                                        <?php endif; ?>
                                         <?php if (!empty($pedido['cupom_manual']) && !empty($pedido['cupom_manual']['ok'])): ?>
                                             <a class="button-link button-link--ghost" href="/admin/pedidos/show?pedido_id=<?php echo (int) $pedido['id']; ?>#cupom-manual"><?php echo !empty($pedido['cupom_manual']['pedido_confirmado']) ? 'Ajustar cupom' : 'Aplicar cupom'; ?></a>
                                         <?php endif; ?>

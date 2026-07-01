@@ -84,18 +84,6 @@ Esse campo foi escolhido porque já armazena HTML e permite validar:
 - sanitização;
 - renderização pública.
 
-## Área do curso
-
-Os campos ricos já mapeados na área do curso são:
-
-- `Próxima ação do checkout` → `conteudo` em `resources/views/admin/area-curso/_modulos_aulas.php` (`full`)
-- `Descrição do módulo` → `descricao` em `resources/views/admin/area-curso/_modulos_aulas.php` (`basic`)
-- `Conteúdo da aula` → `conteudo` em `resources/views/admin/area-curso/_modulos_aulas.php` (`full`)
-- `Descrição do material` → `descricao` em `resources/views/admin/area-curso/_materiais.php` (`basic`)
-- `Descrição da atividade` → `descricao` em `resources/views/admin/area-curso/_atividades.php` (`full`)
-
-Campos como feedback, observações, justificativas e respostas textuais continuam como texto simples, sem WYSIWYG.
-
 ## Observação sobre tabelas
 
 O Quill padrão não traz suporte robusto a tabelas sem extensão adicional. Nesta base, o foco é:

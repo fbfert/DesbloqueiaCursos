@@ -13,10 +13,10 @@ SET @schema_name := DATABASE();
 SET @inscricao_nullable := (
     SELECT COUNT(*)
     FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = @schema_name
-      AND TABLE_NAME = 'conteudo_progresso_aluno'
-      AND COLUMN_NAME = 'inscricao_id'
-      AND IS_NULLABLE = 'YES'
+    WHERE CONVERT(TABLE_SCHEMA USING utf8mb4) = @schema_name
+      AND CONVERT(TABLE_NAME USING utf8mb4) = 'conteudo_progresso_aluno'
+      AND CONVERT(COLUMN_NAME USING utf8mb4) = 'inscricao_id'
+      AND CONVERT(IS_NULLABLE USING utf8mb4) = 'YES'
 );
 
 SET @sql := IF(
@@ -61,9 +61,9 @@ DEALLOCATE PREPARE stmt_guard;
 SET @fk_exists := (
     SELECT COUNT(*)
     FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
-    WHERE CONSTRAINT_SCHEMA = @schema_name
-      AND TABLE_NAME = 'conteudo_progresso_aluno'
-      AND CONSTRAINT_NAME = 'fk_conteudo_progresso_aluno_inscricao'
+    WHERE CONVERT(CONSTRAINT_SCHEMA USING utf8mb4) = @schema_name
+      AND CONVERT(TABLE_NAME USING utf8mb4) = 'conteudo_progresso_aluno'
+      AND CONVERT(CONSTRAINT_NAME USING utf8mb4) = 'fk_conteudo_progresso_aluno_inscricao'
 );
 
 SET @sql := IF(
@@ -89,9 +89,9 @@ DEALLOCATE PREPARE stmt;
 SET @fk_exists := (
     SELECT COUNT(*)
     FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
-    WHERE CONSTRAINT_SCHEMA = @schema_name
-      AND TABLE_NAME = 'conteudo_progresso_aluno'
-      AND CONSTRAINT_NAME = 'fk_conteudo_progresso_aluno_inscricao'
+    WHERE CONVERT(CONSTRAINT_SCHEMA USING utf8mb4) = @schema_name
+      AND CONVERT(TABLE_NAME USING utf8mb4) = 'conteudo_progresso_aluno'
+      AND CONVERT(CONSTRAINT_NAME USING utf8mb4) = 'fk_conteudo_progresso_aluno_inscricao'
 );
 
 SET @sql := IF(

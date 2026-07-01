@@ -15,9 +15,11 @@ use App\Models\ConteudoLink;
 use App\Models\ConteudoLogAluno;
 use App\Models\ConteudoModulo;
 use App\Models\ConteudoProgressoAluno;
+use App\Models\ConteudoQuiz;
 use App\Models\ConteudoTexto;
 use App\Models\ConteudoVideo;
 use App\Models\Inscricao;
+use App\Services\ConteudoQuizService;
 use App\Services\TrashService;
 use App\Services\RbacService;
 use App\Support\HtmlSanitizer;
@@ -25,7 +27,7 @@ use Exception;
 
 class ConteudoCursoService
 {
-    private const TIPOS_ITEM_VALIDOS = array('etiqueta', 'texto', 'arquivo', 'link', 'avaliacao_textual', 'video');
+    private const TIPOS_ITEM_VALIDOS = array('etiqueta', 'texto', 'arquivo', 'link', 'avaliacao_textual', 'video', 'quiz');
     private const STATUS_ITEM_VALIDOS = array('rascunho', 'publicado', 'oculto', 'arquivado');
     private const STATUS_MODULO_VALIDOS = array('rascunho', 'publicado', 'oculto', 'arquivado');
     private const STATUS_PROGRESO_VALIDOS = array('nao_iniciado', 'acessado', 'em_andamento', 'concluido', 'pendente_correcao', 'reprovado');
@@ -45,6 +47,9 @@ class ConteudoCursoService
     private $progressoModel;
     private $logModel;
     private $inscricaoModel;
+    private $aptidaoService;
+    private $quizModel;
+    private $quizService;
     private $auditService;
     private $trashService;
     private $rbacService;
@@ -64,6 +69,9 @@ class ConteudoCursoService
         $this->progressoModel = new ConteudoProgressoAluno();
         $this->logModel = new ConteudoLogAluno();
         $this->inscricaoModel = new Inscricao();
+        $this->aptidaoService = new AptidaoCertificadoService();
+        $this->quizModel   = new ConteudoQuiz();
+        $this->quizService = new ConteudoQuizService();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->rbacService = new RbacService();
@@ -205,7 +213,7 @@ class ConteudoCursoService
                         $concluidosObrigatoriosModulo++;
                     }
                 }
-                if ($tipo === 'avaliacao_textual' && empty($item['concluido_aluno'])) {
+                if (in_array($tipo, array('avaliacao_textual', 'quiz'), true) && empty($item['concluido_aluno'])) {
                     $avaliacoesPendentes++;
                     $avaliacoesPendentesModulo++;
                 }
@@ -273,6 +281,8 @@ class ConteudoCursoService
 
         $detalhe = $this->carregarDetalhePorTipo((string) $item['tipo'], (int) $item['id']);
         $progresso = $this->progressoModel->findByContext($alunoId, $inscricaoId, (int) $item['id']);
+        $item['progresso_aluno'] = $progresso;
+        $item = $this->enriquecerItemParaAluno($item, $cursoEventoId, $inscricaoId, $turmaId);
 
         return array(
             'ok' => true,
@@ -419,6 +429,10 @@ class ConteudoCursoService
 
         if ((string) $item['tipo'] === 'avaliacao_textual') {
             return array('ok' => false, 'message' => 'A avaliação textual não pode ser concluída manualmente nesta etapa.');
+        }
+
+        if ((string) $item['tipo'] === 'quiz') {
+            return array('ok' => false, 'message' => 'O quiz é concluído automaticamente ao ser enviado.');
         }
 
         $contexto['modulo_id'] = (int) $item['modulo_id'];
@@ -1021,6 +1035,47 @@ class ConteudoCursoService
         return array('ok' => !empty($progresso['ok']), 'log_id' => $log['id'], 'progresso' => $progresso);
     }
 
+    public function desmarcarItemComoConcluido($dados)
+    {
+        $dados = (array) $dados;
+        $itemId = isset($dados['item_id']) ? (int) $dados['item_id'] : 0;
+        $inscricaoId = isset($dados['inscricao_id']) ? (int) $dados['inscricao_id'] : 0;
+        $alunoId = isset($dados['aluno_id']) ? (int) $dados['aluno_id'] : 0;
+
+        if ($itemId <= 0 || $inscricaoId <= 0 || $alunoId <= 0) {
+            return array('ok' => false, 'message' => 'Dados insuficientes para alterar a conclusão do item.');
+        }
+
+        $item = $this->itemModel->findById($itemId);
+        if (!$item) {
+            return array('ok' => false, 'message' => 'Item não encontrado.');
+        }
+
+        if ((string) $item['tipo'] === 'avaliacao_textual' && !empty($item['obrigatorio'])) {
+            return array('ok' => false, 'message' => 'A conclusão desta avaliação é controlada pela correção.');
+        }
+
+        if ((string) $item['tipo'] === 'quiz') {
+            return array('ok' => false, 'message' => 'A conclusão de um quiz é controlada pelo envio das respostas.');
+        }
+
+        $dados['acao'] = 'desmarcou_conclusao';
+        $log = $this->registrarLogAluno($dados);
+        if (empty($log['ok'])) {
+            return $log;
+        }
+
+        $progresso = $this->registrarProgressoAluno(array_merge($dados, array(
+            'status' => 'em_andamento',
+            'percentual' => 0.00,
+            'concluido_em' => null,
+            'ultimo_acesso_em' => isset($dados['ultimo_acesso_em']) ? $dados['ultimo_acesso_em'] : date('Y-m-d H:i:s'),
+        )));
+
+        $recalculo = $this->recalcularProgressoInscricao($inscricaoId);
+        return array('ok' => !empty($progresso['ok']), 'log_id' => $log['id'], 'progresso' => $progresso, 'recalculo' => $recalculo);
+    }
+
     public function recalcularProgressoInscricao($inscricaoId)
     {
         $inscricaoId = (int) $inscricaoId;
@@ -1055,6 +1110,7 @@ class ConteudoCursoService
 
         $percentual = round(($concluidos / $totalObrigatorios) * 100, 2);
         $this->inscricaoModel->updateProgress($inscricaoId, $percentual);
+        $this->aptidaoService->recalcularInscricao($inscricaoId);
 
         return array(
             'ok' => true,
@@ -1336,6 +1392,11 @@ class ConteudoCursoService
             return;
         }
 
+        if ($tipo === 'quiz') {
+            $this->quizService->duplicarQuiz($itemIdOrigem, $itemIdDestino);
+            return;
+        }
+
         if ($tipo === 'arquivo') {
             // Conservador:
             // - duplica o item como rascunho (feito no caller)
@@ -1459,7 +1520,7 @@ class ConteudoCursoService
             return array('ok' => false, 'message' => 'Arquivo de conteúdo não encontrado.');
         }
 
-        $arquivo = $this->arquivoModel->findByItemId($itemId);
+        $arquivo = $this->resolverArquivoDetalhe($this->arquivoModel->findByItemId($itemId), $itemId);
         if (!$arquivo || empty($arquivo['caminho'])) {
             return array('ok' => false, 'message' => 'Arquivo de conteúdo indisponível.');
         }
@@ -1518,10 +1579,81 @@ class ConteudoCursoService
             return $this->avaliacaoTextualModel->findByItemId($itemId);
         }
         if ($tipo === 'arquivo') {
-            return $this->arquivoModel->findByItemId($itemId);
+            return $this->resolverArquivoDetalhe($this->arquivoModel->findByItemId($itemId), $itemId);
+        }
+        if ($tipo === 'quiz') {
+            return $this->quizModel->findByItemId($itemId);
         }
 
         return null;
+    }
+
+    private function resolverArquivoDetalhe($arquivo, $itemId = null)
+    {
+        $itemId = $itemId !== null ? (int) $itemId : 0;
+
+        if (empty($arquivo) || !is_array($arquivo)) {
+            if ($itemId > 0) {
+                $ultimaVersao = $this->arquivoVersaoModel->findUltimaPorItemId($itemId);
+                if (!empty($ultimaVersao) && is_array($ultimaVersao)) {
+                    return $this->mesclarArquivoComVersao(array('item_id' => $itemId), $ultimaVersao);
+                }
+            }
+
+            return null;
+        }
+
+        if (!empty($arquivo['caminho'])) {
+            return $arquivo;
+        }
+
+        $arquivoId = !empty($arquivo['id']) ? (int) $arquivo['id'] : 0;
+        $itemId = !empty($arquivo['item_id']) ? (int) $arquivo['item_id'] : 0;
+
+        $versaoAtualId = !empty($arquivo['versao_atual_id']) ? (int) $arquivo['versao_atual_id'] : 0;
+        if ($versaoAtualId > 0) {
+            $versaoAtual = $this->arquivoVersaoModel->findById($versaoAtualId);
+            if (!empty($versaoAtual) && is_array($versaoAtual)) {
+                return $this->mesclarArquivoComVersao($arquivo, $versaoAtual);
+            }
+        }
+
+        if ($arquivoId > 0) {
+            $versoes = $this->arquivoVersaoModel->listForArquivo($arquivoId);
+            if (!empty($versoes)) {
+                return $this->mesclarArquivoComVersao($arquivo, $versoes[0]);
+            }
+        }
+
+        if ($itemId > 0) {
+            $ultimaVersao = $this->arquivoVersaoModel->findUltimaPorItemId($itemId);
+            if (!empty($ultimaVersao) && is_array($ultimaVersao)) {
+                return $this->mesclarArquivoComVersao($arquivo, $ultimaVersao);
+            }
+        }
+
+        if ($arquivoId <= 0 && $itemId <= 0) {
+            return $arquivo;
+        }
+
+        return $arquivo;
+    }
+
+    private function mesclarArquivoComVersao(array $arquivo, array $versao)
+    {
+        $arquivoId = !empty($arquivo['id']) ? (int) $arquivo['id'] : 0;
+        return array_merge($arquivo, array(
+            'id' => $arquivoId > 0 ? $arquivoId : (!empty($versao['arquivo_id']) ? (int) $versao['arquivo_id'] : 0),
+            'item_id' => !empty($arquivo['item_id']) ? (int) $arquivo['item_id'] : (!empty($versao['item_id']) ? (int) $versao['item_id'] : 0),
+            'nome_original' => !empty($versao['nome_original']) ? $versao['nome_original'] : (isset($arquivo['nome_original']) ? $arquivo['nome_original'] : null),
+            'nome_arquivo' => !empty($versao['nome_arquivo']) ? $versao['nome_arquivo'] : (isset($arquivo['nome_arquivo']) ? $arquivo['nome_arquivo'] : null),
+            'caminho' => !empty($versao['caminho']) ? $versao['caminho'] : (isset($arquivo['caminho']) ? $arquivo['caminho'] : null),
+            'mime_type' => !empty($versao['mime_type']) ? $versao['mime_type'] : (isset($arquivo['mime_type']) ? $arquivo['mime_type'] : null),
+            'extensao' => !empty($versao['extensao']) ? $versao['extensao'] : (isset($arquivo['extensao']) ? $arquivo['extensao'] : null),
+            'tamanho_bytes' => array_key_exists('tamanho_bytes', $versao) && $versao['tamanho_bytes'] !== null
+                ? $versao['tamanho_bytes']
+                : (array_key_exists('tamanho_bytes', $arquivo) ? $arquivo['tamanho_bytes'] : null),
+        ));
     }
 
     private function enriquecerItemParaAluno(array $item, $cursoEventoId, $inscricaoId, $turmaId = null)
@@ -1573,6 +1705,11 @@ class ConteudoCursoService
             }
 
             return $statusEntrega !== '' ? $statusEntrega : 'aguardando_envio';
+        }
+
+        if ($tipo === 'quiz') {
+            $status = !empty($progresso) && !empty($progresso['status']) ? (string) $progresso['status'] : 'nao_iniciado';
+            return $status;
         }
 
         if ($tipo === 'etiqueta') {
@@ -1644,12 +1781,13 @@ class ConteudoCursoService
     private function rotuloTipoItemPublicoAluno($tipo)
     {
         $mapa = array(
-            'etiqueta' => 'Etiqueta',
-            'texto' => 'Texto',
-            'arquivo' => 'Arquivo',
-            'link' => 'Link externo',
-            'video' => 'Vídeo',
-            'avaliacao_textual' => 'Avaliação textual',
+            'etiqueta'         => 'Etiqueta',
+            'texto'            => 'Texto',
+            'arquivo'          => 'Arquivo',
+            'link'             => 'Link externo',
+            'video'            => 'Vídeo',
+            'avaliacao_textual'=> 'Avaliação textual',
+            'quiz'             => 'Quiz',
         );
 
         $tipo = (string) $tipo;
@@ -1676,6 +1814,9 @@ class ConteudoCursoService
             return in_array($statusEntrega, array('enviada', 'reenviada', 'devolvida', 'corrigida', 'aprovada', 'reprovada'), true)
                 ? 'Ver avaliação'
                 : 'Responder avaliação';
+        }
+        if ($tipo === 'quiz') {
+            return 'Fazer quiz';
         }
 
         return 'Ver conteúdo';
@@ -1860,8 +2001,12 @@ class ConteudoCursoService
             return array('ok' => true);
         }
 
+        if ($tipo === 'quiz') {
+            return $this->quizService->salvarDetalhesQuiz($itemId, $dados);
+        }
+
         if ($tipo === 'arquivo') {
-            $arquivoExistente = $this->arquivoModel->findByItemId($itemId);
+            $arquivoExistente = $this->resolverArquivoDetalhe($this->arquivoModel->findByItemId($itemId), $itemId);
             $permiteDownload = !empty($dados['arquivo_permite_download']) ? 1 : 0;
 
             if ($arquivoUpload && !empty($arquivoUpload['tmp_name'])) {
@@ -2073,4 +2218,3 @@ class ConteudoCursoService
         );
     }
 }
-

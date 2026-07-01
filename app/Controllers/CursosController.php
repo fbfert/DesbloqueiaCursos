@@ -7,6 +7,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Services\CategoriaService;
+use App\Services\ConfiguracaoGlobalService;
 use App\Services\CursoService;
 use App\Services\InscricaoService;
 
@@ -14,26 +16,65 @@ class CursosController extends Controller
 {
     private $cursoService;
     private $inscricaoService;
+    private $configuracaoGlobalService;
+    private $categoriaService;
 
     public function __construct()
     {
+        $this->configuracaoGlobalService = new ConfiguracaoGlobalService();
+        $this->categoriaService = new CategoriaService();
         $this->cursoService = new CursoService();
         $this->inscricaoService = new InscricaoService();
     }
 
     public function index(Request $request)
     {
-        $contexto = $this->cursoService->listPublic();
         $usuarioId = (int) Session::get('usuario_id', 0);
+        $categoriaSlug = trim((string) $request->query('categoria', ''));
+        $busca = trim((string) $request->query('busca', ''));
+        $busca = trim(strip_tags(mb_substr($busca, 0, 80)));
+        $categoriasFiltro = $this->categoriaService->listPublic();
+        $categoriasFiltro = isset($categoriasFiltro['categorias']) && is_array($categoriasFiltro['categorias']) ? $categoriasFiltro['categorias'] : array();
+        $categoriaSelecionada = null;
+        $filters = array();
+        $pageTitle = 'Cursos e eventos';
+        $pageSubtitle = 'Confira apenas cursos ativos do portal. O frontend não publica itens inativos nem dados operacionais do backoffice.';
+
+        if ($categoriaSlug !== '') {
+            $categoria = $this->categoriaService->findPublicBySlug($categoriaSlug);
+            if ($categoria) {
+                $categoriaSelecionada = $categoria;
+                $filters['categoria_id'] = (int) $categoria['id'];
+                $pageTitle = 'Cursos de ' . $categoria['nome'];
+                $pageSubtitle = !empty($categoria['descricao'])
+                    ? (string) $categoria['descricao']
+                    : 'Cursos públicos da categoria selecionada.';
+            }
+        }
+
+        if ($busca !== '') {
+            $filters['busca'] = $busca;
+        }
+
+        $contexto = $this->cursoService->listPublic($filters);
         if ($usuarioId > 0 && !empty($contexto['cursos']) && is_array($contexto['cursos'])) {
             $contexto['cursos'] = $this->anexarAcessosDoAlunoAoCatalogo($contexto['cursos'], $usuarioId);
         }
 
         return $this->view('cursos/index', array_merge(
             array(
-                'title' => 'Cursos e eventos',
+                'title' => $pageTitle,
+                'page_title' => $pageTitle,
+                'page_subtitle' => $pageSubtitle,
+                'categoriaSelecionada' => $categoriaSelecionada,
+                'categoriaSlugAtual' => $categoriaSlug,
+                'categoriasFiltro' => $categoriasFiltro,
+                'buscaAtual' => $busca,
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
+                'frontend_template' => $this->configuracaoGlobalService->templateVisualPortal(),
+                'loggedIn' => $usuarioId > 0,
+                'usuarioNome' => Session::get('usuario_nome'),
             ),
             $contexto
         ));
@@ -63,10 +104,11 @@ class CursosController extends Controller
         return $this->view('cursos/show', array_merge(
             array(
                 'title' => $contexto['curso']['nome'],
-                'loggedIn' => Session::get('usuario_id') !== null,
+                'loggedIn' => $usuarioId > 0,
                 'usuarioNome' => Session::get('usuario_nome'),
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
+                'frontend_template' => $this->configuracaoGlobalService->templateVisualPortal(),
             ),
             $contexto
         ));

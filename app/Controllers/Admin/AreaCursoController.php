@@ -87,11 +87,26 @@ class AreaCursoController extends Controller
                 'title' => 'Área interna do curso',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
+                'curso_solicitado' => $cursoId > 0,
             ),
             $this->areaCursoService->carregarAdmin(
                 $cursoId,
                 $turmaId,
                 array(
+                    'cursos_filtros' => array(
+                        'busca' => trim((string) $request->query('cursos_busca', '')),
+                        'categoria_id' => (int) $request->query('cursos_categoria_id', 0),
+                        'status' => trim((string) $request->query('cursos_status', '')),
+                        'tipo' => trim((string) $request->query('cursos_tipo', '')),
+                        'modalidade' => trim((string) $request->query('cursos_modalidade', '')),
+                    ),
+                    'cursos_page' => (int) $request->query('cursos_page', 1),
+                    'turmas_filtros' => array(
+                        'curso_id' => $cursoId,
+                        'search' => trim((string) $request->query('turmas_busca', '')),
+                        'status' => trim((string) $request->query('turmas_status', '')),
+                    ),
+                    'turmas_page' => (int) $request->query('turmas_page', 1),
                     'instrucao_id' => (int) $request->query('instrucao_id', 0),
                     'modulo_id' => (int) $request->query('modulo_id', 0),
                     'aula_id' => (int) $request->query('aula_id', 0),
@@ -107,6 +122,18 @@ class AreaCursoController extends Controller
                 )
             )
         );
+
+        $dados['conteudo_modulos'] = isset($dados['conteudo_modulos']) && is_array($dados['conteudo_modulos']) ? $dados['conteudo_modulos'] : array();
+        $dados['conteudo_modulos_arquivados'] = isset($dados['conteudo_modulos_arquivados']) && is_array($dados['conteudo_modulos_arquivados']) ? $dados['conteudo_modulos_arquivados'] : array();
+        $dados['conteudo_modulo_selecionado_id'] = isset($dados['conteudo_modulo_selecionado_id']) ? (int) $dados['conteudo_modulo_selecionado_id'] : 0;
+        $dados['conteudo_modulo_selecionado'] = isset($dados['conteudo_modulo_selecionado']) && is_array($dados['conteudo_modulo_selecionado']) ? $dados['conteudo_modulo_selecionado'] : null;
+        $dados['conteudo_modulo_itens'] = isset($dados['conteudo_modulo_itens']) && is_array($dados['conteudo_modulo_itens']) ? $dados['conteudo_modulo_itens'] : array();
+        $dados['conteudo_modulo_itens_arquivados'] = isset($dados['conteudo_modulo_itens_arquivados']) && is_array($dados['conteudo_modulo_itens_arquivados']) ? $dados['conteudo_modulo_itens_arquivados'] : array();
+        $dados['conteudo_modo_modulo'] = !empty($dados['conteudo_modo_modulo']);
+        $dados['conteudo_modulo_erro'] = isset($dados['conteudo_modulo_erro']) ? (string) $dados['conteudo_modulo_erro'] : '';
+        $dados['conteudo_modulo_arquivado_selecionado'] = !empty($dados['conteudo_modulo_arquivado_selecionado']);
+        $dados['can_manage_turmas'] = !empty($dados['can_manage_turmas']);
+        $dados['can_delete_conteudo_definitivo'] = !empty($dados['can_delete_conteudo_definitivo']);
 
         if (!empty($dados['curso'])) {
             $dados['can_manage_turmas'] = $aba === 'turmas'
@@ -543,8 +570,25 @@ class AreaCursoController extends Controller
             return $this->redirect($formUrl);
         }
 
+        $tipo = (string) ($payload['tipo'] ?? '');
         Session::flash('success', $id > 0 ? 'Conteúdo atualizado com sucesso.' : 'Conteúdo criado com sucesso.');
         $moduloId = (int) ($payload['modulo_id'] ?? 0);
+        if ($tipo === 'quiz' && $id <= 0 && !empty($resultado['id'])) {
+            $quizParams = array(
+                'item_id' => (int) $resultado['id'],
+                'curso_id' => (int) ($payload['curso_evento_id'] ?? $payload['curso_id'] ?? 0),
+            );
+            if (!empty($payload['turma_id'])) {
+                $quizParams['turma_id'] = (int) $payload['turma_id'];
+            }
+            if ($moduloId > 0) {
+                $quizParams['modulo_id'] = $moduloId;
+            }
+
+            Session::flash('success', 'Quiz criado com sucesso. Adicione as perguntas no editor.');
+            return $this->redirect('/admin/area-curso/conteudo/quiz/perguntas?' . http_build_query($quizParams));
+        }
+
         if ($moduloId > 0) {
             return $this->redirect($this->conteudoModuloContextoUrl($request, $moduloId));
         }

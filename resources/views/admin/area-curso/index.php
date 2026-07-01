@@ -1,6 +1,39 @@
 <?php use App\Core\Helpers; ?>
 
 <?php
+$curso = isset($curso) && is_array($curso) ? $curso : null;
+$turma = isset($turma) && is_array($turma) ? $turma : null;
+$cursos = isset($cursos) && is_array($cursos) ? $cursos : array();
+$turmas = isset($turmas) && is_array($turmas) ? $turmas : array();
+$modulos = isset($modulos) && is_array($modulos) ? $modulos : array();
+$materiais = isset($materiais) && is_array($materiais) ? $materiais : array();
+$links = isset($links) && is_array($links) ? $links : array();
+$atividades = isset($atividades) && is_array($atividades) ? $atividades : array();
+$participantes = isset($participantes) && is_array($participantes) ? $participantes : array();
+$resumo = isset($resumo) && is_array($resumo) ? $resumo : array();
+$tabs = isset($tabs) && is_array($tabs) ? $tabs : array();
+$modalidades = isset($modalidades) && is_array($modalidades) ? $modalidades : array('presencial', 'online_ao_vivo', 'hibrido', 'sob_demanda');
+$selected_tab = isset($selected_tab) && $selected_tab !== '' ? (string) $selected_tab : 'visao-geral';
+$cursosFiltros = isset($cursos_filtros) && is_array($cursos_filtros) ? $cursos_filtros : array();
+$cursosPagination = isset($cursos_pagination) && is_array($cursos_pagination) ? $cursos_pagination : array('total' => 0, 'page' => 1, 'per_page' => 20, 'pages' => 1);
+$cursosStatusTotals = isset($cursos_status_totals) && is_array($cursos_status_totals) ? $cursos_status_totals : array();
+$turmasLista = isset($turmas_listadas) && is_array($turmas_listadas) ? $turmas_listadas : array();
+$turmasPagination = isset($turmas_pagination) && is_array($turmas_pagination) ? $turmas_pagination : array('total' => 0, 'page' => 1, 'per_page' => 20, 'pages' => 1);
+$turmasFiltros = isset($turmas_filtros) && is_array($turmas_filtros) ? $turmas_filtros : array();
+
+$can_manage_turmas = !empty($can_manage_turmas);
+$can_delete_conteudo_definitivo = !empty($can_delete_conteudo_definitivo);
+
+$conteudo_modulos = isset($conteudo_modulos) && is_array($conteudo_modulos) ? $conteudo_modulos : array();
+$conteudo_modulos_arquivados = isset($conteudo_modulos_arquivados) && is_array($conteudo_modulos_arquivados) ? $conteudo_modulos_arquivados : array();
+$conteudo_modulo_selecionado = isset($conteudo_modulo_selecionado) && is_array($conteudo_modulo_selecionado) ? $conteudo_modulo_selecionado : null;
+$conteudo_modulo_itens = isset($conteudo_modulo_itens) && is_array($conteudo_modulo_itens) ? $conteudo_modulo_itens : array();
+$conteudo_modulo_itens_arquivados = isset($conteudo_modulo_itens_arquivados) && is_array($conteudo_modulo_itens_arquivados) ? $conteudo_modulo_itens_arquivados : array();
+$conteudo_modulo_selecionado_id = isset($conteudo_modulo_selecionado_id) ? (int) $conteudo_modulo_selecionado_id : 0;
+$conteudo_modo_modulo = !empty($conteudo_modo_modulo);
+$conteudo_modulo_erro = isset($conteudo_modulo_erro) ? (string) $conteudo_modulo_erro : '';
+$cursoSolicitado = !empty($curso_solicitado);
+
 $instrucaoEditar = isset($instrucao_selecionada) ? $instrucao_selecionada : null;
 $moduloEditar = isset($modulo_selecionado) ? $modulo_selecionado : null;
 $aulaEditar = isset($aula_selecionada) ? $aula_selecionada : null;
@@ -65,6 +98,21 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
             . '</' . $nivel . '>';
     }
 }
+
+if (!function_exists('areaCursoQueryString')) {
+    function areaCursoQueryString(array $params)
+    {
+        $query = array();
+        foreach ($params as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $query[$key] = $value;
+        }
+
+        return !empty($query) ? ('?' . http_build_query($query)) : '';
+    }
+}
 ?>
 
 <div class="admin-page admin-area-curso">
@@ -79,9 +127,142 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
 <?php if (empty($curso)): ?>
+    <?php
+    $cursosPage = (int) ($cursosPagination['page'] ?? 1);
+    $cursosPages = (int) ($cursosPagination['pages'] ?? 1);
+    $cursosTotal = (int) ($cursosPagination['total'] ?? 0);
+    $cursosPerPage = (int) ($cursosPagination['per_page'] ?? 20);
+    $cursosFrom = $cursosTotal > 0 ? (($cursosPage - 1) * $cursosPerPage) + 1 : 0;
+    $cursosTo = $cursosTotal > 0 ? min($cursosPage * $cursosPerPage, $cursosTotal) : 0;
+    $cursosStatusAtual = (string) ($cursosFiltros['status'] ?? '');
+    $cursosCategoriaAtual = (int) ($cursosFiltros['categoria_id'] ?? 0);
+    $cursosTipoAtual = (string) ($cursosFiltros['tipo'] ?? '');
+    $cursosModalidadeAtual = (string) ($cursosFiltros['modalidade'] ?? '');
+    $cursosBuscaAtual = (string) ($cursosFiltros['busca'] ?? '');
+    $cursosStatusAtivos = (int) ($cursosStatusTotals['ativo'] ?? 0);
+    $cursosStatusRascunho = (int) ($cursosStatusTotals['rascunho'] ?? 0);
+    $cursosStatusInativos = (int) (($cursosStatusTotals['inativo'] ?? 0) + ($cursosStatusTotals['arquivado'] ?? 0));
+    $cursosTipoOptions = array(
+        '' => 'Todos',
+        'curso' => 'Curso',
+        'evento' => 'Evento',
+    );
+    $cursosStatusOptions = array(
+        '' => 'Todos',
+        'ativo' => 'Ativo',
+        'rascunho' => 'Rascunho',
+        'inativo' => 'Inativo',
+        'arquivado' => 'Arquivado',
+    );
+    $cursosModalidadeOptions = array('' => 'Todas');
+    foreach ($modalidades as $modalidade) {
+        $cursosModalidadeOptions[$modalidade] = ucfirst(str_replace('_', ' ', (string) $modalidade));
+    }
+    ?>
+    <section class="status-card" style="margin-bottom:12px;">
+        <form method="get" action="/admin/area-curso" class="admin-filters">
+            <div class="admin-filters__row">
+                <label>Busca
+                    <input type="text" name="cursos_busca" value="<?php echo Helpers::e($cursosBuscaAtual); ?>" placeholder="Nome, slug ou ID do curso">
+                </label>
+                <label>Categoria
+                    <select name="cursos_categoria_id">
+                        <option value="0">Todas</option>
+                        <?php foreach ($categorias as $categoria): ?>
+                            <option value="<?php echo (int) $categoria['id']; ?>" <?php echo $cursosCategoriaAtual === (int) $categoria['id'] ? 'selected' : ''; ?>>
+                                <?php echo Helpers::e($categoria['nome']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>Status
+                    <select name="cursos_status">
+                        <?php foreach ($cursosStatusOptions as $valor => $rotulo): ?>
+                            <option value="<?php echo Helpers::e($valor); ?>" <?php echo $cursosStatusAtual === $valor ? 'selected' : ''; ?>><?php echo Helpers::e($rotulo); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+            </div>
+            <div class="admin-filters__row" style="margin-top:12px;">
+                <label>Tipo
+                    <select name="cursos_tipo">
+                        <?php foreach ($cursosTipoOptions as $valor => $rotulo): ?>
+                            <option value="<?php echo Helpers::e($valor); ?>" <?php echo $cursosTipoAtual === $valor ? 'selected' : ''; ?>><?php echo Helpers::e($rotulo); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>Modalidade
+                    <select name="cursos_modalidade">
+                        <?php foreach ($cursosModalidadeOptions as $valor => $rotulo): ?>
+                            <option value="<?php echo Helpers::e($valor); ?>" <?php echo $cursosModalidadeAtual === $valor ? 'selected' : ''; ?>><?php echo Helpers::e($rotulo); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+            </div>
+            <div class="cta-group" style="margin-top:12px;">
+                <button type="submit" class="button-link button-link--primary">Filtrar</button>
+                <a class="button-link button-link--ghost" href="/admin/area-curso">Limpar filtros</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="status-card" style="margin-bottom:12px;">
+        <div class="cta-group" style="justify-content:space-between;align-items:center;flex-wrap:wrap;">
+            <small><?php echo $cursosTotal > 0 ? ('Exibindo ' . $cursosFrom . ' a ' . $cursosTo . ' de ' . $cursosTotal . ' cursos.') : 'Nenhum curso encontrado.'; ?></small>
+            <small>Ativos: <?php echo $cursosStatusAtivos; ?> | Rascunhos: <?php echo $cursosStatusRascunho; ?> | Inativos: <?php echo $cursosStatusInativos; ?></small>
+        </div>
+    </section>
+
+    <?php if ($cursosPages > 1): ?>
+        <section class="status-card" style="margin-bottom:12px;">
+            <div class="cta-group" style="justify-content:space-between;align-items:center;flex-wrap:wrap;">
+                <small>Página <?php echo (int) $cursosPage; ?> de <?php echo (int) $cursosPages; ?>.</small>
+                <div class="cta-group">
+                    <?php if ($cursosPage > 1): ?>
+                        <a class="button-link button-link--ghost" href="<?php echo Helpers::e('/admin/area-curso' . areaCursoQueryString(array(
+                            'cursos_busca' => $cursosBuscaAtual,
+                            'cursos_categoria_id' => $cursosCategoriaAtual,
+                            'cursos_status' => $cursosStatusAtual,
+                            'cursos_tipo' => $cursosTipoAtual,
+                            'cursos_modalidade' => $cursosModalidadeAtual,
+                            'cursos_page' => $cursosPage - 1,
+                        ))); ?>">Anterior</a>
+                    <?php endif; ?>
+                    <?php for ($paginaAtual = 1; $paginaAtual <= $cursosPages; $paginaAtual++): ?>
+                        <a class="button-link<?php echo $paginaAtual === $cursosPage ? ' button-link--primary' : ' button-link--ghost'; ?>" href="<?php echo Helpers::e('/admin/area-curso' . areaCursoQueryString(array(
+                            'cursos_busca' => $cursosBuscaAtual,
+                            'cursos_categoria_id' => $cursosCategoriaAtual,
+                            'cursos_status' => $cursosStatusAtual,
+                            'cursos_tipo' => $cursosTipoAtual,
+                            'cursos_modalidade' => $cursosModalidadeAtual,
+                            'cursos_page' => $paginaAtual,
+                        ))); ?>"><?php echo (int) $paginaAtual; ?></a>
+                    <?php endfor; ?>
+                    <?php if ($cursosPage < $cursosPages): ?>
+                        <a class="button-link button-link--ghost" href="<?php echo Helpers::e('/admin/area-curso' . areaCursoQueryString(array(
+                            'cursos_busca' => $cursosBuscaAtual,
+                            'cursos_categoria_id' => $cursosCategoriaAtual,
+                            'cursos_status' => $cursosStatusAtual,
+                            'cursos_tipo' => $cursosTipoAtual,
+                            'cursos_modalidade' => $cursosModalidadeAtual,
+                            'cursos_page' => $cursosPage + 1,
+                        ))); ?>">Próxima</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($cursoSolicitado): ?>
+        <section class="status-card">
+            <h2>Curso não encontrado</h2>
+            <p>Não foi possível localizar o curso informado ou ele pode ter sido removido.</p>
+            <a class="button-link button-link--primary" href="/admin/cursos">Voltar para cursos</a>
+        </section>
+    <?php endif; ?>
     <section class="status-card admin-area-curso__selector">
         <div class="panel-header">
-            <h2>Escolha um curso para trabalhar</h2>
+            <h2>Selecione um curso para administrar sua área interna</h2>
         </div>
         <?php
         $cursosAtivos = array();
@@ -131,7 +312,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
             <section class="admin-area-curso__drafts">
                 <div class="panel-header">
                     <h2>Cursos e eventos em rascunho</h2>
-                    <span class="badge badge--warn"><?php echo count($cursosRascunho); ?> itens</span>
+                    <span class="badge badge--warn"><?php echo $cursosStatusRascunho; ?> itens</span>
                 </div>
                 <div class="table-wrap">
                     <table class="admin-table admin-table--area-cursos admin-table--muted">
@@ -166,7 +347,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
                 <summary class="panel-header">
                     <div>
                         <h2>Cursos inativos</h2>
-                        <span class="badge"><?php echo count($cursosInativos); ?> itens</span>
+                        <span class="badge"><?php echo $cursosStatusInativos; ?> itens</span>
                     </div>
                 </summary>
                 <div class="table-wrap admin-mt-8">
@@ -196,6 +377,7 @@ if (!function_exists('areaCursoHeadingWithTooltip')) {
             </details>
         <?php endif; ?>
     </section>
+    <?php return; ?>
 <?php else: ?>
     <section class="status-card area-curso-workspace__header">
         <div class="area-curso-header">

@@ -1,9 +1,14 @@
 <?php use App\Core\Helpers; ?>
+<?php
+$pedidoStatusNormalizado = strtolower((string) ($pedido['status'] ?? ''));
+$pedidoConcluido = !empty($pedidoSemCobranca) || in_array($pedidoStatusNormalizado, array('aprovado', 'pago'), true);
+$tituloSucesso = $pedidoConcluido ? 'Inscrição realizada com sucesso' : 'Pedido registrado com sucesso';
+?>
 
 <div class="front-section-stack">
     <section class="page-header front-section">
-        <h1>Pedido recebido</h1>
-        <p>Seu fluxo inicial foi concluído.</p>
+        <h1><?php echo Helpers::e($tituloSucesso); ?></h1>
+        <p>Seu pedido foi registrado. Acompanhe o andamento e acesse seus cursos pela área do aluno.</p>
     </section>
 
     <div class="front-card-section front-section">
@@ -42,10 +47,12 @@
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <p>Agora acompanhe suas inscrições em Meus Cursos.</p>
+            <p>Agora acompanhe suas inscrições em Meus Cursos e continue o acesso na área do aluno.</p>
         <?php endif; ?>
         <div class="cta-group">
-            <a class="button-link" href="<?php echo !empty($pedidoSemCobranca) ? '/minha-pagina' : '/meus-cursos'; ?>"><?php echo !empty($pedidoSemCobranca) ? 'Ir para Minha Página' : 'Ir para Meus Cursos'; ?></a>
+            <a class="button-link" href="/minha-pagina">Ir para a área do aluno</a>
+            <a class="button-link button-link--ghost" href="/meus-cursos">Ver meus cursos</a>
+            <a class="button-link button-link--ghost" href="/cursos">Conhecer outros cursos</a>
             <?php if (!empty($pedido)): ?>
                 <a class="button-link button-link--ghost" href="/checkout/resumo?pedido_id=<?php echo (int) $pedido['id']; ?>">Voltar ao resumo</a>
             <?php endif; ?>

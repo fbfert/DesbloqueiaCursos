@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Todos os cursos — Desbloqueia Cursos</title>
+  <meta name="description" content="Catálogo de cursos da Desbloqueia Cursos: busque, filtre por categoria, modalidade, preço e carga horária, ordene e encontre o curso ideal.">
+  <link rel="canonical" href="https://desbloqueiacursos.com.br/v2/catalogo/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
+  <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
+</head>
+<body class="v2-app">
+
+  <!-- Navbar desktop -->
+  <nav class="v2-navbar" aria-label="Menu principal">
+    <div class="v2-container v2-navbar-inner">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+      <div class="v2-nav-links">
+        <a href="/v2/" class="v2-nav-link">Início</a>
+        <a href="/v2/catalogo/" class="v2-nav-link is-active">Cursos</a>
+        <a href="/v2/eventos/" class="v2-nav-link">Eventos</a>
+        <a href="/v2/categorias/" class="v2-nav-link">Categorias</a>
+      </div>
+      <div class="v2-nav-actions">
+        <a href="/v2/login/" class="v2-btn v2-btn-ghost v2-btn-sm">Entrar</a>
+        <a href="/v2/cadastro/" class="v2-btn v2-btn-primary v2-btn-sm">Criar conta</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Topbar mobile -->
+  <div class="v2-topbar">
+    <div class="v2-container" style="display:flex;align-items:center;gap:10px;width:100%">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+    </div>
+  </div>
+
+  <main class="v2-main">
+    <!-- Busca -->
+    <div class="v2-searchbar">
+      <div class="v2-container">
+        <div class="v2-search-row">
+          <div class="v2-search-wrap">
+            <i class="ti ti-search"></i>
+            <input type="search" id="v2c-search" class="v2-input v2-search-input" placeholder="Buscar cursos por nome, categoria ou tema…" aria-label="Buscar cursos" autocomplete="off">
+          </div>
+          <button type="button" class="v2-btn v2-btn-ghost v2-btn-filters" data-open-filters-c aria-label="Abrir filtros">
+            <i class="ti ti-adjustments-horizontal"></i><span class="v2-hide-mobile">Filtros</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="v2-container">
+      <!-- Cabeçalho do catálogo -->
+      <nav class="v2-breadcrumb" aria-label="Caminho">
+        <a href="/v2/">Início</a>
+        <i class="ti ti-chevron-right" aria-hidden="true"></i>
+        <span aria-current="page">Cursos</span>
+      </nav>
+      <header class="v2-catalog-header">
+        <h1 class="v2-h1">Todos os cursos</h1>
+        <p class="v2-muted">Encontre o curso ideal para desenvolver novas competências.</p>
+      </header>
+
+      <!-- Chips de categoria -->
+      <div class="v2-chips v2-chips-wrap" id="v2c-chips" role="list" aria-label="Categorias"></div>
+
+      <div class="v2-catalog">
+        <!-- Filtros (sidebar desktop / bottom-sheet mobile) -->
+        <div class="v2-overlay" id="v2c-overlay" data-close-filters-c></div>
+        <aside class="v2-filters" id="v2c-filters" aria-label="Filtros">
+          <div class="v2-filters-head">
+            <strong>Filtros</strong>
+            <button type="button" class="v2-iconbtn" data-close-filters-c aria-label="Fechar filtros"><i class="ti ti-x"></i></button>
+          </div>
+
+          <div class="v2-fgroup">
+            <div class="v2-flabel">Modalidade</div>
+            <div id="v2c-modalidade"></div>
+          </div>
+
+          <div class="v2-fgroup">
+            <div class="v2-flabel">Faixa de preço</div>
+            <label class="v2-fopt"><input type="radio" name="v2c-preco" value="" checked> Todos</label>
+            <label class="v2-fopt"><input type="radio" name="v2c-preco" value="gratis"> Gratuitos</label>
+            <label class="v2-fopt"><input type="radio" name="v2c-preco" value="ate100"> Até R$ 100</label>
+            <label class="v2-fopt"><input type="radio" name="v2c-preco" value="100a150"> De R$ 100 a R$ 150</label>
+            <label class="v2-fopt"><input type="radio" name="v2c-preco" value="acima150"> Acima de R$ 150</label>
+          </div>
+
+          <div class="v2-fgroup">
+            <div class="v2-flabel">Carga horária</div>
+            <label class="v2-fopt"><input type="radio" name="v2c-carga" value="" checked> Qualquer carga</label>
+            <label class="v2-fopt"><input type="radio" name="v2c-carga" value="ate10"> Até 10 horas</label>
+            <label class="v2-fopt"><input type="radio" name="v2c-carga" value="11a30"> De 11 a 30 horas</label>
+            <label class="v2-fopt"><input type="radio" name="v2c-carga" value="acima30"> Acima de 30 horas</label>
+          </div>
+
+          <div class="v2-fgroup">
+            <div class="v2-flabel">Destaques</div>
+            <label class="v2-fopt"><input type="checkbox" id="v2c-destaque"> Somente cursos em destaque</label>
+          </div>
+
+          <button type="button" class="v2-btn v2-btn-ghost v2-btn-block" data-clear-filters-c><i class="ti ti-rotate"></i> Limpar filtros</button>
+          <button type="button" class="v2-btn v2-btn-primary v2-btn-block" data-close-filters-c style="margin-top:8px;">Ver resultados</button>
+        </aside>
+
+        <!-- Lista -->
+        <div class="v2-catalog-main">
+          <div class="v2-catalog-bar">
+            <span class="v2-muted v2-sm" id="v2c-count">Carregando…</span>
+            <label class="v2-sm v2-muted" style="display:flex;align-items:center;gap:8px;">
+              Ordenar
+              <select id="v2c-order" class="v2-select" style="width:auto;min-width:170px;" aria-label="Ordenar cursos">
+                <option value="relevancia">Mais relevantes</option>
+                <option value="nota">Maior avaliação</option>
+                <option value="preco-asc">Menor preço</option>
+                <option value="preco-desc">Maior preço</option>
+                <option value="alfabetica">Ordem alfabética</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="v2-grid" id="v2c-grid"></div>
+
+          <div class="v2-empty" id="v2c-empty" style="display:none;">
+            <i class="ti ti-search-off"></i>
+            <p>Nenhum curso encontrado para a busca e os filtros selecionados.</p>
+            <button type="button" class="v2-btn v2-btn-outline" data-clear-filters-c><i class="ti ti-rotate"></i> Limpar filtros</button>
+          </div>
+
+          <div class="v2-pagination" id="v2c-pag"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="v2-footer">
+    <div class="v2-container">
+      <div class="v2-footer-grid">
+        <div class="v2-footer-brand">
+          <span class="v2-h3" style="color:#fff">Desbloqueia <span style="color:#FF6A00">Cursos</span></span>
+          <p>Quando aprende de verdade, desbloqueia. Cursos práticos com certificado para você evoluir na carreira.</p>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Plataforma</h4>
+          <a href="/v2/catalogo/">Cursos</a>
+          <a href="/v2/categorias/">Categorias</a>
+          <a href="/v2/login/">Entrar</a>
+          <a href="/v2/cadastro/">Criar conta</a>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Institucional</h4>
+          <a href="/v2/quem-somos/">Quem somos</a>
+          <a href="/v2/contato/">Contato</a>
+          <a href="/v2/onde-estamos/">Onde estamos</a>
+          <a href="/v2/politica-de-privacidade/">Política de privacidade</a>
+          <a href="/v2/termos-de-uso/">Termos de uso</a>
+          <a href="/v2/certificados/validar/">Validar certificado</a>
+        </div>
+      </div>
+      <div class="v2-footer-bottom">
+        <span>© 2026 Desbloqueia Cursos — demonstração visual V2</span>
+        <span>Feito com carinho 🧡</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bottom nav mobile -->
+  <nav class="v2-bnav" aria-label="Navegação rápida">
+    <a href="/v2/" class="v2-bnav-item"><i class="ti ti-home"></i><span>Início</span></a>
+    <a href="/v2/catalogo/" class="v2-bnav-item is-active"><i class="ti ti-compass"></i><span>Explorar</span></a>
+    <a href="/v2/aluno/" class="v2-bnav-item"><i class="ti ti-book"></i><span>Meus cursos</span></a>
+    <a href="/v2/login/" class="v2-bnav-item"><i class="ti ti-user"></i><span>Perfil</span></a>
+  </nav>
+
+  <script src="/v2/data/cursos.js"></script>
+  <script src="/v2/assets/js/v2-main.js"></script>
+</body>
+</html>

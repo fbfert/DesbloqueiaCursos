@@ -65,9 +65,18 @@ class ComprovantePix
     {
         $stmt = Database::connection()->query(
             'SELECT cp.*, p.codigo AS pedido_codigo, p.pagador_nome, p.pagador_email, p.pagador_telefone, p.total AS pedido_total,
-                    p.status AS pedido_status, p.created_at AS pedido_created_at
+                    p.status AS pedido_status, p.created_at AS pedido_created_at,
+                    COALESCE(NULLIF(cursos.cursos_nome, ""), "Curso não informado") AS cursos_nome
              FROM comprovantes_pix cp
              INNER JOIN pedidos p ON p.id = cp.pedido_id
+             LEFT JOIN (
+                SELECT pi.pedido_id,
+                       GROUP_CONCAT(DISTINCT ce.nome ORDER BY ce.nome SEPARATOR ", ") AS cursos_nome
+                FROM pedido_itens pi
+                LEFT JOIN cursos_eventos ce ON ce.id = pi.curso_evento_id AND ce.deleted_at IS NULL
+                WHERE pi.deleted_at IS NULL
+                GROUP BY pi.pedido_id
+             ) cursos ON cursos.pedido_id = p.id
              WHERE cp.deleted_at IS NULL
                AND cp.is_atual = 1
              ORDER BY cp.id DESC'
@@ -96,11 +105,19 @@ class ComprovantePix
                        p.total AS pedido_total,
                        p.status AS pedido_status,
                        p.created_at AS pedido_created_at,
-                       GROUP_CONCAT(DISTINCT ce.nome ORDER BY ce.nome SEPARATOR ", ") AS cursos_nome,
+                       COALESCE(NULLIF(cursos.cursos_nome, ""), "Curso não informado") AS cursos_nome,
                        GROUP_CONCAT(DISTINCT t.nome ORDER BY t.nome SEPARATOR ", ") AS turmas_nome,
                        COUNT(DISTINCT pi.id) AS total_itens
                 FROM comprovantes_pix cp
                 INNER JOIN pedidos p ON p.id = cp.pedido_id
+                LEFT JOIN (
+                    SELECT pi_sub.pedido_id,
+                           GROUP_CONCAT(DISTINCT ce_sub.nome ORDER BY ce_sub.nome SEPARATOR ", ") AS cursos_nome
+                    FROM pedido_itens pi_sub
+                    LEFT JOIN cursos_eventos ce_sub ON ce_sub.id = pi_sub.curso_evento_id AND ce_sub.deleted_at IS NULL
+                    WHERE pi_sub.deleted_at IS NULL
+                    GROUP BY pi_sub.pedido_id
+                ) cursos ON cursos.pedido_id = p.id
                 LEFT JOIN pedido_itens pi ON pi.pedido_id = p.id AND pi.deleted_at IS NULL
                 LEFT JOIN cursos_eventos ce ON ce.id = pi.curso_evento_id AND ce.deleted_at IS NULL
                 LEFT JOIN turmas t ON t.id = pi.turma_id AND t.deleted_at IS NULL

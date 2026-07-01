@@ -33,7 +33,19 @@
             Tempo de bloqueio (min)
             <input type="number" min="1" name="tempo_bloqueio_login_minutos" value="<?php echo htmlspecialchars((string) (isset($configuracao['tempo_bloqueio_login_minutos']) ? $configuracao['tempo_bloqueio_login_minutos'] : 15), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
-        <?php $cancelUrl = '/admin/configuracoes-globais/seguranca'; ?>
+        <fieldset style="grid-column: 1 / -1; padding: 16px; border: 1px solid rgba(0,0,0,.08); border-radius: 12px;">
+            <legend>Recuperação de pedidos incompletos</legend>
+            <label style="display:block; margin-bottom: 12px;">
+                <input type="checkbox" name="recuperacao_pedidos_automatica_ativa" value="1" <?php echo !empty($configuracao['recuperacao_pedidos_automatica_ativa']) ? 'checked' : ''; ?>>
+                Ativar recuperação automática por Cron
+            </label>
+            <label>
+                Limite de pedidos processados por execução
+                <input type="number" min="1" name="recuperacao_pedidos_processamento_limite" value="<?php echo htmlspecialchars((string) (isset($configuracao['recuperacao_pedidos_processamento_limite']) ? $configuracao['recuperacao_pedidos_processamento_limite'] : 50), ENT_QUOTES, 'UTF-8'); ?>">
+            </label>
+            <p class="help-text" style="margin-top: 8px;">A régua interna controla os disparos em 24h, 3 dias, 7 dias e 20 dias. A Cron pode rodar com frequência sem duplicar envios.</p>
+        </fieldset>
+        <?php $cancel_url = '/admin/configuracoes-globais/seguranca'; ?>
         <?php $showSaveAndNew = false; ?>
         <?php $showSaveAndExit = false; ?>
         <?php $showSaveAsCopy = false; ?>

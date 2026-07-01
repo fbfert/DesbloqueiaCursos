@@ -8,6 +8,10 @@
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+<?php
+$templateVisualPortalRaw = isset($configuracao['template_visual_portal']) ? (string) $configuracao['template_visual_portal'] : 'v1';
+$templateVisualPortal = in_array($templateVisualPortalRaw, array('v2', 'v3', 'v4-claude'), true) ? $templateVisualPortalRaw : 'v1';
+?>
 
 <section class="admin-config-frontend__layout">
     <section class="status-card admin-config-frontend__main">
@@ -18,8 +22,14 @@
         <form method="post" action="/admin/configuracoes-globais/frontend" class="form-grid admin-config-frontend__form">
             <?php echo $csrfField; ?>
             <label class="full">
-                Template visual do portal
-                <input type="text" name="template_visual_portal" value="<?php echo htmlspecialchars((string) (isset($configuracao['template_visual_portal']) ? $configuracao['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?>">
+                Template do frontend
+                <select name="template_visual_portal">
+                    <option value="v1"<?php echo $templateVisualPortal === 'v1' ? ' selected' : ''; ?>>Template v1 — Atual</option>
+                    <option value="v2"<?php echo $templateVisualPortal === 'v2' ? ' selected' : ''; ?>>Template v2 — Novo visual</option>
+                    <option value="v3"<?php echo $templateVisualPortal === 'v3' ? ' selected' : ''; ?>>Template v3 — Nova Home</option>
+                    <option value="v4-claude"<?php echo $templateVisualPortal === 'v4-claude' ? ' selected' : ''; ?>>V4 - Claude</option>
+                </select>
+                <small>O template v1 mantém o visual atual. O template v2 ativa o novo visual público mobile first. O template v3 ativa a nova home modular (destaques, categorias, depoimentos e FAQ). O template V4 - Claude ativa a experiência mobile-first com navegação inferior e identidade laranja/roxo.</small>
             </label>
             <label class="full">
                 Espaçamento entre cards do frontend
@@ -56,8 +66,13 @@
                 <input type="number" name="home_destaques_limite" min="1" max="12" step="1" value="<?php echo htmlspecialchars((string) (isset($configuracao['home_destaques_limite']) && (int) $configuracao['home_destaques_limite'] > 0 ? (int) $configuracao['home_destaques_limite'] : 6), ENT_QUOTES, 'UTF-8'); ?>">
                 <small>Faixa recomendada entre 1 e 12. O padrão é 6.</small>
             </label>
+            <label class="admin-config-frontend__limit">
+                Quantidade de categorias na capa
+                <input type="number" name="home_categorias_limite" min="1" max="12" step="1" value="<?php echo htmlspecialchars((string) (isset($configuracao['home_categorias_limite']) && (int) $configuracao['home_categorias_limite'] > 0 ? (int) $configuracao['home_categorias_limite'] : 6), ENT_QUOTES, 'UTF-8'); ?>">
+                <small>Faixa recomendada entre 1 e 12. O padrão é 6.</small>
+            </label>
             <div class="admin-config-frontend__actions full">
-                <?php $cancelUrl = '/admin/configuracoes-globais/frontend'; ?>
+                <?php $cancel_url = '/admin/configuracoes-globais/frontend'; ?>
                 <?php $showSaveAndNew = false; ?>
                 <?php $showSaveAndExit = false; ?>
                 <?php $showSaveAsCopy = false; ?>
@@ -76,6 +91,10 @@
                 <span><?php echo (int) (isset($configuracao['home_destaques_limite']) && (int) $configuracao['home_destaques_limite'] > 0 ? $configuracao['home_destaques_limite'] : 6); ?> destaque(s)</span>
             </div>
             <div>
+                <strong>Categorias na capa</strong>
+                <span><?php echo (int) (isset($configuracao['home_categorias_limite']) && (int) $configuracao['home_categorias_limite'] > 0 ? $configuracao['home_categorias_limite'] : 6); ?> categoria(s)</span>
+            </div>
+            <div>
                 <strong>Espaçamento entre cards</strong>
                 <span><?php echo htmlspecialchars((string) (isset($configuracao['frontend_card_gap']) && trim((string) $configuracao['frontend_card_gap']) !== '' ? $configuracao['frontend_card_gap'] : 'clamp(16px, 2vw, 24px)'), ENT_QUOTES, 'UTF-8'); ?></span>
             </div>
@@ -85,7 +104,15 @@
             </div>
             <div>
                 <strong>Template</strong>
-                <span><?php echo htmlspecialchars((string) (isset($configuracao['template_visual_portal']) ? $configuracao['template_visual_portal'] : 'padrao'), ENT_QUOTES, 'UTF-8'); ?></span>
+                <?php
+                $templateLabels = array(
+                    'v1' => 'Template v1 — Atual',
+                    'v2' => 'Template v2 — Novo visual',
+                    'v3' => 'Template v3 — Nova Home',
+                    'v4-claude' => 'V4 - Claude',
+                );
+                ?>
+                <span><?php echo isset($templateLabels[$templateVisualPortal]) ? $templateLabels[$templateVisualPortal] : $templateLabels['v1']; ?></span>
             </div>
             <div>
                 <strong>Cores</strong>

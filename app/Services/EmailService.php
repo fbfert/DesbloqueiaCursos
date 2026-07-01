@@ -8,6 +8,7 @@ use App\Core\View;
 use App\Core\Validator;
 use App\Models\EmailConfiguracao;
 use App\Models\EmailEnvio;
+use App\Services\CertificadoService;
 use Exception;
 
 class EmailService
@@ -17,6 +18,7 @@ class EmailService
     private $modeloService;
     private $globalConfigService;
     private $auditService;
+    private $certificadoService;
     private $configFallback;
     private $runtimeDiagnosticsLogged = false;
 
@@ -27,6 +29,7 @@ class EmailService
         $this->modeloService = new EmailModeloService();
         $this->globalConfigService = new ConfiguracaoGlobalService();
         $this->auditService = new AuditService();
+        $this->certificadoService = new CertificadoService();
         $this->configFallback = require BASE_PATH . '/config/mail.php';
     }
 
@@ -266,6 +269,114 @@ class EmailService
         }
     }
 
+    public function reenviarHistorico($emailEnvioId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $emailEnvioId = (int) $emailEnvioId;
+        if ($emailEnvioId <= 0) {
+            return array('ok' => false, 'message' => 'E-mail inválido.');
+        }
+
+        $stored = $this->emailModel->findById($emailEnvioId);
+        if (!$stored) {
+            return array('ok' => false, 'message' => 'E-mail não encontrado.');
+        }
+
+        $status = isset($stored['status']) ? (string) $stored['status'] : '';
+        if ($status !== 'enviado') {
+            return array('ok' => false, 'message' => 'Somente e-mails já enviados podem ser reenviados por este fluxo.');
+        }
+
+        $data = array();
+        if (!empty($stored['contexto_json'])) {
+            $decoded = json_decode((string) $stored['contexto_json'], true);
+            if (is_array($decoded)) {
+                $data = $decoded;
+            }
+        }
+
+        $data['email_envio_original_id'] = $emailEnvioId;
+        $data['reenvio_origem'] = 'reenvio_manual';
+
+        $event = isset($stored['evento']) ? (string) $stored['evento'] : '';
+        $template = isset($stored['template']) ? (string) $stored['template'] : '';
+        $destinatarioEmail = isset($stored['destinatario_email']) ? $stored['destinatario_email'] : null;
+        $destinatarioNome = isset($stored['destinatario_nome']) ? $stored['destinatario_nome'] : null;
+        $assunto = isset($stored['assunto']) ? $stored['assunto'] : '';
+        $entidadeTipo = isset($stored['entidade_tipo']) ? $stored['entidade_tipo'] : null;
+        $entidadeId = isset($stored['entidade_id']) ? $stored['entidade_id'] : null;
+
+        $attachments = array();
+        $arquivoPdf = isset($data['inscricao']['certificado_pdf_caminho'])
+            ? trim((string) $data['inscricao']['certificado_pdf_caminho'])
+            : (isset($data['certificado_pdf_caminho']) ? trim((string) $data['certificado_pdf_caminho']) : '');
+        $anexoPdf = $this->resolverAnexoCertificadoHistorico($arquivoPdf, $data);
+        if ($anexoPdf) {
+            $attachments[] = $anexoPdf;
+        }
+
+        $modelo = $this->modeloService->findByEvento($event);
+        if ($modelo && !empty($modelo['corpo_html'])) {
+            $htmlBase = (string) $modelo['corpo_html'];
+        } else {
+            $htmlBase = View::render($template, $data, false, 'emails');
+        }
+
+        return $this->sendCustomHtml(
+            $event,
+            $template,
+            $destinatarioEmail,
+            $destinatarioNome,
+            $assunto,
+            $htmlBase,
+            $data,
+            $entidadeTipo,
+            $entidadeId,
+            $actorUserId,
+            $ipAddress,
+            $userAgent,
+            $attachments
+        );
+    }
+
+    private function resolverAnexoCertificadoHistorico($arquivoPdf, array $data)
+    {
+        $codigo = '';
+        if (!empty($data['inscricao']['certificado_codigo'])) {
+            $codigo = trim((string) $data['inscricao']['certificado_codigo']);
+        } elseif (!empty($data['certificado_codigo'])) {
+            $codigo = trim((string) $data['certificado_codigo']);
+        }
+
+        if ($arquivoPdf !== '') {
+            $caminhoAbsoluto = BASE_PATH . '/storage/private_uploads/' . ltrim($arquivoPdf, '/\\');
+            if (is_file($caminhoAbsoluto)) {
+                return array(
+                    'filename' => 'certificado-' . ($codigo !== '' ? $codigo : 'certificado') . '.pdf',
+                    'mime' => 'application/pdf',
+                    'content' => @file_get_contents($caminhoAbsoluto),
+                );
+            }
+        }
+
+        if ($codigo === '') {
+            return null;
+        }
+
+        $pdfBytes = $this->certificadoService->pdfBytesByCodigo($codigo);
+        if ($pdfBytes === null || $pdfBytes === '') {
+            Logger::warning('emails.reenvio.certificado_pdf_indisponivel', array(
+                'certificado_codigo' => $codigo,
+            ));
+            return null;
+        }
+
+        return array(
+            'filename' => 'certificado-' . $codigo . '.pdf',
+            'mime' => 'application/pdf',
+            'content' => $pdfBytes,
+        );
+    }
+
     public function welcome(array $usuario, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         return $this->sendTemplate(
@@ -407,17 +518,20 @@ class EmailService
         return array('ok' => true, 'results' => $resultados);
     }
 
-    public function pedidoExcluidoInatividade(array $pedido, array $cursos = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function pedidoExcluidoInatividade(array $pedido, array $cursos = array(), array $dados = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         return $this->sendTemplate(
             'email.pedido_excluido_inatividade',
             'pedido_excluido_inatividade',
             isset($pedido['pagador_email']) ? $pedido['pagador_email'] : null,
             isset($pedido['pagador_nome']) ? $pedido['pagador_nome'] : null,
-            'Pedido excluído por inatividade - {pedido.codigo}',
-            array(
-                'pedido' => $pedido,
-                'cursos' => $cursos,
+            'Pedido excluído por inatividade',
+            array_merge(
+                is_array($dados) ? $dados : array(),
+                array(
+                    'pedido' => $pedido,
+                    'cursos' => $cursos,
+                )
             ),
             'pedido',
             isset($pedido['id']) ? $pedido['id'] : null,
@@ -463,6 +577,19 @@ class EmailService
 
     public function certificadoDisponivel(array $inscricao, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
+        $anexos = array();
+        $anexoPdf = $this->resolverAnexoCertificadoHistorico(
+            isset($inscricao['certificado_pdf_caminho']) ? trim((string) $inscricao['certificado_pdf_caminho']) : '',
+            array(
+                'inscricao' => $inscricao,
+                'certificado_codigo' => isset($inscricao['certificado_codigo']) ? (string) $inscricao['certificado_codigo'] : null,
+                'certificado_pdf_caminho' => isset($inscricao['certificado_pdf_caminho']) ? (string) $inscricao['certificado_pdf_caminho'] : null,
+            )
+        );
+        if ($anexoPdf) {
+            $anexos[] = $anexoPdf;
+        }
+
         return $this->sendTemplate(
             'email.certificado_disponivel',
             'certificado_disponivel',
@@ -474,7 +601,9 @@ class EmailService
             isset($inscricao['id']) ? $inscricao['id'] : null,
             $actorUserId,
             $ipAddress,
-            $userAgent
+            $userAgent,
+            false,
+            $anexos
         );
     }
 
@@ -515,7 +644,8 @@ class EmailService
         $actorUserId = null,
         $ipAddress = null,
         $userAgent = null,
-        $forceSend = false
+        $forceSend = false,
+        array $attachments = array()
     ) {
         if (!$destinatarioEmail) {
             return array('ok' => false, 'message' => 'Destinatário inválido.');
@@ -621,7 +751,7 @@ class EmailService
                 'to_name' => $payload['destinatario_nome'],
                 'subject' => $assuntoFinal,
                 'html' => $rendered,
-            ));
+            ), $attachments);
 
             $this->emailModel->markSent($emailId, $response);
 
@@ -677,7 +807,8 @@ class EmailService
         $entidadeId = null,
         $actorUserId = null,
         $ipAddress = null,
-        $userAgent = null
+        $userAgent = null,
+        array $attachments = array()
     ) {
         if (!$destinatarioEmail) {
             return array('ok' => false, 'message' => 'Destinatário inválido.');
@@ -748,7 +879,7 @@ class EmailService
                 'to_name' => $payload['destinatario_nome'],
                 'subject' => $assuntoFinal,
                 'html' => $rendered,
-            ));
+            ), $attachments);
 
             $this->emailModel->markSent($emailId, $response);
 
@@ -823,14 +954,14 @@ class EmailService
         );
     }
 
-    private function sendSmtpMessage(array $config, array $email)
+    private function sendSmtpMessage(array $config, array $email, array $attachments = array())
     {
         $attemptedFallback = false;
         $lastException = null;
 
         foreach ($this->smtpEncryptionAttempts($config['encryption']) as $encryptionMode) {
             try {
-                return $this->sendSmtpMessageWithMode($config, $email, $encryptionMode);
+                return $this->sendSmtpMessageWithMode($config, $email, $encryptionMode, $attachments);
             } catch (Exception $exception) {
                 $lastException = $exception;
                 $allowPlaintextFallback = !empty($config['allow_plaintext_fallback']);
@@ -888,7 +1019,7 @@ class EmailService
         ));
     }
 
-    private function sendSmtpMessageWithMode(array $config, array $email, $encryptionMode)
+    private function sendSmtpMessageWithMode(array $config, array $email, $encryptionMode, array $attachments = array())
     {
         $host = trim((string) $config['host']);
         $port = (int) $config['port'];
@@ -946,20 +1077,9 @@ class EmailService
         $this->smtpCommand($socket, 'RCPT TO:<' . $email['to_email'] . '>', array(250, 251));
         $this->smtpCommand($socket, 'DATA', array(354));
 
-        $message = array();
-        $message[] = 'From: ' . $from;
-        $message[] = 'To: ' . $to;
-        $message[] = 'Subject: ' . $subject;
-        if (!empty($email['reply_to'])) {
-            $message[] = 'Reply-To: ' . $this->formatAddress($email['reply_to'], null);
-        }
-        $message[] = 'MIME-Version: 1.0';
-        $message[] = 'Content-Type: text/html; charset=UTF-8';
-        $message[] = 'Content-Transfer-Encoding: 8bit';
-        $message[] = '';
-        $message[] = $email['html'];
+        $message = $this->montarMensagemSmtp($email, $attachments, $from, $to, $subject);
 
-        fwrite($socket, implode("\r\n", $message) . "\r\n.\r\n");
+        fwrite($socket, $message . "\r\n.\r\n");
         $response = $this->smtpRead($socket, array(250));
 
         fwrite($socket, "QUIT\r\n");
@@ -1079,7 +1199,79 @@ class EmailService
 
         return '=?UTF-8?B?' . base64_encode($value) . '?=';
     }
+
+    private function montarMensagemSmtp(array $email, array $attachments, $from, $to, $subject)
+    {
+        $message = array();
+        $message[] = 'From: ' . $from;
+        $message[] = 'To: ' . $to;
+        $message[] = 'Subject: ' . $subject;
+        if (!empty($email['reply_to'])) {
+            $message[] = 'Reply-To: ' . $this->formatAddress($email['reply_to'], null);
+        }
+        $message[] = 'MIME-Version: 1.0';
+
+        $anexosValidos = array();
+        foreach ($attachments as $attachment) {
+            if (!is_array($attachment)) {
+                continue;
+            }
+            $content = isset($attachment['content']) ? $attachment['content'] : null;
+            if (!is_string($content) || $content === '') {
+                continue;
+            }
+
+            $anexosValidos[] = array(
+                'filename' => isset($attachment['filename']) ? (string) $attachment['filename'] : 'anexo.bin',
+                'mime' => !empty($attachment['mime']) ? (string) $attachment['mime'] : 'application/octet-stream',
+                'content' => $content,
+            );
+        }
+
+        if (empty($anexosValidos)) {
+            $message[] = 'Content-Type: text/html; charset=UTF-8';
+            $message[] = 'Content-Transfer-Encoding: 8bit';
+            $message[] = '';
+            $message[] = $email['html'];
+            return implode("\r\n", $message);
+        }
+
+        $boundaryMixed = 'mix_' . md5(uniqid((string) microtime(true), true));
+        $message[] = 'Content-Type: multipart/mixed; boundary="' . $boundaryMixed . '"';
+        $message[] = '';
+        $message[] = '--' . $boundaryMixed;
+        $message[] = 'Content-Type: text/html; charset=UTF-8';
+        $message[] = 'Content-Transfer-Encoding: 8bit';
+        $message[] = '';
+        $message[] = $email['html'];
+
+        foreach ($anexosValidos as $attachment) {
+            $boundaryAlt = 'att_' . md5(uniqid((string) microtime(true), true));
+            $message[] = '';
+            $message[] = '--' . $boundaryMixed;
+            $message[] = 'Content-Type: ' . $attachment['mime'] . '; name="' . $this->sanitizeFilenameHeader($attachment['filename']) . '"';
+            $message[] = 'Content-Transfer-Encoding: base64';
+            $message[] = 'Content-Disposition: attachment; filename="' . $this->sanitizeFilenameHeader($attachment['filename']) . '"';
+            $message[] = '';
+            $message[] = chunk_split(base64_encode($attachment['content']), 76, "\r\n");
+        }
+
+        $message[] = '--' . $boundaryMixed . '--';
+
+        return implode("\r\n", $message);
+    }
+
+    private function sanitizeFilenameHeader($filename)
+    {
+        $filename = trim((string) $filename);
+        if ($filename === '') {
+            return 'anexo.bin';
+        }
+
+        return str_replace(array('"', "\r", "\n"), '_', $filename);
+    }
 }
+
 
 
 

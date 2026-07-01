@@ -55,10 +55,36 @@ class ProfessorFiscal
 
     public function save(array $data)
     {
-        $current = $this->findByUsuarioId($data['usuario_id']);
+        $id = isset($data['id']) ? (int) $data['id'] : 0;
+        $usuarioId = isset($data['usuario_id']) ? (int) $data['usuario_id'] : 0;
+
+        if ($usuarioId <= 0) {
+            throw new \InvalidArgumentException('Professor não informado.');
+        }
+
+        $current = null;
+
+        if ($id > 0) {
+            $current = $this->findById($id);
+
+            if (!$current) {
+                throw new \RuntimeException('Perfil fiscal não encontrado.');
+            }
+
+            $existingByUser = $this->findByUsuarioId($usuarioId);
+            if ($existingByUser && (int) $existingByUser['id'] !== $id) {
+                throw new \RuntimeException('O professor selecionado já possui perfil fiscal.');
+            }
+        } else {
+            $current = $this->findByUsuarioId($usuarioId);
+
+            if ($current) {
+                throw new \RuntimeException('O professor selecionado já possui perfil fiscal.');
+            }
+        }
 
         $payload = array(
-            'usuario_id' => (int) $data['usuario_id'],
+            'usuario_id' => $usuarioId,
             'tipo_pessoa' => isset($data['tipo_pessoa']) && in_array($data['tipo_pessoa'], array('pf', 'pj'), true) ? $data['tipo_pessoa'] : 'pf',
             'cpf' => isset($data['cpf']) ? preg_replace('/\D+/', '', (string) $data['cpf']) : null,
             'cnpj' => isset($data['cnpj']) ? preg_replace('/\D+/', '', (string) $data['cnpj']) : null,
@@ -72,7 +98,7 @@ class ProfessorFiscal
             'status' => isset($data['status']) && in_array($data['status'], array('ativo', 'inativo'), true) ? $data['status'] : 'ativo',
         );
 
-        if ($current) {
+        if ($id > 0) {
             $stmt = Database::connection()->prepare(
                 'UPDATE professores_fiscal
                  SET tipo_pessoa = :tipo_pessoa,
@@ -90,8 +116,8 @@ class ProfessorFiscal
                  WHERE id = :id'
             );
 
-            $stmt->execute(array_merge($payload, array('id' => (int) $current['id'])));
-            return (int) $current['id'];
+            $stmt->execute(array_merge($payload, array('id' => $id)));
+            return $id;
         }
 
         $stmt = Database::connection()->prepare(

@@ -103,6 +103,10 @@
             <input type="date" name="data_fim" value="<?php echo Helpers::e(substr((string) $value('data_fim', ''), 0, 10)); ?>">
         </label>
         <label>
+            Local da turma
+            <input type="text" name="local" maxlength="255" value="<?php echo Helpers::e($value('local')); ?>" placeholder="Ex.: Lages/SC, Sala 101, Auditório, Online">
+        </label>
+        <label>
             Vagas
             <input type="number" name="vagas" min="0" value="<?php echo Helpers::e((string) $value('vagas', '')); ?>">
         </label>
@@ -116,7 +120,7 @@
                 <?php endforeach; ?>
             </select>
         </label>
-        <?php $cancelUrl = $returnTo !== '' ? $returnTo : '/admin/turmas'; ?>
+        <?php $cancel_url = $returnTo !== '' ? $returnTo : '/admin/turmas'; ?>
         <?php $save_label = $saveLabel; ?>
         <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>

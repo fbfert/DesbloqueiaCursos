@@ -30,7 +30,7 @@ class AuthController extends Controller
         if (!$result['ok']) {
             Session::flash('errors', $result['errors']);
             Session::flash('old', $request->all());
-            return $this->redirect('/cadastro');
+            return $this->redirect($this->resolveOrigemRedirect($request, '/v2/cadastro', '/cadastro'));
         }
 
         Session::flash('account_created', array(
@@ -39,7 +39,7 @@ class AuthController extends Controller
         ));
 
         Session::flash('success', 'Conta criada com sucesso. Agora você já pode acessar sua conta.');
-        return $this->redirect('/login');
+        return $this->redirect($this->resolveOrigemRedirect($request, '/v2/login', '/login'));
     }
 
     public function showLogin(Request $request)
@@ -65,10 +65,16 @@ class AuthController extends Controller
         if (!$result['ok']) {
             Session::flash('errors', array('login' => $result['message']));
             Session::flash('old', array('login' => $request->input('login')));
-            return $this->redirect('/login');
+            return $this->redirect($this->resolveLoginErrorRedirect($request));
         }
 
         Session::flash('success', 'Login realizado com sucesso.');
+
+        $retornoV2 = $this->resolveLoginSuccessRedirect($request);
+        if ($retornoV2 !== null) {
+            return $this->redirect($retornoV2);
+        }
+
         if (isset($result['redirect_to']) && $result['redirect_to'] === '/') {
             Session::flash('post_login_choice_modal', array('enabled' => true));
         }
@@ -158,11 +164,11 @@ class AuthController extends Controller
         if (!$result['ok']) {
             Session::flash('errors', $result['errors']);
             Session::flash('old', array('login' => $request->input('login')));
-            return $this->redirect('/recuperar-senha');
+            return $this->redirect($this->resolveOrigemRedirect($request, '/v2/recuperar-senha', '/recuperar-senha'));
         }
 
         Session::flash('success', 'Se os dados existirem, enviamos um link de recuperação para o e-mail cadastrado.');
-        return $this->redirect('/recuperar-senha');
+        return $this->redirect($this->resolveOrigemRedirect($request, '/v2/recuperar-senha', '/recuperar-senha'));
     }
 
     public function showResetPassword(Request $request)
@@ -191,6 +197,63 @@ class AuthController extends Controller
 
         Session::flash('success', 'Senha redefinida com sucesso.');
         return $this->redirect('/login');
+    }
+
+    /**
+     * Define para onde voltar quando o login falha.
+     *
+     * Segurança: NÃO aceita URL vinda do usuário. A origem é validada contra uma
+     * lista branca interna que mapeia um token conhecido para um caminho interno
+     * fixo. Sem o token (login original), o comportamento permanece idêntico ao
+     * anterior: retorno para '/login'.
+     */
+    private function resolveLoginErrorRedirect(Request $request)
+    {
+        $origem = trim((string) $request->input('origem', ''));
+
+        $permitidos = array(
+            'v2' => '/v2/login',
+            // Veio da Área do Aluno V2: preserva a intenção para o retorno pós-login.
+            'v2_aluno' => '/v2/login?origem=v2_aluno',
+        );
+
+        return isset($permitidos[$origem]) ? $permitidos[$origem] : '/login';
+    }
+
+    /**
+     * Destino seguro APÓS login bem-sucedido, por origem em lista branca.
+     *
+     * Segurança: NÃO aceita URL do usuário. Apenas a flag `origem` é lida e
+     * comparada a tokens fixos. Retorna null quando não há origem V2 aplicável,
+     * preservando integralmente o destino padrão do sistema. Hoje só a Área do
+     * Aluno V2 usa este retorno (`v2_aluno` → `/v2/aluno`).
+     */
+    private function resolveLoginSuccessRedirect(Request $request)
+    {
+        $origem = trim((string) $request->input('origem', ''));
+
+        $permitidos = array(
+            'v2_aluno' => '/v2/aluno',
+        );
+
+        return isset($permitidos[$origem]) ? $permitidos[$origem] : null;
+    }
+
+    /**
+     * Retorno seguro por origem (lista branca por fluxo, reutilizada por
+     * Cadastro V2 e Recuperação de Senha V2).
+     *
+     * Segurança: NÃO aceita URL vinda do usuário. A única entrada do usuário é a
+     * flag `origem`, comparada estritamente a 'v2'. Tanto o alvo V2 quanto o alvo
+     * padrão são caminhos internos FIXOS, definidos pelo chamador. Qualquer
+     * origem ausente, externa ou diferente de 'v2' usa o destino padrão original,
+     * mantendo o comportamento das páginas originais idêntico.
+     */
+    private function resolveOrigemRedirect(Request $request, $alvoV2, $alvoPadrao)
+    {
+        $origem = trim((string) $request->input('origem', ''));
+
+        return $origem === 'v2' ? $alvoV2 : $alvoPadrao;
     }
 
     private function flashData(array $data)

@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -18,8 +18,24 @@ class CertificadosController extends Controller
         $this->certificadoService = new CertificadoService();
     }
 
+    private function configCertificados()
+    {
+        return $this->certificadoService->configuracaoCertificados();
+    }
+
     public function validar(Request $request)
     {
+        $config = $this->configCertificados();
+        if (empty($config['certificados_habilitado']) || empty($config['certificados_validacao_publica_habilitada'])) {
+            return $this->view('certificados/validar', array(
+                'title' => 'Validar certificado',
+                'resultado' => array('ok' => false, 'message' => 'A validaÃ§Ã£o pÃºblica estÃ¡ temporariamente indisponÃ­vel.'),
+                'codigo' => '',
+                'cpf' => '',
+                'errors' => Session::pullFlash('errors', array()),
+            ));
+        }
+
         if ($request->method() === 'POST' || $request->query('codigo')) {
             $codigo = $request->method() === 'POST' ? $request->input('codigo') : $request->query('codigo');
             $cpf = $request->method() === 'POST' ? $request->input('cpf') : $request->query('cpf');
@@ -46,34 +62,106 @@ class CertificadosController extends Controller
     public function show(Request $request)
     {
         $codigo = strtoupper(trim((string) $request->query('codigo', '')));
-        $resultado = $this->certificadoService->validarPublicamente($codigo, null, $request->ip(), $request->userAgent());
+        $config = $this->configCertificados();
+        if (empty($config['certificados_habilitado']) || empty($config['certificados_validacao_publica_habilitada'])) {
+            return $this->view('certificados/show', array(
+                'title' => 'Certificado',
+                'certificado' => null,
+                'canSeePdf' => false,
+                'blockedMessage' => 'A validaÃ§Ã£o pÃºblica estÃ¡ temporariamente indisponÃ­vel.',
+            ));
+        }
 
-        if (empty($resultado['ok'])) {
+        $certificado = $this->certificadoService->localizarCertificadoPublico($codigo);
+
+        if (empty($certificado)) {
             return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
         }
 
+        Logger::info('certificado.visualizacao_online', array(
+            'codigo' => $codigo,
+            'certificado_id' => (int) $certificado['id'],
+            'usuario_id' => Session::get('usuario_id'),
+        ));
+
         return $this->view('certificados/show', array(
             'title' => 'Certificado ' . $codigo,
-            'certificado' => $resultado['certificado'],
-            'canSeePdf' => $this->certificadoService->usuarioPodeAcessarCertificado($resultado['certificado'], Session::get('usuario_id')),
+            'certificado' => $certificado,
+            'canSeePdf' => $this->certificadoService->usuarioPodeAcessarCertificado($certificado, Session::get('usuario_id')),
+            'configCertificados' => $config,
+        ));
+    }
+
+    public function versaoOnline(Request $request)
+    {
+        $codigo = strtoupper(trim((string) $request->query('codigo', '')));
+        $config = $this->configCertificados();
+
+        if (empty($config['certificados_habilitado']) || empty($config['certificados_validacao_publica_habilitada'])) {
+            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+        }
+
+        if (!$this->codigoPublicoDoCertificadoEhValido($codigo)) {
+            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+        }
+
+        $versaoOnline = $this->certificadoService->renderizarVersaoOnlinePublicaPorCodigo($codigo);
+        if (empty($versaoOnline)) {
+            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+        }
+
+        Logger::info('certificado.visualizacao_online_html', array(
+            'codigo' => $codigo,
+            'certificado_id' => (int) ($versaoOnline['certificado']['id'] ?? 0),
+            'usuario_id' => Session::get('usuario_id'),
+        ));
+
+        return $this->view('certificados/versao-online', array(
+            'title' => 'Certificado ' . $codigo . ' - versão online',
+            'certificado' => $versaoOnline['certificado'],
+            'versaoOnline' => $versaoOnline,
+            'configCertificados' => $config,
+            'canSeePdf' => $this->certificadoService->usuarioPodeAcessarCertificado($versaoOnline['certificado'], Session::get('usuario_id')),
         ));
     }
 
     public function pdf(Request $request)
     {
         $codigo = strtoupper(trim((string) $request->query('codigo', '')));
-        $resultado = $this->certificadoService->validarPublicamente($codigo, null, $request->ip(), $request->userAgent());
+        $config = $this->configCertificados();
+        if (empty($config['certificados_habilitado']) || empty($config['certificados_permitir_download'])) {
+            return new Response('O download do certificado não está disponível no momento.', 403, array('Content-Type' => 'text/plain; charset=UTF-8'));
+        }
 
-        if (empty($resultado['ok'])) {
+        if (!$this->codigoPublicoDoCertificadoEhValido($codigo)) {
             return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
         }
 
-        if (!$this->certificadoService->usuarioPodeAcessarCertificado($resultado['certificado'], Session::get('usuario_id'))) {
-            Session::flash('errors', array('certificado' => 'Você nao tem permissao para abrir este PDF.'));
-            return new Response(View::render('errors/403', array('title' => 'Acesso negado')), 403);
+        $certificado = $this->certificadoService->localizarCertificadoPublico($codigo);
+
+        if (empty($certificado)) {
+            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
         }
 
-        $pdf = $this->certificadoService->pdfBytesByCodigo($codigo);
+        Logger::info('certificado.download_pdf_publico', array(
+            'codigo' => $codigo,
+            'certificado_id' => (int) $certificado['id'],
+            'usuario_id' => Session::get('usuario_id'),
+        ));
+
+        try {
+            $pdf = $this->certificadoService->pdfBytesByCodigo($codigo);
+        } catch (\Throwable $exception) {
+            Logger::error('certificado.download_pdf_publico.falhou', array(
+                'codigo' => $codigo,
+                'certificado_id' => (int) $certificado['id'],
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ));
+
+            return new Response('Nao foi possivel gerar o certificado.', 500, array('Content-Type' => 'text/plain; charset=UTF-8'));
+        }
 
         if ($pdf === null) {
             return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
@@ -84,5 +172,21 @@ class CertificadosController extends Controller
             'Content-Disposition' => 'inline; filename="certificado-' . $codigo . '.pdf"',
         ));
     }
+
+    private function codigoPublicoDoCertificadoEhValido($codigo)
+    {
+        $codigo = strtoupper(trim((string) $codigo));
+        if ($codigo === '') {
+            return false;
+        }
+
+        $tamanho = function_exists('mb_strlen') ? mb_strlen($codigo) : strlen($codigo);
+        if ($tamanho < 10 || $tamanho > 32) {
+            return false;
+        }
+
+        return (bool) preg_match('/^[A-Z0-9-]+$/', $codigo);
+    }
 }
+
 

@@ -9,6 +9,7 @@ $status = isset($filters['status']) ? (string) $filters['status'] : '';
 $q = isset($filters['q']) ? (string) $filters['q'] : '';
 $de = isset($filters['de']) ? (string) $filters['de'] : '';
 $ate = isset($filters['ate']) ? (string) $filters['ate'] : '';
+$resultadoReenvioEmails = isset($resultado_reenvio_emails) && is_array($resultado_reenvio_emails) ? $resultado_reenvio_emails : null;
 
 $buildQuery = function (array $override = array()) use ($filters) {
     $merged = array_merge($filters, $override);
@@ -38,6 +39,37 @@ $buildQuery = function (array $override = array()) use ($filters) {
 
     <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
     <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+
+    <?php if (!empty($resultadoReenvioEmails) && !empty($resultadoReenvioEmails['resultados']) && is_array($resultadoReenvioEmails['resultados'])): ?>
+        <section class="panel" style="margin-bottom:12px;">
+            <div class="panel-header">
+                <div>
+                    <h2>Resultado do reenvio</h2>
+                    <p>Reenvios criados a partir da seleção atual.</p>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID original</th>
+                            <th>Status</th>
+                            <th>Mensagem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($resultadoReenvioEmails['resultados'] as $item): ?>
+                            <tr>
+                                <td><?php echo (int) ($item['id'] ?? 0); ?></td>
+                                <td><?php echo !empty($item['ok']) ? 'Reenviado' : 'Falha'; ?></td>
+                                <td><?php echo Helpers::e($item['message'] ?? ''); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <section class="status-card">
         <form method="get" action="/admin/emails/fila" class="form-grid">
@@ -75,9 +107,9 @@ $buildQuery = function (array $override = array()) use ($filters) {
             <input type="hidden" name="justificativa" id="emails-justificativa" value="">
             <div class="cta-group" style="justify-content:space-between;align-items:center;">
                 <div>
-                    <button type="submit" class="button-link" onclick="return confirmarReenvioSelecionados();">Reenviar selecionados</button>
+                    <button type="submit" class="button-link" data-reenviar-selecionados disabled onclick="return confirmarReenvioSelecionados();">Reenviar selecionados</button>
                     <button type="submit" class="button-link button-link--ghost" formaction="/admin/emails/excluir-falhas-selecionadas" onclick="return confirmarExclusaoSelecionados();">Excluir falhas selecionadas</button>
-                    <small class="muted" style="margin-left:10px;">Reenviáveis: pendente/falhou.</small>
+                    <small class="muted" style="margin-left:10px;">Selecionados: <span data-reenviar-contador>0</span> | Novos registros serão criados na fila.</small>
                 </div>
                 <div class="muted">
                     Total: <?php echo (int) ($pagination['total'] ?? 0); ?>
@@ -88,7 +120,7 @@ $buildQuery = function (array $override = array()) use ($filters) {
                 <table class="admin-table">
                     <thead>
                     <tr>
-                        <th style="width:36px;"><input type="checkbox" onclick="toggleTodos(this)"></th>
+                        <th style="width:36px;"><input type="checkbox" data-toggle-todos onclick="toggleTodos(this)"></th>
                         <th>ID</th>
                         <th>Destinatário</th>
                         <th>Assunto</th>
@@ -108,7 +140,7 @@ $buildQuery = function (array $override = array()) use ($filters) {
                         <?php
                         $emailId = (int) ($email['id'] ?? 0);
                         $emailStatus = (string) ($email['status'] ?? '');
-                        $reenviavel = in_array($emailStatus, array('pendente', 'falhou'), true);
+                        $reenviavel = in_array($emailStatus, array('pendente', 'falhou', 'enviado'), true);
                         $excluivel = $emailStatus === 'falhou';
                         $dataTentativa = !empty($email['enviado_em']) ? (string) $email['enviado_em'] : (!empty($email['falhou_em']) ? (string) $email['falhou_em'] : '');
                         $ultimoErro = !empty($email['ultimo_erro']) ? (string) $email['ultimo_erro'] : '';
@@ -121,7 +153,7 @@ $buildQuery = function (array $override = array()) use ($filters) {
                         <tr>
                             <td>
                                 <?php if ($reenviavel): ?>
-                                    <input type="checkbox" name="ids[]" value="<?php echo $emailId; ?>">
+                                    <input type="checkbox" name="ids[]" value="<?php echo $emailId; ?>" data-email-checkbox>
                                 <?php endif; ?>
                             </td>
                             <td><?php echo $emailId; ?></td>
@@ -141,7 +173,7 @@ $buildQuery = function (array $override = array()) use ($filters) {
                                     <form method="post" action="/admin/emails/reenviar" style="display:inline;">
                                         <?php echo $csrfField; ?>
                                         <input type="hidden" name="id" value="<?php echo $emailId; ?>">
-                                        <button type="submit" class="button-link button-link--ghost" onclick="return confirmarAcaoCritica({ palavra: 'REENVIAR', pergunta: 'Você conferiu o reenvio deste e-mail?' });">Reenviar</button>
+                                    <button type="submit" class="button-link button-link--ghost" onclick="return confirmarAcaoCritica({ palavra: 'REENVIAR', pergunta: 'Você conferiu o reenvio deste e-mail?' });">Reenviar</button>
                                     </form>
                                     <?php if ($excluivel): ?>
                                         <button type="submit"
@@ -180,16 +212,17 @@ $buildQuery = function (array $override = array()) use ($filters) {
 function toggleTodos(master) {
     var form = document.getElementById('emails-reenviar-selecionados-form');
     if (!form) return;
-    var inputs = form.querySelectorAll('input[type=\"checkbox\"][name=\"ids[]\"]');
+    var inputs = form.querySelectorAll('input[type=\"checkbox\"][name=\"ids[]\"]:not(:disabled)');
     for (var i = 0; i < inputs.length; i++) {
         inputs[i].checked = master.checked;
     }
+    atualizarContadorReenvio();
 }
 
 function confirmarReenvioSelecionados() {
     var form = document.getElementById('emails-reenviar-selecionados-form');
     if (!form) return false;
-    var checked = form.querySelectorAll('input[type=\"checkbox\"][name=\"ids[]\"]:checked');
+    var checked = form.querySelectorAll('input[type=\"checkbox\"][name=\"ids[]\"]:checked:not(:disabled)');
     if (!checked || checked.length === 0) {
         window.alert('Selecione ao menos um e-mail para reenviar.');
         return false;
@@ -211,7 +244,7 @@ function confirmarExclusaoIndividual() {
 function confirmarExclusaoSelecionados() {
     var form = document.getElementById('emails-reenviar-selecionados-form');
     if (!form) return false;
-    var checked = form.querySelectorAll('input[type=\"checkbox\"][name=\"ids[]\"]:checked');
+    var checked = form.querySelectorAll('input[type=\"checkbox\"][name=\"ids[]\"]:checked:not(:disabled)');
     if (!checked || checked.length === 0) {
         window.alert('Selecione ao menos um e-mail para excluir.');
         return false;
@@ -228,4 +261,28 @@ function confirmarExclusaoSelecionados() {
 
     return confirmarAcaoCritica({ palavra: 'EXCLUIR', pergunta: 'Você conferiu a exclusão de ' + checked.length + ' e-mails selecionados?' });
 }
+
+function atualizarContadorReenvio() {
+    var form = document.getElementById('emails-reenviar-selecionados-form');
+    if (!form) return;
+    var checked = form.querySelectorAll('input[type=\"checkbox\"][name=\"ids[]\"]:checked:not(:disabled)');
+    var button = form.querySelector('[data-reenviar-selecionados]');
+    var counter = form.querySelector('[data-reenviar-contador]');
+    if (counter) {
+        counter.textContent = String(checked.length);
+    }
+    if (button) {
+        button.disabled = checked.length === 0;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('emails-reenviar-selecionados-form');
+    if (!form) return;
+    var inputs = form.querySelectorAll('input[type=\"checkbox\"][name=\"ids[]\"]:not(:disabled)');
+    for (var i = 0; i < inputs.length; i++) {
+        inputs[i].addEventListener('change', atualizarContadorReenvio);
+    }
+    atualizarContadorReenvio();
+});
 </script>

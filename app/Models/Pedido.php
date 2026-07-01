@@ -255,9 +255,20 @@ class Pedido
     {
         $stmt = Database::connection()->query(
             'SELECT p.*,
-                    pc.titulo AS presente_campanha_titulo
+                    pc.titulo AS presente_campanha_titulo,
+                    COALESCE(NULLIF(cursos.cursos_nome, ""), "Curso não informado") AS cursos_nome
              FROM pedidos p
              LEFT JOIN presentes_campanhas pc ON pc.id = p.presente_campanha_id
+             LEFT JOIN (
+                SELECT pi.pedido_id,
+                       GROUP_CONCAT(DISTINCT ce.nome ORDER BY ce.nome SEPARATOR ", ") AS cursos_nome
+                FROM pedido_itens pi
+                LEFT JOIN cursos_eventos ce
+                       ON ce.id = pi.curso_evento_id
+                      AND ce.deleted_at IS NULL
+                WHERE pi.deleted_at IS NULL
+                GROUP BY pi.pedido_id
+             ) cursos ON cursos.pedido_id = p.id
              WHERE p.deleted_at IS NULL
              ORDER BY p.id DESC'
         );
@@ -269,6 +280,16 @@ class Pedido
     {
         $sql = ' FROM pedidos p
                  LEFT JOIN presentes_campanhas pc ON pc.id = p.presente_campanha_id
+                 LEFT JOIN (
+                    SELECT pi.pedido_id,
+                           GROUP_CONCAT(DISTINCT ce.nome ORDER BY ce.nome SEPARATOR ", ") AS cursos_nome
+                    FROM pedido_itens pi
+                    LEFT JOIN cursos_eventos ce
+                           ON ce.id = pi.curso_evento_id
+                          AND ce.deleted_at IS NULL
+                    WHERE pi.deleted_at IS NULL
+                    GROUP BY pi.pedido_id
+                 ) cursos ON cursos.pedido_id = p.id
                  WHERE p.deleted_at IS NULL';
 
         $q = isset($filters['q']) ? trim((string) $filters['q']) : '';
@@ -374,7 +395,8 @@ class Pedido
 
         $params = array();
         $sql = 'SELECT p.*,
-                       pc.titulo AS presente_campanha_titulo'
+                       pc.titulo AS presente_campanha_titulo,
+                       COALESCE(NULLIF(cursos.cursos_nome, ""), "Curso não informado") AS cursos_nome'
             . $this->backofficeBaseSql($filters, $params)
             . ' ORDER BY ' . $sortMap[$sortBy] . ' ' . strtoupper($sortDir) . ', p.id DESC
                LIMIT :limit OFFSET :offset';

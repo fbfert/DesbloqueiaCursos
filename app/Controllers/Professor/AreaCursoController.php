@@ -736,7 +736,7 @@ class AreaCursoController extends Controller
             $alternativos = array(
                 BASE_PATH . '/storage/private_uploads/' . ltrim($relativePath, '/\\'),
                 dirname(BASE_PATH) . '/storage/private_uploads/' . ltrim($relativePath, '/\\'),
-                BASE_PATH . '/public_html/storage/private_uploads/' . ltrim($relativePath, '/\\'),
+                BASE_PATH . '/storage/private_uploads/' . ltrim($relativePath, '/\\'),
             );
             foreach ($alternativos as $caminhoAlternativo) {
                 if (is_file($caminhoAlternativo)) {

@@ -49,6 +49,7 @@ class EmailsController extends Controller
             'filters' => $filters,
             'emails' => $result['items'],
             'pagination' => $result,
+            'resultado_reenvio_emails' => Session::pullFlash('resultado_reenvio_emails'),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
         ));
@@ -86,7 +87,14 @@ class EmailsController extends Controller
         }
 
         $result = $this->adminService->reenviarSelecionados($ids, Session::get('usuario_id'), $request->ip(), $request->userAgent());
-        Session::flash('success', (int) $result['reenviados'] . ' e-mails reenviados. ' . (int) $result['ignorados'] . ' ignorados.');
+        Session::flash('resultado_reenvio_emails', $result);
+
+        if (!empty($result['reenviados'])) {
+            Session::flash('success', (int) $result['reenviados'] . ' e-mail(s) reenviado(s) com sucesso.');
+        }
+        if (!empty($result['ignorados'])) {
+            Session::flash('errors', array((int) $result['ignorados'] . ' e-mail(s) não puderam ser reenviados.'));
+        }
         return $this->redirect('/admin/emails/fila');
     }
 

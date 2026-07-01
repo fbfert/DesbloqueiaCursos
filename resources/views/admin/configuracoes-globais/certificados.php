@@ -32,16 +32,19 @@ $checked = function ($key, $default = 0) use ($v) {
 
     <form method="post" action="/admin/configuracoes-globais/certificados">
         <section class="status-card">
-            <h2 style="margin-top:0;">Status do módulo</h2>
+            <h2 style="margin-top:0;">Status geral</h2>
+            <p class="muted" style="margin:0 0 12px 0;">Controle se o módulo fica ativo e se o aluno pode acessar certificados e validação pública.</p>
             <div class="form-grid">
                 <label class="checkbox">
                     <input type="checkbox" name="certificados_habilitado" value="1" <?php echo $checked('certificados_habilitado', 1); ?>>
                     Habilitar módulo de certificados
+                    <small class="muted">Quando desativado, nenhum certificado poderá ser emitido.</small>
                 </label>
 
                 <label class="checkbox">
                     <input type="checkbox" name="certificados_emissao_habilitada" value="1" <?php echo $checked('certificados_emissao_habilitada', 1); ?>>
                     Permitir emissão de certificados
+                    <small class="muted">Bloqueia emissões individuais, manuais e em lote.</small>
                 </label>
 
                 <label>
@@ -62,6 +65,7 @@ $checked = function ($key, $default = 0) use ($v) {
                 <label class="checkbox">
                     <input type="checkbox" name="certificados_permitir_download" value="1" <?php echo $checked('certificados_permitir_download', 1); ?>>
                     Permitir download pelo aluno
+                    <small class="muted">Quando desativado, o aluno pode visualizar, mas não baixar o PDF.</small>
                 </label>
 
                 <label class="checkbox">
@@ -77,11 +81,13 @@ $checked = function ($key, $default = 0) use ($v) {
         </section>
 
         <section class="status-card" style="margin-top:12px;">
-            <h2 style="margin-top:0;">Regras de emissão</h2>
+            <h2 style="margin-top:0;">Permissões de emissão</h2>
+            <p class="muted" style="margin:0 0 12px 0;">Regras que validam se o certificado pode ser emitido e em quais condições.</p>
             <div class="form-grid">
                 <label class="checkbox">
                     <input type="checkbox" name="certificados_exigir_inscricao_concluida" value="1" <?php echo $checked('certificados_exigir_inscricao_concluida', 0); ?>>
                     Exigir inscrição ativa/concluída (global)
+                    <small class="muted">A emissão só segue para inscrições válidas e concluídas.</small>
                 </label>
                 <label class="checkbox">
                     <input type="checkbox" name="certificados_exigir_pagamento_aprovado" value="1" <?php echo $checked('certificados_exigir_pagamento_aprovado', 0); ?>>
@@ -117,7 +123,7 @@ $checked = function ($key, $default = 0) use ($v) {
                 </label>
                 <label class="checkbox">
                     <input type="checkbox" name="certificados_permitir_emissao_com_pendencias_admin" value="1" <?php echo $checked('certificados_permitir_emissao_com_pendencias_admin', 1); ?>>
-                    Permitir emissão se houver pendências administrativas
+                    Permitir emissão excepcional de certificado com pendências administrativas
                 </label>
                 <label style="grid-column:1/-1;">
                     Status de inscrição permitidos (separados por vírgula)
@@ -128,7 +134,7 @@ $checked = function ($key, $default = 0) use ($v) {
                     <textarea name="certificados_observacao_regras_emissao" rows="3"><?php echo Helpers::e($v('certificados_observacao_regras_emissao')); ?></textarea>
                 </label>
                 <div class="status-card" style="grid-column:1/-1;margin-top:4px;">
-                    <p class="muted" style="margin:0;">Observação: regras acadêmicas por curso/turma continuam sendo controladas no módulo acadêmico.</p>
+                    <p class="muted" style="margin:0;">Quando habilitado, administradores com permissão específica poderão emitir certificados para inscrições com pendências, mediante justificativa obrigatória e registro de auditoria.</p>
                 </div>
             </div>
         </section>
@@ -156,9 +162,10 @@ $checked = function ($key, $default = 0) use ($v) {
         </section>
 
         <section class="status-card" style="margin-top:12px;">
-            <h2 style="margin-top:0;">Validação pública</h2>
+            <h2 style="margin-top:0;">Validação pública e código</h2>
+            <p class="muted" style="margin:0 0 12px 0;">Define a página pública, o formato do código e a forma como o QR Code aponta para a validação.</p>
             <div class="form-grid">
-                <label class="checkbox"><input type="checkbox" name="certificados_validacao_publica_habilitada" value="1" <?php echo $checked('certificados_validacao_publica_habilitada', 1); ?>> Habilitar página pública de validação</label>
+                <label class="checkbox"><input type="checkbox" name="certificados_validacao_publica_habilitada" value="1" <?php echo $checked('certificados_validacao_publica_habilitada', 1); ?>> Habilitar página pública de validação <small class="muted">Quando desativado, a página pública exibe indisponibilidade.</small></label>
                 <label class="checkbox"><input type="checkbox" name="certificados_validacao_exibir_nome_aluno" value="1" <?php echo $checked('certificados_validacao_exibir_nome_aluno', 1); ?>> Exibir nome do aluno</label>
                 <label class="checkbox"><input type="checkbox" name="certificados_validacao_exibir_curso" value="1" <?php echo $checked('certificados_validacao_exibir_curso', 1); ?>> Exibir curso</label>
                 <label class="checkbox"><input type="checkbox" name="certificados_validacao_exibir_carga_horaria" value="1" <?php echo $checked('certificados_validacao_exibir_carga_horaria', 0); ?>> Exibir carga horária</label>
@@ -174,14 +181,17 @@ $checked = function ($key, $default = 0) use ($v) {
                         <option value="prefixo_ano_sequencial" <?php echo $fmt === 'prefixo_ano_sequencial' ? 'selected' : ''; ?>>Prefixo + ano + sequencial</option>
                         <option value="hash_curto" <?php echo $fmt === 'hash_curto' ? 'selected' : ''; ?>>Hash curto</option>
                     </select>
+                    <small class="muted">Use formatos simples e compatíveis com o sistema.</small>
                 </label>
                 <label>
                     Prefixo do código (opcional)
                     <input type="text" name="certificados_codigo_prefixo" value="<?php echo Helpers::e($v('certificados_codigo_prefixo')); ?>" placeholder="DC">
+                    <small class="muted">Define o prefixo dos códigos emitidos, como DC, R12 ou CERT.</small>
                 </label>
                 <label>
                     Tamanho mínimo do código/hash
                     <input type="number" min="4" max="80" name="certificados_codigo_tamanho_minimo" value="<?php echo Helpers::e($v('certificados_codigo_tamanho_minimo', 10)); ?>">
+                    <small class="muted">Garante códigos com tamanho mínimo consistente.</small>
                 </label>
                 <label class="checkbox"><input type="checkbox" name="certificados_permitir_validacao_por_qrcode" value="1" <?php echo $checked('certificados_permitir_validacao_por_qrcode', 1); ?>> Permitir validação por QR Code</label>
                 <label style="grid-column:1/-1;">
@@ -209,7 +219,8 @@ $checked = function ($key, $default = 0) use ($v) {
         </section>
 
         <section class="status-card" style="margin-top:12px;">
-            <h2 style="margin-top:0;">Layout padrão</h2>
+            <h2 style="margin-top:0;">Código e aparência</h2>
+            <p class="muted" style="margin:0 0 12px 0;">Configura o prefixo geral, a logo padrão e o comportamento visual herdado pelos certificados.</p>
             <div class="form-grid">
                 <label>
                     Prefixo do certificado
@@ -265,7 +276,10 @@ $checked = function ($key, $default = 0) use ($v) {
                 <label style="grid-column:1/-1;">Imagem de fundo padrão <input type="text" name="certificados_imagem_fundo_padrao" value="<?php echo Helpers::e($v('certificados_imagem_fundo_padrao')); ?>"></label>
 
                 <label class="checkbox"><input type="checkbox" name="certificados_usar_logo_institucional" value="1" <?php echo $checked('certificados_usar_logo_institucional', 1); ?>> Usar logo institucional</label>
-                <label style="grid-column:1/-1;">Logo padrão (opcional) <input type="text" name="certificados_logo_padrao" value="<?php echo Helpers::e($v('certificados_logo_padrao')); ?>"></label>
+                <label style="grid-column:1/-1;">Logo específica dos certificados (opcional) <input type="text" name="certificados_logo_padrao" value="<?php echo Helpers::e($v('certificados_logo_padrao')); ?>"></label>
+                <div class="status-card" style="grid-column:1/-1;margin-top:4px;">
+                    <p class="muted" style="margin:0;">Prioridade da imagem no PDF: template do certificado, logo específica dos certificados e, por fim, logo institucional/global.</p>
+                </div>
 
                 <label class="checkbox"><input type="checkbox" name="certificados_qrcode_habilitado" value="1" <?php echo $checked('certificados_qrcode_habilitado', 1); ?>> Usar QR Code</label>
                 <label>
@@ -308,12 +322,13 @@ $checked = function ($key, $default = 0) use ($v) {
 
         <section class="status-card" style="margin-top:12px;">
             <h2 style="margin-top:0;">Reemissão e auditoria</h2>
+            <p class="muted" style="margin:0 0 12px 0;">Controla segunda via, cancelamento e rastreabilidade administrativa.</p>
             <div class="form-grid">
                 <label class="checkbox"><input type="checkbox" name="certificados_permitir_segunda_via" value="1" <?php echo $checked('certificados_permitir_segunda_via', 1); ?>> Permitir segunda via</label>
                 <label class="checkbox"><input type="checkbox" name="certificados_registrar_numero_via" value="1" <?php echo $checked('certificados_registrar_numero_via', 1); ?>> Registrar número da via</label>
                 <label class="checkbox"><input type="checkbox" name="certificados_manter_historico_reemissoes" value="1" <?php echo $checked('certificados_manter_historico_reemissoes', 1); ?>> Manter histórico de reemissões</label>
                 <label class="checkbox"><input type="checkbox" name="certificados_permitir_cancelamento" value="1" <?php echo $checked('certificados_permitir_cancelamento', 1); ?>> Permitir cancelamento</label>
-                <label class="checkbox"><input type="checkbox" name="certificados_exigir_motivo_cancelamento" value="1" <?php echo $checked('certificados_exigir_motivo_cancelamento', 1); ?>> Exigir motivo ao cancelar</label>
+                <label class="checkbox"><input type="checkbox" name="certificados_exigir_motivo_cancelamento" value="1" <?php echo $checked('certificados_exigir_motivo_cancelamento', 1); ?>> Exigir motivo ao cancelar <small class="muted">A validação do motivo também ocorre no backend.</small></label>
                 <label class="checkbox"><input type="checkbox" name="certificados_registrar_usuario_emissor" value="1" <?php echo $checked('certificados_registrar_usuario_emissor', 1); ?>> Registrar usuário emissor</label>
                 <label class="checkbox"><input type="checkbox" name="certificados_registrar_usuario_cancelou" value="1" <?php echo $checked('certificados_registrar_usuario_cancelou', 1); ?>> Registrar usuário que cancelou</label>
                 <label class="checkbox"><input type="checkbox" name="certificados_registrar_ip_data_hora_emissao" value="1" <?php echo $checked('certificados_registrar_ip_data_hora_emissao', 1); ?>> Registrar IP/data/hora de emissão</label>

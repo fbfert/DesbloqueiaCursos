@@ -1,8 +1,8 @@
 <?php use App\Core\Helpers; ?>
 
-<?php $perfil = isset($form_data['perfil']) ? $form_data['perfil'] : null; ?>
-<?php $professores = isset($form_data['professores']) ? $form_data['professores'] : array(); ?>
-<?php $oldData = isset($old) && is_array($old) ? $old : array(); ?>
+<?php $perfil = isset($form_data['perfil']) && is_array($form_data['perfil']) ? $form_data['perfil'] : null; ?>
+<?php $professores = isset($form_data['professores']) && is_array($form_data['professores']) ? $form_data['professores'] : array(); ?>
+<?php $oldData = isset($oldInput) && is_array($oldInput) ? $oldInput : (isset($old) && is_array($old) ? $old : array()); ?>
 <?php $value = function($key, $default = '') use ($oldData, $perfil) {
     if (array_key_exists($key, $oldData)) {
         return $oldData[$key];
@@ -27,6 +27,7 @@
 
 <section class="status-card">
     <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form">
+        <?php echo \App\Core\Csrf::field(); ?>
         <input type="hidden" name="id" value="<?php echo (int) $value('id', 0); ?>">
         <label>
             Professor
@@ -89,7 +90,7 @@
             <input type="checkbox" name="exige_nota_fiscal" value="1" <?php echo !empty($value('exige_nota_fiscal', 0)) ? 'checked' : ''; ?>>
             Exigir nota fiscal
         </label>
-        <?php $cancelUrl = '/admin/professores-fiscais'; ?>
+        <?php $cancel_url = '/admin/professores-fiscais'; ?>
         <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>

@@ -1159,3 +1159,92 @@ body.v2-modal-open { overflow: hidden; }
 @media (min-width: 560px) { .v2-app .v2-cert-result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .v2-app .v2-cert-result-grid > div { display: flex; flex-direction: column; }
 .v2-app .v2-cert-result-grid b { font-size: 0.95rem; }
+
+/* ============================================================
+   FICHA DE CURSO V2 INTEGRADA (Fase 2.3) — indicador de turma
+   selecionável por link/GET (sem input de formulário). Escopo .v2-app.
+   ============================================================ */
+.v2-app .v2-turma-radio-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--v2-border); box-sizing: border-box; display: block; }
+.v2-app .v2-turma.is-sel .v2-turma-radio-dot { border-color: var(--v2-laranja); background: var(--v2-laranja); box-shadow: inset 0 0 0 3px #fff; }
+.v2-app a.v2-turma-sel { color: inherit; text-decoration: none; }
+.v2-app a.v2-turma-sel:hover { text-decoration: none; }
+
+/* ============================================================
+   QUIZ V2 (Fase 2.9) — quizzes objetivos reais
+   Escopo .v2-app · prefixo v2- · mobile-first · uma coluna
+   Estados (correta/errada/escolhida/aprovado/reprovado) com
+   ícone + texto, nunca dependendo apenas de cor.
+   ============================================================ */
+.v2-app .v2-quiz { padding: 16px 0 40px; max-width: 760px; }
+.v2-app .v2-quiz-instrucoes { background: var(--v2-surface); border: 1px solid var(--v2-border); border-radius: var(--v2-radius-lg); padding: 12px 14px; margin: 0 0 12px; color: var(--v2-text); }
+.v2-app .v2-quiz-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 12px; }
+.v2-app .v2-quiz-pergunta { border: 1px solid var(--v2-border); border-radius: var(--v2-radius-lg); padding: 14px; margin: 0 0 14px; background: var(--v2-surface); min-width: 0; }
+.v2-app .v2-quiz-enunciado { font-weight: 600; padding: 0; margin: 0 0 10px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
+.v2-app .v2-quiz-num { flex-shrink: 0; min-width: 26px; height: 26px; border-radius: 50%; background: var(--v2-laranja); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 700; }
+.v2-app .v2-quiz-obrig { color: var(--v2-danger); font-weight: 700; }
+.v2-app .v2-quiz-alts { display: flex; flex-direction: column; gap: 8px; }
+.v2-app .v2-quiz-alt { display: flex; gap: 10px; align-items: flex-start; padding: 11px 12px; border: 1px solid var(--v2-border); border-radius: 10px; cursor: pointer; min-height: 44px; transition: border-color .15s, background .15s; }
+.v2-app .v2-quiz-alt:hover { border-color: var(--v2-laranja); }
+.v2-app .v2-quiz-alt input[type="radio"] { margin-top: 3px; flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--v2-laranja); }
+.v2-app .v2-quiz-alt:has(input[type="radio"]:checked) { border-color: var(--v2-laranja); background: #fff4ec; }
+.v2-app .v2-quiz-alt input[type="radio"]:focus-visible { outline: 2px solid var(--v2-laranja); outline-offset: 2px; }
+.v2-app .v2-quiz-alt-text { line-height: 1.4; overflow-wrap: anywhere; }
+.v2-app .v2-quiz-alt--ro { cursor: default; align-items: center; }
+.v2-app .v2-quiz-alt-mark { flex-shrink: 0; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; color: var(--v2-text-2); }
+.v2-app .v2-quiz-alt--chosen { border-color: var(--v2-laranja); background: #fff7f1; }
+.v2-app .v2-quiz-alt--correct { border-color: var(--v2-success); background: #e9fbf6; }
+.v2-app .v2-quiz-alt--correct .v2-quiz-alt-mark { color: var(--v2-success); }
+.v2-app .v2-quiz-alt--wrong { border-color: var(--v2-danger); background: #fff0f3; }
+.v2-app .v2-quiz-alt--wrong .v2-quiz-alt-mark { color: var(--v2-danger); }
+.v2-app .v2-quiz-tag { flex-shrink: 0; margin-left: auto; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--v2-text-2); border: 1px solid var(--v2-border); border-radius: 999px; padding: 2px 8px; }
+.v2-app .v2-quiz-tag--ok { color: var(--v2-success); border-color: var(--v2-success); }
+.v2-app .v2-quiz-explica { margin: 10px 0 0; font-size: 0.85rem; color: var(--v2-text-2); display: flex; gap: 6px; align-items: flex-start; }
+.v2-app .v2-quiz-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+.v2-app .v2-quiz-score { margin: 0 0 6px; }
+.v2-app .v2-quiz-status { display: inline-flex; gap: 6px; align-items: center; font-weight: 700; margin: 0; }
+.v2-app .v2-quiz-status--ok { color: var(--v2-success); }
+.v2-app .v2-quiz-status--fail { color: var(--v2-danger); }
+
+/* ============================================================
+   ATIVIDADE DISCURSIVA V2 (Fase 2.10) — resposta textual real
+   Escopo .v2-app · prefixo v2- · sem upload. Estados por
+   ícone + texto (não só cor). Textarea confortável em mobile.
+   ============================================================ */
+.v2-app .v2-textarea { width: 100%; min-height: 160px; resize: vertical; line-height: 1.5; }
+.v2-app .v2-atv-status { display: inline-flex; gap: 8px; align-items: center; margin: 6px 0 12px; padding: 8px 12px; border: 1px solid var(--v2-border); border-radius: 999px; font-size: 0.9rem; }
+.v2-app .v2-atv-status i { font-size: 1.05rem; }
+.v2-app .v2-atv-status--aprovada { border-color: var(--v2-success); color: var(--v2-success); }
+.v2-app .v2-atv-status--reprovada { border-color: var(--v2-danger); color: var(--v2-danger); }
+.v2-app .v2-atv-status--devolvida { border-color: var(--v2-laranja); color: var(--v2-laranja); }
+.v2-app .v2-atv-status--em_correcao { border-color: var(--v2-roxo); color: var(--v2-roxo); }
+.v2-app .v2-atv-resposta { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--v2-surface-2); border: 1px solid var(--v2-border); border-radius: 10px; padding: 12px; }
+.v2-app .v2-atv-nota { margin: 10px 0 0; }
+.v2-app .v2-atv-feedback { margin: 10px 0 0; padding: 12px; border-left: 3px solid var(--v2-success); background: #e9fbf6; border-radius: 0 10px 10px 0; }
+.v2-app .v2-atv-feedback p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ============================================================
+   CHECKOUT V2 (Fase 2.12A) — pré-pagamento (inscrição,
+   participantes, resumo). Escopo .v2-app · prefixo v2-.
+   Etapas por texto + estado (não só cor). Reutiliza
+   .v2-checkout, .v2-block, .v2-field, .v2-input, .v2-btn.
+   ============================================================ */
+.v2-app .v2-checkout-hero { margin: 8px 0 6px; }
+.v2-app .v2-steps { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 8px 0 16px; counter-reset: none; }
+.v2-app .v2-step { display: flex; align-items: center; gap: 8px; flex: 1 1 0; min-width: 0; padding: 8px 10px; border: 1px solid var(--v2-border); border-radius: 999px; font-size: 0.85rem; }
+.v2-app .v2-step-num { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; background: var(--v2-surface-2); color: var(--v2-text-2); }
+.v2-app .v2-step-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2-app .v2-step--atual { border-color: var(--v2-laranja); color: var(--v2-laranja); font-weight: 700; }
+.v2-app .v2-step--atual .v2-step-num { background: var(--v2-laranja); color: #fff; }
+.v2-app .v2-step--feito { border-color: var(--v2-success); color: var(--v2-success); }
+.v2-app .v2-step--feito .v2-step-num { background: var(--v2-success); color: #fff; }
+.v2-app .v2-sumlist { margin: 0; }
+.v2-app .v2-sumrow { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--v2-border); }
+.v2-app .v2-sumrow:last-child { border-bottom: 0; }
+.v2-app .v2-sumrow dt { color: var(--v2-text-2); margin: 0; }
+.v2-app .v2-sumrow dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.v2-app .v2-sumrow--total dd { font-size: 1.05rem; }
+.v2-app .v2-checkout-line { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--v2-border); }
+.v2-app .v2-checkout-line:last-child { border-bottom: 0; }
+.v2-app .v2-checkout-line > span:last-child { margin-left: auto; font-weight: 600; }
+.v2-app .v2-checkout-part { margin-bottom: 14px; }
+.v2-app .v2-checkout-part > legend { padding: 0 6px; }

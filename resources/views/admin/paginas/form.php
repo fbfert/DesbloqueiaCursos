@@ -80,7 +80,7 @@ $value = function ($field, $default = '') use ($old, $pagina) {
                 <textarea name="conteudo_html" rows="14" style="font-family:Consolas, monospace;"><?php echo Helpers::e($value('conteudo_html')); ?></textarea>
             </label>
 
-            <?php $cancelUrl = '/admin/paginas'; ?>
+            <?php $cancel_url = '/admin/paginas'; ?>
             <?php $showSaveAsCopy = !empty($pagina); ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>

@@ -82,12 +82,10 @@ class Usuario
             'SELECT u.*,
                     COALESCE(GROUP_CONCAT(DISTINCT p.nome ORDER BY p.nome SEPARATOR ", "), "") AS perfis
              FROM usuarios u
-             INNER JOIN usuario_perfis up ON up.usuario_id = u.id
-             INNER JOIN perfis p ON p.id = up.perfil_id
+             LEFT JOIN usuario_perfis up ON up.usuario_id = u.id
+             LEFT JOIN perfis p ON p.id = up.perfil_id AND p.deleted_at IS NULL
              WHERE u.deleted_at IS NULL
-               AND u.status = "ativo"
                AND u.id = :id
-               AND p.slug = "aluno"
              GROUP BY u.id
              LIMIT 1'
         );
@@ -175,6 +173,55 @@ class Usuario
                 INNER JOIN perfis p ON p.id = up.perfil_id
                 WHERE ' . implode(' AND ', $where) . '
                 GROUP BY u.id
+                ORDER BY u.nome ASC
+                LIMIT ' . $limit;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function buscarAlunosParaCertificadoRapido($termo, $limit = 20)
+    {
+        $termo = trim((string) $termo);
+        $limit = (int) $limit;
+        if ($limit < 1 || $limit > 50) {
+            $limit = 20;
+        }
+
+        $digits = preg_replace('/\D+/', '', $termo);
+        $termLower = mb_strtolower($termo, 'UTF-8');
+        $termCompact = preg_replace('/\s+/', '', $termLower);
+        $where = array(
+            'u.deleted_at IS NULL',
+        );
+        $params = array();
+
+        if ($termo !== '') {
+            $where[] = '('
+                . 'LOWER(TRIM(u.nome)) LIKE :q_nome'
+                . ' OR REPLACE(LOWER(TRIM(u.nome)), " ", "") LIKE :q_nome_compact'
+                . ' OR LOWER(TRIM(u.email)) LIKE :q_email'
+                . ' OR REPLACE(LOWER(TRIM(u.email)), " ", "") LIKE :q_email_compact'
+                . ($digits !== '' ? ' OR REPLACE(REPLACE(REPLACE(u.cpf, ".", ""), "-", ""), " ", "") LIKE :q_cpf' : '')
+                . ')';
+            $params['q_nome'] = '%' . $termLower . '%';
+            $params['q_nome_compact'] = '%' . $termCompact . '%';
+            $params['q_email'] = '%' . $termLower . '%';
+            $params['q_email_compact'] = '%' . $termCompact . '%';
+            if ($digits !== '') {
+                $params['q_cpf'] = '%' . $digits . '%';
+            }
+        }
+
+        $sql = 'SELECT u.id,
+                       u.nome,
+                       u.email,
+                       u.cpf,
+                       u.telefone
+                FROM usuarios u
+                WHERE ' . implode(' AND ', $where) . '
                 ORDER BY u.nome ASC
                 LIMIT ' . $limit;
 

@@ -176,6 +176,11 @@ class FinanceiroService
         return $this->repasseService->listarPorProfessor($usuarioId);
     }
 
+    public function buscarProfessorFiscalPorId($perfilId)
+    {
+        return $this->professorFiscalModel->findById((int) $perfilId);
+    }
+
     public function exportarEntradasCsv(array $filters = array())
     {
         $filtros = $this->normalizarFiltrosEntradas($filters);

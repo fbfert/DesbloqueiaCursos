@@ -67,7 +67,7 @@ $cidadeAtual = (string) $value('cidade');
                 <?php endforeach; ?>
             </div>
 
-            <?php $cancelUrl = '/admin/usuarios'; ?>
+            <?php $cancel_url = '/admin/usuarios'; ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>

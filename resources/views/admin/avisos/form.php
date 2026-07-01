@@ -192,7 +192,7 @@ if ($alunoSelecionado) {
                 <small class="muted">Avisos com status <strong>Enviado</strong> aparecem para os alunos automaticamente dentro do período configurado.</small>
             </div>
 
-            <?php $cancelUrl = '/admin/avisos'; ?>
+            <?php $cancel_url = '/admin/avisos'; ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>

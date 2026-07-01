@@ -329,21 +329,35 @@ class RepasseProfessorService
 
     public function salvarProfessorFiscal(array $data, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
-        $id = $this->professorFiscalModel->save($data);
+        try {
+            $id = $this->professorFiscalModel->save($data);
 
-        $this->auditService->record(
-            'financeiro.professor_fiscal.salvo',
-            'professores_fiscal',
-            $id,
-            $data,
-            $actorUserId,
-            $ipAddress,
-            $userAgent
-        );
+            $this->auditService->record(
+                'financeiro.professor_fiscal.salvo',
+                'professores_fiscal',
+                $id,
+                $data,
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
 
-        Logger::info('financeiro.professor_fiscal.salvo', array('professor_fiscal_id' => $id));
+            Logger::info('financeiro.professor_fiscal.salvo', array('professor_fiscal_id' => $id));
 
-        return array('ok' => true, 'id' => $id);
+            return array('ok' => true, 'id' => $id);
+        } catch (\Throwable $exception) {
+            Logger::error('financeiro.professor_fiscal.salvar_falha', array(
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+                'data_keys' => array_keys($data),
+            ));
+
+            return array(
+                'ok' => false,
+                'message' => $exception->getMessage() ?: 'Não foi possível salvar o perfil fiscal.',
+            );
+        }
     }
 
     private function renderRpaEspelho(array $repasse, $nome, $cpf, $competencia)

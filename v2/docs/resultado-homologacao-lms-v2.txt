@@ -1,0 +1,38 @@
+Resultado da homologação LMS V2
+================================
+
+Data: 30/06/2026
+
+Status final: PENDENTE
+
+Testes executados:
+- Nenhum teste funcional de gravação foi executado.
+- A validação das condições prévias de segurança foi realizada antes de
+  qualquer execução e indicou que os testes não podiam prosseguir.
+
+Testes não executados e motivo:
+- Os testes de progresso e conclusão (abertura de conteúdo, marcação de
+  conclusão, verificação de duplicidade, conteúdo bloqueado, comportamento de
+  avaliações e verificações de segurança) não foram executados.
+- Motivo: as condições prévias obrigatórias não foram integralmente atendidas.
+  A autorização interna não estava devidamente protegida, não indicava de forma
+  válida todos os itens a testar e não disponibilizava um meio seguro de
+  autenticação. Por política, na ausência dessas condições nenhuma gravação é
+  realizada.
+
+Falhas:
+- Não foram identificadas falhas no sistema durante esta tentativa, pois nenhum
+  teste de gravação chegou a ser executado.
+- Os impedimentos encontrados referem-se à preparação da autorização e do
+  ambiente de teste, não a defeitos da aplicação.
+
+Alteração de código:
+- Nenhum código, configuração ou dado foi alterado durante esta homologação.
+
+Próximo passo recomendado:
+- Ajustar a autorização interna (proteção de acesso adequada, indicação válida
+  dos itens de teste e meio seguro de autenticação) e, em seguida, reexecutar a
+  homologação funcional completa.
+
+Observação: este é um resumo público temporário, sem informações técnicas
+sensíveis.

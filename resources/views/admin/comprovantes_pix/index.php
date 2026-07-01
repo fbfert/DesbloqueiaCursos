@@ -29,6 +29,19 @@ if (!function_exists('comprovantesPixFormatarTelefone')) {
         return $telefone;
     }
 }
+
+if (!function_exists('comprovantesPixCursoNome')) {
+    function comprovantesPixCursoNome($cursoNome)
+    {
+        $cursoNome = trim((string) $cursoNome);
+
+        if ($cursoNome === '') {
+            return 'Curso não informado';
+        }
+
+        return $cursoNome;
+    }
+}
 ?>
 
 <section class="status-card admin-pending-pix">
@@ -82,6 +95,7 @@ if (!function_exists('comprovantesPixFormatarTelefone')) {
                             <a href="/admin/pedidos/show?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>">
                                 <?php echo htmlspecialchars((string) $comprovante['pedido_codigo'], ENT_QUOTES, 'UTF-8'); ?>
                             </a>
+                            <br><small class="muted text-muted">Curso: <?php echo htmlspecialchars(comprovantesPixCursoNome(isset($comprovante['cursos_nome']) ? $comprovante['cursos_nome'] : ''), ENT_QUOTES, 'UTF-8'); ?></small>
                         </td>
                         <td>
                             <?php echo htmlspecialchars((string) $comprovante['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
@@ -157,11 +171,12 @@ if (!function_exists('comprovantesPixFormatarTelefone')) {
                     <?php foreach ($comprovantes_pix as $comprovante): ?>
                         <?php $statusMeta = statusComprovanteMeta(isset($comprovante['status']) ? $comprovante['status'] : ''); ?>
                         <tr>
-                            <td>
-                                <a href="/admin/pedidos/show?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>">
-                                    <?php echo htmlspecialchars((string) $comprovante['pedido_codigo'], ENT_QUOTES, 'UTF-8'); ?>
-                                </a>
-                            </td>
+                        <td>
+                            <a href="/admin/pedidos/show?pedido_id=<?php echo (int) $comprovante['pedido_id']; ?>">
+                                <?php echo htmlspecialchars((string) $comprovante['pedido_codigo'], ENT_QUOTES, 'UTF-8'); ?>
+                            </a>
+                            <br><small class="muted text-muted">Curso: <?php echo htmlspecialchars(comprovantesPixCursoNome(isset($comprovante['cursos_nome']) ? $comprovante['cursos_nome'] : ''), ENT_QUOTES, 'UTF-8'); ?></small>
+                        </td>
                         <td>
                             <?php echo htmlspecialchars((string) $comprovante['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
                             <small><?php echo htmlspecialchars((string) $comprovante['pagador_email'], ENT_QUOTES, 'UTF-8'); ?></small>

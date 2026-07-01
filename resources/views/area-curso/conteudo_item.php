@@ -411,14 +411,32 @@ $avaliacaoStatusPodeReenviar = $avaliacaoPodeManipular ? 'Disponível' : 'Indisp
         <?php endif; ?>
 
         <?php if ($podeConcluir): ?>
-            <form method="post" action="/aluno/cursos/conteudo/item/concluir" class="conteudo-item-concluir-form">
+            <form method="post" action="/aluno/cursos/conteudo/item/concluir" class="conteudo-conclusao-form conteudo-item-concluir-form">
                 <?php echo $csrfField; ?>
                 <input type="hidden" name="item_id" value="<?php echo (int) ($item['id'] ?? 0); ?>">
                 <input type="hidden" name="inscricao_id" value="<?php echo (int) $inscricaoId; ?>">
                 <input type="hidden" name="curso_id" value="<?php echo (int) $cursoId; ?>">
                 <input type="hidden" name="turma_id" value="<?php echo $turmaId > 0 ? (int) $turmaId : ''; ?>">
-                <button type="submit">Marcar como concluído</button>
+                <input type="hidden" name="acao" value="<?php echo $itemConcluido ? 'desmarcar' : 'marcar'; ?>">
+
+                <div class="conteudo-conclusao-panel <?php echo $itemConcluido ? 'conteudo-conclusao-panel--concluido' : 'conteudo-conclusao-panel--pendente'; ?>">
+                    <div class="conteudo-conclusao-panel__estado" aria-live="polite">
+                        <span class="conteudo-conclusao-icone" aria-hidden="true"><?php echo $itemConcluido ? '✓' : '○'; ?></span>
+                        <strong><?php echo $itemConcluido ? 'Concluído' : 'Não concluído'; ?></strong>
+                    </div>
+                    <button type="submit" class="conteudo-conclusao-btn <?php echo $itemConcluido ? 'conteudo-conclusao-btn--concluido' : 'conteudo-conclusao-btn--pendente'; ?>" title="<?php echo $itemConcluido ? 'Reverter conclusão' : 'Concluir'; ?>" aria-label="<?php echo $itemConcluido ? 'Reverter conclusão' : 'Concluir'; ?>">
+                        <span class="conteudo-conclusao-icone" aria-hidden="true"><?php echo $itemConcluido ? '↺' : '✓'; ?></span>
+                        <span><?php echo $itemConcluido ? 'Reverter conclusão' : 'Concluir'; ?></span>
+                    </button>
+                </div>
             </form>
+        <?php elseif ($itemConcluido): ?>
+            <div class="conteudo-conclusao-panel conteudo-conclusao-panel--concluido" role="status" aria-live="polite">
+                <div class="conteudo-conclusao-panel__estado">
+                    <span class="conteudo-conclusao-icone" aria-hidden="true">✓</span>
+                    <strong>Concluído</strong>
+                </div>
+            </div>
         <?php endif; ?>
 
         <div class="conteudo-item-orientacao">

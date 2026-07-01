@@ -18,7 +18,7 @@ $value = function ($key, $default = '') use ($oldInput, $item) {
 
 $cursoId = isset($curso_id) ? (int) $curso_id : 0;
 $turmaId = isset($turma_id) ? (int) $turma_id : 0;
-$cancelUrl = isset($cancel_url) ? (string) $cancel_url : ('/admin/area-curso?curso_id=' . $cursoId . '&aba=conteudo' . ($turmaId > 0 ? '&turma_id=' . $turmaId : ''));
+$resolvedCancelUrl = isset($cancel_url) ? (string) $cancel_url : ('/admin/area-curso?curso_id=' . $cursoId . '&aba=conteudo' . ($turmaId > 0 ? '&turma_id=' . $turmaId : ''));
 
 $formatTipoHint = function ($tipo) {
     $mapa = array(
@@ -45,7 +45,7 @@ $editorValue = function ($value) {
             <p class="admin-page__subtitle">Escolha o módulo, o tipo e os detalhes do conteúdo em uma tela dedicada.</p>
         </div>
         <div class="cta-group">
-            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($cancelUrl); ?>">Voltar à aba Conteúdo</a>
+            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($resolvedCancelUrl); ?>">Voltar à aba Conteúdo</a>
         </div>
     </section>
 
@@ -93,11 +93,12 @@ $editorValue = function ($value) {
                         <option value="link" title="<?php echo Helpers::e($formatTipoHint('link')); ?>" <?php echo $tipoSelecionado === 'link' ? 'selected' : ''; ?>>Link</option>
                         <option value="avaliacao_textual" title="<?php echo Helpers::e($formatTipoHint('avaliacao_textual')); ?>" <?php echo $tipoSelecionado === 'avaliacao_textual' ? 'selected' : ''; ?>>Avaliação textual</option>
                         <option value="video" title="<?php echo Helpers::e($formatTipoHint('video')); ?>" <?php echo $tipoSelecionado === 'video' ? 'selected' : ''; ?>>Vídeo</option>
+                        <option value="quiz" <?php echo $tipoSelecionado === 'quiz' ? 'selected' : ''; ?>>Quiz (múltipla escolha)</option>
                     </select>
                 </label>
 
                 <div class="muted" style="grid-column: 1 / -1;">
-                    Etiqueta: bloco de orientação exibido ao aluno. | Texto: página de conteúdo com editor. | Arquivo: material para download. | Link: endereço externo, botão ou embed. | Avaliação textual: pergunta discursiva com nota e feedback. | Vídeo: vídeo incorporado por link/embed.
+                    Etiqueta: bloco de orientação exibido ao aluno. | Texto: página de conteúdo com editor. | Arquivo: material para download. | Link: endereço externo, botão ou embed. | Avaliação textual: pergunta discursiva com nota e feedback. | Vídeo: vídeo incorporado por link/embed. | Quiz: atividade de múltipla escolha com correção automática.
                 </div>
 
                 <label>
@@ -224,10 +225,88 @@ $editorValue = function ($value) {
                 </div>
 
                 <?php
+                // --- Bloco Quiz ---
+                $quizDetalhe = ($tipoSelecionado === 'quiz' && !empty($detalhe) && isset($detalhe['id'])) ? $detalhe : array();
+                $qVal = function ($key, $default = '') use ($oldInput, $quizDetalhe) {
+                    $prefixKey = 'quiz_' . $key;
+                    if (array_key_exists($prefixKey, $oldInput)) { return $oldInput[$prefixKey]; }
+                    if (array_key_exists($key, $quizDetalhe)) { return $quizDetalhe[$key]; }
+                    return $default;
+                };
+                ?>
+                <div id="conteudo-tipo-quiz" class="form-grid" style="grid-column: 1 / -1;">
+                    <h4 style="margin:0;">Configurações do Quiz</h4>
+                    <p class="muted" style="margin:0;">O quiz será criado inicialmente sem perguntas. Depois de salvar, adicione as perguntas e alternativas no editor de perguntas.</p>
+
+                    <label style="grid-column: 1 / -1;">
+                        Instruções (exibidas ao aluno antes de iniciar)
+                        <textarea name="quiz_instrucoes" rows="3"><?php echo Helpers::e((string) $qVal('instrucoes', '')); ?></textarea>
+                    </label>
+
+                    <label>
+                        Máximo de tentativas
+                        <input type="number" name="quiz_tentativas_maximas" min="1" step="1" placeholder="Deixe em branco para ilimitado" value="<?php echo Helpers::e((string) $qVal('tentativas_maximas', '')); ?>">
+                        <span class="field-hint">Deixe em branco para tentativas ilimitadas.</span>
+                    </label>
+
+                    <label>
+                        Percentual mínimo para aprovação (%)
+                        <input type="number" name="quiz_percentual_minimo" min="0" max="100" step="0.01" value="<?php echo Helpers::e((string) $qVal('percentual_minimo', '0')); ?>">
+                    </label>
+
+                    <label class="checkbox">
+                        <input type="checkbox" name="quiz_exige_aprovacao" value="1" <?php echo !empty($qVal('exige_aprovacao')) ? 'checked' : ''; ?>>
+                        Exigir aprovação para concluir o item
+                    </label>
+
+                    <label class="checkbox">
+                        <input type="checkbox" name="quiz_exibir_resultado_apos_envio" value="1" <?php echo $qVal('exibir_resultado_apos_envio', 1) ? 'checked' : ''; ?>>
+                        Exibir resultado após envio (percentual e acertos)
+                    </label>
+
+                    <label class="checkbox">
+                        <input type="checkbox" name="quiz_exibir_gabarito_apos_envio" value="1" <?php echo $qVal('exibir_gabarito_apos_envio', 1) ? 'checked' : ''; ?>>
+                        Exibir gabarito após envio (alternativa correta)
+                    </label>
+
+                    <label class="checkbox">
+                        <input type="checkbox" name="quiz_exibir_comentarios_apos_envio" value="1" <?php echo $qVal('exibir_comentarios_apos_envio', 1) ? 'checked' : ''; ?>>
+                        Exibir comentários/explicações após envio
+                    </label>
+
+                    <label class="checkbox">
+                        <input type="checkbox" name="quiz_embaralhar_perguntas" value="1" <?php echo !empty($qVal('embaralhar_perguntas')) ? 'checked' : ''; ?>>
+                        Embaralhar ordem das perguntas
+                    </label>
+
+                    <label class="checkbox">
+                        <input type="checkbox" name="quiz_embaralhar_alternativas" value="1" <?php echo !empty($qVal('embaralhar_alternativas')) ? 'checked' : ''; ?>>
+                        Embaralhar alternativas de cada pergunta
+                    </label>
+
+                    <?php if (!empty($item['id']) && $tipoSelecionado === 'quiz'): ?>
+                        <div style="grid-column: 1 / -1; margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <a class="button-link button-link--secondary"
+                               href="/admin/area-curso/conteudo/quiz/perguntas?item_id=<?php echo (int) $item['id']; ?>&curso_id=<?php echo $cursoId; ?><?php echo $turmaId > 0 ? '&turma_id=' . $turmaId : ''; ?>">
+                                Editar perguntas
+                            </a>
+                            <a class="button-link button-link--ghost"
+                               href="/admin/area-curso/conteudo/quiz/preview?item_id=<?php echo (int) $item['id']; ?>&curso_id=<?php echo $cursoId; ?>">
+                                Pré-visualizar
+                            </a>
+                            <a class="button-link button-link--ghost"
+                               href="/admin/area-curso/conteudo/quiz/resultados?item_id=<?php echo (int) $item['id']; ?>&curso_id=<?php echo $cursoId; ?><?php echo $turmaId > 0 ? '&turma_id=' . $turmaId : ''; ?>">
+                                Ver resultados
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <?php
                 $show_save_and_new = false;
                 $show_save_and_exit = false;
                 $show_save_as_copy = false;
-                $cancel_url = $cancelUrl;
+                $cancel_url = $resolvedCancelUrl;
                 $save_label = 'Salvar';
                 $cancel_label = 'Cancelar';
                 require BASE_PATH . '/resources/views/admin/partials/form-actions.php';
@@ -255,7 +334,8 @@ $editorValue = function ($value) {
             link: document.getElementById('conteudo-tipo-link'),
             video: document.getElementById('conteudo-tipo-video'),
             avaliacao_textual: document.getElementById('conteudo-tipo-avaliacao'),
-            arquivo: document.getElementById('conteudo-tipo-arquivo')
+            arquivo: document.getElementById('conteudo-tipo-arquivo'),
+            quiz: document.getElementById('conteudo-tipo-quiz')
         };
 
         Object.keys(blocks).forEach(function (key) {

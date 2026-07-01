@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS configuracoes_globais (
     email_certificados VARCHAR(191) NULL,
     telefone VARCHAR(30) NULL,
     logo_caminho VARCHAR(255) NULL,
+    favicon_caminho VARCHAR(255) NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NULL,
     deleted_at DATETIME NULL,

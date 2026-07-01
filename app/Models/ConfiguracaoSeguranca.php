@@ -31,6 +31,8 @@ class ConfiguracaoSeguranca
             'validade_reset_senha_minutos' => isset($data['validade_reset_senha_minutos']) ? (int) $data['validade_reset_senha_minutos'] : 60,
             'max_tentativas_login' => isset($data['max_tentativas_login']) ? (int) $data['max_tentativas_login'] : 5,
             'tempo_bloqueio_login_minutos' => isset($data['tempo_bloqueio_login_minutos']) ? (int) $data['tempo_bloqueio_login_minutos'] : 15,
+            'recuperacao_pedidos_automatica_ativa' => !empty($data['recuperacao_pedidos_automatica_ativa']) ? 1 : 0,
+            'recuperacao_pedidos_processamento_limite' => isset($data['recuperacao_pedidos_processamento_limite']) ? (int) $data['recuperacao_pedidos_processamento_limite'] : 50,
         );
 
         if ($current) {
@@ -40,6 +42,8 @@ class ConfiguracaoSeguranca
                      validade_reset_senha_minutos = :validade_reset_senha_minutos,
                      max_tentativas_login = :max_tentativas_login,
                      tempo_bloqueio_login_minutos = :tempo_bloqueio_login_minutos,
+                     recuperacao_pedidos_automatica_ativa = :recuperacao_pedidos_automatica_ativa,
+                     recuperacao_pedidos_processamento_limite = :recuperacao_pedidos_processamento_limite,
                      updated_at = NOW()
                  WHERE id = :id'
             );
@@ -50,9 +54,9 @@ class ConfiguracaoSeguranca
 
         $stmt = Database::connection()->prepare(
             'INSERT INTO configuracoes_seguranca
-             (politica_login, validade_reset_senha_minutos, max_tentativas_login, tempo_bloqueio_login_minutos, created_at, updated_at, deleted_at)
+             (politica_login, validade_reset_senha_minutos, max_tentativas_login, tempo_bloqueio_login_minutos, recuperacao_pedidos_automatica_ativa, recuperacao_pedidos_processamento_limite, created_at, updated_at, deleted_at)
              VALUES
-             (:politica_login, :validade_reset_senha_minutos, :max_tentativas_login, :tempo_bloqueio_login_minutos, NOW(), NOW(), NULL)'
+             (:politica_login, :validade_reset_senha_minutos, :max_tentativas_login, :tempo_bloqueio_login_minutos, :recuperacao_pedidos_automatica_ativa, :recuperacao_pedidos_processamento_limite, NOW(), NOW(), NULL)'
         );
 
         $stmt->execute($payload);

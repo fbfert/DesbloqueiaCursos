@@ -1,5 +1,31 @@
+<?php
+if (!isset($frontend_template)) {
+    try { $frontend_template = (new \App\Services\ConfiguracaoGlobalService())->templateVisualPortal(); } catch (\Throwable $e) { $frontend_template = 'v1'; }
+}
+if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resources/views/v4-claude/cadastro.php'; return; }
+?>
 <section class="auth-shell">
     <h1>Cadastro</h1>
+    <section class="auth-info-card front-card" aria-labelledby="cadastro-orientacao-title">
+        <h2 id="cadastro-orientacao-title">Cadastro em poucos passos</h2>
+        <ol class="auth-info-card__steps">
+            <li>Informe seus dados principais.</li>
+            <li>Confira se seu e-mail está correto.</li>
+            <li>Crie uma senha segura.</li>
+            <li>Depois do cadastro, você poderá escolher um curso, fazer sua inscrição e acessar a área do aluno.</li>
+        </ol>
+    </section>
+
+    <section class="auth-info-card front-card" aria-labelledby="cadastro-por-que-title">
+        <h2 id="cadastro-por-que-title">Por que criar cadastro?</h2>
+        <ul class="auth-info-card__list">
+            <li>Para acessar seus cursos</li>
+            <li>Para acompanhar suas inscrições</li>
+            <li>Para continuar sua compra com mais facilidade</li>
+            <li>Para estudar com segurança e praticidade</li>
+        </ul>
+    </section>
+
     <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
     <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
@@ -52,13 +78,13 @@
 
         <label class="auth-check form-check-row">
             <input type="checkbox" name="aceite_marketing" value="1" <?php echo !empty($old['aceite_marketing']) ? 'checked' : ''; ?>>
-            <span>Quero receber comunicacoes</span>
+            <span>Quero receber comunicações</span>
         </label>
 
         <button type="submit">Criar conta</button>
     </form>
 
-    <p><a href="/login">Ja tenho conta</a></p>
+    <p><a href="/login">Já tenho conta</a></p>
 </section>
 
 <script>

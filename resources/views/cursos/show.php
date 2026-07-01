@@ -1,5 +1,10 @@
 <?php use App\Core\Helpers; ?>
 <?php
+$dcShowTemplate = isset($frontend_template) ? (string) $frontend_template : 'v1';
+if ($dcShowTemplate === 'v4-claude') {
+    require BASE_PATH . '/resources/views/v4-claude/curso.php';
+    return;
+}
 $professoresResponsaveis = isset($curso['professores_responsaveis']) && is_array($curso['professores_responsaveis']) ? $curso['professores_responsaveis'] : array();
 $professoresResponsaveisNomes = array();
 foreach ($professoresResponsaveis as $professorResponsavel) {
@@ -70,6 +75,10 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
         <?php if (!empty($curso['thumbnail'])): ?>
             <div class="course-detail__image">
                 <img src="<?php echo Helpers::e($curso['thumbnail']); ?>" alt="<?php echo Helpers::e($curso['nome']); ?>">
+            </div>
+        <?php else: ?>
+            <div class="course-detail__image course-detail__image--placeholder" style="min-height:280px;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                <span aria-hidden="true" style="width:72px;height:72px;border-radius:18px;background:rgba(17,24,39,.12);display:block;"></span>
             </div>
         <?php endif; ?>
         <dl class="summary-list">
@@ -245,7 +254,7 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
         </article>
     </section>
 
-        <?php if (!empty($curso['inscricao_disponivel']) && !empty($curso['turma_selecionada'])): ?>
+    <?php if (!empty($curso['inscricao_disponivel']) && !empty($curso['turma_selecionada'])): ?>
         <section class="notice notice--success front-card front-section">
             <strong>Inscrição disponível</strong>
             <p>A turma <?php echo Helpers::e($curso['turma_selecionada']['nome']); ?> está aberta e pode receber inscrições agora.</p>
@@ -270,6 +279,31 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
     <?php endif; ?>
 
     <?php if (empty($loggedIn)): ?>
+        <?php
+        $turmaParticiparId = !empty($curso['turma_selecionada']['id'])
+            ? (int) $curso['turma_selecionada']['id']
+            : (!empty($curso['turmas_abertas'][0]['id']) ? (int) $curso['turmas_abertas'][0]['id'] : 0);
+        $turmaParticiparHref = '/inscricao?curso_id=' . (int) $curso['id'];
+        if ($turmaParticiparId > 0) {
+            $turmaParticiparHref .= '&turma_id=' . $turmaParticiparId;
+        }
+        ?>
+        <section class="notice notice--info front-card front-section">
+            <strong>Como funciona para participar?</strong>
+            <ol class="auth-info-card__steps">
+                <li>Conheça o curso nesta página.</li>
+                <li>Clique em participar, inscrever-se ou comprar.</li>
+                <li>Crie seu cadastro ou entre na sua conta.</li>
+                <li>Finalize sua inscrição ou pagamento.</li>
+                <li>Acesse o curso pela área do aluno.</li>
+            </ol>
+            <div class="cta-group">
+                <?php if ($turmaParticiparId > 0): ?>
+                    <a class="button-link" href="<?php echo Helpers::e($turmaParticiparHref); ?>">Quero participar deste curso</a>
+                <?php endif; ?>
+                <a class="button-link button-link--ghost" href="/cursos">Conhecer outros cursos</a>
+            </div>
+        </section>
         <section class="notice front-section">
             <strong>Para continuar</strong>
             <p>Entre na sua conta ou crie uma nova para seguir com a inscrição.</p>

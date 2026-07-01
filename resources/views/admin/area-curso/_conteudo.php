@@ -11,9 +11,6 @@ $conteudoModuloSelecionado = isset($conteudo_modulo_selecionado) && is_array($co
 $conteudoModuloSelecionadoId = isset($conteudo_modulo_selecionado_id) ? (int) $conteudo_modulo_selecionado_id : 0;
 $conteudoModoModulo = !empty($conteudo_modo_modulo) || $conteudoModuloSelecionadoId > 0;
 $conteudoModuloErro = isset($conteudo_modulo_erro) ? trim((string) $conteudo_modulo_erro) : '';
-$conteudoVoltarModulosUrl = isset($conteudo_voltar_modulos_url) && trim((string) $conteudo_voltar_modulos_url) !== ''
-    ? (string) $conteudo_voltar_modulos_url
-    : $buildConteudoUrl();
 $conteudoModuloItens = isset($conteudo_modulo_itens) && is_array($conteudo_modulo_itens) ? $conteudo_modulo_itens : array();
 $conteudoModuloItensArquivados = isset($conteudo_modulo_itens_arquivados) && is_array($conteudo_modulo_itens_arquivados) ? $conteudo_modulo_itens_arquivados : array();
 $canDeleteConteudoDefinitivo = !empty($can_delete_conteudo_definitivo);
@@ -37,6 +34,10 @@ $buildConteudoUrl = function (array $params = array()) use ($cursoIdAtual, $turm
 
     return '/admin/area-curso?' . http_build_query($query);
 };
+
+$conteudoVoltarModulosUrl = isset($conteudo_voltar_modulos_url) && trim((string) $conteudo_voltar_modulos_url) !== ''
+    ? (string) $conteudo_voltar_modulos_url
+    : $buildConteudoUrl();
 
 $buildNovoModuloUrl = function () use ($cursoIdAtual, $turmaIdAtual) {
     return '/admin/area-curso/conteudo/modulos/criar?curso_id=' . $cursoIdAtual . ($turmaIdAtual > 0 ? '&turma_id=' . $turmaIdAtual : '');

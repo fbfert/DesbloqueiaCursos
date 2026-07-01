@@ -16,7 +16,7 @@ $value = function ($key, $default = '') use ($oldInput, $modulo) {
 
 $cursoId = isset($curso_id) ? (int) $curso_id : 0;
 $turmaId = isset($turma_id) ? (int) $turma_id : 0;
-$cancelUrl = isset($cancel_url) ? (string) $cancel_url : ('/admin/area-curso?curso_id=' . $cursoId . '&aba=conteudo' . ($turmaId > 0 ? '&turma_id=' . $turmaId : ''));
+$resolvedCancelUrl = isset($cancel_url) ? (string) $cancel_url : ('/admin/area-curso?curso_id=' . $cursoId . '&aba=conteudo' . ($turmaId > 0 ? '&turma_id=' . $turmaId : ''));
 
 $editorValue = function ($value) {
     return Helpers::e(Helpers::decodeEditorHtml((string) $value));
@@ -30,7 +30,7 @@ $editorValue = function ($value) {
             <p class="admin-page__subtitle">Cadastre o módulo em uma tela própria e volte para a listagem ao salvar.</p>
         </div>
         <div class="cta-group">
-            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($cancelUrl); ?>">Voltar à aba Conteúdo</a>
+            <a class="button-link button-link--ghost" href="<?php echo Helpers::e($resolvedCancelUrl); ?>">Voltar à aba Conteúdo</a>
         </div>
     </section>
 
@@ -69,7 +69,7 @@ $editorValue = function ($value) {
             $show_save_and_new = false;
             $show_save_and_exit = false;
             $show_save_as_copy = false;
-            $cancel_url = $cancelUrl;
+            $cancel_url = $resolvedCancelUrl;
             $save_label = 'Salvar';
             $cancel_label = 'Cancelar';
             require BASE_PATH . '/resources/views/admin/partials/form-actions.php';

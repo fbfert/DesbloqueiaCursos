@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Core\Database;
 use App\Core\Logger;
+use App\Models\Inscricao;
 use App\Models\Turma;
 use App\Models\Usuario;
 use App\Models\UsuarioTurma;
@@ -15,6 +16,7 @@ class TurmaService
     private $cursoModel;
     private $usuarioModel;
     private $usuarioTurmaModel;
+    private $inscricaoModel;
     private $auditService;
     private $trashService;
 
@@ -24,6 +26,7 @@ class TurmaService
         $this->cursoModel = new \App\Models\CursoEvento();
         $this->usuarioModel = new Usuario();
         $this->usuarioTurmaModel = new UsuarioTurma();
+        $this->inscricaoModel = new Inscricao();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
     }
@@ -113,12 +116,19 @@ class TurmaService
 
     public function formData($turmaId = null, $cursoId = null)
     {
+        $alunosMatriculados = array();
+        if ($turmaId) {
+            $alunosMatriculados = $this->inscricaoModel->forTurmaMatriculados($turmaId);
+        }
+
         return array(
             'turma' => $turmaId ? $this->turmaModel->findAdminById($turmaId) : null,
             'cursos' => $this->cursoModel->allForSelect(),
             'professores' => $this->usuarioModel->professores(),
             'professor_responsavel' => $turmaId ? $this->usuarioTurmaModel->findProfessorForTurma($turmaId) : null,
             'curso_id' => $cursoId ? (int) $cursoId : 0,
+            'alunos_matriculados' => $alunosMatriculados,
+            'alunos_matriculados_total' => count($alunosMatriculados),
         );
     }
 
@@ -131,6 +141,7 @@ class TurmaService
         $codigo = strtoupper(trim((string) (isset($data['codigo']) ? $data['codigo'] : '')));
         $dataInicio = isset($data['data_inicio']) ? trim((string) $data['data_inicio']) : null;
         $dataFim = isset($data['data_fim']) ? trim((string) $data['data_fim']) : null;
+        $local = isset($data['local']) ? trim((string) $data['local']) : '';
         $vagas = isset($data['vagas']) && $data['vagas'] !== '' ? (int) $data['vagas'] : null;
         $status = isset($data['status']) && in_array($data['status'], array('planejada', 'aberta', 'encerrada', 'excluida'), true) ? $data['status'] : 'planejada';
         $professorResponsavelUsuarioId = isset($data['professor_responsavel_usuario_id']) && $data['professor_responsavel_usuario_id'] !== ''
@@ -149,6 +160,9 @@ class TurmaService
         }
         if ($codigo === '') {
             $errors[] = 'Codigo da turma e obrigatorio.';
+        }
+        if ($local !== '' && (function_exists('mb_strlen') ? mb_strlen($local) : strlen($local)) > 255) {
+            $errors[] = 'O local da turma deve ter no maximo 255 caracteres.';
         }
         if ($dataInicio !== null && $dataInicio !== '' && $dataFim !== null && $dataFim !== '' && $dataFim < $dataInicio) {
             $errors[] = 'Data fim nao pode ser menor que a data inicio.';
@@ -192,6 +206,7 @@ class TurmaService
             'codigo' => $codigo,
             'data_inicio' => $dataInicio !== '' ? $dataInicio : null,
             'data_fim' => $dataFim !== '' ? $dataFim : null,
+            'local' => $local !== '' ? $local : null,
             'vagas' => $vagas,
             'status' => $status,
         );
@@ -266,6 +281,11 @@ class TurmaService
         }
         if (array_key_exists('vagas', $data)) {
             $payload['vagas'] = $data['vagas'];
+        }
+        if (array_key_exists('local', $data)) {
+            $payload['local'] = trim((string) $data['local']);
+        } elseif (array_key_exists('local', $original)) {
+            $payload['local'] = $original['local'];
         }
         if (array_key_exists('professor_responsavel_usuario_id', $data)) {
             $payload['professor_responsavel_usuario_id'] = $data['professor_responsavel_usuario_id'];

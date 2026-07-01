@@ -1,27 +1,40 @@
 <?php use App\Core\Helpers; ?>
 
-<?php $curso = isset($form_data['curso']) ? $form_data['curso'] : null; ?>
-<?php $categorias = isset($form_data['categorias']) ? $form_data['categorias'] : array(); ?>
-<?php $professores = isset($form_data['professores']) ? $form_data['professores'] : array(); ?>
-<?php $professoresResponsaveisIds = isset($form_data['professores_responsaveis_ids']) ? (array) $form_data['professores_responsaveis_ids'] : array(); ?>
-<?php $professoresResponsaveisIdsSelecionados = array_map('intval', $professoresResponsaveisIds); ?>
-<?php $thumbnailsDisponiveis = isset($form_data['thumbnails_disponiveis']) ? $form_data['thumbnails_disponiveis'] : array(); ?>
-<?php $oldInput = isset($oldInput) && is_array($oldInput) ? $oldInput : array(); ?>
 <?php
-$inputValue = function ($key, $default = '') use ($oldInput, $curso) {
-    if (array_key_exists($key, $oldInput)) {
-        return $oldInput[$key];
+$formData = isset($form_data) && is_array($form_data) ? $form_data : array();
+$curso = isset($formData['curso']) && is_array($formData['curso']) ? $formData['curso'] : array();
+$old = isset($oldInput) && is_array($oldInput) ? $oldInput : array();
+
+$categorias = isset($formData['categorias']) && is_array($formData['categorias']) ? $formData['categorias'] : array();
+$professores = isset($formData['professores']) && is_array($formData['professores']) ? $formData['professores'] : array();
+$professoresResponsaveisIds = isset($formData['professores_responsaveis_ids']) ? (array) $formData['professores_responsaveis_ids'] : array();
+$professoresResponsaveisIdsSelecionados = array_map('intval', $professoresResponsaveisIds);
+$thumbnailsDisponiveis = isset($formData['thumbnails_disponiveis']) && is_array($formData['thumbnails_disponiveis']) ? $formData['thumbnails_disponiveis'] : array();
+
+$value = function ($key, $default = '') use ($old, $curso) {
+    if (array_key_exists($key, $old)) {
+        return $old[$key];
     }
 
-    return isset($curso[$key]) ? $curso[$key] : $default;
+    if (array_key_exists($key, $curso)) {
+        return $curso[$key];
+    }
+
+    return $default;
 };
-?>
-<?php
-$conteudoProgramaticoTipo = (string) ($curso['conteudo_programatico_tipo'] ?? 'texto');
-if ($conteudoProgramaticoTipo === '') $conteudoProgramaticoTipo = 'texto';
+
+$checked = function ($key, $default = 0) use ($value) {
+    $valor = $value($key, $default);
+    return ((string) $valor === '1' || $valor === 1 || $valor === true) ? 'checked' : '';
+};
+
+$conteudoProgramaticoTipo = (string) $value('conteudo_programatico_tipo', 'texto');
+if ($conteudoProgramaticoTipo === '') {
+    $conteudoProgramaticoTipo = 'texto';
+}
 
 $modulosExistentes = array();
-$modulosJson = (string) ($curso['conteudo_programatico_modulos'] ?? '');
+$modulosJson = (string) $value('conteudo_programatico_modulos', '');
 if (trim($modulosJson) !== '') {
     $decoded = json_decode($modulosJson, true);
     if (is_array($decoded)) {
@@ -61,16 +74,16 @@ if (empty($modulosExistentes)) {
 
 <section class="status-card">
     <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form" enctype="multipart/form-data">
-        <input type="hidden" name="id" value="<?php echo !empty($curso['id']) ? (int) $curso['id'] : 0; ?>">
+        <input type="hidden" name="id" value="<?php echo (int) $value('id', 0); ?>">
         <h2 style="margin:0 0 8px;">Identificação</h2>
-        <label>Nome<input type="text" name="nome" value="<?php echo Helpers::e($curso['nome'] ?? ''); ?>" required></label>
-        <label>Slug<input type="text" name="slug" value="<?php echo Helpers::e($curso['slug'] ?? ''); ?>"></label>
+        <label>Nome<input type="text" name="nome" value="<?php echo Helpers::e((string) $value('nome', '')); ?>" required></label>
+        <label>Slug<input type="text" name="slug" value="<?php echo Helpers::e((string) $value('slug', '')); ?>"></label>
         <label>
             Categoria
             <select name="categoria_id">
                 <option value="">Sem categoria</option>
                 <?php foreach ($categorias as $categoria): ?>
-                    <option value="<?php echo (int) $categoria['id']; ?>" <?php echo !empty($curso['categoria_id']) && (int) $curso['categoria_id'] === (int) $categoria['id'] ? 'selected' : ''; ?>>
+                    <option value="<?php echo (int) $categoria['id']; ?>" <?php echo ((string) $value('categoria_id', '') !== '' && (int) $value('categoria_id', 0) === (int) $categoria['id']) ? 'selected' : ''; ?>>
                         <?php echo Helpers::e($categoria['nome']); ?>
                     </option>
                 <?php endforeach; ?>
@@ -90,15 +103,15 @@ if (empty($modulosExistentes)) {
         <label>
             Tipo
             <select name="tipo">
-                <option value="curso" <?php echo (($curso['tipo'] ?? '') === 'curso') ? 'selected' : ''; ?>>Curso</option>
-                <option value="evento" <?php echo (($curso['tipo'] ?? '') === 'evento') ? 'selected' : ''; ?>>Evento</option>
+                <option value="curso" <?php echo ($value('tipo', '') === 'curso') ? 'selected' : ''; ?>>Curso</option>
+                <option value="evento" <?php echo ($value('tipo', '') === 'evento') ? 'selected' : ''; ?>>Evento</option>
             </select>
         </label>
         <label>
             Modalidade
             <select name="modalidade">
-                <?php foreach (($form_data['modalidades'] ?? array()) as $modalidade): ?>
-                    <option value="<?php echo Helpers::e($modalidade); ?>" <?php echo (($curso['modalidade'] ?? 'presencial') === $modalidade) ? 'selected' : ''; ?>>
+                <?php foreach (isset($formData['modalidades']) && is_array($formData['modalidades']) ? $formData['modalidades'] : array() as $modalidade): ?>
+                    <option value="<?php echo Helpers::e($modalidade); ?>" <?php echo ($value('modalidade', 'presencial') === $modalidade) ? 'selected' : ''; ?>>
                         <?php echo Helpers::e($modalidade); ?>
                     </option>
                 <?php endforeach; ?>
@@ -108,14 +121,14 @@ if (empty($modulosExistentes)) {
         <h2 class="full" style="margin:16px 0 8px;">Imagem</h2>
         <label>
             Thumbnail (URL ou caminho)
-            <input type="text" name="thumbnail" value="<?php echo Helpers::e($curso['thumbnail'] ?? ''); ?>">
+            <input type="text" name="thumbnail" value="<?php echo Helpers::e((string) $value('thumbnail', '')); ?>">
         </label>
         <label>
             Escolher thumbnail da pasta
             <select name="thumbnail_existente">
                 <option value="">Manter ou usar o campo acima</option>
                 <?php foreach ($thumbnailsDisponiveis as $thumbnailPath): ?>
-                    <option value="<?php echo Helpers::e($thumbnailPath); ?>" <?php echo (($curso['thumbnail'] ?? '') === $thumbnailPath) ? 'selected' : ''; ?>>
+                    <option value="<?php echo Helpers::e($thumbnailPath); ?>" <?php echo ($value('thumbnail', '') === $thumbnailPath) ? 'selected' : ''; ?>>
                         <?php echo Helpers::e($thumbnailPath); ?>
                     </option>
                 <?php endforeach; ?>
@@ -129,59 +142,59 @@ if (empty($modulosExistentes)) {
         <h2 class="full" style="margin:16px 0 8px;">Valores</h2>
         <label>
             Valor
-            <input id="curso-valor" type="number" step="0.01" min="0" name="valor" value="<?php echo Helpers::e((string) $inputValue('valor', '0.00')); ?>">
+            <input id="curso-valor" type="number" step="0.01" min="0" name="valor" value="<?php echo Helpers::e((string) $value('valor', '0.00')); ?>">
         </label>
         <label>
             Valor promocional (opcional)
-            <input id="curso-valor-promocional" type="number" step="0.01" min="0" name="valor_promocional" value="<?php echo Helpers::e((string) $inputValue('valor_promocional', '')); ?>">
+            <input id="curso-valor-promocional" type="number" step="0.01" min="0" name="valor_promocional" value="<?php echo Helpers::e((string) $value('valor_promocional', '')); ?>">
             <small class="muted" id="curso-preview-desconto" style="display:block;margin-top:6px;"></small>
             <small class="muted" style="display:block;margin-top:6px;">Deixe em branco para manter o valor atual. Se informar um valor promocional válido, a promoção será aplicada automaticamente.</small>
         </label>
         <label>
             Carga horária
-            <input type="number" name="carga_horaria" min="0" value="<?php echo Helpers::e((string) ($curso['carga_horaria'] ?? '')); ?>">
+            <input type="number" name="carga_horaria" min="0" value="<?php echo Helpers::e((string) $value('carga_horaria', '')); ?>">
         </label>
 
         <h2 class="full" style="margin:16px 0 8px;">Descritivo do curso</h2>
         <label class="full">
             Descrição curta
-            <textarea name="descricao_curta" rows="3"><?php echo Helpers::e($curso['descricao_curta'] ?? ''); ?></textarea>
+            <textarea name="descricao_curta" rows="3"><?php echo Helpers::e((string) $value('descricao_curta', '')); ?></textarea>
         </label>
         <label class="full">
             Descritivo do curso
-            <textarea name="descricao_completa" rows="6"><?php echo Helpers::e($curso['descricao_completa'] ?? ''); ?></textarea>
+            <textarea name="descricao_completa" rows="6"><?php echo Helpers::e((string) $value('descricao_completa', '')); ?></textarea>
         </label>
 
         <h2 class="full" style="margin:16px 0 8px;">Objetivos</h2>
         <label class="full">
             Objetivo geral (opcional)
-            <textarea name="objetivo_geral" rows="3"><?php echo Helpers::e($curso['objetivo_geral'] ?? ''); ?></textarea>
+            <textarea name="objetivo_geral" rows="3"><?php echo Helpers::e((string) $value('objetivo_geral', '')); ?></textarea>
         </label>
         <label class="full">
             Objetivos específicos (opcional)
             <small class="muted" style="display:block;margin-bottom:6px;">Informe um objetivo por linha. Cada linha poderá virar um item na página pública.</small>
-            <textarea name="objetivos_especificos" rows="4"><?php echo Helpers::e($curso['objetivos_especificos'] ?? ''); ?></textarea>
+            <textarea name="objetivos_especificos" rows="4"><?php echo Helpers::e((string) $value('objetivos_especificos', '')); ?></textarea>
         </label>
 
         <h2 class="full" style="margin:16px 0 8px;">Público e pré-requisitos</h2>
         <label class="full">
             Público-alvo (opcional)
-            <textarea name="publico_alvo" rows="3"><?php echo Helpers::e($curso['publico_alvo'] ?? ''); ?></textarea>
+            <textarea name="publico_alvo" rows="3"><?php echo Helpers::e((string) $value('publico_alvo', '')); ?></textarea>
         </label>
         <label class="full">
             Pré-requisitos — texto base (opcional)
-            <textarea name="pre_requisitos_texto" rows="3"><?php echo Helpers::e($curso['pre_requisitos_texto'] ?? ''); ?></textarea>
+            <textarea name="pre_requisitos_texto" rows="3"><?php echo Helpers::e((string) $value('pre_requisitos_texto', '')); ?></textarea>
         </label>
         <label class="full">
             Pré-requisitos — itens (opcional)
             <small class="muted" style="display:block;margin-bottom:6px;">Informe um item por linha. Cada linha poderá virar um item na página pública.</small>
-            <textarea name="pre_requisitos_itens" rows="4"><?php echo Helpers::e($curso['pre_requisitos_itens'] ?? ''); ?></textarea>
+            <textarea name="pre_requisitos_itens" rows="4"><?php echo Helpers::e((string) $value('pre_requisitos_itens', '')); ?></textarea>
         </label>
 
         <h2 class="full" style="margin:16px 0 8px;">Ementa</h2>
         <label class="full">
             Ementa (opcional)
-            <textarea name="ementa" rows="4"><?php echo Helpers::e($curso['ementa'] ?? ''); ?></textarea>
+            <textarea name="ementa" rows="4"><?php echo Helpers::e((string) $value('ementa', '')); ?></textarea>
         </label>
 
         <h2 class="full" style="margin:16px 0 8px;">Conteúdo programático</h2>
@@ -198,7 +211,7 @@ if (empty($modulosExistentes)) {
             <label class="full">
                 Conteúdo programático (texto/HTML)
                 <small class="muted" style="display:block;margin-bottom:6px;">No modo HTML, use apenas tags seguras (sem scripts/iframes).</small>
-                <textarea name="conteudo_programatico_texto" rows="6"><?php echo Helpers::e($curso['conteudo_programatico_texto'] ?? ''); ?></textarea>
+                <textarea name="conteudo_programatico_texto" rows="6"><?php echo Helpers::e((string) $value('conteudo_programatico_texto', '')); ?></textarea>
             </label>
         </div>
 
@@ -225,43 +238,50 @@ if (empty($modulosExistentes)) {
         <h2 class="full" style="margin:16px 0 8px;">Metodologia, produto final e avaliação</h2>
         <label class="full">
             Metodologia (opcional)
-            <textarea name="metodologia" rows="4"><?php echo Helpers::e($curso['metodologia'] ?? ''); ?></textarea>
+            <textarea name="metodologia" rows="4"><?php echo Helpers::e((string) $value('metodologia', '')); ?></textarea>
         </label>
         <label class="full">
             Produto final (opcional)
             <small class="muted" style="display:block;margin-bottom:6px;">Informe uma competência por linha para virar itens na página pública (opcional).</small>
-            <textarea name="produto_final" rows="4"><?php echo Helpers::e($curso['produto_final'] ?? ''); ?></textarea>
+            <textarea name="produto_final" rows="4"><?php echo Helpers::e((string) $value('produto_final', '')); ?></textarea>
         </label>
         <label class="full">
             Avaliação (opcional)
-            <textarea name="avaliacao" rows="4"><?php echo Helpers::e($curso['avaliacao'] ?? ''); ?></textarea>
+            <textarea name="avaliacao" rows="4"><?php echo Helpers::e((string) $value('avaliacao', '')); ?></textarea>
         </label>
 
         <h2 class="full" style="margin:16px 0 8px;">Publicação</h2>
         <label>
             Ordem
-            <input type="number" name="ordem" min="0" value="<?php echo Helpers::e((string) ($curso['ordem'] ?? 0)); ?>">
+            <input type="number" name="ordem" min="0" value="<?php echo Helpers::e((string) $value('ordem', 0)); ?>">
         </label>
         <label>
             Status
             <select name="status">
-                <?php foreach (array('rascunho', 'ativo', 'inativo', 'arquivado') as $status): ?>
-                    <option value="<?php echo Helpers::e($status); ?>" <?php echo (($curso['status'] ?? '') === $status) ? 'selected' : ''; ?>>
-                        <?php echo Helpers::e($status); ?>
+                <?php foreach (array('rascunho', 'ativo', 'inativo', 'arquivado') as $statusOption): ?>
+                    <option value="<?php echo Helpers::e($statusOption); ?>" <?php echo ($value('status', 'rascunho') === $statusOption) ? 'selected' : ''; ?>>
+                        <?php echo Helpers::e($statusOption); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
         </label>
         <label class="checkbox">
-            <input type="checkbox" name="em_promocao" value="1" <?php echo !empty(array_key_exists('em_promocao', $oldInput) ? $oldInput['em_promocao'] : $curso['em_promocao']) ? 'checked' : ''; ?>>
+            <input type="hidden" name="em_promocao" value="0">
+            <input type="checkbox" name="em_promocao" value="1" <?php echo $checked('em_promocao', 0); ?>>
             Em promoção
         </label>
         <label class="checkbox">
-            <input type="checkbox" name="destaque" value="1" <?php echo !empty($curso['destaque']) ? 'checked' : ''; ?>>
+            <input type="hidden" name="destaque" value="0">
+            <input type="checkbox" name="destaque" value="1" <?php echo $checked('destaque', 0); ?>>
             Destaque
         </label>
-        <?php $cancelUrl = '/admin/cursos'; ?>
-        <?php $showSaveAsCopy = !empty($curso['id']); ?>
+        <label class="checkbox">
+            <input type="hidden" name="usar_turmas" value="0">
+            <input type="checkbox" name="usar_turmas" value="1" <?php echo $checked('usar_turmas', 0); ?>>
+            Usar turmas/edições
+        </label>
+        <?php $cancel_url = '/admin/cursos'; ?>
+        <?php $showSaveAsCopy = (int) $value('id', 0) > 0; ?>
         <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>
 </section>

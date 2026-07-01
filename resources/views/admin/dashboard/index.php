@@ -83,6 +83,18 @@ $pendingRepassesValue = isset($pendingRepassesCard['value']) ? $pendingRepassesC
                 <span>Avaliações textuais pendentes</span>
                 <small><span class="badge badge--status badge--status-pendente"><?php echo (int) ($conteudo_avaliacoes_pendentes ?? 0); ?></span> aguardando correção</small>
             </a>
+            <?php if (!empty($is_superadmin)): ?>
+                <?php $superadminPreview = isset($superadmin_turmas_preview) && is_array($superadmin_turmas_preview) ? $superadmin_turmas_preview : array(); ?>
+                <form method="post" action="/admin/dashboard/superadmins-turmas/sincronizar" class="card-link admin-shortcut admin-shortcut--alert admin-shortcut--form" onsubmit="return confirm('Esta ação criará inscrições gratuitas para superadministradores nas turmas elegíveis. Continuar?');">
+                    <?php echo $csrfField; ?>
+                    <span>Liberar superadmins nas turmas</span>
+                    <small>Adicionar superadministradores às turmas ativas dos cursos ativos.</small>
+                    <div class="admin-shortcut__footer">
+                        <?php echo (int) ($superadminPreview['inscricoes_faltantes'] ?? 0); ?> inscrições faltantes
+                    </div>
+                    <button type="submit" class="button-link button-link--primary button-link--small admin-shortcut__button">Sincronizar agora</button>
+                </form>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -92,6 +104,7 @@ $pendingRepassesValue = isset($pendingRepassesCard['value']) ? $pendingRepassesC
         </div>
         <div class="quick-actions quick-actions--dashboard">
             <a class="card-link admin-shortcut" href="/admin/pedidos"><span>Pedidos</span><small>Análise, aprovação e pendências</small></a>
+            <a class="card-link admin-shortcut" href="/admin/pedidos/recuperacao"><span>Recuperação Manual por e-mail</span><small>Pedidos incompletos elegíveis</small></a>
             <a class="card-link admin-shortcut" href="/admin/comprovantes-pix"><span>Comprovantes PIX</span><small>Validação manual de pagamentos</small></a>
             <a class="card-link admin-shortcut" href="/admin/inscricoes"><span>Inscrições</span><small>Status e acompanhamento</small></a>
             <a class="card-link admin-shortcut" href="/admin/cursos"><span>Cursos</span><small>Catálogo e publicação</small></a>

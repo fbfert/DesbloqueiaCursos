@@ -1,6 +1,7 @@
 <?php use App\Core\Helpers; ?>
 
 <div class="admin-page">
+<?php $configCertificados = isset($configCertificados) && is_array($configCertificados) ? $configCertificados : array(); ?>
 <section class="admin-page__header">
     <div>
         <h1 class="admin-page__title">Emitir certificado</h1>
@@ -19,6 +20,13 @@
         <?php foreach ($errors as $error): ?>
             <p><?php echo Helpers::e($error); ?></p>
         <?php endforeach; ?>
+    </section>
+<?php endif; ?>
+
+<?php if (empty($configCertificados['certificados_habilitado']) || empty($configCertificados['certificados_emissao_habilitada'])): ?>
+    <section class="status-card" style="margin-bottom:12px;border-left:4px solid #b45309;background:#fff7ed;">
+        <strong>Emissão desativada</strong>
+        <p class="muted" style="margin:8px 0 0 0;">A emissão de certificados está desativada nas configurações globais.</p>
     </section>
 <?php endif; ?>
 
@@ -72,7 +80,7 @@
         </label>
 
         <div class="full cta-group">
-            <button type="submit" class="button-link button-link--primary">Emitir</button>
+            <button type="submit" class="button-link button-link--primary" <?php echo (empty($configCertificados['certificados_habilitado']) || empty($configCertificados['certificados_emissao_habilitada'])) ? 'disabled' : ''; ?>>Emitir</button>
             <a class="button-link button-link--ghost" href="/admin/certificados">Cancelar</a>
         </div>
     </form>

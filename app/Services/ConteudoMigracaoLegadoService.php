@@ -842,7 +842,6 @@ class ConteudoMigracaoLegadoService
 
         $candidatos = array(
             BASE_PATH . '/' . ltrim($caminho, '/\\'),
-            BASE_PATH . '/public_html/' . ltrim($caminho, '/\\'),
             BASE_PATH . '/storage/private_uploads/' . ltrim($caminho, '/\\'),
         );
         foreach ($candidatos as $cand) {

@@ -1,6 +1,7 @@
 <?php use App\Core\Helpers; ?>
 
 <div class="admin-page">
+<?php $configCertificados = isset($configCertificados) && is_array($configCertificados) ? $configCertificados : array(); ?>
 <section class="admin-page__header">
     <div>
         <h1 class="admin-page__title">Certificados</h1>
@@ -22,11 +23,28 @@
     </section>
 <?php endif; ?>
 
+<?php if (empty($configCertificados['certificados_habilitado']) || empty($configCertificados['certificados_emissao_habilitada'])): ?>
+    <section class="status-card" style="margin-bottom:12px;border-left:4px solid #b45309;background:#fff7ed;">
+        <strong>Emissão de certificados desativada</strong>
+        <p class="muted" style="margin:8px 0 0 0;">A emissão de certificados está desativada nas configurações globais.</p>
+    </section>
+<?php endif; ?>
+
 <section class="card-grid">
+    <article class="status-card">
+        <strong>Emissão Rápida Individual</strong>
+        <span>Localize o aluno, selecione as inscrições e emita os certificados em uma única operação.</span>
+        <a href="/admin/certificados/emissao-rapida-individual">Abrir emissão rápida</a>
+    </article>
     <article class="status-card">
         <strong>Aptos para emissão</strong>
         <span><?php echo count($aptos); ?> inscrições aptas</span>
         <a href="/admin/certificados/emitir">Emitir agora</a>
+    </article>
+    <article class="status-card">
+        <strong>Emissão Manual</strong>
+        <span>Filtre cursos, turmas e alunos para emissão individual ou em lote.</span>
+        <a href="/admin/certificados/emissao-manual">Acessar emissão manual</a>
     </article>
 </section>
 
@@ -58,7 +76,25 @@
                         <td><?php echo Helpers::e($certificado['curso_nome']); ?></td>
                         <td><span class="pill"><?php echo Helpers::e($certificado['status']); ?></span></td>
                         <td><?php echo Helpers::e($certificado['emitido_em']); ?></td>
-                        <td><a href="/admin/certificados/show?certificado_id=<?php echo (int) $certificado['id']; ?>">Abrir</a></td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="/admin/certificados/show?certificado_id=<?php echo (int) $certificado['id']; ?>">Abrir</a>
+
+                                <?php if (!empty($certificado['codigo'])): ?>
+                                    <?php if (!empty($configCertificados['certificados_permitir_download'])): ?>
+                                        <a
+                                            href="/admin/certificados/pdf?codigo=<?php echo urlencode($certificado['codigo']); ?>"
+                                            target="_blank"
+                                            rel="noopener"
+                                        >
+                                            Ver certificado
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="muted">Download desativado</span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

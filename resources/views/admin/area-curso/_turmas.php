@@ -2,11 +2,34 @@
 
 <?php
 $turmas = isset($turmas) && is_array($turmas) ? $turmas : array();
+$turmasListadas = isset($turmas_listadas) && is_array($turmas_listadas) ? $turmas_listadas : $turmas;
 $cursoAtual = isset($curso) && is_array($curso) ? $curso : array();
 $turmasInscritosMap = isset($turmas_inscritos) && is_array($turmas_inscritos) ? $turmas_inscritos : array();
 $csrfTurmaField = isset($csrfField) ? (string) $csrfField : '';
 $canManageTurmas = !empty($can_manage_turmas);
-$returnToTurmas = '/admin/area-curso?curso_id=' . (int) ($cursoAtual['id'] ?? 0) . '&aba=turmas';
+$turmasPagination = isset($turmas_pagination) && is_array($turmas_pagination) ? $turmas_pagination : array('total' => count($turmasListadas), 'page' => 1, 'per_page' => 20, 'pages' => 1);
+$turmasFiltros = isset($turmas_filtros) && is_array($turmas_filtros) ? $turmas_filtros : array();
+$turmasStatusTotals = isset($turmas_status_totals) && is_array($turmas_status_totals) ? $turmas_status_totals : array();
+
+if (!function_exists('areaCursoTurmasQuery')) {
+    function areaCursoTurmasQuery(array $cursoAtual, array $turmasFiltros, $page = null)
+    {
+        $params = array(
+            'curso_id' => (int) ($cursoAtual['id'] ?? 0),
+            'aba' => 'turmas',
+            'turmas_busca' => isset($turmasFiltros['search']) ? $turmasFiltros['search'] : '',
+            'turmas_status' => isset($turmasFiltros['status']) ? $turmasFiltros['status'] : '',
+        );
+
+        if ($page !== null) {
+            $params['turmas_page'] = (int) $page;
+        }
+
+        return '/admin/area-curso?' . http_build_query($params);
+    }
+}
+
+$returnToTurmas = areaCursoTurmasQuery($cursoAtual, $turmasFiltros, isset($turmasPagination['page']) ? (int) $turmasPagination['page'] : 1);
 $returnToTurmasEncoded = urlencode($returnToTurmas);
 
 $formatDate = function ($value) {
@@ -93,6 +116,7 @@ $renderAcoes = function (array $turma) use ($canManageTurmas, $returnToTurmasEnc
 
     return $html;
 };
+
 ?>
 
 <section class="status-card admin-area-curso__section area-curso-tab-panel<?php echo $selectedTab === 'turmas' ? ' is-active' : ''; ?>" data-area-curso-tab="turmas" id="area-curso-turmas">
@@ -140,7 +164,54 @@ $renderAcoes = function (array $turma) use ($canManageTurmas, $returnToTurmasEnc
         </div>
     </div>
 
-    <?php if (empty($turmas)): ?>
+    <?php
+    $turmasPage = (int) ($turmasPagination['page'] ?? 1);
+    $turmasPages = (int) ($turmasPagination['pages'] ?? 1);
+    $turmasTotal = (int) ($turmasPagination['total'] ?? count($turmasListadas));
+    $turmasPerPage = (int) ($turmasPagination['per_page'] ?? 20);
+    $turmasFrom = $turmasTotal > 0 ? (($turmasPage - 1) * $turmasPerPage) + 1 : 0;
+    $turmasTo = $turmasTotal > 0 ? min($turmasPage * $turmasPerPage, $turmasTotal) : 0;
+    $turmasBuscaAtual = (string) ($turmasFiltros['search'] ?? '');
+    $turmasStatusAtual = (string) ($turmasFiltros['status'] ?? '');
+    $turmasStatusOptions = array(
+        '' => 'Todos',
+        'planejada' => 'Planejada',
+        'aberta' => 'Aberta',
+        'encerrada' => 'Encerrada',
+    );
+    ?>
+
+    <div class="status-card admin-mt-16">
+        <form method="get" action="/admin/area-curso" class="admin-filters">
+            <input type="hidden" name="curso_id" value="<?php echo !empty($cursoAtual['id']) ? (int) $cursoAtual['id'] : 0; ?>">
+            <input type="hidden" name="aba" value="turmas">
+            <div class="admin-filters__row">
+                <label>Busca
+                    <input type="text" name="turmas_busca" value="<?php echo Helpers::e($turmasBuscaAtual); ?>" placeholder="Nome, código ou ID da turma">
+                </label>
+                <label>Status
+                    <select name="turmas_status">
+                        <?php foreach ($turmasStatusOptions as $valor => $rotulo): ?>
+                            <option value="<?php echo Helpers::e($valor); ?>" <?php echo $turmasStatusAtual === $valor ? 'selected' : ''; ?>><?php echo Helpers::e($rotulo); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+            </div>
+            <div class="cta-group" style="margin-top:12px;">
+                <button type="submit" class="button-link button-link--primary">Filtrar</button>
+                <a class="button-link button-link--ghost" href="/admin/area-curso?curso_id=<?php echo !empty($cursoAtual['id']) ? (int) $cursoAtual['id'] : 0; ?>&aba=turmas">Limpar filtros</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="status-card admin-mt-12">
+        <div class="cta-group" style="justify-content:space-between;align-items:center;flex-wrap:wrap;">
+            <small><?php echo $turmasTotal > 0 ? ('Exibindo ' . $turmasFrom . ' a ' . $turmasTo . ' de ' . $turmasTotal . ' turmas.') : 'Nenhuma turma encontrada.'; ?></small>
+            <small>Planejadas: <?php echo (int) ($turmasStatusTotals['planejada'] ?? 0); ?> | Abertas: <?php echo (int) ($turmasStatusTotals['aberta'] ?? 0); ?> | Encerradas: <?php echo (int) ($turmasStatusTotals['encerrada'] ?? 0); ?></small>
+        </div>
+    </div>
+
+    <?php if (empty($turmasListadas)): ?>
         <div class="area-curso-empty-state admin-mt-16">
             <p class="muted">Nenhuma turma cadastrada para este curso.</p>
             <?php if ($canManageTurmas): ?>
@@ -165,7 +236,7 @@ $renderAcoes = function (array $turma) use ($canManageTurmas, $returnToTurmasEnc
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($turmas as $turma): ?>
+                        <?php foreach ($turmasListadas as $turma): ?>
                             <?php
                             $turmaId = (int) $turma['id'];
                             $turmaInscritos = isset($turmasInscritosMap[$turmaId]) ? (int) $turmasInscritosMap[$turmaId] : 0;
@@ -186,5 +257,23 @@ $renderAcoes = function (array $turma) use ($canManageTurmas, $returnToTurmasEnc
                 </table>
             </div>
         </div>
+        <?php if ($turmasPages > 1): ?>
+            <div class="status-card admin-mt-12">
+                <div class="cta-group" style="justify-content:space-between;align-items:center;flex-wrap:wrap;">
+                    <small>Página <?php echo (int) $turmasPage; ?> de <?php echo (int) $turmasPages; ?>.</small>
+                    <div class="cta-group">
+                        <?php if ($turmasPage > 1): ?>
+                            <a class="button-link button-link--ghost" href="<?php echo Helpers::e(areaCursoTurmasQuery($cursoAtual, $turmasFiltros, $turmasPage - 1)); ?>">Anterior</a>
+                        <?php endif; ?>
+                        <?php for ($paginaAtual = 1; $paginaAtual <= $turmasPages; $paginaAtual++): ?>
+                            <a class="button-link<?php echo $paginaAtual === $turmasPage ? ' button-link--primary' : ' button-link--ghost'; ?>" href="<?php echo Helpers::e(areaCursoTurmasQuery($cursoAtual, $turmasFiltros, $paginaAtual)); ?>"><?php echo (int) $paginaAtual; ?></a>
+                        <?php endfor; ?>
+                        <?php if ($turmasPage < $turmasPages): ?>
+                            <a class="button-link button-link--ghost" href="<?php echo Helpers::e(areaCursoTurmasQuery($cursoAtual, $turmasFiltros, $turmasPage + 1)); ?>">Próxima</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 </section>

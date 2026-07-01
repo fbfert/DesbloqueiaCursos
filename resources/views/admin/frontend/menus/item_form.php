@@ -33,7 +33,7 @@ $value = function ($field, $default = '') use ($old, $item) {
             <label>Rel<input type="text" name="rel" value="<?php echo Helpers::e($value('rel')); ?>" placeholder="noopener noreferrer"></label>
             <label>Ordem<input type="number" name="ordem" value="<?php echo Helpers::e((string) $value('ordem', 0)); ?>"></label>
             <label><input type="checkbox" name="ativo" value="1" <?php echo (int) $value('ativo', 1) === 1 ? 'checked' : ''; ?>> Ativo</label>
-            <?php $cancelUrl = '/admin/frontend/menus/itens?menu_id=' . (int) $menu['id']; ?>
+            <?php $cancel_url = '/admin/frontend/menus/itens?menu_id=' . (int) $menu['id']; ?>
             <?php $showSaveAsCopy = !empty($item['id']); ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>

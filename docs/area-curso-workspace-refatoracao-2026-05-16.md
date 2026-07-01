@@ -149,3 +149,173 @@ Os identificadores internos foram uniformizados para reduzir ambiguidade:
 
 - Foi conferido o arquivo publicado por FTP para garantir que a versão em produção contém a redução da coluna `Ações`.
 - Não restou referência a `/admin/turmas/show` dentro da partial da aba `Turmas`.
+
+## Etapa seguinte — aba `Módulos e aulas`
+
+### Refatoração estrutural
+
+- A aba `Módulos e aulas` foi extraída da `view` principal e passou a morar em uma partial própria:
+  - `resources/views/admin/area-curso/_modulos_aulas.php`
+- A `view` principal (`resources/views/admin/area-curso/index.php`) agora apenas inclui a partial, sem manter o bloco longo inline.
+- A aba passou a ser organizada em blocos mais claros:
+  - cabeçalho com tooltip
+  - cards-resumo
+  - ações rápidas
+  - instruções pós-checkout
+  - módulos
+  - aulas
+  - links externos
+
+### Ajustes funcionais
+
+- Os formulários de instruções e links passaram a respeitar o campo `aba` ao salvar, preservando o retorno para a aba correta.
+- Os links internos da aba agora preservam `curso_id`, `turma_id` e a aba ativa.
+- A aba deixou de misturar participantes dentro do conteúdo de `Módulos e aulas`.
+- O formulário de aula passou a reutilizar seleção contextual de módulo e aula, quando disponível no `AreaCursoController`.
+
+### Organização visual
+
+- Foram adicionados estilos próprios para:
+  - cards de módulo
+  - itens de aula
+  - detalhes recolhíveis dos formulários
+  - blocos de ações rápidas
+  - listas e estados vazios
+- A estrutura principal deixou de depender da tabela linear longa do bloco anterior.
+
+### Arquivos desta etapa
+
+- `resources/views/admin/area-curso/_modulos_aulas.php`
+- `resources/views/admin/area-curso/index.php`
+- `app/Controllers/Admin/AreaCursoController.php`
+- `public_html/assets/css/admin.css`
+
+## Etapa seguinte — aba `Participantes`
+
+### Implementação
+
+- A aba `Participantes` deixou de ser placeholder e passou a renderizar uma listagem administrativa dos alunos vinculados ao curso e à turma selecionados.
+- O conteúdo foi isolado em uma partial própria:
+  - `resources/views/admin/area-curso/_participantes.php`
+- A aba agora exibe:
+  - cabeçalho com tooltip
+  - resumo com contagens acadêmicas
+  - filtros por termo e status
+  - tabela organizada com links de apoio
+
+### Integração com os dados existentes
+
+- A listagem continua usando o modelo `ParticipantePedido`.
+- O serviço `AreaCursoService::listarParticipantes()` passou a aceitar filtros opcionais.
+- A consulta agora inclui dados úteis para o acompanhamento administrativo:
+  - pedido
+  - status da inscrição
+  - curso
+  - turma
+  - dados do participante e do usuário vinculado
+
+### Arquivos desta etapa
+
+- `resources/views/admin/area-curso/index.php`
+- `resources/views/admin/area-curso/_participantes.php`
+- `app/Controllers/Admin/AreaCursoController.php`
+- `app/Services/AreaCursoService.php`
+- `app/Models/ParticipantePedido.php`
+- `public_html/assets/css/admin.css`
+
+## Etapa seguinte — aba `Presença`
+
+### Implementação
+
+- A aba `Presença` deixou de ser placeholder e passou a operar dentro do workspace do curso.
+- Foi criada a partial própria:
+  - `resources/views/admin/area-curso/_presenca.php`
+- A aba agora oferece:
+  - cabeçalho com tooltip
+  - resumo por status
+  - filtros por busca, data, aula e status
+  - registro em lote por participantes selecionados
+  - histórico de presença
+  - exclusão individual e em lote com justificativa
+  - exportação CSV
+
+### Reaproveitamento da infraestrutura existente
+
+- A implementação reutiliza:
+  - `app/Models/Presenca.php`
+  - `app/Services/PresencaService.php`
+  - recálculo de aptidão já existente no projeto
+- A listagem de presença passou a ser filtrável sem alterar a estrutura das demais abas.
+
+### Ajustes técnicos
+
+- O `AreaCursoController` passou a trazer contexto de presença quando a aba ativa é `presenca`.
+- O `PresencaService` ganhou suporte a:
+  - listagem filtrada
+  - exportação CSV
+  - registro em lote
+  - exclusão em lote
+- O `Presenca` model passou a devolver dados enriquecidos de participante, curso, turma, aula e marcador.
+
+### Arquivos desta etapa
+
+- `resources/views/admin/area-curso/index.php`
+- `resources/views/admin/area-curso/_presenca.php`
+- `app/Controllers/Admin/AreaCursoController.php`
+- `app/Services/AreaCursoService.php`
+- `app/Services/PresencaService.php`
+- `app/Models/Presenca.php`
+- `routes/web.php`
+- `public_html/assets/css/admin.css`
+
+---
+
+## Avaliações e notas
+
+### Objetivo
+
+- A aba `Avaliações e notas` foi implementada para consolidar o acompanhamento acadêmico do curso/turma no workspace administrativo.
+- O foco é reunir, em um único painel, nota final, progresso, presença, certificados, avaliações cadastradas e atividades avaliativas relacionadas.
+
+### O que foi entregue
+
+- Foi criada a partial própria:
+  - `resources/views/admin/area-curso/_avaliacoes_notas.php`
+- A aba passou a exibir:
+  - cabeçalho com tooltip explicativo
+  - cards-resumo com indicadores acadêmicos
+  - formulário para lançar ou atualizar nota
+  - cards das avaliações cadastradas
+  - tabela de participantes com situação acadêmica
+  - tabela de atividades avaliativas e entregas
+  - exportação CSV preservando o contexto e os filtros aplicados
+
+### Reaproveitamento da infraestrutura existente
+
+- A implementação reutiliza:
+  - `app/Services/AvaliacaoService.php`
+  - `app/Services/AreaCursoService.php`
+  - `app/Services/AptidaoCertificadoService.php`
+  - `app/Models/Inscricao.php`
+- O recálculo de aptidão para certificado continua sendo feito ao registrar ou atualizar nota.
+
+### Ajustes técnicos
+
+- O `AreaCursoController` passou a reconhecer a aba `avaliacoes-notas`, carregar os filtros específicos e encaminhar o POST de lançamento de nota.
+- O `AreaCursoService` passou a consolidar:
+  - inscrições no contexto
+  - avaliações cadastradas
+  - atividades vinculadas
+  - resumo acadêmico da aba
+  - exportação CSV
+- O workspace preserva o contexto da aba ao navegar, filtrar e salvar.
+
+### Arquivos desta etapa
+
+- `resources/views/admin/area-curso/index.php`
+- `resources/views/admin/area-curso/_avaliacoes_notas.php`
+- `app/Controllers/Admin/AreaCursoController.php`
+- `app/Services/AreaCursoService.php`
+- `app/Services/AvaliacaoService.php`
+- `routes/web.php`
+- `public_html/assets/css/admin.css`

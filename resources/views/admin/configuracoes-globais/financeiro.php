@@ -23,7 +23,7 @@
             Observação de repasse
             <textarea name="observacao_repasse" rows="5"><?php echo htmlspecialchars((string) (isset($configuracao['observacao_repasse']) ? $configuracao['observacao_repasse'] : ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
         </label>
-        <?php $cancelUrl = '/admin/configuracoes-globais/financeiro'; ?>
+        <?php $cancel_url = '/admin/configuracoes-globais/financeiro'; ?>
         <?php $showSaveAndNew = false; ?>
         <?php $showSaveAndExit = false; ?>
         <?php $showSaveAsCopy = false; ?>

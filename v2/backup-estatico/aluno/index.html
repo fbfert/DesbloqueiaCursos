@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minha área — Desbloqueia Cursos</title>
+  <meta name="description" content="Área do aluno (demonstração V2): cursos, pedidos, certificados e perfil. Ambiente demonstrativo, sem dados reais.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
+  <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
+</head>
+<body class="v2-app">
+
+  <!-- Navbar desktop -->
+  <nav class="v2-navbar" aria-label="Menu principal">
+    <div class="v2-container v2-navbar-inner">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+      <div class="v2-nav-links">
+        <a href="/v2/" class="v2-nav-link">Início</a>
+        <a href="/v2/catalogo/" class="v2-nav-link">Cursos</a>
+        <a href="/v2/eventos/" class="v2-nav-link">Eventos</a>
+        <a href="/v2/categorias/" class="v2-nav-link">Categorias</a>
+        <a href="/v2/aluno/" class="v2-nav-link is-active">Minha área</a>
+      </div>
+      <div class="v2-nav-actions">
+        <div class="v2-avatar-menu">
+          <button type="button" class="v2-avatar" id="v2-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-controls="v2-avatar-dd" aria-label="Menu de Ana Souza">AS</button>
+          <div class="v2-avatar-dd" id="v2-avatar-dd" role="menu" aria-label="Menu da conta">
+            <a href="/v2/aluno/" role="menuitem">Minha área</a>
+            <a href="/v2/aluno/?aba=perfil" role="menuitem">Meu perfil</a>
+            <button type="button" role="menuitem" id="v2-logout-demo">Sair da demonstração</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Topbar mobile -->
+  <div class="v2-topbar">
+    <div class="v2-container" style="display:flex;align-items:center;gap:10px;width:100%">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+    </div>
+  </div>
+
+  <main class="v2-main v2-aluno-area">
+    <!-- Cabeçalho -->
+    <div class="v2-aluno-head">
+      <div class="v2-container">
+        <div class="v2-aluno-greet">
+          <div class="v2-aluno-greet-text">
+            <h1 class="v2-h2" id="v2-aluno-ola">Olá, Ana! 👋</h1>
+            <p class="v2-muted v2-sm">Continue sua jornada de aprendizado.</p>
+          </div>
+          <div class="v2-avatar" id="v2-aluno-avatar" style="width:52px;height:52px;font-size:1.2rem;">AS</div>
+        </div>
+
+        <div class="v2-aluno-statgrid" id="v2-aluno-stats"></div>
+
+        <!-- Abas -->
+        <div class="v2-tabs v2-tabs-aluno" id="v2-aluno-tabs" role="tablist" aria-label="Seções da área do aluno">
+          <button class="v2-tab is-on" data-aba="cursos" role="tab" aria-selected="true" id="v2-tab-cursos" aria-controls="v2-pane-cursos">Meus cursos</button>
+          <button class="v2-tab" data-aba="pedidos" role="tab" aria-selected="false" id="v2-tab-pedidos" aria-controls="v2-pane-pedidos">Pedidos</button>
+          <button class="v2-tab" data-aba="certificados" role="tab" aria-selected="false" id="v2-tab-certificados" aria-controls="v2-pane-certificados">Certificados</button>
+          <button class="v2-tab" data-aba="perfil" role="tab" aria-selected="false" id="v2-tab-perfil" aria-controls="v2-pane-perfil">Perfil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="v2-container" style="padding-top:18px;">
+      <div role="tabpanel" id="v2-pane-cursos" aria-labelledby="v2-tab-cursos"></div>
+      <div role="tabpanel" id="v2-pane-pedidos" aria-labelledby="v2-tab-pedidos" hidden></div>
+      <div role="tabpanel" id="v2-pane-certificados" aria-labelledby="v2-tab-certificados" hidden></div>
+      <div role="tabpanel" id="v2-pane-perfil" aria-labelledby="v2-tab-perfil" hidden></div>
+    </div>
+  </main>
+
+  <!-- Modal reutilizável (pedidos / certificados) -->
+  <div class="v2-modal-overlay" id="v2-modal-overlay" data-modal-close>
+    <div class="v2-modal" role="dialog" aria-modal="true" aria-labelledby="v2-modal-title" id="v2-modal">
+      <div class="v2-modal-head">
+        <strong id="v2-modal-title"></strong>
+        <button type="button" class="v2-iconbtn" id="v2-modal-x" data-modal-close aria-label="Fechar"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="v2-modal-body" id="v2-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="v2-footer">
+    <div class="v2-container">
+      <div class="v2-footer-grid">
+        <div class="v2-footer-brand">
+          <span class="v2-h3" style="color:#fff">Desbloqueia <span style="color:#FF6A00">Cursos</span></span>
+          <p>Quando aprende de verdade, desbloqueia. Cursos práticos com certificado para você evoluir na carreira.</p>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Plataforma</h4>
+          <a href="/v2/catalogo/">Cursos</a>
+          <a href="/v2/aluno/">Minha área</a>
+          <a href="/v2/login/">Entrar</a>
+          <a href="/v2/cadastro/">Criar conta</a>
+        </div>
+        <div class="v2-footer-col">
+          <h4>Institucional</h4>
+          <a href="/v2/quem-somos/">Quem somos</a>
+          <a href="/v2/contato/">Contato</a>
+          <a href="/v2/onde-estamos/">Onde estamos</a>
+          <a href="/v2/politica-de-privacidade/">Política de privacidade</a>
+          <a href="/v2/termos-de-uso/">Termos de uso</a>
+          <a href="/v2/certificados/validar/">Validar certificado</a>
+        </div>
+      </div>
+      <div class="v2-footer-bottom">
+        <span>© 2026 Desbloqueia Cursos — demonstração visual V2. Os dados desta área são fictícios e não vêm do sistema real.</span>
+        <span>Feito com carinho 🧡</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bottom nav mobile -->
+  <nav class="v2-bnav" aria-label="Navegação rápida">
+    <a href="/v2/" class="v2-bnav-item"><i class="ti ti-home"></i><span>Início</span></a>
+    <a href="/v2/catalogo/" class="v2-bnav-item"><i class="ti ti-compass"></i><span>Cursos</span></a>
+    <a href="/v2/aluno/" class="v2-bnav-item is-active" data-bnav="estudos"><i class="ti ti-book"></i><span>Estudos</span></a>
+    <a href="/v2/aluno/?aba=perfil" class="v2-bnav-item" data-bnav="perfil"><i class="ti ti-user"></i><span>Perfil</span></a>
+  </nav>
+
+  <script src="/v2/data/cursos.js"></script>
+  <script src="/v2/assets/js/v2-main.js"></script>
+</body>
+</html>

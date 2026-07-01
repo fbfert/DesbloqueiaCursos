@@ -1,6 +1,7 @@
 <?php use App\Core\Helpers; ?>
 
 <div class="admin-page">
+<?php $configCertificados = isset($configCertificados) && is_array($configCertificados) ? $configCertificados : array(); ?>
 <section class="admin-page__header">
     <div>
         <h1 class="admin-page__title">Certificado <?php echo Helpers::e($certificado['codigo']); ?></h1>
@@ -22,6 +23,13 @@
     </section>
 <?php endif; ?>
 
+<?php if (empty($configCertificados['certificados_habilitado']) || empty($configCertificados['certificados_emissao_habilitada'])): ?>
+    <section class="status-card" style="margin-bottom:12px;border-left:4px solid #b45309;background:#fff7ed;">
+        <strong>Emissão desativada</strong>
+        <p class="muted" style="margin:8px 0 0 0;">A emissão de certificados está desativada nas configurações globais.</p>
+    </section>
+<?php endif; ?>
+
 <section class="panel">
     <div class="panel-header">
         <div>
@@ -39,8 +47,25 @@
         <div><dt>Turma</dt><dd><?php echo Helpers::e(isset($certificado['turma_nome']) ? $certificado['turma_nome'] : 'Não informada'); ?></dd></div>
     </dl>
 
+    <?php if (!empty($certificado['emissao_excepcional'])): ?>
+        <section class="status-card admin-mt-16" style="border-left:4px solid #b45309;background:#fff7ed;">
+            <strong>Este certificado foi emitido por exceção administrativa.</strong>
+            <div class="detail-list admin-mt-12">
+                <div><dt>Justificativa</dt><dd><?php echo Helpers::e($certificado['emissao_excepcional']['justificativa']); ?></dd></div>
+                <div><dt>Emitido por</dt><dd><?php echo Helpers::e(!empty($certificado['emissao_excepcional']['emitido_por_nome']) ? $certificado['emissao_excepcional']['emitido_por_nome'] : 'Não informado'); ?></dd></div>
+                <div><dt>Data</dt><dd><?php echo Helpers::e($certificado['emissao_excepcional']['created_at']); ?></dd></div>
+                <div><dt>Situação na emissão</dt><dd><?php echo Helpers::e(!empty($certificado['emissao_excepcional']['situacao_elegibilidade']) ? $certificado['emissao_excepcional']['situacao_elegibilidade'] : 'Não informada'); ?></dd></div>
+                <div><dt>Motivos de pendência</dt><dd><?php echo Helpers::e(!empty($certificado['emissao_excepcional']['motivos_pendencias']) ? $certificado['emissao_excepcional']['motivos_pendencias'] : 'Não informados'); ?></dd></div>
+            </div>
+        </section>
+    <?php endif; ?>
+
     <div class="pill-row admin-mt-16">
-        <a class="pill" href="/admin/certificados/pdf?codigo=<?php echo urlencode($certificado['codigo']); ?>">Abrir PDF</a>
+        <?php if (!empty($configCertificados['certificados_permitir_download'])): ?>
+            <a class="pill" href="/admin/certificados/pdf?codigo=<?php echo urlencode($certificado['codigo']); ?>">Abrir PDF</a>
+        <?php else: ?>
+            <span class="pill" aria-disabled="true">Download desativado</span>
+        <?php endif; ?>
         <a class="pill" href="/certificados/validar?codigo=<?php echo urlencode($certificado['codigo']); ?>">Validação pública</a>
     </div>
 </section>
@@ -59,7 +84,7 @@
             <input type="checkbox" name="manter_codigo" value="1" checked>
             Manter código atual
         </label>
-        <button type="submit" class="button-link button-link--primary">Reemitir</button>
+        <button type="submit" class="button-link button-link--primary" <?php if (empty($configCertificados['certificados_permitir_segunda_via'])): ?>disabled<?php endif; ?>>Reemitir</button>
     </form>
 </section>
 
@@ -76,7 +101,7 @@
             Observação
             <input type="text" name="observacao">
         </label>
-        <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'CANCELAR', pergunta: 'Você conferiu o cancelamento deste certificado?' });">Cancelar</button>
+        <button type="submit" class="button-link button-link--primary" <?php if (empty($configCertificados['certificados_permitir_cancelamento'])): ?>disabled<?php else: ?>onclick="return confirmarAcaoCritica({ palavra: 'CANCELAR', pergunta: 'Você conferiu o cancelamento deste certificado?' });"<?php endif; ?>>Cancelar</button>
     </form>
     <form method="post" action="/admin/certificados/revogar" class="form-grid admin-mt-12">
         <input type="hidden" name="certificado_id" value="<?php echo (int) $certificado['id']; ?>">
@@ -84,7 +109,7 @@
             Observação
             <input type="text" name="observacao">
         </label>
-        <button type="submit" class="button-link button-link--primary" onclick="return confirmarAcaoCritica({ palavra: 'REVOGAR', pergunta: 'Você conferiu a revogação deste certificado?' });">Revogar</button>
+        <button type="submit" class="button-link button-link--primary" <?php if (empty($configCertificados['certificados_permitir_cancelamento'])): ?>disabled<?php else: ?>onclick="return confirmarAcaoCritica({ palavra: 'REVOGAR', pergunta: 'Você conferiu a revogação deste certificado?' });"<?php endif; ?>>Revogar</button>
     </form>
 </section>
 

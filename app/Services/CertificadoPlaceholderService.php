@@ -35,6 +35,11 @@ class CertificadoPlaceholderService
                 '{curso_objetivo_geral}' => 'Objetivo geral',
                 '{curso_ementa}' => 'Ementa',
             ),
+            'Conteúdo programático' => array(
+                '{conteudo_programatico}' => 'Conteúdo programático principal do curso',
+                '{modulos_conteudos}' => 'Lista HTML de módulos e conteúdos',
+                '{modulos_nomes}' => 'Lista simples somente com os nomes dos módulos',
+            ),
             'Turma' => array(
                 '{turma_nome}' => 'Nome da turma',
                 '{turma_codigo}' => 'Código da turma',
@@ -50,6 +55,7 @@ class CertificadoPlaceholderService
                 '{inscricao_data}' => 'Data da inscrição',
                 '{pedido_codigo}' => 'Código do pedido',
                 '{pedido_status}' => 'Status do pedido',
+                '{aluno_data_inicio}' => 'Data do pedido do curso',
             ),
             'Aproveitamento e conclusão' => array(
                 '{frequencia_percentual}' => 'Frequência (%)',
@@ -63,6 +69,7 @@ class CertificadoPlaceholderService
                 '{certificado_hash}' => 'Hash (quando aplicável)',
                 '{certificado_data_emissao}' => 'Data de emissão',
                 '{certificado_data_reemissao}' => 'Data de reemissão',
+                '{aluno_data_fim}' => 'Data de emissão do certificado',
                 '{certificado_numero_via}' => 'Número da via',
                 '{certificado_url_validacao}' => 'URL pública de validação',
                 '{certificado_qrcode}' => 'QR Code do certificado (quando habilitado)',
@@ -76,8 +83,13 @@ class CertificadoPlaceholderService
                 '{instituicao_cidade}' => 'Cidade',
                 '{instituicao_estado}' => 'UF',
                 '{logo_url}' => 'Logo institucional (URL/caminho)',
+                '{instituicao_logo}' => 'Logo institucional atual',
+                '{site_logo}' => 'Logo institucional atual',
+                '{background_url}' => 'Imagem de fundo do template (URL/caminho)',
+                '{imagem_fundo_url}' => 'Imagem de fundo do template atual',
             ),
             'Assinaturas' => array(
+                '{assinatura}' => 'Imagem da assinatura deste template',
                 '{assinatura_1_nome}' => 'Nome assinatura 1',
                 '{assinatura_1_cargo}' => 'Cargo assinatura 1',
                 '{assinatura_1_imagem}' => 'Imagem assinatura 1 (URL/caminho)',
@@ -123,6 +135,9 @@ class CertificadoPlaceholderService
         $uf = !empty($institucional['uf']) ? $institucional['uf'] : 'SC';
 
         $dataAtualBr = $this->formatarDataBr(date('Y-m-d'));
+        $certificadoService = new CertificadoService();
+        $qrcodePreviewUrl = Helpers::url('certificados/validar?codigo=DC-2026-000001');
+        $qrcodePreview = $certificadoService->gerarQrSvgDataUri($qrcodePreviewUrl);
 
         return array(
             'aluno' => array(
@@ -131,6 +146,7 @@ class CertificadoPlaceholderService
                 'email' => 'maria.silva@example.com',
                 'documento' => '***.***.***-**',
                 'cpf' => '12345678901',
+                'data_inicio' => $this->formatarDataBr(date('Y-m-d', strtotime('-40 days'))),
             ),
             'curso' => array(
                 'nome' => 'Curso Formativo de Oratória e Semiótica',
@@ -174,8 +190,10 @@ class CertificadoPlaceholderService
                 'hash' => 'dc26a1b2c3',
                 'data_emissao' => $dataAtualBr,
                 'data_reemissao' => '',
+                'data_fim' => $dataAtualBr,
                 'numero_via' => '1',
             ),
+            'certificado_qrcode' => $qrcodePreview,
             'instituicao' => array(
                 'nome' => $nomeInstituicao,
                 'cnpj' => !empty($institucional['cnpj']) ? $institucional['cnpj'] : '',
@@ -209,8 +227,23 @@ class CertificadoPlaceholderService
         $escape = array_key_exists('escape', $opcoes) ? (bool) $opcoes['escape'] : true;
 
         $map = $this->montarMapa($contexto, $escape);
+        $qrcodePlaceholder = isset($contexto['certificado_qrcode']) ? (string) $contexto['certificado_qrcode'] : '';
+        if (isset($map['{certificado_qrcode}'])) {
+            unset($map['{certificado_qrcode}']);
+        }
+
+        if ($qrcodePlaceholder !== '') {
+            $conteudo = str_replace(
+                array('src="{certificado_qrcode}"', "src='{certificado_qrcode}'"),
+                array('src="' . Helpers::e($qrcodePlaceholder) . '"', "src='" . Helpers::e($qrcodePlaceholder) . "'"),
+                $conteudo
+            );
+        }
 
         $rendered = strtr($conteudo, $map);
+        if ($qrcodePlaceholder !== '') {
+            $rendered = str_replace('{certificado_qrcode}', $this->renderizarQrCodePlaceholderHtml($qrcodePlaceholder), $rendered);
+        }
 
         if (!$debug) {
             return $rendered;
@@ -239,6 +272,7 @@ class CertificadoPlaceholderService
         $certificado = isset($contexto['certificado']) && is_array($contexto['certificado']) ? $contexto['certificado'] : array();
         $instituicao = isset($contexto['instituicao']) && is_array($contexto['instituicao']) ? $contexto['instituicao'] : array();
         $assinaturas = isset($contexto['assinaturas']) && is_array($contexto['assinaturas']) ? $contexto['assinaturas'] : array();
+        $certificadoQrCode = isset($contexto['certificado_qrcode']) ? (string) $contexto['certificado_qrcode'] : '';
 
         $codigo = isset($certificado['codigo']) ? (string) $certificado['codigo'] : '';
         $validacaoUrl = $codigo !== '' ? Helpers::url('certificados/validar?codigo=' . urlencode($codigo)) : Helpers::url('certificados/validar');
@@ -270,6 +304,9 @@ class CertificadoPlaceholderService
             '{curso_professor_responsavel}' => $value($curso['professor_responsavel'] ?? ''),
             '{curso_objetivo_geral}' => $value($curso['objetivo_geral'] ?? ''),
             '{curso_ementa}' => $value($curso['ementa'] ?? ''),
+            '{conteudo_programatico}' => $value($contexto['conteudo_programatico'] ?? ''),
+            '{modulos_conteudos}' => $value($contexto['modulos_conteudos'] ?? ''),
+            '{modulos_nomes}' => $value($contexto['modulos_nomes'] ?? ''),
 
             '{turma_nome}' => $value($turma['nome'] ?? ''),
             '{turma_codigo}' => $value($turma['codigo'] ?? ''),
@@ -284,6 +321,7 @@ class CertificadoPlaceholderService
             '{inscricao_data}' => $value($inscricao['data'] ?? ''),
             '{pedido_codigo}' => $value($pedido['codigo'] ?? ''),
             '{pedido_status}' => $value($pedido['status'] ?? ''),
+            '{aluno_data_inicio}' => $value($aluno['data_inicio'] ?? ''),
 
             '{frequencia_percentual}' => $value($aproveitamento['frequencia_percentual'] ?? ''),
             '{nota_final}' => $value($aproveitamento['nota_final'] ?? ''),
@@ -295,9 +333,10 @@ class CertificadoPlaceholderService
             '{certificado_hash}' => $value($certificado['hash'] ?? ''),
             '{certificado_data_emissao}' => $value($certificado['data_emissao'] ?? ''),
             '{certificado_data_reemissao}' => $value($certificado['data_reemissao'] ?? ''),
+            '{aluno_data_fim}' => $value($certificado['data_fim'] ?? ''),
             '{certificado_numero_via}' => $value($certificado['numero_via'] ?? ''),
             '{certificado_url_validacao}' => $value($validacaoUrl),
-            '{certificado_qrcode}' => '',
+            '{certificado_qrcode}' => $value($certificadoQrCode),
 
             '{instituicao_nome}' => $value($instituicao['nome'] ?? $institucional['nome_fantasia'] ?? ''),
             '{instituicao_cnpj}' => $value($instituicao['cnpj'] ?? $institucional['cnpj'] ?? ''),
@@ -307,6 +346,11 @@ class CertificadoPlaceholderService
             '{instituicao_cidade}' => $value($instituicao['cidade'] ?? $institucional['cidade'] ?? ''),
             '{instituicao_estado}' => $value($instituicao['estado'] ?? $institucional['uf'] ?? ''),
             '{logo_url}' => $value($instituicao['logo_url'] ?? $institucional['logo_caminho'] ?? ''),
+            '{instituicao_logo}' => $value($instituicao['logo_url'] ?? $institucional['logo_caminho'] ?? ''),
+            '{site_logo}' => $value($instituicao['logo_url'] ?? $institucional['logo_caminho'] ?? ''),
+            '{background_url}' => $value($contexto['background_url'] ?? $contexto['imagem_fundo_url'] ?? ''),
+            '{imagem_fundo_url}' => $value($contexto['imagem_fundo_url'] ?? $contexto['background_url'] ?? ''),
+            '{assinatura}' => $value($contexto['assinatura'] ?? ''),
 
             '{assinatura_1_nome}' => $value($assinaturas['assinatura_1_nome'] ?? ($certConfig['certificados_assinatura_1_nome'] ?? '')),
             '{assinatura_1_cargo}' => $value($assinaturas['assinatura_1_cargo'] ?? ($certConfig['certificados_assinatura_1_cargo'] ?? '')),
@@ -329,6 +373,16 @@ class CertificadoPlaceholderService
             '{url_site}' => $value($siteUrl),
             '{nome_plataforma}' => $value($nomePortal),
         );
+    }
+
+    private function renderizarQrCodePlaceholderHtml($qrcodeDataUri)
+    {
+        $qrcodeDataUri = trim((string) $qrcodeDataUri);
+        if ($qrcodeDataUri === '') {
+            return '';
+        }
+
+        return '<img src="' . Helpers::e($qrcodeDataUri) . '" alt="QR Code para validação do certificado" width="68" height="68" style="width:68px;height:68px;border:0;display:inline-block;">';
     }
 
     private function formatarDataBr($ymd)

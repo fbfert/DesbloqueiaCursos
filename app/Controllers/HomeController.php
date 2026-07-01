@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
 use App\Services\AvisoService;
+use App\Services\CategoriaService;
 use App\Services\ConfiguracaoGlobalService;
 use App\Services\CursoService;
 use App\Services\FrontendModuloService;
@@ -15,6 +16,7 @@ class HomeController extends Controller
     private $pageKey = 'home';
     private $cursoService;
     private $avisoService;
+    private $categoriaService;
     private $configuracaoGlobalService;
     private $frontendModuloService;
 
@@ -22,6 +24,7 @@ class HomeController extends Controller
     {
         $this->cursoService = new CursoService();
         $this->avisoService = new AvisoService();
+        $this->categoriaService = new CategoriaService();
         $this->configuracaoGlobalService = new ConfiguracaoGlobalService();
         $this->frontendModuloService = new FrontendModuloService();
     }
@@ -29,7 +32,9 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $limiteDestaques = $this->configuracaoGlobalService->homeDestaquesLimite();
+        $limiteCategorias = $this->configuracaoGlobalService->homeCategoriasLimite();
         $cursosDestaque = $this->cursoService->listPublicHome($limiteDestaques);
+        $categoriasDestaque = $this->categoriaService->listPublicHome($limiteCategorias);
         $topCursos = $this->cursoService->listPublicTopVendas(5);
         $usuarioId = Session::get('usuario_id');
         $appConfig = require BASE_PATH . '/config/app.php';
@@ -40,10 +45,13 @@ class HomeController extends Controller
             'page_key' => $this->pageKey,
             'loggedIn' => $usuarioId !== null,
             'usuarioNome' => Session::get('usuario_nome'),
+            'frontend_template' => $this->configuracaoGlobalService->templateVisualPortal(),
             'postLoginChoiceModal' => Session::pullFlash('post_login_choice_modal'),
             'avisos' => $usuarioId ? $this->avisoService->avisosAtivosParaUsuario((int) $usuarioId) : array(),
             'cursos' => $cursosDestaque,
+            'categoriasDestaque' => $categoriasDestaque,
             'topCursos' => $topCursos,
+            'credibilidade' => $this->cursoService->homeStats(),
             'topCursosModulo' => $this->moduloCapaOuPadrao('top_5_cursos_capa', array(
                 'titulo' => 'Top 5 Cursos',
                 'conteudo' => 'Cursos com mais vendas aprovadas no portal.',

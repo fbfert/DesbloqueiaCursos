@@ -10,8 +10,10 @@ class Request
     private $body;
     private $server;
     private $routeParams;
+    private $rawBody;
+    private $contentType;
 
-    public function __construct($method, $path, array $query, array $body, array $server = array(), array $routeParams = array())
+    public function __construct($method, $path, array $query, array $body, array $server = array(), array $routeParams = array(), $rawBody = null, $contentType = null)
     {
         $this->method = strtoupper($method);
         $this->path = '/' . trim($path, '/');
@@ -19,6 +21,8 @@ class Request
         $this->body = $body;
         $this->server = $server;
         $this->routeParams = $routeParams;
+        $this->rawBody = $rawBody;
+        $this->contentType = $contentType;
 
         if ($this->path === '/') {
             $this->path = '/';
@@ -29,13 +33,26 @@ class Request
     {
         $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/';
         $path = parse_url($uri, PHP_URL_PATH);
+        $rawBody = file_get_contents('php://input');
+        $contentType = isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : (isset($_SERVER['HTTP_CONTENT_TYPE']) ? $_SERVER['HTTP_CONTENT_TYPE'] : '');
+        $body = $_POST;
+
+        if (is_string($contentType) && stripos($contentType, 'application/json') !== false) {
+            $decoded = json_decode((string) $rawBody, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $body = $decoded;
+            }
+        }
 
         return new self(
             isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET',
             $path,
             $_GET,
-            $_POST,
-            $_SERVER
+            $body,
+            $_SERVER,
+            array(),
+            $rawBody,
+            $contentType
         );
     }
 
@@ -108,5 +125,15 @@ class Request
     public function server()
     {
         return $this->server;
+    }
+
+    public function rawBody()
+    {
+        return $this->rawBody;
+    }
+
+    public function contentType()
+    {
+        return $this->contentType;
     }
 }

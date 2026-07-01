@@ -1,5 +1,19 @@
+<?php
+if (!isset($frontend_template)) {
+    try { $frontend_template = (new \App\Services\ConfiguracaoGlobalService())->templateVisualPortal(); } catch (\Throwable $e) { $frontend_template = 'v1'; }
+}
+if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resources/views/v4-claude/login.php'; return; }
+?>
 <section class="auth-shell">
     <h1>Login</h1>
+    <section class="auth-info-card front-card" aria-labelledby="login-orientacao-title">
+        <h2 id="login-orientacao-title">Já tem cadastro?</h2>
+        <p>Entre com seu e-mail e senha para acessar seus cursos, acompanhar inscrições ou continuar sua compra.</p>
+        <div class="auth-info-card__actions cta-group">
+            <a class="button-link button-link--ghost" href="/cadastro">Ainda não tenho cadastro</a>
+            <a class="button-link button-link--ghost" href="/recuperar-senha">Esqueci minha senha</a>
+        </div>
+    </section>
     <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 
     <?php if (!empty($accountCreated) && is_array($accountCreated)): ?>
@@ -34,8 +48,4 @@
         <button type="submit">Entrar</button>
     </form>
 
-    <div class="cta-group login-secondary-actions">
-        <a class="button-link button-link--ghost" href="/cadastro">Criar conta</a>
-        <a class="button-link button-link--ghost" href="/recuperar-senha">Recuperar senha</a>
-    </div>
 </section>

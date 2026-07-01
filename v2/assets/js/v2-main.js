@@ -394,6 +394,38 @@
     render();
   }
 
+  /* ---------------- CATÁLOGO V2 INTEGRADO (server-side) ------ */
+  /* Não renderiza dados: o catálogo /v2/catalogo/ é entregue pelo backend
+     com dados reais via GET. Aqui só melhoramos a UX do formulário GET —
+     abrir/fechar o bottom sheet de filtros (mobile) e enviar a ordenação ao
+     trocar o select. Busca, filtros, ordenação e paginação funcionam sem JS. */
+  function initCatalogoIntegradoV2() {
+    if (!window.V2_CATALOGO_INTEGRADO) return;
+    var form = $("#v2c-form");
+    if (!form) return;
+
+    var filters = $("#v2c-filters");
+    var overlay = $("#v2c-overlay");
+
+    function openSheet() { if (filters) filters.classList.add("is-open"); if (overlay) overlay.classList.add("is-open"); }
+    function closeSheet() { if (filters) filters.classList.remove("is-open"); if (overlay) overlay.classList.remove("is-open"); }
+
+    $$("[data-open-filters-c]").forEach(function (b) { b.addEventListener("click", openSheet); });
+    $$("[data-close-filters-c]").forEach(function (b) { b.addEventListener("click", closeSheet); });
+    if (overlay) overlay.addEventListener("click", closeSheet);
+    document.addEventListener("keydown", function (e) {
+      if ((e.key === "Escape" || e.key === "Esc") && filters && filters.classList.contains("is-open")) closeSheet();
+    });
+
+    // Enviar ordenação ao trocar o select (progressive enhancement).
+    var order = $("#v2c-order");
+    var orderApply = $("#v2c-order-apply");
+    if (order) {
+      order.addEventListener("change", function () { form.submit(); });
+      if (orderApply) orderApply.style.display = "none"; // botão de apoio só é necessário sem JS
+    }
+  }
+
   /* ---------------- FICHA DO CURSO (/v2/curso/?id=…) --------- */
   /* Lê o ?id= da query string, busca o curso em window.V2_CURSOS e
      renderiza a ficha completa no cliente. Sem rede, sem backend. */
@@ -642,6 +674,48 @@
     });
 
     applyTurma();
+  }
+
+  /* ---------------- FICHA DE CURSO V2 INTEGRADA (server-side) -- */
+  /* A ficha /v2/curso/?curso_id=ID é renderizada pelo backend com dados reais.
+     Aqui só melhoramos a UX: accordions visuais do conteúdo programático,
+     seleção de turma sem recarregar a página e atualização segura do link de
+     CTA (rota oficial /inscricao). Sem rede, sem dados demonstrativos.
+     A seleção de turma também funciona sem JS, via link/GET (?turma_id=). */
+  function initCursoIntegradoV2() {
+    if (!window.V2_CURSO_INTEGRADO) return;
+    var root = $("#v2-curso-integrado");
+    if (!root) return;
+
+    function setText(id, value) { var el = $("#" + id); if (el) el.textContent = value; }
+    function setHref(id, value) { var el = $("#" + id); if (el && value) el.setAttribute("href", value); }
+
+    root.addEventListener("click", function (e) {
+      // Accordion do conteúdo programático (apenas visual).
+      var head = e.target.closest(".v2-acc-head");
+      if (head && root.contains(head)) {
+        var acc = head.closest(".v2-acc");
+        if (acc) {
+          var open = acc.classList.toggle("is-open");
+          head.setAttribute("aria-expanded", open ? "true" : "false");
+        }
+        return;
+      }
+
+      // Seleção de turma sem recarregar (enhancement do link/GET).
+      var turma = e.target.closest(".v2-turma-sel");
+      if (turma && root.contains(turma)) {
+        e.preventDefault();
+        $$(".v2-turma-sel", root).forEach(function (el) { el.classList.remove("is-sel"); });
+        turma.classList.add("is-sel");
+        var nome = turma.getAttribute("data-turma-nome") || "";
+        var ctaHref = turma.getAttribute("data-cta-href") || "";
+        setText("v2-curso-turma-nome", nome);
+        setText("v2-curso-turma-nome-m", nome);
+        setHref("v2-curso-cta", ctaHref);
+        setHref("v2-curso-cta-m", ctaHref);
+      }
+    });
   }
 
   /* ============================================================
@@ -2349,6 +2423,145 @@
     });
   }
 
+  /* ---------------- LMS V2: progresso/conclusão (envio nativo) -----
+     Apenas melhorias visuais sobre formulários POST reais (CSRF). Não usa
+     fetch/XHR/API/localStorage e NÃO calcula progresso no cliente. O formulário
+     funciona integralmente sem JavaScript (o botão é o fallback). */
+  function initLmsV2() {
+    // Foco no feedback real (sucesso/erro) após o redirect.
+    var fb = $("#v2-aula-feedback");
+    if (fb && fb.textContent && fb.textContent.trim() !== "") {
+      try { fb.focus(); } catch (e) {}
+    }
+
+    // Prevenção de clique duplo + rótulo "Concluindo…" (sem bloquear o envio real).
+    $$("form.v2-lms-complete, form.v2-lms-complete-form").forEach(function (form) {
+      form.addEventListener("submit", function () {
+        var btn = form.querySelector("[data-complete-btn]");
+        if (!btn) return;
+        if (btn.getAttribute("data-submitting") === "1") return;
+        btn.setAttribute("data-submitting", "1");
+        var label = btn.getAttribute("data-loading-label");
+        if (label) { btn.textContent = label; }
+        // Desabilita após o envio já ter sido capturado pelo navegador.
+        setTimeout(function () { btn.setAttribute("disabled", "disabled"); }, 0);
+      });
+    });
+
+    // Texto: leitura automática via envio nativo (POST → Redirect → GET).
+    // Só existe para o item de texto atual ainda não concluído; idempotente no
+    // servidor; após concluir, o formulário deixa de ser renderizado (sem loop).
+    var auto = $("form[data-v2-autocomplete]");
+    if (auto) {
+      setTimeout(function () {
+        if (typeof auto.requestSubmit === "function") { auto.requestSubmit(); }
+        else { auto.submit(); }
+      }, 150);
+    }
+  }
+
+  /* ---------------- QUIZ V2 (Fase 2.9) ----------------------- */
+  // UX visual apenas: foco no feedback real após o redirect e prevenção de
+  // clique duplo no envio NATIVO. Nenhuma correção, nota ou estado de quiz é
+  // calculado no cliente; o formulário continua funcional sem JavaScript.
+  function initQuizV2() {
+    var fb = $("#v2-quiz-feedback");
+    if (fb && fb.textContent && fb.textContent.trim() !== "") {
+      try { fb.focus(); } catch (e) {}
+    }
+
+    $$("form.v2-quiz-form").forEach(function (form) {
+      form.addEventListener("submit", function () {
+        var btn = form.querySelector("[data-quiz-btn]");
+        if (!btn) return;
+        if (btn.getAttribute("data-submitting") === "1") return;
+        btn.setAttribute("data-submitting", "1");
+        var label = btn.getAttribute("data-loading-label");
+        if (label) { btn.textContent = label; }
+        // Desabilita só após o envio nativo já ter sido capturado pelo navegador.
+        setTimeout(function () { btn.setAttribute("disabled", "disabled"); }, 0);
+      });
+    });
+  }
+
+  /* ---------------- ATIVIDADE DISCURSIVA V2 (Fase 2.10) ------ */
+  // UX apenas: contador visual de caracteres, prevenção de clique duplo no
+  // envio NATIVO e foco no feedback. Sem rascunho local, sem storage, sem AJAX.
+  // A atividade continua funcional sem JavaScript.
+  function initAtividadeV2() {
+    var fb = $("#v2-atividade-feedback");
+    if (fb && fb.textContent && fb.textContent.trim() !== "") {
+      try { fb.focus(); } catch (e) {}
+    }
+
+    $$("textarea[data-char-counter]").forEach(function (ta) {
+      var form = ta.form;
+      var out = form ? form.querySelector("[data-char-count]") : null;
+      if (!out) return;
+      var upd = function () { out.textContent = String(ta.value.length); };
+      upd();
+      ta.addEventListener("input", upd);
+    });
+
+    $$("form.v2-atv-form").forEach(function (form) {
+      form.addEventListener("submit", function () {
+        var btn = form.querySelector("[data-atv-btn]");
+        if (!btn) return;
+        if (btn.getAttribute("data-submitting") === "1") return;
+        btn.setAttribute("data-submitting", "1");
+        var label = btn.getAttribute("data-loading-label");
+        if (label) { btn.textContent = label; }
+        setTimeout(function () { btn.setAttribute("disabled", "disabled"); }, 0);
+      });
+    });
+  }
+
+  /* ---------------- VALIDAÇÃO DE CERTIFICADO V2 (Fase 2.11) -- */
+  // UX apenas: foco acessível no resultado/erro após o POST → Redirect → GET e
+  // prevenção de clique duplo no envio NATIVO. Sem fetch/AJAX, sem dados
+  // demonstrativos. A validação real acontece 100% no backend. Seletores
+  // próprios (não colidem com o validador demonstrativo `initCertValidarV2`).
+  function initCertValidacaoV2() {
+    var foco = $("#v2-cert-resultado") || $("#v2-cert-erro");
+    if (foco) { try { foco.focus(); } catch (e) {} }
+
+    var form = $("#v2-cert-validacao-form");
+    if (!form) return;
+    form.addEventListener("submit", function () {
+      var btn = form.querySelector("[data-cert-btn]");
+      if (!btn) return;
+      if (btn.getAttribute("data-submitting") === "1") return;
+      btn.setAttribute("data-submitting", "1");
+      var label = btn.getAttribute("data-loading-label");
+      if (label) { btn.textContent = label; }
+      setTimeout(function () { btn.setAttribute("disabled", "disabled"); }, 0);
+    });
+  }
+
+  /* ---------------- CHECKOUT V2 PRÉ-PAGAMENTO (Fase 2.12A) --- */
+  // UX apenas: foco no feedback após PRG e prevenção de clique duplo no envio
+  // NATIVO. Sem cálculo de preço, sem persistência (storage), sem POST por JS.
+  // As telas continuam funcionais sem JavaScript. Seletores próprios (não
+  // colidem com o checkout demonstrativo `initCheckoutV2`/`initCheckout`).
+  function initCheckoutPreV2() {
+    var fb = $("#v2-checkout-feedback");
+    if (fb && fb.textContent && fb.textContent.trim() !== "") {
+      try { fb.focus(); } catch (e) {}
+    }
+
+    $$("form.v2-checkout-form").forEach(function (form) {
+      form.addEventListener("submit", function () {
+        var btn = form.querySelector("[data-checkout-btn]");
+        if (!btn) return;
+        if (btn.getAttribute("data-submitting") === "1") return;
+        btn.setAttribute("data-submitting", "1");
+        var label = btn.getAttribute("data-loading-label");
+        if (label) { btn.textContent = label; }
+        setTimeout(function () { btn.setAttribute("disabled", "disabled"); }, 0);
+      });
+    });
+  }
+
   /* ---------------- LOGIN / CADASTRO ------------------------- */
   function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
   function validCPF(v) { return /^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/.test(v.replace(/\s/g, "")); }
@@ -2385,6 +2598,16 @@
     if (d.length <= 6) return d.slice(0, 3) + "." + d.slice(3);
     if (d.length <= 9) return d.slice(0, 3) + "." + d.slice(3, 6) + "." + d.slice(6);
     return d.slice(0, 3) + "." + d.slice(3, 6) + "." + d.slice(6, 9) + "-" + d.slice(9);
+  }
+
+  /* Máscara de CPF para os formulários reais V2 (Cadastro V2 integrado).
+     Apenas formata visualmente o input marcado com [data-mask-cpf]; a validação
+     real continua no servidor (que aceita CPF com ou sem máscara). */
+  function initAuthMasksV2() {
+    $$("[data-mask-cpf]").forEach(function (inp) {
+      inp.value = maskCPF(inp.value);
+      inp.addEventListener("input", function () { this.value = maskCPF(this.value); });
+    });
   }
 
   function initCadastro() {
@@ -2619,16 +2842,25 @@
   function initFormGuard() {
     $$("form").forEach(function (f) {
       if (f.id === "v2-login-form" || f.id === "v2-cadastro-form" || f.id === "v2-quiz") return;
+      if (f.hasAttribute("data-native-submit")) return; // formulários GET reais (ex.: catálogo integrado)
       f.addEventListener("submit", function (e) { e.preventDefault(); });
     });
   }
 
   /* ---------------- Boot ------------------------------------- */
   document.addEventListener("DOMContentLoaded", function () {
-    renderHome();
+    if (!window.V2_DISABLE_AUTORENDER_HOME) {
+      renderHome();
+    }
     renderCatalogo();
-    renderCatalogoV2();
-    renderCursoV2();
+    if (!window.V2_DISABLE_AUTORENDER_CATALOGO) {
+      renderCatalogoV2();
+    }
+    initCatalogoIntegradoV2();
+    if (!window.V2_DISABLE_AUTORENDER_CURSO) {
+      renderCursoV2();
+    }
+    initCursoIntegradoV2();
     initCheckoutV2();
     initAlunoV2();
     initAulaV2();
@@ -2642,8 +2874,14 @@
     initAnchorsV2();
     initFilterSheet();
     initPassToggles();
+    initAuthMasksV2();
     initTabs();
     initAccordion();
+    initLmsV2();
+    initQuizV2();
+    initAtividadeV2();
+    initCertValidacaoV2();
+    initCheckoutPreV2();
     initLogin();
     initCadastro();
     initCheckout();

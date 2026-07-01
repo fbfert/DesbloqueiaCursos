@@ -76,26 +76,58 @@ class EmailAdminService
 
     public function reenviarEmail($emailId, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
-        return $this->emailService->resendExisting((int) $emailId, $actorUserId, $ipAddress, $userAgent);
+        $emailId = (int) $emailId;
+        if ($emailId <= 0) {
+            return array('ok' => false, 'message' => 'E-mail inválido.');
+        }
+
+        $email = $this->emailModel->findById($emailId);
+        if (!$email) {
+            return array('ok' => false, 'message' => 'E-mail não encontrado.');
+        }
+
+        $status = isset($email['status']) ? (string) $email['status'] : '';
+        if ($status === 'enviado') {
+            return $this->emailService->reenviarHistorico($emailId, $actorUserId, $ipAddress, $userAgent);
+        }
+
+        return $this->emailService->resendExisting($emailId, $actorUserId, $ipAddress, $userAgent);
     }
 
     public function reenviarSelecionados(array $ids, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $reenviados = 0;
         $ignorados = 0;
+        $resultados = array();
 
         foreach ($ids as $id) {
             $id = (int) $id;
             if ($id <= 0) {
                 $ignorados++;
+                $resultados[] = array(
+                    'id' => $id,
+                    'ok' => false,
+                    'message' => 'ID inválido.',
+                );
                 continue;
             }
 
             $result = $this->reenviarEmail($id, $actorUserId, $ipAddress, $userAgent);
             if (!empty($result['ok'])) {
                 $reenviados++;
+                $resultados[] = array(
+                    'id' => $id,
+                    'ok' => true,
+                    'email_id' => isset($result['email_id']) ? (int) $result['email_id'] : null,
+                    'message' => isset($result['skipped']) && !empty($result['skipped']) ? (string) ($result['message'] ?? 'Envio ignorado.') : 'E-mail reenviado com sucesso.',
+                );
             } else {
                 $ignorados++;
+                $resultados[] = array(
+                    'id' => $id,
+                    'ok' => false,
+                    'message' => isset($result['message']) ? (string) $result['message'] : 'Não foi possível reenviar o e-mail.',
+                );
             }
         }
 
@@ -104,7 +136,7 @@ class EmailAdminService
             'ignorados' => $ignorados,
         ));
 
-        return array('ok' => true, 'reenviados' => $reenviados, 'ignorados' => $ignorados);
+        return array('ok' => true, 'reenviados' => $reenviados, 'ignorados' => $ignorados, 'resultados' => $resultados);
     }
 
     public function reenviarPendentes($actorUserId = null, $ipAddress = null, $userAgent = null)

@@ -20,9 +20,9 @@ class Certificado
                     pp.cpf AS participante_cpf,
                     ct.nome AS template_nome
              FROM certificados c
-             INNER JOIN cursos_eventos ce ON ce.id = c.curso_evento_id
-             INNER JOIN inscricoes i ON i.id = c.inscricao_id
-             INNER JOIN participantes_pedido pp ON pp.id = c.participante_pedido_id
+             LEFT JOIN cursos_eventos ce ON ce.id = c.curso_evento_id
+             LEFT JOIN inscricoes i ON i.id = c.inscricao_id
+             LEFT JOIN participantes_pedido pp ON pp.id = c.participante_pedido_id
              LEFT JOIN turmas t ON t.id = c.turma_id
              LEFT JOIN pedidos p ON p.id = c.pedido_id
              LEFT JOIN certificados_templates ct ON ct.id = c.template_id
@@ -49,9 +49,9 @@ class Certificado
                     pp.cpf AS participante_cpf,
                     ct.nome AS template_nome
              FROM certificados c
-             INNER JOIN cursos_eventos ce ON ce.id = c.curso_evento_id
-             INNER JOIN inscricoes i ON i.id = c.inscricao_id
-             INNER JOIN participantes_pedido pp ON pp.id = c.participante_pedido_id
+             LEFT JOIN cursos_eventos ce ON ce.id = c.curso_evento_id
+             LEFT JOIN inscricoes i ON i.id = c.inscricao_id
+             LEFT JOIN participantes_pedido pp ON pp.id = c.participante_pedido_id
              LEFT JOIN turmas t ON t.id = c.turma_id
              LEFT JOIN pedidos p ON p.id = c.pedido_id
              LEFT JOIN certificados_templates ct ON ct.id = c.template_id
@@ -91,9 +91,9 @@ class Certificado
                     pp.nome AS participante_nome,
                     pp.cpf AS participante_cpf
              FROM certificados c
-             INNER JOIN cursos_eventos ce ON ce.id = c.curso_evento_id
-             INNER JOIN inscricoes i ON i.id = c.inscricao_id
-             INNER JOIN participantes_pedido pp ON pp.id = c.participante_pedido_id
+             LEFT JOIN cursos_eventos ce ON ce.id = c.curso_evento_id
+             LEFT JOIN inscricoes i ON i.id = c.inscricao_id
+             LEFT JOIN participantes_pedido pp ON pp.id = c.participante_pedido_id
              LEFT JOIN turmas t ON t.id = c.turma_id
              WHERE c.deleted_at IS NULL
              ORDER BY c.id DESC'
@@ -132,6 +132,102 @@ class Certificado
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function searchManualCandidates(array $filters = array())
+    {
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 100;
+        if ($limit <= 0) {
+            $limit = 100;
+        }
+        if ($limit > 200) {
+            $limit = 200;
+        }
+
+        $sql = 'SELECT i.*,
+                       p.codigo AS pedido_codigo,
+                       p.status AS pedido_status,
+                       p.pagador_nome,
+                       p.pagador_email,
+                       pp.nome AS participante_nome,
+                       pp.cpf AS participante_cpf,
+                       ce.nome AS curso_nome,
+                       ce.slug AS curso_slug,
+                       t.nome AS turma_nome,
+                       u.nome AS aluno_nome,
+                       u.email AS aluno_email,
+                       c.id AS certificado_id,
+                       c.codigo AS certificado_codigo,
+                       c.status AS certificado_status,
+                       c.emitido_em AS certificado_emitido_em
+                FROM inscricoes i
+                INNER JOIN pedidos p ON p.id = i.pedido_id
+                INNER JOIN participantes_pedido pp ON pp.id = i.participante_pedido_id
+                INNER JOIN cursos_eventos ce ON ce.id = i.curso_evento_id
+                LEFT JOIN turmas t ON t.id = i.turma_id
+                LEFT JOIN usuarios u ON u.id = i.usuario_id
+                LEFT JOIN certificados c ON c.inscricao_id = i.id AND c.deleted_at IS NULL AND c.status = "emitido"
+                WHERE i.deleted_at IS NULL
+                  AND i.status <> "excluida"';
+        $params = array();
+
+        $cursoEventoId = isset($filters['curso_evento_id']) ? (int) $filters['curso_evento_id'] : 0;
+        if ($cursoEventoId > 0) {
+            $sql .= ' AND i.curso_evento_id = :curso_evento_id';
+            $params['curso_evento_id'] = $cursoEventoId;
+        }
+
+        $turmaId = isset($filters['turma_id']) ? (int) $filters['turma_id'] : 0;
+        if ($turmaId > 0) {
+            $sql .= ' AND i.turma_id = :turma_id';
+            $params['turma_id'] = $turmaId;
+        }
+
+        $busca = isset($filters['busca']) ? trim((string) $filters['busca']) : '';
+        if ($busca !== '') {
+            $sql .= ' AND (
+                        CAST(i.id AS CHAR) LIKE :busca
+                        OR pp.nome LIKE :busca
+                        OR pp.cpf LIKE :busca
+                        OR p.pagador_nome LIKE :busca
+                        OR p.pagador_email LIKE :busca
+                        OR ce.nome LIKE :busca
+                        OR t.nome LIKE :busca
+                        OR u.nome LIKE :busca
+                        OR u.email LIKE :busca
+                    )';
+            $params['busca'] = '%' . $busca . '%';
+        }
+
+        $statusInscricao = isset($filters['status_inscricao']) ? trim((string) $filters['status_inscricao']) : '';
+        $aptidao = isset($filters['aptidao']) ? trim((string) $filters['aptidao']) : 'todos';
+        if ($statusInscricao !== '') {
+            $sql .= ' AND i.status = :status_inscricao';
+            $params['status_inscricao'] = $statusInscricao;
+        } elseif ($aptidao !== 'pendentes' && empty($filters['mostrar_status_excluidos'])) {
+            $sql .= ' AND i.status NOT IN ("pendente", "cancelada", "reprovada")';
+        }
+
+        $certificado = isset($filters['certificado']) ? trim((string) $filters['certificado']) : 'todos';
+        if ($certificado === 'sem_certificado') {
+            $sql .= ' AND c.id IS NULL';
+        } elseif ($certificado === 'com_certificado') {
+            $sql .= ' AND c.id IS NOT NULL';
+        }
+
+        if ($aptidao === 'aptos') {
+            $sql .= ' AND i.apto_certificado = 1';
+        } elseif ($aptidao === 'pendentes') {
+            $sql .= ' AND i.apto_certificado = 0';
+        }
+
+        $sql .= ' ORDER BY i.id DESC
+                  LIMIT ' . (int) $limit;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(
@@ -140,13 +236,13 @@ class Certificado
               codigo, versao, nome_participante, cpf_participante, cpf_mascarado, titulo, status, pdf_caminho,
               pdf_nome_original, emitido_por_usuario_id, emitido_em, cancelado_por_usuario_id, cancelado_em,
               revogado_por_usuario_id, revogado_em, reemissao_de_certificado_id, substituido_por_certificado_id,
-              created_at, updated_at, deleted_at)
+              emissao_excepcional, emissao_excepcional_justificativa, created_at, updated_at, deleted_at)
              VALUES
              (:template_id, :curso_evento_id, :turma_id, :pedido_id, :inscricao_id, :participante_pedido_id, :usuario_id,
               :codigo, :versao, :nome_participante, :cpf_participante, :cpf_mascarado, :titulo, :status, :pdf_caminho,
               :pdf_nome_original, :emitido_por_usuario_id, :emitido_em, :cancelado_por_usuario_id, :cancelado_em,
               :revogado_por_usuario_id, :revogado_em, :reemissao_de_certificado_id, :substituido_por_certificado_id,
-              NOW(), NOW(), NULL)'
+              :emissao_excepcional, :emissao_excepcional_justificativa, NOW(), NOW(), NULL)'
         );
 
         $stmt->execute(array(
@@ -174,6 +270,8 @@ class Certificado
             'revogado_em' => isset($data['revogado_em']) ? $data['revogado_em'] : null,
             'reemissao_de_certificado_id' => isset($data['reemissao_de_certificado_id']) ? $data['reemissao_de_certificado_id'] : null,
             'substituido_por_certificado_id' => isset($data['substituido_por_certificado_id']) ? $data['substituido_por_certificado_id'] : null,
+            'emissao_excepcional' => !empty($data['emissao_excepcional']) ? 1 : 0,
+            'emissao_excepcional_justificativa' => isset($data['emissao_excepcional_justificativa']) ? $data['emissao_excepcional_justificativa'] : null,
         ));
 
         return (int) Database::connection()->lastInsertId();
@@ -207,6 +305,8 @@ class Certificado
                  revogado_em = :revogado_em,
                  reemissao_de_certificado_id = :reemissao_de_certificado_id,
                  substituido_por_certificado_id = :substituido_por_certificado_id,
+                 emissao_excepcional = :emissao_excepcional,
+                 emissao_excepcional_justificativa = :emissao_excepcional_justificativa,
                  updated_at = NOW()
              WHERE id = :id'
         );
@@ -236,6 +336,8 @@ class Certificado
             'revogado_em' => isset($data['revogado_em']) ? $data['revogado_em'] : null,
             'reemissao_de_certificado_id' => isset($data['reemissao_de_certificado_id']) ? $data['reemissao_de_certificado_id'] : null,
             'substituido_por_certificado_id' => isset($data['substituido_por_certificado_id']) ? $data['substituido_por_certificado_id'] : null,
+            'emissao_excepcional' => !empty($data['emissao_excepcional']) ? 1 : 0,
+            'emissao_excepcional_justificativa' => isset($data['emissao_excepcional_justificativa']) ? $data['emissao_excepcional_justificativa'] : null,
             'id' => $id,
         ));
     }

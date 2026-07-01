@@ -20,6 +20,7 @@
         <table class="admin-table">
             <thead>
                 <tr>
+                    <th class="admin-category-thumb-col">Thumb</th>
                     <th>Categoria</th>
                     <th>Slug</th>
                     <th>Ordem</th>
@@ -30,10 +31,21 @@
             </thead>
             <tbody>
                 <?php if (empty($categorias)): ?>
-                    <tr><td colspan="6">Nenhuma categoria cadastrada.</td></tr>
+                    <tr><td colspan="7">Nenhuma categoria cadastrada.</td></tr>
                 <?php endif; ?>
                 <?php foreach ($categorias as $categoria): ?>
                     <tr>
+                        <td class="admin-category-thumb-col">
+                            <?php if (!empty($categoria['thumbnail'])): ?>
+                                <div class="admin-category-thumb">
+                                    <img src="<?php echo Helpers::e($categoria['thumbnail']); ?>" alt="<?php echo Helpers::e($categoria['nome']); ?>">
+                                </div>
+                            <?php else: ?>
+                                <div class="admin-category-thumb admin-category-thumb--empty">
+                                    <span>Sem imagem</span>
+                                </div>
+                            <?php endif; ?>
+                        </td>
                         <td><?php echo Helpers::e($categoria['nome']); ?></td>
                         <td><?php echo Helpers::e($categoria['slug']); ?></td>
                         <td><?php echo (int) $categoria['ordem']; ?></td>

@@ -49,7 +49,55 @@ class CursoService
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->thumbnailDirectoryPublic = '/assets/uploads/thumbnails';
-        $this->thumbnailDirectoryAbsolute = BASE_PATH . '/public_html' . $this->thumbnailDirectoryPublic;
+        $this->thumbnailDirectoryAbsolute = $this->resolverDiretorioPublico() . $this->thumbnailDirectoryPublic;
+    }
+
+    private function resolverDiretorioPublico()
+    {
+        if (defined('PUBLIC_PATH') && is_dir(PUBLIC_PATH)) {
+            return rtrim((string) PUBLIC_PATH, '/\\');
+        }
+
+        $candidatos = array(
+            BASE_PATH . '/public_html',
+            BASE_PATH . '/public',
+            BASE_PATH,
+        );
+
+        foreach ($candidatos as $candidato) {
+            if ($candidato !== '' && is_dir($candidato)) {
+                return rtrim($candidato, '/\\');
+            }
+        }
+
+        return rtrim(BASE_PATH, '/\\');
+    }
+
+    private function resolverThumbnailCaminhoAbsoluto($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return null;
+        }
+
+        $valor = str_replace('\\', '/', $valor);
+        $prefixo = $this->thumbnailDirectoryPublic . '/';
+        if (strpos($valor, $prefixo) !== 0) {
+            return null;
+        }
+
+        $nomeArquivo = basename($valor);
+        if ($nomeArquivo === '' || $nomeArquivo === '.' || $nomeArquivo === '..') {
+            return null;
+        }
+
+        $caminho = $this->thumbnailDirectoryAbsolute . '/' . $nomeArquivo;
+        return is_file($caminho) ? $caminho : null;
+    }
+
+    private function thumbnailPublicaValida($valor)
+    {
+        return $this->resolverThumbnailCaminhoAbsoluto($valor) !== null;
     }
 
     public function allowedModalidades()
@@ -57,9 +105,10 @@ class CursoService
         return $this->modalidades;
     }
 
-    public function listAdmin()
+    public function listAdmin(array $filters = array(), $page = 1, $perPage = 20)
     {
-        $cursos = $this->cursoModel->allWithCategoryAndCounts();
+        $resultado = $this->cursoModel->paginateAdmin($filters, $page, $perPage);
+        $cursos = isset($resultado['items']) && is_array($resultado['items']) ? $resultado['items'] : array();
         $categorias = $this->categoriaModel->allWithCounts();
         $cursosAtivos = array();
         $cursosRascunho = array();
@@ -86,6 +135,10 @@ class CursoService
 
         return array(
             'categorias' => $categorias,
+            'filters' => $filters,
+            'pagination' => isset($resultado['pagination']) && is_array($resultado['pagination']) ? $resultado['pagination'] : array('total' => 0, 'page' => 1, 'per_page' => 20, 'pages' => 1),
+            'status_totals' => isset($resultado['status_totals']) && is_array($resultado['status_totals']) ? $resultado['status_totals'] : array(),
+            'modalidades' => $this->modalidades,
             'cursos' => $cursosAtivos,
             'cursos_rascunho' => $cursosRascunho,
             'cursos_inativos' => $cursosInativos,
@@ -143,6 +196,7 @@ class CursoService
         $valorPromocional = $this->normalizarDecimalOpcional($valorPromocionalBruto);
         $ordem = isset($data['ordem']) ? (int) $data['ordem'] : 0;
         $status = isset($data['status']) && in_array($data['status'], array('rascunho', 'ativo', 'inativo', 'arquivado'), true) ? $data['status'] : 'rascunho';
+        $usarTurmas = !empty($data['usar_turmas']) ? 1 : 0;
 
         $professoresResponsaveisIds = array();
         if (array_key_exists('professores_responsaveis_usuario_ids', $data)) {
@@ -275,6 +329,7 @@ class CursoService
             'metodologia' => $metodologia,
             'produto_final' => $produtoFinal,
             'avaliacao' => $avaliacao,
+            'usar_turmas' => $usarTurmas,
             'em_promocao' => ($valorPromocional !== null && $valorPromocional < $valor)
                 ? 1
                 : (!empty($data['em_promocao']) ? 1 : 0),
@@ -324,7 +379,9 @@ class CursoService
     private function listarThumbnailsDisponiveis()
     {
         if (!is_dir($this->thumbnailDirectoryAbsolute)) {
-            return array();
+            if (!@mkdir($this->thumbnailDirectoryAbsolute, 0775, true) && !is_dir($this->thumbnailDirectoryAbsolute)) {
+                return array();
+            }
         }
 
         $arquivos = @scandir($this->thumbnailDirectoryAbsolute);
@@ -359,29 +416,12 @@ class CursoService
 
     private function normalizarThumbnailSelecionada($valor)
     {
-        $valor = trim((string) $valor);
-        if ($valor === '') {
+        $caminhoAbsoluto = $this->resolverThumbnailCaminhoAbsoluto($valor);
+        if ($caminhoAbsoluto === null) {
             return null;
         }
 
-        $valor = str_replace('\\', '/', $valor);
-        $prefixo = $this->thumbnailDirectoryPublic . '/';
-
-        if (strpos($valor, $prefixo) !== 0) {
-            return null;
-        }
-
-        $nomeArquivo = basename($valor);
-        if ($nomeArquivo === '' || $nomeArquivo === '.' || $nomeArquivo === '..') {
-            return null;
-        }
-
-        $caminhoAbsoluto = $this->thumbnailDirectoryAbsolute . '/' . $nomeArquivo;
-        if (!is_file($caminhoAbsoluto)) {
-            return null;
-        }
-
-        return $this->thumbnailDirectoryPublic . '/' . $nomeArquivo;
+        return $this->thumbnailDirectoryPublic . '/' . basename($caminhoAbsoluto);
     }
 
     private function salvarThumbnailUpload(array $arquivo)
@@ -499,25 +539,22 @@ class CursoService
         }
     }
 
-    public function listPublic()
+    public function listPublic(array $filters = array())
     {
-        $cursos = $this->cursoModel->allPublic();
-
-        foreach ($cursos as &$curso) {
-            $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
-            $curso['turmas_abertas'] = $this->turmaModel->forPublicCourse($curso['id'], true);
-            $curso['total_turmas_abertas'] = count($curso['turmas_abertas']);
-            $curso['valor_efetivo'] = $this->calcularValorEfetivoCurso($curso);
-            $curso['desconto_promocional'] = $this->calcularDescontoPromocional($curso);
-        }
-        unset($curso);
+        $cursos = $this->cursoModel->allPublic($filters);
+        $cursos = $this->hidratarCursosPublicos($cursos);
 
         return array('cursos' => $cursos);
     }
 
+    public function listPublicByCategoria($categoriaId)
+    {
+        return $this->listPublic(array('categoria_id' => (int) $categoriaId));
+    }
+
     public function listPublicHome($limit = 6)
     {
-        $contexto = $this->listPublic();
+        $contexto = $this->listPublic(array('destaque' => 1));
         $cursos = isset($contexto['cursos']) ? $contexto['cursos'] : array();
         $limit = (int) $limit;
         if ($limit < 1 || $limit > 12) {
@@ -530,18 +567,78 @@ class CursoService
     public function listPublicTopVendas($limit = 5)
     {
         $cursos = $this->cursoModel->topPublicBySales($limit);
-
-        foreach ($cursos as &$curso) {
-            $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
-            $curso['turmas_abertas'] = $this->turmaModel->forPublicCourse($curso['id'], true);
-            $curso['total_turmas_abertas'] = count($curso['turmas_abertas']);
-            $curso['valor_efetivo'] = $this->calcularValorEfetivoCurso($curso);
-            $curso['desconto_promocional'] = $this->calcularDescontoPromocional($curso);
-            $curso['total_vendas'] = isset($curso['total_vendas']) ? (int) $curso['total_vendas'] : 0;
-        }
-        unset($curso);
+        $cursos = $this->hidratarCursosPublicos($cursos, true);
 
         return $cursos;
+    }
+
+    public function homeStats()
+    {
+        $alunos = $this->contarAlunosComMatriculaAtiva();
+        $cursos = $this->contarCursosPublicados();
+        $certificados = $this->contarCertificadosEmitidos();
+
+        if ($alunos === 0 && $cursos === 0 && $certificados === 0) {
+            return null;
+        }
+
+        return array(
+            'alunos' => $alunos,
+            'cursos' => $cursos,
+            'certificados' => $certificados,
+        );
+    }
+
+    private function contarAlunosComMatriculaAtiva()
+    {
+        try {
+            $stmt = Database::connection()->query(
+                'SELECT COUNT(DISTINCT usuario_id) AS total
+                 FROM inscricoes
+                 WHERE deleted_at IS NULL
+                   AND usuario_id IS NOT NULL
+                   AND status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")'
+            );
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            return $row ? (int) $row['total'] : 0;
+        } catch (Exception $exception) {
+            return 0;
+        }
+    }
+
+    private function contarCursosPublicados()
+    {
+        try {
+            $stmt = Database::connection()->query(
+                'SELECT COUNT(*) AS total
+                 FROM cursos_eventos
+                 WHERE deleted_at IS NULL
+                   AND status = "ativo"'
+            );
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            return $row ? (int) $row['total'] : 0;
+        } catch (Exception $exception) {
+            return 0;
+        }
+    }
+
+    private function contarCertificadosEmitidos()
+    {
+        try {
+            $stmt = Database::connection()->query(
+                'SELECT COUNT(*) AS total
+                 FROM certificados
+                 WHERE deleted_at IS NULL
+                   AND status = "emitido"'
+            );
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            return $row ? (int) $row['total'] : 0;
+        } catch (Exception $exception) {
+            return 0;
+        }
     }
 
     public function showPublic($cursoId, $turmaId = null)
@@ -557,6 +654,7 @@ class CursoService
         $curso['turmas'] = $curso['turmas_abertas'];
         $curso['turma_selecionada'] = null;
         $curso['inscricao_disponivel'] = !empty($curso['turmas_abertas']);
+        $curso['thumbnail'] = !empty($curso['thumbnail']) && $this->thumbnailPublicaValida($curso['thumbnail']) ? $curso['thumbnail'] : null;
         $curso['valor_efetivo'] = $this->calcularValorEfetivoCurso($curso);
         $curso['desconto_promocional'] = $this->calcularDescontoPromocional($curso);
         $curso['conteudo_programatico_view'] = $this->prepararConteudoProgramaticoParaView($curso);
@@ -626,6 +724,25 @@ class CursoService
             'desconto_valor' => $descontoValor,
             'desconto_percentual' => $percentual,
         );
+    }
+
+    private function hidratarCursosPublicos(array $cursos, $incluirTotalVendas = false)
+    {
+        foreach ($cursos as &$curso) {
+            $curso = $this->anexarProfessoresResponsaveisAoCurso($curso);
+            $curso['turmas_abertas'] = $this->turmaModel->forPublicCourse($curso['id'], true);
+            $curso['total_turmas_abertas'] = count($curso['turmas_abertas']);
+            $curso['thumbnail'] = !empty($curso['thumbnail']) && $this->thumbnailPublicaValida($curso['thumbnail']) ? $curso['thumbnail'] : null;
+            $curso['valor_efetivo'] = $this->calcularValorEfetivoCurso($curso);
+            $curso['desconto_promocional'] = $this->calcularDescontoPromocional($curso);
+
+            if ($incluirTotalVendas) {
+                $curso['total_vendas'] = isset($curso['total_vendas']) ? (int) $curso['total_vendas'] : 0;
+            }
+        }
+        unset($curso);
+
+        return $cursos;
     }
 
     public function prepararConteudoProgramaticoParaView(array $curso)

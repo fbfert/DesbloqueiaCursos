@@ -23,6 +23,10 @@ Portal de cursos e eventos em PHP MVC, preparado para Linux/cPanel, MySQL 5.7, c
 - [Padrao editorial PT-BR](docs/padrao-editorial-ptbr.md)
 - [Refatoracao admin desktop-first](docs/refatoracao-admin-desktop-2026-04.md)
 - [Ajuste do editor de conteúdo na área do curso](docs/ajuste-editor-conteudo-area-curso-2026-05-27.md)
+- [Recuperação de pedidos: redirecionamento corrigido](docs/2026-06-12-recuperacao-pedidos-redirecionamento-corrigido.md)
+- [Recuperação de pedidos: automação por Cron](docs/2026-06-12-recuperacao-pedidos-cron-automacao.md)
+- [Recuperação de pedidos: entrega final](docs/2026-06-12-recuperacao-pedidos-entrega-final.md)
+- [Integração da API do Claude](specs/0001-integracao-api-claude/spec.md)
 
 ## Execucao Local
 
@@ -190,3 +194,23 @@ php tests/Smoke/smoke.php https://polorainbow.com.br
 ```
 
 O script valida rotas criticas do portal, incluindo dashboard admin, dashboard professor, areas protegidas, financeiro, configuracoes globais, certificados e validacao publica, e retorna `0` quando tudo responde como esperado.
+
+## Integração com o Claude
+
+Configure as variáveis abaixo no `.env` antes de usar a integração:
+
+- `ANTHROPIC_ENABLED`
+- `ANTHROPIC_API_KEY`
+- `ANTHROPIC_BASE_URL`
+- `ANTHROPIC_MODEL`
+- `ANTHROPIC_MAX_TOKENS`
+- `ANTHROPIC_TEMPERATURE`
+- `ANTHROPIC_TIMEOUT`
+
+A rota interna de teste é:
+
+```text
+POST /api/claude/teste
+```
+
+Ela aceita `application/json` ou formulário com pelo menos o campo `prompt`.

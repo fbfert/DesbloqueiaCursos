@@ -32,6 +32,20 @@ class ConteudoArquivoVersao
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function findUltimaPorItemId($itemId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM conteudo_arquivos_versoes
+             WHERE item_id = :item_id
+             ORDER BY versao DESC, id DESC
+             LIMIT 1'
+        );
+        $stmt->execute(array('item_id' => (int) $itemId));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(

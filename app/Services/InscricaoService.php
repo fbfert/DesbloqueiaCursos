@@ -34,7 +34,6 @@ class InscricaoService
         $this->participanteModel = new ParticipantePedido();
         $this->cursoModel = new CursoEvento();
         $this->turmaModel = new Turma();
-        $this->emailService = new EmailService();
         $this->auditService = new AuditService();
         $this->trashService = new TrashService();
         $this->rbacService = new RbacService();
@@ -117,7 +116,7 @@ class InscricaoService
             foreach ($criados as $inscricaoId) {
                 $inscricao = $this->inscricaoModel->findById($inscricaoId);
                 if ($inscricao) {
-                    $this->emailService->cursoProximo(
+                    $this->emailService()->cursoProximo(
                         $this->envelopeInscricaoParaEmail($inscricao),
                         $actorUserId,
                         $ipAddress,
@@ -243,17 +242,18 @@ class InscricaoService
             $pdo->commit();
 
             $inscricaoAtualizada = $this->inscricaoModel->findById($inscricaoId);
+            $resultadoEmail = null;
             if ($novoStatus === 'com_pendencia') {
-                $this->emailService->pendencia($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $observacao, $actorUserId, $ipAddress, $userAgent);
+                $resultadoEmail = $this->emailService()->pendencia($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $observacao, $actorUserId, $ipAddress, $userAgent);
             } elseif ($novoStatus === 'em_andamento') {
-                $this->emailService->cursoProximo($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
+                $resultadoEmail = $this->emailService()->cursoProximo($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
             } elseif ($novoStatus === 'concluida' || $novoStatus === 'concluida_sem_certificado') {
-                $this->emailService->concluido($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
+                $resultadoEmail = $this->emailService()->concluido($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
             } elseif ($novoStatus === 'certificado_emitido') {
-                $this->emailService->certificadoDisponivel($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
+                $resultadoEmail = $this->emailService()->certificadoDisponivel($this->envelopeInscricaoParaEmail($inscricaoAtualizada), $actorUserId, $ipAddress, $userAgent);
             }
 
-            return array('ok' => true);
+            return array('ok' => true, 'email_result' => $resultadoEmail);
         } catch (Exception $exception) {
             $pdo->rollBack();
             Logger::error('inscricao.status.falhou', array(
@@ -263,6 +263,15 @@ class InscricaoService
 
             throw $exception;
         }
+    }
+
+    private function emailService()
+    {
+        if (!$this->emailService) {
+            $this->emailService = new EmailService();
+        }
+
+        return $this->emailService;
     }
 
     public function alterarStatus($inscricaoId, $novoStatus, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
@@ -527,6 +536,8 @@ class InscricaoService
             'participante_email' => isset($participante['email']) ? $participante['email'] : null,
             'certificado_codigo' => isset($certificado['codigo']) ? $certificado['codigo'] : null,
             'certificado_pdf_url' => isset($certificado['codigo']) ? Helpers::url('certificados/pdf?codigo=' . urlencode($certificado['codigo'])) : null,
+            'certificado_url_download' => isset($certificado['codigo']) ? Helpers::url('certificados/pdf?codigo=' . urlencode($certificado['codigo'])) : null,
+            'certificado_pdf_caminho' => isset($certificado['pdf_caminho']) ? $certificado['pdf_caminho'] : null,
             'certificado_validacao_url' => isset($certificado['codigo']) ? Helpers::url('certificados/validar?codigo=' . urlencode($certificado['codigo'])) : null,
         );
     }

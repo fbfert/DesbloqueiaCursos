@@ -1,6 +1,18 @@
 <?php use App\Core\Helpers; ?>
 
 <div class="front-section-stack">
+    <?php if (!empty($blockedMessage)): ?>
+        <section class="auth-message auth-message-error front-section">
+            <p><?php echo Helpers::e($blockedMessage); ?></p>
+        </section>
+    <?php endif; ?>
+
+    <?php $configCertificados = isset($configCertificados) && is_array($configCertificados) ? $configCertificados : array(); ?>
+    <?php if (empty($certificado)): ?>
+        <section class="panel front-section">
+            <p class="muted">A consulta pública deste certificado está indisponível no momento.</p>
+        </section>
+    <?php else: ?>
     <section class="page-header front-section">
         <h1>Certificado online</h1>
         <p><?php echo Helpers::e($certificado['codigo']); ?></p>
@@ -31,7 +43,7 @@
         </div>
 
         <div class="pill-row" style="margin-top:16px;">
-            <?php if (!empty($canSeePdf)): ?>
+            <?php if (!empty($canSeePdf) && !empty($configCertificados['certificados_permitir_download'])): ?>
                 <a class="pill" href="<?php echo Helpers::e($certificado['pdf_url']); ?>">Abrir PDF</a>
             <?php endif; ?>
             <a class="pill" href="<?php echo Helpers::e($certificado['validacao_url']); ?>">Validar novamente</a>
@@ -49,5 +61,6 @@
             <img src="<?php echo Helpers::e($certificado['qr_svg']); ?>" alt="QR Code do certificado" style="width:100%;height:auto;">
         </div>
         </section>
+    <?php endif; ?>
     </div>
 </div>

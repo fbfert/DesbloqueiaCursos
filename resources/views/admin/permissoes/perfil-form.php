@@ -35,7 +35,7 @@ $show_save_as_copy = !empty((int) $value('id', 0));
                 <?php endforeach; ?>
             </div>
 
-            <?php $cancelUrl = '/admin/permissoes'; ?>
+            <?php $cancel_url = '/admin/permissoes'; ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>
     </section>

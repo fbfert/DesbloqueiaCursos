@@ -1,5 +1,7 @@
 <?php use App\Core\Helpers; ?>
 <?php
+if (!isset($frontend_template)) { try { $frontend_template = (new \App\Services\ConfiguracaoGlobalService())->templateVisualPortal(); } catch (\Throwable $e) { $frontend_template = 'v1'; } }
+if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resources/views/v4-claude/checkout/resumo.php'; return; }
 $pedidoStatusNormalizado = strtolower((string) ($pedido['status'] ?? ''));
 $pedidoGateway = strtolower(trim((string) ($pedidoGateway ?? ($pedido['payment_gateway'] ?? ''))));
 $pedidoTemCheckoutOnline = !empty($pedido['payment_provider_payment_url']) || !empty($pedido['payment_provider_checkout_id']);

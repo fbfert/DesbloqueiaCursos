@@ -40,6 +40,10 @@ class ErrorHandler
             'line' => $line,
         ));
 
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         http_response_code($status);
 
         echo View::render('errors/500', array(

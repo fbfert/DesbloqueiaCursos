@@ -458,6 +458,8 @@ class AreaCursoController extends Controller
         }
 
         $item = $detalhe['item'];
+        $progressoItem = isset($detalhe['progresso']) && is_array($detalhe['progresso']) ? $detalhe['progresso'] : null;
+        $itemJaConcluido = !empty($progressoItem) && in_array((string) ($progressoItem['status'] ?? ''), array('concluido', 'aprovada', 'corrigida'), true);
         $resumo = $this->conteudoService->obterResumoProgressoAluno(
             $cursoId,
             (int) Session::get('usuario_id'),
@@ -497,6 +499,54 @@ class AreaCursoController extends Controller
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ));
+
+        if ((string) ($item['tipo'] ?? '') === 'texto' && !$itemJaConcluido) {
+            try {
+                $resultadoConclusao = $this->conteudoService->concluirItemAluno(array(
+                    'curso_evento_id' => $cursoId,
+                    'turma_id' => $turmaId > 0 ? $turmaId : null,
+                    'inscricao_id' => (int) $inscricao['id'],
+                    'aluno_id' => (int) Session::get('usuario_id'),
+                    'item_id' => (int) $item['id'],
+                    'modulo_id' => $moduloId,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ));
+
+                if (empty($resultadoConclusao['ok'])) {
+                    Logger::warning('conteudo.texto.auto_conclusao_nao_aplicada', array(
+                        'inscricao_id' => (int) $inscricao['id'],
+                        'item_id' => (int) $item['id'],
+                        'message' => isset($resultadoConclusao['message']) ? $resultadoConclusao['message'] : null,
+                    ));
+                } else {
+                    $detalhe = $this->conteudoService->buscarItemPublicadoParaAluno(
+                        $itemId,
+                        (int) Session::get('usuario_id'),
+                        (int) $inscricao['id'],
+                        $cursoId,
+                        $turmaId > 0 ? $turmaId : null
+                    );
+                    if (!empty($detalhe['ok'])) {
+                        $item = $detalhe['item'];
+                        $progressoItem = isset($detalhe['progresso']) && is_array($detalhe['progresso']) ? $detalhe['progresso'] : null;
+                        $itemJaConcluido = !empty($progressoItem) && in_array((string) ($progressoItem['status'] ?? ''), array('concluido', 'aprovada', 'corrigida'), true);
+                    }
+                    $resumo = $this->conteudoService->obterResumoProgressoAluno(
+                        $cursoId,
+                        (int) Session::get('usuario_id'),
+                        (int) $inscricao['id'],
+                        $turmaId > 0 ? $turmaId : null
+                    );
+                }
+            } catch (\Exception $exception) {
+                Logger::warning('conteudo.texto.auto_conclusao_falhou', array(
+                    'inscricao_id' => (int) $inscricao['id'],
+                    'item_id' => (int) $item['id'],
+                    'message' => $exception->getMessage(),
+                ));
+            }
+        }
 
         $entregasAvaliacao = array();
         $avaliacaoPodeEnviar = null;
@@ -612,6 +662,7 @@ class AreaCursoController extends Controller
         $turmaId = (int) $request->input('turma_id', 0);
         $moduloId = (int) $request->input('modulo_id', 0);
         $inscricaoId = (int) $request->input('inscricao_id', 0);
+        $acao = trim((string) $request->input('acao', 'marcar'));
 
         $contexto = $this->carregarContextoAlunoConteudo(array(
             'inscricao_id' => $inscricaoId,
@@ -627,7 +678,7 @@ class AreaCursoController extends Controller
         $inscricao = $contexto['inscricao'];
         $cursoId = (int) $inscricao['curso_evento_id'];
         $turmaId = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : 0;
-        $resultado = $this->conteudoService->concluirItemAluno(array(
+        $payload = array(
             'curso_evento_id' => $cursoId,
             'turma_id' => $turmaId > 0 ? $turmaId : null,
             'inscricao_id' => (int) $inscricao['id'],
@@ -635,12 +686,18 @@ class AreaCursoController extends Controller
             'item_id' => $itemId,
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
-        ));
+        );
+
+        if ($acao === 'desmarcar') {
+            $resultado = $this->conteudoService->desmarcarItemComoConcluido($payload);
+        } else {
+            $resultado = $this->conteudoService->concluirItemAluno($payload);
+        }
 
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível concluir o item.'));
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível alterar a conclusão do item.'));
         } else {
-            Session::flash('success', 'Item marcado como concluído.');
+            Session::flash('success', $acao === 'desmarcar' ? 'Conclusão desmarcada.' : 'Item marcado como concluído.');
         }
 
         $moduloRedirecionar = $moduloId;
@@ -710,6 +767,22 @@ class AreaCursoController extends Controller
         $storage = new FileStorageService();
         $absolutePath = $storage->privatePath((string) $arquivo['arquivo']['caminho']);
         if (!is_file($absolutePath)) {
+            $relativePath = ltrim((string) $arquivo['arquivo']['caminho'], '/\\');
+            $alternativos = array(
+                BASE_PATH . '/storage/private_uploads/' . $relativePath,
+                dirname(BASE_PATH) . '/storage/private_uploads/' . $relativePath,
+                BASE_PATH . '/public_html/storage/private_uploads/' . $relativePath,
+            );
+
+            foreach ($alternativos as $caminhoAlternativo) {
+                if (is_file($caminhoAlternativo)) {
+                    $absolutePath = $caminhoAlternativo;
+                    break;
+                }
+            }
+        }
+        if (!is_file($absolutePath)) {
+            Logger::error('conteudo.arquivo.download_arquivo_ausente', array('contexto' => 'aluno', 'item_id' => (int) $detalhe['item']['id'], 'caminho' => (string) $arquivo['arquivo']['caminho']));
             return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
         }
 

@@ -15,7 +15,7 @@
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
 <section class="status-card">
-    <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form">
+    <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?php echo !empty($categoria['id']) ? (int) $categoria['id'] : 0; ?>">
         <label>
             Nome
@@ -52,7 +52,23 @@
             Descrição
             <textarea name="descricao" rows="4"><?php echo Helpers::e($categoria['descricao'] ?? ''); ?></textarea>
         </label>
-        <?php $cancelUrl = '/admin/categorias'; ?>
+        <label class="full">
+            Thumbnail da categoria
+            <input type="text" name="thumbnail" value="<?php echo Helpers::e($categoria['thumbnail'] ?? ''); ?>" placeholder="/assets/uploads/categorias/exemplo.jpg ou https://...">
+            <small>Informe uma URL pública ou o caminho do arquivo. O upload abaixo substitui este valor quando enviado.</small>
+        </label>
+        <label class="full">
+            Enviar nova thumbnail
+            <input type="file" name="thumbnail_upload" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif">
+            <small>Formatos aceitos: JPG, JPEG, PNG, WEBP e GIF. Tamanho máximo: 5 MB.</small>
+        </label>
+        <?php if (!empty($categoria['thumbnail'])): ?>
+            <div class="full" style="display:flex;flex-direction:column;gap:8px;">
+                <strong>Prévia atual</strong>
+                <img src="<?php echo Helpers::e($categoria['thumbnail']); ?>" alt="<?php echo Helpers::e($categoria['nome'] ?? 'Categoria'); ?>" style="max-width:160px;border-radius:12px;display:block;">
+            </div>
+        <?php endif; ?>
+        <?php $cancel_url = '/admin/categorias'; ?>
         <?php $showSaveAsCopy = !empty($categoria['id']); ?>
         <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
     </form>

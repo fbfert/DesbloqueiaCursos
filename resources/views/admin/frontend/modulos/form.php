@@ -143,7 +143,7 @@ if (empty($regrasExibicao)) {
                 <button type="button" class="button-link" id="frontend-modulo-adicionar-regra">Adicionar regra</button>
             </section>
 
-            <?php $cancelUrl = '/admin/frontend/modulos'; ?>
+            <?php $cancel_url = '/admin/frontend/modulos'; ?>
             <?php $showSaveAsCopy = !empty($modulo['id']); ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>

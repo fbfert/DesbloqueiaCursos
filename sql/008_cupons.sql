@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS cupons (
     codigo VARCHAR(80) NOT NULL,
     nome VARCHAR(150) NOT NULL,
     descricao VARCHAR(500) NULL,
-    escopo VARCHAR(30) NOT NULL DEFAULT 'todo_site',
     tipo ENUM('publico', 'privado', 'usuario', 'empresa') NOT NULL DEFAULT 'publico',
     desconto_tipo ENUM('percentual', 'valor') NOT NULL DEFAULT 'percentual',
     valor_desconto DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -35,29 +34,11 @@ CREATE TABLE IF NOT EXISTS cupons (
     PRIMARY KEY (id),
     UNIQUE KEY uk_cupons_codigo (codigo),
     KEY idx_cupons_tipo (tipo),
-    KEY idx_cupons_escopo (escopo),
     KEY idx_cupons_desconto_tipo (desconto_tipo),
     KEY idx_cupons_status (status),
     KEY idx_cupons_data_inicio (data_inicio),
     KEY idx_cupons_data_fim (data_fim),
     KEY idx_cupons_deleted_at (deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS cupom_cursos (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    cupom_id BIGINT UNSIGNED NOT NULL,
-    curso_id BIGINT UNSIGNED NOT NULL,
-    created_at DATETIME NULL,
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_cupom_cursos (cupom_id, curso_id),
-    KEY idx_cupom_cursos_cupom (cupom_id),
-    KEY idx_cupom_cursos_curso (curso_id),
-    CONSTRAINT fk_cupom_cursos_cupom
-        FOREIGN KEY (cupom_id) REFERENCES cupons (id)
-        ON DELETE CASCADE,
-    CONSTRAINT fk_cupom_cursos_curso
-        FOREIGN KEY (curso_id) REFERENCES cursos_eventos (id)
-        ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS cupons_relacoes (

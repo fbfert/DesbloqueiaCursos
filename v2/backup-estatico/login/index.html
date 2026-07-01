@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar — Desbloqueia Cursos</title>
+  <meta name="description" content="Acesso à demonstração V2 da Desbloqueia Cursos. Ambiente demonstrativo, sem login real.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
+  <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
+</head>
+<body class="v2-app">
+
+  <header class="v2-auth-header">
+    <div class="v2-container v2-auth-header-inner">
+      <a href="/v2/" class="v2-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+      <a href="/v2/" class="v2-btn v2-btn-ghost v2-btn-sm"><i class="ti ti-arrow-left"></i> Voltar ao site</a>
+    </div>
+  </header>
+
+  <main class="v2-main v2-authpage">
+    <div class="v2-container">
+      <div class="v2-auth-split">
+        <!-- Painel visual (desktop) -->
+        <aside class="v2-auth-aside" aria-hidden="true">
+          <h2 class="v2-h1 v2-auth-aside-title">Quando aprende de verdade, <em>desbloqueia.</em></h2>
+          <p class="v2-muted">Acesse sua jornada de aprendizado na nova experiência V2.</p>
+          <ul class="v2-auth-benes">
+            <li><span class="v2-auth-bene-ic"><i class="ti ti-player-play"></i></span> Aulas, módulos e progresso demonstrativos</li>
+            <li><span class="v2-auth-bene-ic"><i class="ti ti-certificate"></i></span> Certificados e pedidos de exemplo</li>
+            <li><span class="v2-auth-bene-ic"><i class="ti ti-device-mobile"></i></span> Funciona bem no computador e no celular</li>
+          </ul>
+        </aside>
+
+        <!-- Card de login -->
+        <div class="v2-auth-card">
+          <a href="/v2/" class="v2-auth-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
+          <h1 class="v2-h2 v2-center">Bem-vindo de volta</h1>
+          <p class="v2-muted v2-center v2-sm" style="margin-bottom:20px;">Entre para continuar sua jornada de aprendizado.</p>
+
+          <div id="lg-feedback" class="v2-callout" role="status" aria-live="polite" style="display:none;"></div>
+
+          <form id="v2-login-v2" novalidate>
+            <div class="v2-field" id="lg-f-login">
+              <label for="lg-login">E-mail ou CPF</label>
+              <input type="text" id="lg-login" class="v2-input" placeholder="seuemail@exemplo.com ou 000.000.000-00" autocomplete="username" aria-describedby="e-lg-login">
+              <div class="v2-field-error" id="e-lg-login" aria-live="polite"></div>
+            </div>
+            <div class="v2-field" id="lg-f-senha">
+              <label for="lg-senha">Senha</label>
+              <div class="v2-input-wrap">
+                <input type="password" id="lg-senha" class="v2-input" placeholder="Sua senha" autocomplete="current-password" aria-describedby="e-lg-senha">
+                <button type="button" class="v2-eye" data-toggle-pass="#lg-senha" aria-label="Mostrar senha"><i class="ti ti-eye"></i></button>
+              </div>
+              <div class="v2-field-error" id="e-lg-senha" aria-live="polite"></div>
+            </div>
+
+            <div class="v2-auth-row">
+              <label class="v2-check v2-check-inline"><input type="checkbox" id="lg-remember"> <span>Lembrar acesso nesta demonstração</span></label>
+              <a href="/v2/recuperar-senha/" class="v2-sm">Esqueci minha senha</a>
+            </div>
+
+            <button type="submit" class="v2-btn v2-btn-primary v2-btn-block">Entrar</button>
+          </form>
+
+          <div class="v2-callout v2-callout-info v2-auth-note"><i class="ti ti-info-circle"></i><span>Ambiente demonstrativo: nenhum dado será enviado ao sistema real.</span></div>
+          <div class="v2-auth-foot">Ainda não tem conta? <a href="/v2/cadastro/">Criar conta</a></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/v2/data/cursos.js"></script>
+  <script src="/v2/assets/js/v2-main.js"></script>
+</body>
+</html>

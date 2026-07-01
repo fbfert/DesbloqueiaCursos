@@ -49,7 +49,9 @@ class Router
                     $request->queryAll(),
                     $request->all(),
                     $request->server(),
-                    $routeParams
+                    $routeParams,
+                    $request->rawBody(),
+                    $request->contentType()
                 );
                 $handler = $route['handler'];
                 $middleware = $this->buildMiddlewareStack(isset($route['middleware']) ? $route['middleware'] : array());
@@ -66,20 +68,7 @@ class Router
                 try {
                     return $this->executeMiddlewareStack($middleware, $request, $runner);
                 } catch (\Throwable $exception) {
-                    Logger::error('admin.route.error', array(
-                        'path' => $request->path(),
-                        'method' => $request->method(),
-                        'message' => $exception->getMessage(),
-                        'file' => $exception->getFile(),
-                        'line' => $exception->getLine(),
-                    ));
-
-                    if (strpos($request->path(), '/admin') === 0) {
-                        Session::flash('errors', array('Ocorreu um erro interno ao carregar a página administrativa.'));
-                        return Response::redirect('/admin/dashboard');
-                    }
-
-                    throw $exception;
+                    return $this->handleAdminException($request, $exception);
                 }
             }
 
@@ -112,21 +101,77 @@ class Router
         try {
             return $this->executeMiddlewareStack($middleware, $request, $runner);
         } catch (\Throwable $exception) {
-            Logger::error('admin.route.error', array(
-                'path' => $request->path(),
-                'method' => $request->method(),
-                'message' => $exception->getMessage(),
-                'file' => $exception->getFile(),
-                'line' => $exception->getLine(),
-            ));
+            return $this->handleAdminException($request, $exception);
+        }
+    }
 
-            if (strpos($request->path(), '/admin') === 0) {
-                Session::flash('errors', array('Ocorreu um erro interno ao carregar a página administrativa.'));
-                return Response::redirect('/admin/dashboard');
-            }
+    private function handleAdminException(Request $request, \Throwable $exception)
+    {
+        $context = array(
+            'path' => $request->path(),
+            'method' => $request->method(),
+            'message' => $exception->getMessage(),
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine(),
+        );
 
+        Logger::error('admin.route.error', $context);
+
+        if (strpos($request->path(), '/admin') !== 0) {
             throw $exception;
         }
+
+        Session::flash('errors', array(
+            'Ocorreu um erro ao processar a solicitação. Verifique os dados e tente novamente.',
+        ));
+
+        if ($request->method() === 'POST') {
+            $old = $request->all();
+            unset($old['_token'], $old['csrf_token']);
+            Session::flash('old_input', $old);
+
+            $referer = isset($_SERVER['HTTP_REFERER']) ? trim((string) $_SERVER['HTTP_REFERER']) : '';
+            $redirectTo = $this->sanitizeInternalRedirect($referer, '');
+
+            if ($redirectTo !== '') {
+                return Response::redirect($redirectTo);
+            }
+        }
+
+        return new Response(View::render('errors/500', array(
+            'title' => 'Erro interno',
+            'debug' => false,
+            'message' => $exception->getMessage(),
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine(),
+        )), 500);
+    }
+
+    private function sanitizeInternalRedirect($url, $fallback)
+    {
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        $parsed = parse_url($url);
+
+        if (!$parsed || empty($parsed['path'])) {
+            return $fallback;
+        }
+
+        $path = $parsed['path'];
+
+        if (strpos($path, '/admin') !== 0) {
+            return $fallback;
+        }
+
+        if (!empty($parsed['query'])) {
+            $path .= '?' . $parsed['query'];
+        }
+
+        return $path;
     }
 
     private function add($method, $path, $handler, array $middleware = array())

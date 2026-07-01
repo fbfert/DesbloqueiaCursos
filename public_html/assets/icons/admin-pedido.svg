@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-  <path d="M6 4.5h8.5L18.5 8v11a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19V6A1.5 1.5 0 0 1 6 4.5Z" stroke="#4c1d95" stroke-width="1.6" />
-  <path d="M14.5 4.5V8H18" stroke="#4c1d95" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M8 12h8M8 15.5h6" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round" />
-  <path d="M14.5 12.5 16.5 14.5 14.5 16.5" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-</svg>

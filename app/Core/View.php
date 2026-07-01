@@ -13,10 +13,17 @@ class View
         }
 
         if (trim((string) $baseDirectory, '/\\') === 'views') {
+            if (!array_key_exists('oldInput', $data)) {
+                $data['oldInput'] = Session::pullFlash('old_input', array());
+            }
+
+            if (!array_key_exists('old', $data)) {
+                $data['old'] = $data['oldInput'];
+            }
+
             $data = array_merge($data, array(
                 'csrfToken' => Csrf::token(),
                 'csrfField' => Csrf::field(),
-                'oldInput' => Session::pullFlash('old_input', array()),
             ));
         }
 

@@ -2128,10 +2128,22 @@ class PedidoService
         }
 
         $cursos = array_values(array_unique($cursos));
+        $cursoNome = !empty($cursos) ? implode(', ', $cursos) : 'Curso não informado';
+
+        $valorTotal = isset($pedido['total']) && is_numeric($pedido['total']) ? (float) $pedido['total'] : 0.0;
+        $valorPago = $this->calcularValorPagoPedido($pedido, $valorTotal);
+        $valorNaoPago = max(0.0, $valorTotal - $valorPago);
 
         return array(
             'pedido' => $pedido,
             'cursos' => $cursos,
+            'pedido_codigo' => isset($pedido['codigo']) ? (string) $pedido['codigo'] : '',
+            'curso_nome' => $cursoNome,
+            'valor_total' => $this->formatarMoedaBR($valorTotal),
+            'valor_pago' => $this->formatarMoedaBR($valorPago),
+            'valor_nao_pago' => $this->formatarMoedaBR($valorNaoPago),
+            'aluno_nome' => isset($pedido['pagador_nome']) ? (string) $pedido['pagador_nome'] : '',
+            'aluno_email' => isset($pedido['pagador_email']) ? (string) $pedido['pagador_email'] : '',
         );
     }
 
@@ -2145,6 +2157,7 @@ class PedidoService
             $this->emailService->pedidoExcluidoInatividade(
                 $notificacaoEmail['pedido'],
                 isset($notificacaoEmail['cursos']) && is_array($notificacaoEmail['cursos']) ? $notificacaoEmail['cursos'] : array(),
+                $notificacaoEmail,
                 $actorUserId,
                 $ipAddress,
                 $userAgent
@@ -2155,6 +2168,42 @@ class PedidoService
                 'message' => $exception->getMessage(),
             ));
         }
+    }
+
+    private function calcularValorPagoPedido(array $pedido, $valorTotal = 0.0)
+    {
+        $valorTotal = is_numeric($valorTotal) ? (float) $valorTotal : 0.0;
+        $valorPago = 0.0;
+
+        if (isset($pedido['payment_provider_paid_amount']) && is_numeric($pedido['payment_provider_paid_amount'])) {
+            $valorPago = (float) $pedido['payment_provider_paid_amount'];
+        }
+
+        if ($valorPago <= 0.0 && !empty($pedido['payment_provider_status'])) {
+            $statusGateway = strtolower(trim((string) $pedido['payment_provider_status']));
+            if (in_array($statusGateway, array('paid', 'pago', 'aprovado', 'approved', 'confirmed', 'success', 'succeeded', 'completed'), true)) {
+                $valorPago = isset($pedido['payment_provider_amount']) && is_numeric($pedido['payment_provider_amount'])
+                    ? (float) $pedido['payment_provider_amount']
+                    : $valorTotal;
+            }
+        }
+
+        if ($valorPago < 0.0) {
+            $valorPago = 0.0;
+        }
+
+        if ($valorPago > $valorTotal) {
+            $valorPago = $valorTotal;
+        }
+
+        return $valorPago;
+    }
+
+    private function formatarMoedaBR($valor)
+    {
+        $valor = is_numeric($valor) ? (float) $valor : 0.0;
+
+        return 'R$ ' . number_format(max(0.0, $valor), 2, ',', '.');
     }
 
     private function normalizarFiltrosExclusao(array $filters)

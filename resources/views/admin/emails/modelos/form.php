@@ -97,7 +97,7 @@ $modelName = $isEdit ? 'modelo' : 'novo modelo';
 
             <label>
                 Variáveis disponíveis
-                <textarea name="variaveis_disponiveis" rows="4" placeholder="{usuario.nome}\n{usuario.email}\n{pedido.codigo}" <?php echo $readOnlyDefault ? 'readonly' : ''; ?>><?php echo Helpers::e($variaveisTexto()); ?></textarea>
+                <textarea name="variaveis_disponiveis" rows="4" placeholder="{usuario.nome}\n{usuario.email}\n{pedido.codigo}\n{certificado_url_download}" <?php echo $readOnlyDefault ? 'readonly' : ''; ?>><?php echo Helpers::e($variaveisTexto()); ?></textarea>
                 <small class="muted">Uma variável por linha. Use as chaves exatamente como aparecem no corpo e no assunto.</small>
             </label>
 
@@ -120,7 +120,7 @@ $modelName = $isEdit ? 'modelo' : 'novo modelo';
             <?php endif; ?>
 
             <div class="status-card" style="margin-top:8px;">
-                <p class="muted" style="margin:0;">Placeholders principais: {usuario.nome}, {usuario.email}, {pedido.codigo}, {pedido.total}, {reset_url}, {observacao}, {inscricao.participante_nome}, {inscricao.curso_nome}, {inscricao.turma_nome}, {sistema.nome}</p>
+                <p class="muted" style="margin:0;">Placeholders principais: {usuario.nome}, {usuario.email}, {pedido.codigo}, {pedido.total}, {reset_url}, {observacao}, {inscricao.participante_nome}, {inscricao.curso_nome}, {inscricao.turma_nome}, {certificado_url_download}, {sistema.nome}, {{pedido_codigo}}, {{curso_nome}}, {{valor_total}}, {{valor_pago}}, {{valor_pendente}}, {{cupom_codigo}}, {{link_pedido}}, {{link_pagamento}}, {{link_descadastro_recuperacao}}, {{aluno_nome}}, {{aluno_email}}</p>
             </div>
 
             <?php if ($readOnlyDefault): ?>

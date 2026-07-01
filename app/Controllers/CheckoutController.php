@@ -62,7 +62,7 @@ class CheckoutController extends Controller
 
         if (!empty($curso['curso']['usar_turmas']) && empty($curso['curso']['turma_selecionada'])) {
             Session::flash('errors', array('turma' => 'Selecione uma turma aberta para iniciar a inscricao.'));
-            return $this->redirect('/cursos/detalhe?curso_id=' . $cursoId);
+            return $this->redirect($this->urlCursoDetalheCheckout($request, $cursoId));
         }
 
         $usuarioId = (int) Session::get('usuario_id', 0);
@@ -90,7 +90,7 @@ class CheckoutController extends Controller
         if (in_array($statusFluxo, array('matriculado', 'pendente_pagamento'), true)) {
             $errors = Session::pullFlash('errors', array());
 
-            return $this->view('checkout/inscricao', array(
+            return $this->renderCheckout($request, 'inscricao', array(
                 'title' => 'Inscricao',
                 'curso' => $curso['curso'],
                 'loggedIn' => Session::get('usuario_id') !== null,
@@ -114,7 +114,7 @@ class CheckoutController extends Controller
 
         $errors = Session::pullFlash('errors', array());
 
-        return $this->view('checkout/inscricao', array(
+        return $this->renderCheckout($request, 'inscricao', array(
             'title' => 'Inscricao',
             'curso' => $curso['curso'],
             'loggedIn' => Session::get('usuario_id') !== null,
@@ -134,7 +134,7 @@ class CheckoutController extends Controller
     {
         $pedidoId = (int) $this->pedidoIdFromRequest($request);
         if ($pedidoId <= 0) {
-            return $this->redirect('/cursos');
+            return $this->redirect($this->urlCatalogoCheckout($request));
         }
 
         if ($request->method() === 'POST') {
@@ -158,7 +158,7 @@ class CheckoutController extends Controller
             $resultadoCompraPropria = $this->concluirCheckoutCompraPropria($pedidoId, $request, $pedido['pedido']);
             if (empty($resultadoCompraPropria['ok'])) {
                 Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
-                return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+                return $this->redirect($this->urlResumo($request, $pedidoId));
             }
 
             if (!empty($resultadoCompraPropria['auto_aprovado_zero_valor'])) {
@@ -167,7 +167,7 @@ class CheckoutController extends Controller
             }
 
             Session::flash('success', 'Compra própria concluída com participante automático.');
-            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            return $this->redirect($this->urlResumo($request, $pedidoId));
         }
 
         $usuarioPrefillId = $this->resolverUsuarioPrefillIdDoPedido($pedido['pedido']);
@@ -186,7 +186,7 @@ class CheckoutController extends Controller
             $participantePrefill['telefone'] = (string) $pagadorPrefill['telefone'];
         }
 
-        return $this->view('checkout/participantes', array(
+        return $this->renderCheckout($request, 'participantes', array(
             'title' => 'Participantes',
             'pedido' => $pedido['pedido'],
             'quantidade' => $quantidade,
@@ -203,7 +203,7 @@ class CheckoutController extends Controller
     {
         $pedidoId = (int) $this->pedidoIdFromRequest($request);
         if ($pedidoId <= 0) {
-            return $this->redirect('/cursos');
+            return $this->redirect($this->urlCatalogoCheckout($request));
         }
 
         $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
@@ -226,7 +226,7 @@ class CheckoutController extends Controller
             'payment_provider_payment_url' => isset($pedido['pedido']['payment_provider_payment_url']) ? $pedido['pedido']['payment_provider_payment_url'] : null,
         ));
 
-        return $this->view('checkout/resumo', array(
+        return $this->renderCheckout($request, 'resumo', array(
             'title' => 'Resumo do pedido',
             'pedido' => $pedido['pedido'],
             'canSeePix' => !empty($pedido['can_see_pix']),
@@ -239,6 +239,8 @@ class CheckoutController extends Controller
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
             'cupomPromocional' => Session::get('cupom_promocional_codigo', ''),
+            // Apenas para a casca V2: rota oficial atual para seguir o pagamento.
+            'continuarPagamentoUrl' => $this->urlContinuarPagamentoLegado($pedidoId),
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
         ));
@@ -498,9 +500,11 @@ class CheckoutController extends Controller
         }
 
         if ((string) $situacaoInscricao['status_fluxo'] === 'pendente_pagamento') {
-            $destinoPagamento = !empty($situacaoInscricao['checkout_url'])
-                ? (string) $situacaoInscricao['checkout_url']
-                : '/checkout/resumo?pedido_id=' . (int) $situacaoInscricao['pedido_id'];
+            $destinoPagamento = $this->emModoV2($request)
+                ? $this->urlResumo($request, (int) $situacaoInscricao['pedido_id'])
+                : (!empty($situacaoInscricao['checkout_url'])
+                    ? (string) $situacaoInscricao['checkout_url']
+                    : '/checkout/resumo?pedido_id=' . (int) $situacaoInscricao['pedido_id']);
 
             Session::flash('success', 'Você possui uma inscrição pendente para este curso. Continue o pagamento para concluir sua matrícula.');
 
@@ -512,7 +516,7 @@ class CheckoutController extends Controller
             Session::flash('errors', $errors);
             $cursoIdErro = (int) $request->input('curso_evento_id', 0);
             $turmaIdErro = (int) $request->input('turma_id', 0);
-            return $this->redirect('/inscricao?curso_id=' . $cursoIdErro . ($turmaIdErro ? '&turma_id=' . $turmaIdErro : ''));
+            return $this->redirect($this->urlInscricao($request, $cursoIdErro, $turmaIdErro));
         }
 
         $cursoId = (int) $request->input('curso_evento_id', 0);
@@ -572,7 +576,7 @@ class CheckoutController extends Controller
 
         if (empty($resultado['ok'])) {
             Session::flash('errors', array('pedido' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel iniciar o checkout.'));
-            return $this->redirect('/inscricao?curso_id=' . $cursoId . ($turmaId ? '&turma_id=' . $turmaId : ''));
+            return $this->redirect($this->urlInscricao($request, $cursoId, $turmaId));
         }
 
         Session::put('checkout_pedido_id', $resultado['pedido_id']);
@@ -581,14 +585,14 @@ class CheckoutController extends Controller
             $resultadoCompraPropria = $this->concluirCheckoutCompraPropria((int) $resultado['pedido_id'], $request);
             if (empty($resultadoCompraPropria['ok'])) {
                 Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
-                return $this->redirect('/checkout/resumo?pedido_id=' . (int) $resultado['pedido_id']);
+                return $this->redirect($this->urlResumo($request, (int) $resultado['pedido_id']));
             }
 
             Session::flash('success', 'Compra própria iniciada com sucesso. O participante foi gerado automaticamente.');
-            return $this->redirect('/checkout/resumo?pedido_id=' . (int) $resultado['pedido_id']);
+            return $this->redirect($this->urlResumo($request, (int) $resultado['pedido_id']));
         }
 
-        return $this->redirect('/checkout/participantes?pedido_id=' . $resultado['pedido_id']);
+        return $this->redirect($this->urlParticipantes($request, (int) $resultado['pedido_id']));
     }
 
     private function salvarParticipantes(Request $request, $pedidoId)
@@ -601,14 +605,14 @@ class CheckoutController extends Controller
         $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
         if (empty($pedido['pedido'])) {
             Session::flash('errors', array('pedido' => 'Você nao tem permissao para alterar este pedido.'));
-            return $this->redirect('/cursos');
+            return $this->redirect($this->urlCatalogoCheckout($request));
         }
 
         if ($this->isCompraPropriaPedido(isset($pedido['pedido']['tipo_pedido']) ? $pedido['pedido']['tipo_pedido'] : '')) {
             $resultadoCompraPropria = $this->concluirCheckoutCompraPropria($pedidoId, $request, $pedido['pedido']);
             if (empty($resultadoCompraPropria['ok'])) {
                 Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
-                return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+                return $this->redirect($this->urlResumo($request, $pedidoId));
             }
 
             if (!empty($resultadoCompraPropria['auto_aprovado_zero_valor'])) {
@@ -617,7 +621,7 @@ class CheckoutController extends Controller
             }
 
             Session::flash('success', 'Compra própria concluída com participante automático.');
-            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            return $this->redirect($this->urlResumo($request, $pedidoId));
         }
 
         $participantes = $request->input('participantes', array());
@@ -628,7 +632,7 @@ class CheckoutController extends Controller
         $errors = $this->validateParticipantes($participantes);
         if (!empty($errors)) {
             Session::flash('errors', $errors);
-            return $this->redirect('/checkout/participantes?pedido_id=' . $pedidoId);
+            return $this->redirect($this->urlParticipantes($request, $pedidoId));
         }
 
         $resultado = $this->pedidoService->adicionarParticipantesAoPedido(
@@ -641,14 +645,14 @@ class CheckoutController extends Controller
 
         if (empty($resultado['ok'])) {
             Session::flash('errors', array('participantes' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar os participantes.'));
-            return $this->redirect('/checkout/participantes?pedido_id=' . $pedidoId);
+            return $this->redirect($this->urlParticipantes($request, $pedidoId));
         }
 
         $this->inscricaoService->gerarDoPedido($pedidoId, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $finalizacao = $this->pedidoService->finalizarCheckout($pedidoId, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($finalizacao['ok'])) {
             Session::flash('errors', array('pedido' => isset($finalizacao['message']) ? $finalizacao['message'] : 'Não foi possivel finalizar o pedido.'));
-            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            return $this->redirect($this->urlResumo($request, $pedidoId));
         }
 
         if (!empty($finalizacao['auto_aprovado_zero_valor'])) {
@@ -661,7 +665,7 @@ class CheckoutController extends Controller
         } else {
             Session::flash('success', 'Participantes salvos. Revise o pedido e siga para o comprovante PIX.');
         }
-        return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+        return $this->redirect($this->urlResumo($request, $pedidoId));
     }
 
     private function enviarComprovante(Request $request, $pedidoId)
@@ -1016,6 +1020,114 @@ class CheckoutController extends Controller
         }
 
         return $acoesVisiveis;
+    }
+
+    // ------------------------------------------------------------------
+    // Variante de APRESENTAÇÃO V2 (Fase 2.12A) — pré-pagamento.
+    //
+    // É apenas uma casca visual V2 sobre as MESMAS ações deste controller.
+    // A "origem" V2 é detectada estritamente pelo CAMINHO interno da rota
+    // (`/v2/checkout...`), nunca por parâmetro do usuário/URL/redirect/next/
+    // return. Quando ausente (rotas legadas), o comportamento é idêntico ao
+    // atual: as views e os destinos legados ficam exatamente como estão.
+    // Nenhuma regra de pedido/preço/desconto/participante é alterada aqui.
+    // ------------------------------------------------------------------
+
+    /** Entrada V2: redireciona para a inscrição V2 preservando apenas IDs. */
+    public function entradaCheckoutV2(Request $request)
+    {
+        $cursoId = (int) $request->query('curso_id', 0);
+        $turmaId = (int) $request->query('turma_id', 0);
+        return $this->redirect($this->urlInscricao($request, $cursoId, $turmaId));
+    }
+
+    private function emModoV2(Request $request)
+    {
+        return strpos((string) $request->path(), '/v2/checkout') === 0;
+    }
+
+    /** Renderiza a view legada OU a casca V2 (sem layout legado), conforme o modo. */
+    private function renderCheckout(Request $request, $nome, array $data)
+    {
+        if ($this->emModoV2($request)) {
+            $data = array_merge($this->dadosLayoutCheckoutV2(), $data);
+            return new Response(View::render('v2/checkout/' . $nome, $data, false));
+        }
+
+        return $this->view('checkout/' . $nome, $data);
+    }
+
+    private function urlInscricao(Request $request, $cursoId, $turmaId = 0)
+    {
+        $base = $this->emModoV2($request) ? '/v2/checkout/inscricao' : '/inscricao';
+        return $base . '?curso_id=' . (int) $cursoId . ((int) $turmaId > 0 ? '&turma_id=' . (int) $turmaId : '');
+    }
+
+    private function urlParticipantes(Request $request, $pedidoId)
+    {
+        $base = $this->emModoV2($request) ? '/v2/checkout/participantes' : '/checkout/participantes';
+        return $base . '?pedido_id=' . (int) $pedidoId;
+    }
+
+    private function urlResumo(Request $request, $pedidoId)
+    {
+        $base = $this->emModoV2($request) ? '/v2/checkout/resumo' : '/checkout/resumo';
+        return $base . '?pedido_id=' . (int) $pedidoId;
+    }
+
+    private function urlCatalogoCheckout(Request $request)
+    {
+        return $this->emModoV2($request) ? '/v2/catalogo/' : '/cursos';
+    }
+
+    private function urlCursoDetalheCheckout(Request $request, $cursoId)
+    {
+        return $this->emModoV2($request)
+            ? '/v2/curso/?curso_id=' . (int) $cursoId
+            : '/cursos/detalhe?curso_id=' . (int) $cursoId;
+    }
+
+    /** Rota oficial atual para continuar o checkout/pagamento do rascunho. */
+    private function urlContinuarPagamentoLegado($pedidoId)
+    {
+        return '/checkout/resumo?pedido_id=' . (int) $pedidoId;
+    }
+
+    private function dadosLayoutCheckoutV2()
+    {
+        $usuarioId = (int) Session::get('usuario_id', 0);
+        $usuarioNome = trim((string) Session::get('usuario_nome', ''));
+        $sessionPerfis = Session::get('usuario_perfis', array());
+        $hasAdmin = (bool) Session::get('usuario_admin') || (bool) Session::get('is_admin') || in_array('admin', $sessionPerfis, true);
+        $hasProf = (bool) Session::get('usuario_professor') || (bool) Session::get('is_professor') || in_array('professor', $sessionPerfis, true);
+
+        $areaHref = '/v2/aluno';
+        if ($hasAdmin) {
+            $areaHref = '/admin';
+        } elseif ($hasProf) {
+            $areaHref = '/professor/dashboard';
+        }
+
+        $primeiro = 'aluno';
+        if ($usuarioNome !== '') {
+            $partes = preg_split('/\s+/', $usuarioNome);
+            $primeiro = ($partes && !empty($partes[0])) ? (string) $partes[0] : $usuarioNome;
+        }
+
+        return array(
+            'loggedIn' => $usuarioId > 0,
+            'usuarioNome' => $usuarioNome,
+            'usuarioPrimeiroNome' => $usuarioId > 0 ? $primeiro : '',
+            'areaHref' => $areaHref,
+            'loginHref' => '/v2/login',
+            'registerHref' => '/v2/cadastro',
+            'catalogoHref' => '/v2/catalogo/',
+            'categoriasHref' => '/categorias',
+            'certificadosHref' => '/v2/certificados/validar',
+            'sobreHref' => '/sobre',
+            'contatoHref' => '/contato',
+            'homeHref' => '/v2/',
+        );
     }
 }
 

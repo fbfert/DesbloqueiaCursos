@@ -18,27 +18,130 @@ class CursoEvento
                 )';
     }
 
-    public function allPublic()
+    public function allPublic(array $filters = array())
     {
-        $stmt = Database::connection()->query(
-            'SELECT ce.*,
-                    c.nome AS categoria_nome,
-                    COALESCE(t_total.total_turmas, 0) AS total_turmas
-             FROM cursos_eventos ce
-             LEFT JOIN categorias c ON c.id = ce.categoria_id
-             LEFT JOIN (
-                SELECT curso_evento_id, COUNT(*) AS total_turmas
-                FROM turmas
-                WHERE deleted_at IS NULL
-                GROUP BY curso_evento_id
-             ) t_total ON t_total.curso_evento_id = ce.id
-             WHERE ce.deleted_at IS NULL
-               AND ce.status = "ativo"
-               AND ' . $this->existsTurmaAbertaSql() . '
-             ORDER BY ce.destaque DESC, ce.ordem ASC, ce.nome ASC'
-        );
+        $sql = 'SELECT ce.*,
+                       c.nome AS categoria_nome,
+                       COALESCE(t_total.total_turmas, 0) AS total_turmas
+                FROM cursos_eventos ce
+                LEFT JOIN categorias c ON c.id = ce.categoria_id
+                LEFT JOIN (
+                    SELECT curso_evento_id, COUNT(*) AS total_turmas
+                    FROM turmas
+                    WHERE deleted_at IS NULL
+                    GROUP BY curso_evento_id
+                ) t_total ON t_total.curso_evento_id = ce.id
+                WHERE ce.deleted_at IS NULL
+                  AND ce.status = "ativo"
+                  AND ' . $this->existsTurmaAbertaSql();
+        $params = array();
+
+        if (!empty($filters['categoria_id'])) {
+            $sql .= ' AND ce.categoria_id = :categoria_id';
+            $params['categoria_id'] = (int) $filters['categoria_id'];
+        }
+
+        if (array_key_exists('destaque', $filters) && $filters['destaque'] !== '') {
+            $sql .= ' AND ce.destaque = :destaque';
+            $params['destaque'] = (int) $filters['destaque'];
+        }
+
+        if (!empty($filters['busca'])) {
+            $sql .= ' AND (
+                ce.nome LIKE :busca
+                OR ce.descricao_curta LIKE :busca
+                OR ce.descricao_completa LIKE :busca
+                OR c.nome LIKE :busca
+            )';
+            $params['busca'] = '%' . $this->normalizarBuscaPublica($filters['busca']) . '%';
+        }
+
+        $sql .= ' ORDER BY ce.destaque DESC, ce.ordem ASC, ce.nome ASC';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function allPublicByCategoriaId($categoriaId)
+    {
+        return $this->allPublic(array('categoria_id' => (int) $categoriaId));
+    }
+
+    private function normalizarBuscaPublica($busca)
+    {
+        $busca = (string) $busca;
+        $busca = trim(strip_tags($busca));
+
+        return $this->limitarTextoSeguro($busca, 80);
+    }
+
+    private function normalizarBuscaAdmin($busca)
+    {
+        $busca = (string) $busca;
+        $busca = trim(strip_tags($busca));
+
+        return $this->limitarTextoSeguro($busca, 120);
+    }
+
+    private function limitarTextoSeguro($texto, $limite)
+    {
+        $texto = (string) $texto;
+        $limite = (int) $limite;
+
+        if ($limite <= 0) {
+            return '';
+        }
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($texto, 0, $limite);
+        }
+
+        return substr($texto, 0, $limite);
+    }
+
+    private function montarFiltrosAdminSql(array $filters, array &$params)
+    {
+        $sql = ' WHERE ce.deleted_at IS NULL';
+
+        $busca = isset($filters['busca']) ? $this->normalizarBuscaAdmin($filters['busca']) : '';
+        if ($busca !== '') {
+            $sql .= ' AND (
+                ce.nome LIKE :busca
+                OR ce.slug LIKE :busca
+                OR CAST(ce.id AS CHAR) = :busca_id
+                OR c.nome LIKE :busca
+            )';
+            $params['busca'] = '%' . $busca . '%';
+            $params['busca_id'] = ctype_digit($busca) ? (int) $busca : -1;
+        }
+
+        $categoriaId = isset($filters['categoria_id']) ? (int) $filters['categoria_id'] : 0;
+        if ($categoriaId > 0) {
+            $sql .= ' AND ce.categoria_id = :categoria_id';
+            $params['categoria_id'] = $categoriaId;
+        }
+
+        $status = isset($filters['status']) ? trim((string) $filters['status']) : '';
+        if ($status !== '') {
+            $sql .= ' AND ce.status = :status';
+            $params['status'] = $status;
+        }
+
+        $tipo = isset($filters['tipo']) ? trim((string) $filters['tipo']) : '';
+        if ($tipo !== '') {
+            $sql .= ' AND ce.tipo = :tipo';
+            $params['tipo'] = $tipo;
+        }
+
+        $modalidade = isset($filters['modalidade']) ? trim((string) $filters['modalidade']) : '';
+        if ($modalidade !== '') {
+            $sql .= ' AND ce.modalidade = :modalidade';
+            $params['modalidade'] = $modalidade;
+        }
+
+        return $sql;
     }
 
     public function allWithCategoryAndCounts()
@@ -67,6 +170,89 @@ class CursoEvento
         );
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function paginateAdmin(array $filters = array(), $page = 1, $perPage = 20)
+    {
+        $page = (int) $page;
+        if ($page < 1) {
+            $page = 1;
+        }
+
+        $perPage = (int) $perPage;
+        if ($perPage < 1) {
+            $perPage = 20;
+        }
+        if ($perPage > 100) {
+            $perPage = 100;
+        }
+
+        $params = array();
+        $whereSql = $this->montarFiltrosAdminSql($filters, $params);
+
+        $countSql = 'SELECT COUNT(*) AS total
+                     FROM cursos_eventos ce
+                     LEFT JOIN categorias c ON c.id = ce.categoria_id' . $whereSql;
+        $countStmt = Database::connection()->prepare($countSql);
+        $countStmt->execute($params);
+        $countRow = $countStmt->fetch(PDO::FETCH_ASSOC);
+        $total = (int) ($countRow['total'] ?? 0);
+
+        $statusTotalsSql = 'SELECT ce.status, COUNT(*) AS total
+                            FROM cursos_eventos ce
+                            LEFT JOIN categorias c ON c.id = ce.categoria_id' . $whereSql . '
+                            GROUP BY ce.status';
+        $statusStmt = Database::connection()->prepare($statusTotalsSql);
+        $statusStmt->execute($params);
+        $statusTotalsRows = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
+        $statusTotals = array();
+        foreach ($statusTotalsRows as $row) {
+            $statusKey = isset($row['status']) ? (string) $row['status'] : '';
+            if ($statusKey !== '') {
+                $statusTotals[$statusKey] = (int) ($row['total'] ?? 0);
+            }
+        }
+
+        $offset = ($page - 1) * $perPage;
+        $dataSql = 'SELECT ce.*,
+                           c.nome AS categoria_nome,
+                           COALESCE(t_total.total_turmas, 0) AS total_turmas,
+                           COALESCE(p_total.total_pessoas_vinculadas, 0) AS total_pessoas_vinculadas
+                    FROM cursos_eventos ce
+                    LEFT JOIN categorias c ON c.id = ce.categoria_id
+                    LEFT JOIN (
+                        SELECT curso_evento_id, COUNT(*) AS total_turmas
+                        FROM turmas
+                        WHERE deleted_at IS NULL
+                        GROUP BY curso_evento_id
+                    ) t_total ON t_total.curso_evento_id = ce.id
+                    LEFT JOIN (
+                        SELECT curso_evento_id, COUNT(*) AS total_pessoas_vinculadas
+                        FROM curso_pessoas_vinculadas
+                        WHERE deleted_at IS NULL
+                        GROUP BY curso_evento_id
+                    ) p_total ON p_total.curso_evento_id = ce.id' . $whereSql . '
+                    ORDER BY ce.ordem ASC, ce.nome ASC
+                    LIMIT :limit OFFSET :offset';
+
+        $dataStmt = Database::connection()->prepare($dataSql);
+        foreach ($params as $key => $value) {
+            $dataStmt->bindValue(':' . $key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $dataStmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $dataStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $dataStmt->execute();
+
+        return array(
+            'items' => $dataStmt->fetchAll(PDO::FETCH_ASSOC),
+            'pagination' => array(
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $perPage,
+                'pages' => $perPage > 0 ? (int) ceil($total / $perPage) : 1,
+            ),
+            'status_totals' => $statusTotals,
+        );
     }
 
     public function findPublicById($id)
@@ -274,6 +460,7 @@ class CursoEvento
             'carga_horaria' => isset($data['carga_horaria']) ? $data['carga_horaria'] : null,
             'valor' => isset($data['valor']) ? $data['valor'] : 0,
             'valor_promocional' => array_key_exists('valor_promocional', $data) ? $data['valor_promocional'] : null,
+            'usar_turmas' => array_key_exists('usar_turmas', $data) ? (int) (bool) $data['usar_turmas'] : 1,
             'objetivo_geral' => array_key_exists('objetivo_geral', $data) ? $data['objetivo_geral'] : null,
             'objetivos_especificos' => array_key_exists('objetivos_especificos', $data) ? $data['objetivos_especificos'] : null,
             'publico_alvo' => array_key_exists('publico_alvo', $data) ? $data['publico_alvo'] : null,
@@ -310,6 +497,7 @@ class CursoEvento
                  carga_horaria = :carga_horaria,
                  valor = :valor,
                  valor_promocional = :valor_promocional,
+                 usar_turmas = :usar_turmas,
                  objetivo_geral = :objetivo_geral,
                  objetivos_especificos = :objetivos_especificos,
                  publico_alvo = :publico_alvo,
@@ -342,6 +530,7 @@ class CursoEvento
             'carga_horaria' => isset($data['carga_horaria']) ? $data['carga_horaria'] : null,
             'valor' => isset($data['valor']) ? $data['valor'] : 0,
             'valor_promocional' => array_key_exists('valor_promocional', $data) ? $data['valor_promocional'] : null,
+            'usar_turmas' => array_key_exists('usar_turmas', $data) ? (int) (bool) $data['usar_turmas'] : 1,
             'objetivo_geral' => array_key_exists('objetivo_geral', $data) ? $data['objetivo_geral'] : null,
             'objetivos_especificos' => array_key_exists('objetivos_especificos', $data) ? $data['objetivos_especificos'] : null,
             'publico_alvo' => array_key_exists('publico_alvo', $data) ? $data['publico_alvo'] : null,

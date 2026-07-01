@@ -21,7 +21,7 @@ class EmailModeloService
 
     public function listar()
     {
-        $defaults = $this->defaults();
+        $defaults = $this->allDefaults();
 
         try {
             $modelos = array();
@@ -379,7 +379,7 @@ class EmailModeloService
             return false;
         }
 
-        $defaults = $this->defaults();
+        $defaults = $this->allDefaults();
         return isset($defaults[$evento]);
     }
 
@@ -392,8 +392,8 @@ class EmailModeloService
 
         $flat = $this->flattenContext($this->buildContext($context));
 
-        return preg_replace_callback('/\{([a-zA-Z0-9_.]+)\}/', function ($matches) use ($flat) {
-            $key = $matches[1];
+        return preg_replace_callback('/\{\{([a-zA-Z0-9_.]+)\}\}|\{([a-zA-Z0-9_.]+)\}/', function ($matches) use ($flat) {
+            $key = !empty($matches[1]) ? $matches[1] : $matches[2];
             if (!array_key_exists($key, $flat)) {
                 return '';
             }
@@ -423,8 +423,18 @@ class EmailModeloService
         }
 
         $data['sistema'] = $sistema;
+        $data['usuario'] = $this->resolverUsuarioContexto($data);
+        $certificadoUrlDownload = $this->resolverCertificadoUrlDownload($data);
+        if ($certificadoUrlDownload !== '') {
+            $data['certificado_url_download'] = $certificadoUrlDownload;
+        }
 
         return $data;
+    }
+
+    private function allDefaults()
+    {
+        return array_merge($this->defaults(), $this->pedidoRecuperacaoDefaults());
     }
 
     private function defaults()
@@ -579,6 +589,37 @@ HTML,
                 'ativo' => 1,
                 'editavel' => 1,
             ),
+            'email.pedido_excluido_inatividade' => array(
+                'evento' => 'email.pedido_excluido_inatividade',
+                'template' => 'pedido_excluido_inatividade',
+                'nome' => 'Pedido excluído por inatividade',
+                'assunto' => 'Pedido excluído por inatividade',
+                'corpo_html' => <<<'HTML'
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido excluído por inatividade</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <div style="max-width:640px;margin:0 auto;padding:24px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;">
+            <h1 style="margin:0 0 16px;">Pedido excluído por inatividade</h1>
+            <p>O pedido <strong>{{pedido_codigo}}</strong> foi excluído por inatividade.</p>
+            <p>Curso: {{curso_nome}}<br>
+            Valor não pago: {{valor_nao_pago}}</p>
+            <p>Se você acredita que isso ocorreu por engano, entre em contato com a equipe de atendimento.</p>
+        </div>
+    </div>
+</body>
+</html>
+HTML,
+                'gatilho_descricao' => 'Enviado quando um pedido é excluído por inatividade na rotina administrativa de limpeza.',
+                'variaveis_json' => json_encode(array('{{pedido_codigo}}', '{{curso_nome}}', '{{valor_nao_pago}}', '{{valor_total}}', '{{valor_pago}}', '{{aluno_nome}}', '{{aluno_email}}'), JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
             'email.presente_concedido' => array(
                 'evento' => 'email.presente_concedido',
                 'template' => 'presente_concedido',
@@ -719,13 +760,87 @@ HTML,
             <h1 style="margin:0 0 16px;">Certificado disponível</h1>
             <p>Seu certificado de {inscricao.curso_nome} está disponível.</p>
             <p>Acesse sua área do aluno para validar e baixar o documento.</p>
-        </div>
+                </div>
     </div>
 </body>
 </html>
 HTML,
                 'gatilho_descricao' => 'Enviado quando a inscrição muda para certificado_emitido.',
-                'variaveis_json' => json_encode(array('{inscricao.curso_nome}'), JSON_UNESCAPED_UNICODE),
+                'variaveis_json' => json_encode(array('{usuario.nome}', '{inscricao.curso_nome}', '{certificado_url_download}'), JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
+        );
+    }
+
+    private function pedidoRecuperacaoDefaults()
+    {
+        $placeholders = array('{{aluno_nome}}', '{{aluno_email}}', '{{pedido_codigo}}', '{{curso_nome}}', '{{valor_total}}', '{{valor_pago}}', '{{valor_pendente}}', '{{link_pagamento}}', '{{link_pedido}}', '{{data_pedido}}', '{{data_expiracao}}', '{{cupom_codigo}}', '{{whatsapp_atendimento}}', '{{link_descadastro_recuperacao}}');
+
+        return array(
+            'pedido_recuperacao_primeiro_lembrete' => array(
+                'evento' => 'pedido_recuperacao_primeiro_lembrete',
+                'template' => 'pedido_recuperacao_primeiro_lembrete',
+                'nome' => 'Recuperação de pedido - 1º lembrete',
+                'assunto' => 'Norminha aqui: sua inscrição ficou quase pronta',
+                'corpo_html' => '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Recuperação de pedido</title></head><body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;"><div style="max-width:640px;margin:0 auto;padding:24px;"><div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;"><p style="margin:0 0 16px;"><a href="{{link_descadastro_recuperacao}}">Não quero mais receber este tipo de lembrete</a></p><p>Olá, {{aluno_nome}}!</p><p>Aqui é a Norminha, do Desbloqueia Cursos. Vi que você começou o pedido {{pedido_codigo}}, mas ele ainda não foi concluído.</p><p>Curso: {{curso_nome}}<br>Valor pendente: {{valor_pendente}}</p><p>Para continuar, acesse o resumo do seu pedido:<br>{{link_pedido}}</p><p>Se tiver qualquer dificuldade, fale com nossa equipe de atendimento.</p></div></div></body></html>',
+                'gatilho_descricao' => 'Modelo de recuperação enviado manualmente no primeiro lembrete.',
+                'variaveis_json' => json_encode($placeholders, JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
+            'pedido_recuperacao_segundo_lembrete' => array(
+                'evento' => 'pedido_recuperacao_segundo_lembrete',
+                'template' => 'pedido_recuperacao_segundo_lembrete',
+                'nome' => 'Recuperação de pedido - 2º lembrete',
+                'assunto' => 'Seu pedido ainda está esperando por você',
+                'corpo_html' => '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Recuperação de pedido</title></head><body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;"><div style="max-width:640px;margin:0 auto;padding:24px;"><div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;"><p style="margin:0 0 16px;"><a href="{{link_descadastro_recuperacao}}">Não quero mais receber este tipo de lembrete</a></p><p>Olá, {{aluno_nome}}!</p><p>Passando rapidinho para lembrar que o pedido {{pedido_codigo}} ainda está em aberto.</p><p>Curso: {{curso_nome}}<br>Valor pendente: {{valor_pendente}}</p><p>Você pode continuar pelo resumo do pedido:<br>{{link_pedido}}</p><p>Se precisar de ajuda, nossa equipe está por perto.</p></div></div></body></html>',
+                'gatilho_descricao' => 'Segundo lembrete da recuperação de pedido.',
+                'variaveis_json' => json_encode($placeholders, JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
+            'pedido_recuperacao_terceiro_lembrete' => array(
+                'evento' => 'pedido_recuperacao_terceiro_lembrete',
+                'template' => 'pedido_recuperacao_terceiro_lembrete',
+                'nome' => 'Recuperação de pedido - 3º lembrete',
+                'assunto' => 'Norminha passando para te lembrar do seu curso',
+                'corpo_html' => '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Recuperação de pedido</title></head><body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;"><div style="max-width:640px;margin:0 auto;padding:24px;"><div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;"><p style="margin:0 0 16px;"><a href="{{link_descadastro_recuperacao}}">Não quero mais receber este tipo de lembrete</a></p><p>Olá, {{aluno_nome}}!</p><p>Seu pedido {{pedido_codigo}} ainda não foi concluído, e eu não queria que você perdesse a chance de continuar seus estudos.</p><p>Curso: {{curso_nome}}<br>Valor pendente: {{valor_pendente}}</p><p>Acesse o resumo do pedido:<br>{{link_pedido}}</p><p>Qualquer dúvida, fale com a equipe do Desbloqueia Cursos.</p></div></div></body></html>',
+                'gatilho_descricao' => 'Terceiro lembrete da recuperação de pedido.',
+                'variaveis_json' => json_encode($placeholders, JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
+            'pedido_recuperacao_ultimo_lembrete' => array(
+                'evento' => 'pedido_recuperacao_ultimo_lembrete',
+                'template' => 'pedido_recuperacao_ultimo_lembrete',
+                'nome' => 'Recuperação de pedido - último lembrete',
+                'assunto' => 'Último lembrete sobre seu pedido no Desbloqueia Cursos',
+                'corpo_html' => '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Recuperação de pedido</title></head><body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;"><div style="max-width:640px;margin:0 auto;padding:24px;"><div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;"><p style="margin:0 0 16px;"><a href="{{link_descadastro_recuperacao}}">Não quero mais receber este tipo de lembrete</a></p><p>Olá, {{aluno_nome}}!</p><p>Este é um último lembrete da Norminha sobre o pedido {{pedido_codigo}}, que ainda está em aberto.</p><p>Curso: {{curso_nome}}<br>Valor pendente: {{valor_pendente}}</p><p>Para continuar, acesse:<br>{{link_pedido}}</p><p>Se você não quiser seguir com este pedido, não precisa fazer nada.</p></div></div></body></html>',
+                'gatilho_descricao' => 'Último lembrete da recuperação de pedido.',
+                'variaveis_json' => json_encode($placeholders, JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
+            'pedido_recuperacao_quase_expirando' => array(
+                'evento' => 'pedido_recuperacao_quase_expirando',
+                'template' => 'pedido_recuperacao_quase_expirando',
+                'nome' => 'Recuperação de pedido - quase expirando',
+                'assunto' => 'Seu pedido pode expirar em breve',
+                'corpo_html' => '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Recuperação de pedido</title></head><body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;"><div style="max-width:640px;margin:0 auto;padding:24px;"><div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;"><p style="margin:0 0 16px;"><a href="{{link_descadastro_recuperacao}}">Não quero mais receber este tipo de lembrete</a></p><p>Olá, {{aluno_nome}}!</p><p>A Norminha passou para avisar que seu pedido {{pedido_codigo}} ainda está em aberto e pode expirar em breve.</p><p>Curso: {{curso_nome}}<br>Valor pendente: {{valor_pendente}}</p><p>Acesse o resumo do pedido:<br>{{link_pedido}}</p><p>Se precisar de ajuda, entre em contato com nossa equipe.</p></div></div></body></html>',
+                'gatilho_descricao' => 'Lembrete para pedidos que estão próximos do prazo final.',
+                'variaveis_json' => json_encode($placeholders, JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
+            'pedido_recuperacao_com_cupom' => array(
+                'evento' => 'pedido_recuperacao_com_cupom',
+                'template' => 'pedido_recuperacao_com_cupom',
+                'nome' => 'Recuperação de pedido - com cupom',
+                'assunto' => 'A Norminha trouxe uma ajudinha para você concluir seu curso',
+                'corpo_html' => '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Recuperação de pedido</title></head><body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;"><div style="max-width:640px;margin:0 auto;padding:24px;"><div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;"><p style="margin:0 0 16px;"><a href="{{link_descadastro_recuperacao}}">Não quero mais receber este tipo de lembrete</a></p><p>Olá, {{aluno_nome}}!</p><p>Vi que seu pedido {{pedido_codigo}} ainda está em aberto e trouxe uma ajudinha para você continuar.</p><p>Curso: {{curso_nome}}<br>Valor pendente: {{valor_pendente}}<br>Cupom: {{cupom_codigo}}</p><p>Acesse o resumo do pedido:<br>{{link_pedido}}</p><p>Use o cupom informado, se ele ainda estiver válido, e finalize sua inscrição.</p></div></div></body></html>',
+                'gatilho_descricao' => 'Modelo de recuperação com cupom informado manualmente.',
+                'variaveis_json' => json_encode($placeholders, JSON_UNESCAPED_UNICODE),
                 'ativo' => 1,
                 'editavel' => 1,
             ),
@@ -734,7 +849,7 @@ HTML,
 
     private function defaultDefinition($evento)
     {
-        $defaults = $this->defaults();
+        $defaults = $this->allDefaults();
         return isset($defaults[$evento]) ? $defaults[$evento] : null;
     }
 
@@ -767,6 +882,12 @@ HTML,
     private function normalizeModel(array $modelo)
     {
         $variaveis = $this->decodeVariables(isset($modelo['variaveis_json']) ? $modelo['variaveis_json'] : null);
+        if (isset($modelo['evento']) && (string) $modelo['evento'] === 'email.certificado_disponivel' && !in_array('{certificado_url_download}', $variaveis, true)) {
+            $variaveis[] = '{certificado_url_download}';
+        }
+        if (isset($modelo['evento']) && (string) $modelo['evento'] === 'email.certificado_disponivel' && !in_array('{usuario.nome}', $variaveis, true)) {
+            $variaveis[] = '{usuario.nome}';
+        }
         $modelo['variaveis_json'] = json_encode($variaveis, JSON_UNESCAPED_UNICODE);
         $modelo['variaveis_disponiveis'] = implode(PHP_EOL, $variaveis);
         $modelo['ativo'] = !empty($modelo['ativo']) ? 1 : 0;
@@ -798,11 +919,118 @@ HTML,
         return $modelo;
     }
 
+    private function resolverUsuarioContexto(array $data)
+    {
+        $usuario = isset($data['usuario']) && is_array($data['usuario']) ? $data['usuario'] : array();
+
+        $nome = isset($usuario['nome']) ? trim((string) $usuario['nome']) : '';
+        if ($nome === '') {
+            $candidatosNome = array(
+                isset($data['usuario_nome']) ? $data['usuario_nome'] : null,
+                isset($data['aluno_nome']) ? $data['aluno_nome'] : null,
+                isset($data['participante_nome']) ? $data['participante_nome'] : null,
+                isset($data['pagador_nome']) ? $data['pagador_nome'] : null,
+                isset($data['inscricao']['aluno_nome']) ? $data['inscricao']['aluno_nome'] : null,
+                isset($data['inscricao']['participante_nome']) ? $data['inscricao']['participante_nome'] : null,
+                isset($data['inscricao']['pagador_nome']) ? $data['inscricao']['pagador_nome'] : null,
+                isset($data['certificado']['nome_participante']) ? $data['certificado']['nome_participante'] : null,
+            );
+
+            foreach ($candidatosNome as $candidato) {
+                $candidato = trim((string) $candidato);
+                if ($candidato !== '') {
+                    $nome = $candidato;
+                    break;
+                }
+            }
+
+            if ($nome === '') {
+                $nome = 'Aluno(a)';
+            }
+        }
+
+        $email = isset($usuario['email']) ? trim((string) $usuario['email']) : '';
+        if ($email === '') {
+            $candidatosEmail = array(
+                isset($data['usuario_email']) ? $data['usuario_email'] : null,
+                isset($data['aluno_email']) ? $data['aluno_email'] : null,
+                isset($data['participante_email']) ? $data['participante_email'] : null,
+                isset($data['pagador_email']) ? $data['pagador_email'] : null,
+                isset($data['inscricao']['aluno_email']) ? $data['inscricao']['aluno_email'] : null,
+                isset($data['inscricao']['pagador_email']) ? $data['inscricao']['pagador_email'] : null,
+            );
+
+            foreach ($candidatosEmail as $candidato) {
+                $candidato = trim((string) $candidato);
+                if ($candidato !== '' && filter_var($candidato, FILTER_VALIDATE_EMAIL) !== false) {
+                    $email = strtolower($candidato);
+                    break;
+                }
+            }
+        } elseif (filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
+            $email = strtolower($email);
+        }
+
+        if ($email === '' && !empty($data['sistema']['email_suporte'])) {
+            $email = trim((string) $data['sistema']['email_suporte']);
+        }
+
+        $cpf = isset($usuario['cpf']) ? trim((string) $usuario['cpf']) : '';
+        if ($cpf === '') {
+            $candidatosCpf = array(
+                isset($data['usuario_cpf']) ? $data['usuario_cpf'] : null,
+                isset($data['aluno_cpf']) ? $data['aluno_cpf'] : null,
+                isset($data['participante_cpf']) ? $data['participante_cpf'] : null,
+                isset($data['inscricao']['aluno_cpf']) ? $data['inscricao']['aluno_cpf'] : null,
+                isset($data['inscricao']['participante_cpf']) ? $data['inscricao']['participante_cpf'] : null,
+            );
+
+            foreach ($candidatosCpf as $candidato) {
+                $candidato = trim((string) $candidato);
+                if ($candidato !== '') {
+                    $cpf = $candidato;
+                    break;
+                }
+            }
+        }
+
+        $usuario['nome'] = $nome;
+        $usuario['email'] = $email;
+        $usuario['cpf'] = $cpf;
+
+        return $usuario;
+    }
+
     private function nomeDaCopia($valor)
     {
         $valor = trim((string) $valor);
         $valor = preg_replace('/^c[oó]pia de\s+/iu', '', $valor);
         return 'Cópia de ' . $valor;
+    }
+
+    private function resolverCertificadoUrlDownload(array $data)
+    {
+        $candidatos = array(
+            isset($data['certificado_url_download']) ? trim((string) $data['certificado_url_download']) : '',
+            isset($data['certificado_pdf_url']) ? trim((string) $data['certificado_pdf_url']) : '',
+        );
+
+        if (isset($data['certificado']) && is_array($data['certificado']) && !empty($data['certificado']['codigo'])) {
+            $candidatos[] = Helpers::url('certificados/pdf?codigo=' . urlencode((string) $data['certificado']['codigo']));
+        }
+
+        if (!empty($data['certificado_codigo'])) {
+            $candidatos[] = Helpers::url('certificados/pdf?codigo=' . urlencode((string) $data['certificado_codigo']));
+        }
+
+        foreach ($candidatos as $candidato) {
+            $candidato = trim((string) $candidato);
+            if ($candidato !== '') {
+                return $candidato;
+            }
+        }
+
+        return '';
     }
 
     private function suffixUnique($valor, $field)
@@ -907,7 +1135,7 @@ HTML,
             return '';
         }
 
-        if (is_numeric($value) && preg_match('/(total|valor|preco|desconto|acrescimo|subtotal)$/i', (string) $key)) {
+        if (is_numeric($value) && preg_match('/(total|valor|preco|desconto|acrescimo|subtotal|pago|pendente|saldo|nao_pago)$/i', (string) $key)) {
             return htmlspecialchars(number_format((float) $value, 2, ',', '.'), ENT_QUOTES, 'UTF-8');
         }
 

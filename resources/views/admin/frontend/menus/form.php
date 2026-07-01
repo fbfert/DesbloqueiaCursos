@@ -112,7 +112,7 @@ if (empty($regrasExibicao)) {
                 </div>
                 <button type="button" class="button-link" id="frontend-menu-adicionar-regra">Adicionar regra</button>
             </section>
-            <?php $cancelUrl = '/admin/frontend/menus'; ?>
+            <?php $cancel_url = '/admin/frontend/menus'; ?>
             <?php $showSaveAsCopy = !empty($menu['id']); ?>
             <?php require BASE_PATH . '/resources/views/admin/partials/form-actions.php'; ?>
         </form>

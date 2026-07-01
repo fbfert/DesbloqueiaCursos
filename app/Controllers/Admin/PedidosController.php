@@ -10,16 +10,19 @@ use App\Core\View;
 use App\Core\Logger;
 use App\Services\ComprovantePixService;
 use App\Services\PedidoService;
+use App\Services\PedidoRecuperacaoService;
 
 class PedidosController extends Controller
 {
     private $pedidoService;
     private $comprovanteService;
+    private $pedidoRecuperacaoService;
 
     public function __construct()
     {
         $this->pedidoService = new PedidoService();
         $this->comprovanteService = new ComprovantePixService();
+        $this->pedidoRecuperacaoService = new PedidoRecuperacaoService();
     }
 
     public function index(Request $request)
@@ -36,19 +39,25 @@ class PedidosController extends Controller
         );
         $page = (int) $request->query('page', 1);
 
+        $recuperacaoAtiva = $filters['status'] === 'pedido_incompleto';
+        $lista = $recuperacaoAtiva
+            ? $this->pedidoRecuperacaoService->listarRecuperaveis($filters, $page, $filters['per_page'])
+            : $this->pedidoService->listarBackoffice(
+                Session::get('usuario_id'),
+                $filters,
+                $page,
+                $filters['per_page']
+            );
+
         return $this->view('admin/pedidos/index', array_merge(
             array(
                 'title' => 'Pedidos',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
                 'filters' => $filters,
+                'recuperacao_ativa' => $recuperacaoAtiva,
             ),
-            $this->pedidoService->listarBackoffice(
-                Session::get('usuario_id'),
-                $filters,
-                $page,
-                $filters['per_page']
-            )
+            $lista
         ));
     }
 
@@ -413,6 +422,141 @@ class PedidosController extends Controller
 
         Session::flash('success', 'Reenvio de comprovante solicitado.');
         return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId);
+    }
+
+    public function recuperacao(Request $request)
+    {
+        $filters = array(
+            'q' => trim((string) $request->query('q', '')),
+            'status' => trim((string) $request->query('status', 'pedido_incompleto')),
+            'curso' => trim((string) $request->query('curso', '')),
+            'de' => trim((string) $request->query('de', '')),
+            'ate' => trim((string) $request->query('ate', '')),
+            'modelo_chave' => trim((string) $request->query('modelo_chave', 'pedido_recuperacao_primeiro_lembrete')),
+            'sort_by' => trim((string) $request->query('sort_by', 'created_at')),
+            'sort_dir' => strtolower(trim((string) $request->query('sort_dir', 'asc'))),
+            'per_page' => (int) $request->query('per_page', 20),
+        );
+        $page = (int) $request->query('page', 1);
+        $automacao = $this->pedidoRecuperacaoService->statusAutomacao();
+        $resumo = $this->pedidoRecuperacaoService->resumoRecuperacao($filters);
+
+        return $this->view('admin/pedidos/recuperacao', array_merge(
+            array(
+                'title' => 'Recuperação de pedidos incompletos',
+                'success' => Session::pullFlash('success'),
+                'errors' => Session::pullFlash('errors', array()),
+                'filters' => $filters,
+                'automacao' => $automacao,
+                'resumo' => $resumo,
+            ),
+            $this->pedidoRecuperacaoService->listarRecuperaveis($filters, $page, $filters['per_page'])
+        ));
+    }
+
+    public function enviarRecuperacao(Request $request)
+    {
+        $pedidoId = (int) $request->input('single_pedido_id', (int) $request->input('pedido_id', 0));
+        $modelo = trim((string) $request->input('modelo_chave', ''));
+        $cupomCodigo = trim((string) $request->input('cupom_codigo', ''));
+        $confirmarEnvio = (bool) $request->input('confirmar_envio', false);
+
+        $pedidoIdsLote = $request->input('pedido_ids', array());
+        if (!is_array($pedidoIdsLote)) {
+            $pedidoIdsLote = array($pedidoIdsLote);
+        }
+        $pedidoIdsLote = array_values(array_filter(array_map('intval', $pedidoIdsLote), function ($value) {
+            return $value > 0;
+        }));
+
+        if ($pedidoId > 0) {
+            $resultado = $this->pedidoRecuperacaoService->enviarManual(
+                $pedidoId,
+                array(
+                    'modelo_chave' => $modelo,
+                    'cupom_codigo' => $cupomCodigo,
+                    'confirmar_envio' => $confirmarEnvio ? 1 : 0,
+                ),
+                Session::get('usuario_id'),
+                $request->ip(),
+                $request->userAgent()
+            );
+
+            if (empty($resultado['ok'])) {
+                Session::flash('errors', array($resultado['message'] ?? 'Não foi possível enviar a recuperação.'));
+                return $this->redirect('/admin/pedidos/recuperacao?pedido_id=' . $pedidoId);
+            }
+
+            Session::flash('success', 'Recuperação enviada com sucesso.');
+            return $this->redirect('/admin/pedidos/recuperacao?pedido_id=' . $pedidoId);
+        }
+
+        if (empty($pedidoIdsLote)) {
+            Session::flash('errors', array('Selecione ao menos um pedido para enviar a recuperação.'));
+            return $this->redirect('/admin/pedidos/recuperacao');
+        }
+
+        $resultados = $this->pedidoRecuperacaoService->enviarLote(
+            $pedidoIdsLote,
+            array(
+                'modelo_chave' => $modelo,
+                'cupom_codigo' => $cupomCodigo,
+                'confirmar_envio' => $confirmarEnvio ? 1 : 0,
+            ),
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        $enviados = 0;
+        $bloqueados = 0;
+        foreach ($resultados as $resultado) {
+            if (!empty($resultado['ok'])) {
+                $enviados++;
+            } elseif (($resultado['status'] ?? '') === 'bloqueado') {
+                $bloqueados++;
+            }
+        }
+
+        Session::flash('success', 'Envio em lote concluído. Enviados: ' . $enviados . '. Bloqueados: ' . $bloqueados . '.');
+        return $this->redirect('/admin/pedidos/recuperacao');
+    }
+
+    public function enviarRecuperacaoLote(Request $request)
+    {
+        $pedidoIds = $request->input('pedido_ids', array());
+        if (!is_array($pedidoIds)) {
+            $pedidoIds = array($pedidoIds);
+        }
+
+        $modelo = trim((string) $request->input('modelo_chave', ''));
+        $cupomCodigo = trim((string) $request->input('cupom_codigo', ''));
+        $confirmarEnvio = (bool) $request->input('confirmar_envio', false);
+
+        $resultados = $this->pedidoRecuperacaoService->enviarLote(
+            $pedidoIds,
+            array(
+                'modelo_chave' => $modelo,
+                'cupom_codigo' => $cupomCodigo,
+                'confirmar_envio' => $confirmarEnvio ? 1 : 0,
+            ),
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        $enviados = 0;
+        $bloqueados = 0;
+        foreach ($resultados as $resultado) {
+            if (!empty($resultado['ok'])) {
+                $enviados++;
+            } elseif (($resultado['status'] ?? '') === 'bloqueado') {
+                $bloqueados++;
+            }
+        }
+
+        Session::flash('success', 'Envio em lote concluído. Enviados: ' . $enviados . '. Bloqueados: ' . $bloqueados . '.');
+        return $this->redirect('/admin/pedidos/recuperacao');
     }
 
     private function salvarPedidoManual(Request $request)

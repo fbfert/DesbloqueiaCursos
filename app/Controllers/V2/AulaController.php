@@ -1,0 +1,541 @@
+<?php
+
+namespace App\Controllers\V2;
+
+use App\Core\Controller;
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\Session;
+use App\Core\View;
+use App\Services\AreaCursoService;
+use App\Services\ConteudoCursoService;
+
+/**
+ * LMS V2 (Fase 2.7) — estritamente LEITURA e NAVEGAÇÃO.
+ *
+ * Reutiliza a MESMA autorização do LMS atual:
+ * - `AreaCursoService::carregarAluno($usuarioId, $inscricaoId, ...)` só retorna a
+ *   inscrição quando ela pertence ao usuário da sessão (via
+ *   `forUsuarioAprovadas`) e cruza curso/turma com a inscrição real;
+ * - `ConteudoCursoService::listarConteudoPublicadoAluno(...)` e
+ *   `buscarItemPublicadoParaAluno(...)` retornam apenas módulos/itens
+ *   PUBLICADOS e permitidos.
+ *
+ * Esta fase NÃO escreve nada: não chama `registrarAcessoItem`,
+ * `concluirItemAluno`, `registrarLogAluno`, nem qualquer método de progresso/
+ * quiz/atividade. Apenas leitura. IDs de URL são meros localizadores; a
+ * autorização ocorre sempre no backend com o usuário da sessão.
+ */
+class AulaController extends Controller
+{
+    /** @var AreaCursoService */
+    private $areaCursoService;
+    /** @var ConteudoCursoService */
+    private $conteudoService;
+
+    public function __construct()
+    {
+        $this->areaCursoService = new AreaCursoService();
+        $this->conteudoService = new ConteudoCursoService();
+    }
+
+    public function index(Request $request)
+    {
+        // --- Autenticação real (mesma sessão do sistema) ---
+        $usuarioId = (int) Session::get('usuario_id', 0);
+        if ($usuarioId <= 0) {
+            // Sem preservar nenhum ID de curso/turma/inscrição/módulo/item.
+            return Response::redirect('/v2/login?origem=v2_aluno');
+        }
+
+        // --- Localizadores de navegação (autorização é no backend) ---
+        $inscricaoId = (int) $request->query('inscricao_id', 0);
+        $cursoIdParam = (int) $request->query('curso_id', 0);
+        $turmaIdParam = (int) $request->query('turma_id', 0);
+        $moduloIdParam = (int) $request->query('modulo_id', 0);
+        $conteudoId = (int) $request->query('conteudo_id', $request->query('id', 0));
+
+        $base = $this->dadosLayout($usuarioId);
+
+        if ($inscricaoId <= 0) {
+            return $this->estado($base, 'Selecione um curso', 'Escolha um curso na sua área para começar a estudar.', 200);
+        }
+
+        // --- Autorização por posse da inscrição (mesma lógica do LMS atual) ---
+        $contexto = $this->areaCursoService->carregarAluno(
+            $usuarioId,
+            $inscricaoId,
+            0,
+            0,
+            $cursoIdParam > 0 ? $cursoIdParam : null,
+            $turmaIdParam > 0 ? $turmaIdParam : null,
+            null
+        );
+
+        if (empty($contexto['inscricao'])) {
+            return $this->estado($base, 'Conteúdo indisponível', 'Não encontramos uma inscrição válida sua para este curso. Verifique na sua área.', 404);
+        }
+
+        $inscricao = $contexto['inscricao'];
+        $cursoId = (int) $inscricao['curso_evento_id'];
+        $turmaId = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : 0;
+
+        // O curso/turma informados precisam corresponder à inscrição real.
+        if ($cursoIdParam > 0 && $cursoIdParam !== $cursoId) {
+            return $this->estado($base, 'Conteúdo indisponível', 'O curso informado não corresponde à sua inscrição.', 404);
+        }
+        if ($turmaIdParam > 0 && ($turmaId <= 0 || $turmaIdParam !== $turmaId)) {
+            return $this->estado($base, 'Conteúdo indisponível', 'A turma informada não corresponde à sua inscrição.', 404);
+        }
+
+        // --- Conteúdo publicado e permitido (somente leitura) ---
+        $conteudoAluno = $this->conteudoService->listarConteudoPublicadoAluno(
+            $cursoId,
+            $usuarioId,
+            (int) $inscricao['id'],
+            $turmaId > 0 ? $turmaId : null
+        );
+        $modulos = !empty($conteudoAluno['ok']) && !empty($conteudoAluno['modulos']) && is_array($conteudoAluno['modulos'])
+            ? $conteudoAluno['modulos']
+            : array();
+        $resumo = !empty($conteudoAluno['ok']) && !empty($conteudoAluno['resumo']) && is_array($conteudoAluno['resumo'])
+            ? $conteudoAluno['resumo']
+            : array();
+
+        $curso = isset($contexto['curso']) && is_array($contexto['curso']) ? $contexto['curso'] : array();
+        $turma = isset($contexto['turma']) && is_array($contexto['turma']) ? $contexto['turma'] : array();
+
+        $cabecalho = array(
+            'curso_nome' => isset($curso['nome']) ? (string) $curso['nome'] : '',
+            'turma_nome' => isset($turma['nome']) ? (string) $turma['nome'] : '',
+            'progresso' => $this->progressoPercentual($inscricao, $resumo),
+        );
+
+        // --- Item atual (validado pelo backend) ---
+        $itemAtual = null;
+        $itemInacessivel = false;
+        $moduloAtualId = $moduloIdParam;
+
+        if ($conteudoId > 0) {
+            $detalhe = $this->conteudoService->buscarItemPublicadoParaAluno(
+                $conteudoId,
+                $usuarioId,
+                (int) $inscricao['id'],
+                $cursoId,
+                $turmaId > 0 ? $turmaId : null
+            );
+            if (empty($detalhe['ok'])) {
+                // Não expõe nada do item bloqueado/indisponível.
+                $itemInacessivel = true;
+            } else {
+                $itemAtual = $this->montarItem($detalhe['item'], $detalhe['detalhe'], $detalhe['modulo'], $inscricao, $cursoId, $turmaId);
+                $moduloAtualId = (int) ($detalhe['modulo']['id'] ?? $moduloAtualId);
+            }
+        } else {
+            // Sem item escolhido: assume o primeiro item acessível (se houver).
+            $primeiro = $this->primeiroItem($modulos);
+            if ($primeiro !== null) {
+                $detalhe = $this->conteudoService->buscarItemPublicadoParaAluno(
+                    (int) $primeiro['item_id'],
+                    $usuarioId,
+                    (int) $inscricao['id'],
+                    $cursoId,
+                    $turmaId > 0 ? $turmaId : null
+                );
+                if (!empty($detalhe['ok'])) {
+                    $itemAtual = $this->montarItem($detalhe['item'], $detalhe['detalhe'], $detalhe['modulo'], $inscricao, $cursoId, $turmaId);
+                    $moduloAtualId = (int) ($detalhe['modulo']['id'] ?? $primeiro['modulo_id']);
+                    $conteudoId = (int) $primeiro['item_id'];
+                }
+            }
+        }
+
+        $arvore = $this->montarArvore($modulos, $inscricao, $cursoId, $turmaId, $moduloAtualId, $conteudoId);
+        $navegacao = $this->montarNavegacao($modulos, $inscricao, $cursoId, $turmaId, $conteudoId);
+
+        // Contexto mínimo para o formulário POST de conclusão (localizadores;
+        // a autorização é refeita no servidor ao concluir).
+        $formCtx = array(
+            'inscricao_id' => (int) $inscricao['id'],
+            'curso_id' => $cursoId,
+            'turma_id' => $turmaId,
+            'modulo_id' => (int) $moduloAtualId,
+            'item_id' => (int) $conteudoId,
+            'concluir_action' => '/v2/aula/concluir',
+        );
+
+        $data = array_merge($base, array(
+            'title' => ($cabecalho['curso_nome'] !== '' ? $cabecalho['curso_nome'] : 'Aula') . ' — Desbloqueia Cursos',
+            'pageTitle' => ($cabecalho['curso_nome'] !== '' ? $cabecalho['curso_nome'] : 'Aula') . ' — Desbloqueia Cursos',
+            'pageDescription' => 'Ambiente de aprendizagem com seu conteúdo real.',
+            'estado' => null,
+            'cabecalho' => $cabecalho,
+            'arvore' => $arvore,
+            'navegacao' => $navegacao,
+            'item' => $itemAtual,
+            'itemInacessivel' => $itemInacessivel,
+            'temConteudo' => !empty($modulos),
+            'formCtx' => $formCtx,
+            'success' => Session::pullFlash('success'),
+            'errors' => Session::pullFlash('errors', array()),
+        ));
+
+        return new Response(View::render('v2/aula', $data, false));
+    }
+
+    /**
+     * POST /v2/aula/concluir — marca/desmarca a conclusão de um item.
+     *
+     * Segurança: CSRF (middleware automático do POST), autenticação por sessão,
+     * e posse da inscrição revalidada no servidor (mesma lógica do LMS atual).
+     * A REGRA DE NEGÓCIO é 100% delegada ao service real
+     * (`ConteudoCursoService::concluirItemAluno` / `desmarcarItemComoConcluido`),
+     * que valida publicação/tipo (rejeita quiz e avaliação), é idempotente e
+     * recalcula o progresso. Nada é reimplementado aqui. Retorno SEMPRE para um
+     * caminho interno fixo da própria aula V2 (nunca URL vinda do navegador).
+     */
+    public function concluir(Request $request)
+    {
+        $usuarioId = (int) Session::get('usuario_id', 0);
+        if ($usuarioId <= 0) {
+            return Response::redirect('/v2/login?origem=v2_aluno');
+        }
+
+        $inscricaoId = (int) $request->input('inscricao_id', 0);
+        $cursoIdParam = (int) $request->input('curso_id', 0);
+        $turmaIdParam = (int) $request->input('turma_id', 0);
+        $moduloIdParam = (int) $request->input('modulo_id', 0);
+        $itemId = (int) $request->input('item_id', 0);
+        $acao = trim((string) $request->input('acao', 'marcar'));
+        $acao = $acao === 'desmarcar' ? 'desmarcar' : 'marcar';
+
+        // Posse da inscrição (mesma checagem real do LMS atual).
+        $contexto = $this->areaCursoService->carregarAluno(
+            $usuarioId,
+            $inscricaoId,
+            0,
+            0,
+            $cursoIdParam > 0 ? $cursoIdParam : null,
+            $turmaIdParam > 0 ? $turmaIdParam : null,
+            null
+        );
+
+        if (empty($contexto['inscricao'])) {
+            Session::flash('errors', array('Acesso negado para concluir o item.'));
+            return Response::redirect('/v2/aluno/');
+        }
+
+        $inscricao = $contexto['inscricao'];
+        $cursoId = (int) $inscricao['curso_evento_id'];
+        $turmaId = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : 0;
+
+        // Curso/turma informados precisam corresponder à inscrição real.
+        if (($cursoIdParam > 0 && $cursoIdParam !== $cursoId)
+            || ($turmaIdParam > 0 && ($turmaId <= 0 || $turmaIdParam !== $turmaId))) {
+            Session::flash('errors', array('Acesso negado para concluir o item.'));
+            return Response::redirect('/v2/aluno/');
+        }
+
+        if ($itemId <= 0) {
+            Session::flash('errors', array('Conteúdo inválido.'));
+            return Response::redirect($this->urlV2Curso($inscricao, $cursoId, $turmaId));
+        }
+
+        $payload = array(
+            'curso_evento_id' => $cursoId,
+            'turma_id' => $turmaId > 0 ? $turmaId : null,
+            'inscricao_id' => (int) $inscricao['id'],
+            'aluno_id' => $usuarioId,
+            'item_id' => $itemId,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        );
+
+        // Regra de negócio 100% no service real (publicação, tipo, idempotência,
+        // recálculo de progresso). Quiz/avaliação são rejeitados pelo próprio service.
+        if ($acao === 'desmarcar') {
+            $resultado = $this->conteudoService->desmarcarItemComoConcluido($payload);
+        } else {
+            $resultado = $this->conteudoService->concluirItemAluno($payload);
+        }
+
+        if (empty($resultado['ok'])) {
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível atualizar a conclusão do item.'));
+        } else {
+            Session::flash('success', $acao === 'desmarcar' ? 'Conclusão desmarcada.' : 'Item marcado como concluído.');
+        }
+
+        // Módulo de retorno (revalidado pelo backend).
+        $moduloRet = $moduloIdParam;
+        if ($moduloRet <= 0) {
+            $detalhe = $this->conteudoService->buscarItemPublicadoParaAluno(
+                $itemId,
+                $usuarioId,
+                (int) $inscricao['id'],
+                $cursoId,
+                $turmaId > 0 ? $turmaId : null
+            );
+            if (!empty($detalhe['ok'])) {
+                $moduloRet = (int) ($detalhe['modulo']['id'] ?? 0);
+            }
+        }
+
+        return Response::redirect($this->urlV2($inscricao, $cursoId, $turmaId, $moduloRet, $itemId));
+    }
+
+    private function urlV2Curso(array $inscricao, $cursoId, $turmaId)
+    {
+        return '/v2/aula/?inscricao_id=' . (int) $inscricao['id']
+            . '&curso_id=' . (int) $cursoId
+            . '&turma_id=' . (int) $turmaId;
+    }
+
+    private function progressoPercentual(array $inscricao, array $resumo)
+    {
+        if (isset($resumo['percentual']) && is_numeric($resumo['percentual'])) {
+            $p = (float) $resumo['percentual'];
+        } elseif (isset($inscricao['percentual_progresso']) && is_numeric($inscricao['percentual_progresso'])) {
+            $p = (float) $inscricao['percentual_progresso'];
+        } else {
+            $p = 0.0;
+        }
+        if ($p < 0) { $p = 0.0; }
+        if ($p > 100) { $p = 100.0; }
+        return (int) round($p);
+    }
+
+    private function primeiroItem(array $modulos)
+    {
+        foreach ($modulos as $modulo) {
+            $itens = !empty($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array();
+            foreach ($itens as $item) {
+                if ((string) ($item['tipo'] ?? '') === 'etiqueta') {
+                    continue; // etiqueta é separador visual, não conteúdo navegável
+                }
+                $itemId = (int) ($item['id'] ?? 0);
+                if ($itemId > 0) {
+                    return array('item_id' => $itemId, 'modulo_id' => (int) ($modulo['id'] ?? 0));
+                }
+            }
+        }
+        return null;
+    }
+
+    private function montarItem(array $item, $detalhe, $modulo, array $inscricao, $cursoId, $turmaId)
+    {
+        $detalhe = is_array($detalhe) ? $detalhe : array();
+        $tipo = (string) ($item['tipo'] ?? '');
+
+        // Conteúdos textuais já passam pelo sanitizador oficial.
+        $texto = $this->valorDetalhe($detalhe, array('conteudo', 'texto', 'descricao', 'corpo', 'html'));
+        $videoEmbed = $this->valorDetalhe($detalhe, array('embed_html', 'embed', 'html'));
+        $videoUrl = $this->valorDetalhe($detalhe, array('url', 'video_url', 'link'));
+
+        $tiposInterativos = array('quiz', 'avaliacao_textual', 'atividade');
+        $ehInterativo = in_array($tipo, $tiposInterativos, true);
+        // Conclusão manual só para os tipos que o LMS atual permite concluir
+        // (o service `concluirItemAluno` rejeita quiz e avaliacao_textual).
+        $podeConcluir = in_array($tipo, array('texto', 'video', 'arquivo', 'link'), true);
+
+        return array(
+            'id' => (int) ($item['id'] ?? 0),
+            'titulo' => (string) ($item['titulo'] ?? ''),
+            'tipo' => $tipo,
+            'tipo_label' => (string) ($item['tipo_label'] ?? $tipo),
+            'status_label' => (string) ($item['status_label'] ?? ''),
+            'status_class' => (string) ($item['status_class'] ?? ''),
+            'concluido' => !empty($item['concluido_aluno']),
+            'pode_concluir' => $podeConcluir,
+            'auto_leitura' => $tipo === 'texto',
+            'modulo_titulo' => is_array($modulo) ? (string) ($modulo['titulo'] ?? '') : '',
+            'texto_html' => $texto,
+            'video_embed' => $videoEmbed,
+            'video_url' => $videoUrl,
+            'acao_url' => (string) ($item['acao_url'] ?? ''),
+            'eh_interativo' => $ehInterativo,
+            // Rota oficial atual do item no LMS (para abrir a atividade/quiz real).
+            'oficial_url' => $this->urlOficialItem($inscricao, $cursoId, $turmaId, (int) (is_array($modulo) ? ($modulo['id'] ?? 0) : 0), (int) ($item['id'] ?? 0)),
+            // Quiz objetivo: passa a abrir na própria V2 (Fase 2.9).
+            'quiz_url' => $tipo === 'quiz'
+                ? $this->urlQuizV2($inscricao, $cursoId, $turmaId, (int) (is_array($modulo) ? ($modulo['id'] ?? 0) : 0), (int) ($item['id'] ?? 0))
+                : '',
+            // Atividade discursiva textual: passa a abrir na própria V2 (Fase 2.10).
+            'atividade_url' => $tipo === 'avaliacao_textual'
+                ? $this->urlAtividadeV2($inscricao, $cursoId, $turmaId, (int) (is_array($modulo) ? ($modulo['id'] ?? 0) : 0), (int) ($item['id'] ?? 0))
+                : '',
+        );
+    }
+
+    private function urlQuizV2(array $inscricao, $cursoId, $turmaId, $moduloId, $itemId)
+    {
+        return '/v2/quiz?inscricao_id=' . (int) $inscricao['id']
+            . '&curso_id=' . (int) $cursoId
+            . '&turma_id=' . (int) $turmaId
+            . '&modulo_id=' . (int) $moduloId
+            . '&conteudo_id=' . (int) $itemId;
+    }
+
+    private function urlAtividadeV2(array $inscricao, $cursoId, $turmaId, $moduloId, $itemId)
+    {
+        return '/v2/atividade?inscricao_id=' . (int) $inscricao['id']
+            . '&curso_id=' . (int) $cursoId
+            . '&turma_id=' . (int) $turmaId
+            . '&modulo_id=' . (int) $moduloId
+            . '&conteudo_id=' . (int) $itemId;
+    }
+
+    private function montarArvore(array $modulos, array $inscricao, $cursoId, $turmaId, $moduloAtualId, $conteudoId)
+    {
+        $arvore = array();
+        foreach ($modulos as $modulo) {
+            $moduloId = (int) ($modulo['id'] ?? 0);
+            $itens = !empty($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array();
+            $itensView = array();
+            foreach ($itens as $item) {
+                $itemId = (int) ($item['id'] ?? 0);
+                $tipo = (string) ($item['tipo'] ?? '');
+                $itensView[] = array(
+                    'id' => $itemId,
+                    'titulo' => (string) ($item['titulo'] ?? ''),
+                    'tipo' => $tipo,
+                    'tipo_label' => (string) ($item['tipo_label'] ?? $tipo),
+                    'concluido' => !empty($item['concluido_aluno']),
+                    'atual' => $itemId === (int) $conteudoId,
+                    'etiqueta' => $tipo === 'etiqueta',
+                    'url' => $this->urlV2($inscricao, $cursoId, $turmaId, $moduloId, $itemId),
+                );
+            }
+            $arvore[] = array(
+                'id' => $moduloId,
+                'titulo' => (string) ($modulo['titulo'] ?? ''),
+                'status_label' => (string) ($modulo['status_label'] ?? ''),
+                'total_itens' => (int) ($modulo['total_itens'] ?? count($itensView)),
+                'concluidos_itens' => (int) ($modulo['concluidos_itens'] ?? 0),
+                'aberto' => $moduloId === (int) $moduloAtualId,
+                'itens' => $itensView,
+            );
+        }
+        return $arvore;
+    }
+
+    private function montarNavegacao(array $modulos, array $inscricao, $cursoId, $turmaId, $conteudoId)
+    {
+        $sequencia = array();
+        foreach ($modulos as $modulo) {
+            $moduloId = (int) ($modulo['id'] ?? 0);
+            $itens = !empty($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array();
+            foreach ($itens as $item) {
+                if ((string) ($item['tipo'] ?? '') === 'etiqueta') {
+                    continue;
+                }
+                $sequencia[] = array('modulo_id' => $moduloId, 'item_id' => (int) ($item['id'] ?? 0), 'titulo' => (string) ($item['titulo'] ?? ''));
+            }
+        }
+
+        $indice = null;
+        foreach ($sequencia as $i => $reg) {
+            if ($reg['item_id'] === (int) $conteudoId) {
+                $indice = $i;
+                break;
+            }
+        }
+        if ($indice === null) {
+            return array('anterior' => null, 'proximo' => null);
+        }
+
+        $ant = isset($sequencia[$indice - 1]) ? $sequencia[$indice - 1] : null;
+        $prox = isset($sequencia[$indice + 1]) ? $sequencia[$indice + 1] : null;
+
+        return array(
+            'anterior' => $ant ? array('label' => $ant['titulo'], 'url' => $this->urlV2($inscricao, $cursoId, $turmaId, $ant['modulo_id'], $ant['item_id'])) : null,
+            'proximo' => $prox ? array('label' => $prox['titulo'], 'url' => $this->urlV2($inscricao, $cursoId, $turmaId, $prox['modulo_id'], $prox['item_id'])) : null,
+        );
+    }
+
+    private function urlV2(array $inscricao, $cursoId, $turmaId, $moduloId, $itemId)
+    {
+        return '/v2/aula/?inscricao_id=' . (int) $inscricao['id']
+            . '&curso_id=' . (int) $cursoId
+            . '&turma_id=' . (int) $turmaId
+            . '&modulo_id=' . (int) $moduloId
+            . '&conteudo_id=' . (int) $itemId;
+    }
+
+    private function urlOficialItem(array $inscricao, $cursoId, $turmaId, $moduloId, $itemId)
+    {
+        return '/aluno/curso/' . (int) $inscricao['id'] . '/' . (int) $cursoId . '/' . (int) $turmaId
+            . '/modulo/' . (int) $moduloId . '/conteudo/' . (int) $itemId;
+    }
+
+    private function valorDetalhe($detalhe, array $chaves)
+    {
+        if (!is_array($detalhe)) {
+            return '';
+        }
+        foreach ($chaves as $chave) {
+            if (isset($detalhe[$chave]) && trim((string) $detalhe[$chave]) !== '') {
+                return (string) $detalhe[$chave];
+            }
+        }
+        return '';
+    }
+
+    private function estado(array $base, $titulo, $mensagem, $status)
+    {
+        $data = array_merge($base, array(
+            'title' => $titulo . ' — Desbloqueia Cursos',
+            'pageTitle' => $titulo . ' — Desbloqueia Cursos',
+            'pageDescription' => $mensagem,
+            'estado' => array('titulo' => $titulo, 'mensagem' => $mensagem),
+            'cabecalho' => null,
+            'arvore' => array(),
+            'navegacao' => array('anterior' => null, 'proximo' => null),
+            'item' => null,
+            'itemInacessivel' => false,
+            'temConteudo' => false,
+        ));
+
+        return new Response(View::render('v2/aula', $data, false), (int) $status);
+    }
+
+    private function dadosLayout($usuarioId)
+    {
+        $usuarioNome = trim((string) Session::get('usuario_nome', ''));
+        $sessionPerfis = Session::get('usuario_perfis', array());
+        $hasAdminAccess = (bool) Session::get('usuario_admin') || (bool) Session::get('is_admin') || in_array('admin', $sessionPerfis, true);
+        $hasProfessorAccess = (bool) Session::get('usuario_professor') || (bool) Session::get('is_professor') || in_array('professor', $sessionPerfis, true);
+
+        $areaHref = '/v2/aluno';
+        if ($hasAdminAccess) {
+            $areaHref = '/admin';
+        } elseif ($hasProfessorAccess) {
+            $areaHref = '/professor/dashboard';
+        }
+
+        return array(
+            'loggedIn' => true,
+            'usuarioNome' => $usuarioNome,
+            'usuarioPrimeiroNome' => $this->primeiroNome($usuarioNome),
+            'areaHref' => $areaHref,
+            'alunoHref' => '/v2/aluno/',
+            'loginHref' => '/v2/login',
+            'registerHref' => '/v2/cadastro',
+            'catalogoHref' => '/v2/catalogo/',
+            'categoriasHref' => '/categorias',
+            'certificadosHref' => '/v2/certificados/validar',
+            'sobreHref' => '/sobre',
+            'contatoHref' => '/contato',
+            'homeHref' => '/v2/',
+        );
+    }
+
+    private function primeiroNome($nome)
+    {
+        $nome = trim((string) $nome);
+        if ($nome === '') {
+            return 'aluno';
+        }
+        $partes = preg_split('/\s+/', $nome);
+        return ($partes && !empty($partes[0])) ? (string) $partes[0] : $nome;
+    }
+}

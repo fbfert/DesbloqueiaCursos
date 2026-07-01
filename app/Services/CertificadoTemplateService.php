@@ -66,20 +66,21 @@ class CertificadoTemplateService
             'margem_left' => null,
             'margem_right' => null,
             'corpo_html' => '',
+            'html_segunda_pagina' => '',
             'css' => '',
             'imagem_fundo' => '',
             'logo' => '',
+            'assinatura_url' => '',
             'cor_fundo' => '#ffffff',
             'cor_texto' => '#111827',
             'observacoes' => '',
         );
     }
 
-    public function save(array $input, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    public function save(array $input, $actorUserId = null, $ipAddress = null, $userAgent = null, array $files = array())
     {
         $id = isset($input['id']) ? (int) $input['id'] : 0;
         $stored = $id > 0 ? $this->templateModel->findById($id) : null;
-
         $payload = $this->normalizePayload($input, $stored, $actorUserId);
         $errors = $this->validate($payload, $id);
         if (!empty($errors)) {
@@ -88,6 +89,7 @@ class CertificadoTemplateService
 
         $pdo = Database::connection();
         $pdo->beginTransaction();
+        $uploadedArquivos = array();
 
         try {
             if ($id > 0 && $stored) {
@@ -96,6 +98,23 @@ class CertificadoTemplateService
             } else {
                 $resultId = $this->templateModel->create($payload);
             }
+
+            $uploadErrors = array();
+            $input = $this->aplicarUploads($input, $files, $resultId, $uploadErrors, $uploadedArquivos);
+            if (!empty($uploadErrors)) {
+                $this->removerUploadsTemporarios($uploadedArquivos);
+                $pdo->rollBack();
+                return array('ok' => false, 'errors' => $uploadErrors);
+            }
+
+            $payloadUpload = $this->normalizePayload($input, $stored ? array_merge($stored, array('id' => $resultId)) : array('id' => $resultId), $actorUserId);
+            $payload = array_merge($payload, array(
+                'imagem_fundo' => $payloadUpload['imagem_fundo'],
+                'logo' => $payloadUpload['logo'],
+                'assinatura_url' => $payloadUpload['assinatura_url'],
+            ));
+
+            $this->templateModel->update($resultId, $payload);
 
             if (!empty($payload['padrao']) && (int) $payload['padrao'] === 1 && $this->isGlobalContext($payload)) {
                 $this->templateModel->unsetDefaultGlobal($resultId);
@@ -117,8 +136,15 @@ class CertificadoTemplateService
             return array('ok' => true, 'id' => $resultId);
         } catch (Exception $exception) {
             $pdo->rollBack();
-            Logger::error('certificados_template.salvar_falhou', array('message' => $exception->getMessage()));
-            throw $exception;
+            $this->removerUploadsTemporarios($uploadedArquivos);
+            Logger::error('certificados_template.salvar_falhou', array(
+                'message' => $exception->getMessage(),
+                'id' => $id,
+            ));
+            return array(
+                'ok' => false,
+                'errors' => array('Não foi possível salvar o template. Tente novamente.'),
+            );
         }
     }
 
@@ -244,9 +270,20 @@ class CertificadoTemplateService
         $padrao = !empty($input['padrao']) ? 1 : 0;
 
         $corpoHtml = isset($input['corpo_html']) ? trim((string) $input['corpo_html']) : ($stored['corpo_html'] ?? null);
+        if ($corpoHtml !== '') {
+            $corpoHtml = $this->normalizarHtmlCertificadoLegado($corpoHtml);
+        }
+        $htmlSegundaPagina = isset($input['html_segunda_pagina']) ? trim((string) $input['html_segunda_pagina']) : ($stored['html_segunda_pagina'] ?? null);
         $css = isset($input['css']) ? trim((string) $input['css']) : ($stored['css'] ?? null);
-        $imagemFundo = isset($input['imagem_fundo']) ? trim((string) $input['imagem_fundo']) : ($stored['imagem_fundo'] ?? null);
-        $logo = isset($input['logo']) ? trim((string) $input['logo']) : ($stored['logo'] ?? null);
+        $imagemFundo = array_key_exists('imagem_fundo', $input)
+            ? $this->normalizarImagemPublica(trim((string) $input['imagem_fundo']))
+            : (isset($stored['imagem_fundo']) ? $stored['imagem_fundo'] : null);
+        $logo = array_key_exists('logo', $input)
+            ? $this->normalizarImagemPublica(trim((string) $input['logo']))
+            : (isset($stored['logo']) ? $stored['logo'] : null);
+        $assinaturaUrl = array_key_exists('assinatura_url', $input)
+            ? $this->normalizarImagemPublica(trim((string) $input['assinatura_url']))
+            : (isset($stored['assinatura_url']) ? $stored['assinatura_url'] : null);
         $observacoes = isset($input['observacoes']) ? trim((string) $input['observacoes']) : ($stored['observacoes'] ?? null);
         $corFundo = isset($input['cor_fundo']) ? trim((string) $input['cor_fundo']) : ($stored['cor_fundo'] ?? null);
         $corTexto = isset($input['cor_texto']) ? trim((string) $input['cor_texto']) : ($stored['cor_texto'] ?? null);
@@ -268,9 +305,11 @@ class CertificadoTemplateService
             'curso_id' => $cursoId > 0 ? $cursoId : null,
             'turma_id' => $turmaId > 0 ? $turmaId : null,
             'corpo_html' => $corpoHtml !== '' ? $corpoHtml : null,
+            'html_segunda_pagina' => $htmlSegundaPagina !== '' ? $htmlSegundaPagina : null,
             'css' => $css !== '' ? $css : null,
             'imagem_fundo' => $imagemFundo !== '' ? $imagemFundo : null,
             'logo' => $logo !== '' ? $logo : null,
+            'assinatura_url' => $assinaturaUrl !== '' ? $assinaturaUrl : null,
             'observacoes' => $observacoes !== '' ? $observacoes : null,
             'cor_fundo' => $corFundo !== '' ? $corFundo : null,
             'cor_texto' => $corTexto !== '' ? $corTexto : null,
@@ -285,6 +324,262 @@ class CertificadoTemplateService
             'criado_por' => $stored ? ($stored['criado_por'] ?? null) : ($actorUserId ? (int) $actorUserId : null),
             'atualizado_por' => $actorUserId ? (int) $actorUserId : null,
         );
+    }
+
+    private function aplicarUploads(array $input, array $files, $templateId, array &$errors, array &$uploadedArquivos = array())
+    {
+        if (isset($files['logo_upload']) && !empty($files['logo_upload']['tmp_name'])) {
+            $resultado = $this->salvarImagemTemplateUpload($files['logo_upload'], 'logo', $templateId);
+            if (empty($resultado['ok'])) {
+                $errors['logo_upload'] = isset($resultado['message']) ? $resultado['message'] : 'Não foi possível enviar a logo do template.';
+            } else {
+                $input['logo'] = $resultado['path'];
+                $uploadedArquivos[] = $resultado['absolute_path'];
+            }
+        }
+
+        if (isset($files['imagem_fundo_upload']) && !empty($files['imagem_fundo_upload']['tmp_name'])) {
+            $resultado = $this->salvarImagemTemplateUpload($files['imagem_fundo_upload'], 'imagem_fundo', $templateId);
+            if (empty($resultado['ok'])) {
+                $errors['imagem_fundo_upload'] = isset($resultado['message']) ? $resultado['message'] : 'Não foi possível enviar a imagem de fundo do template.';
+            } else {
+                $input['imagem_fundo'] = $resultado['path'];
+                $uploadedArquivos[] = $resultado['absolute_path'];
+            }
+        }
+
+        if (isset($files['assinatura_upload']) && !empty($files['assinatura_upload']['tmp_name'])) {
+            $resultado = $this->salvarImagemTemplateUpload($files['assinatura_upload'], 'assinatura', $templateId);
+            if (empty($resultado['ok'])) {
+                $errors['assinatura_upload'] = isset($resultado['message']) ? $resultado['message'] : 'Não foi possível enviar a assinatura do template.';
+            } else {
+                $input['assinatura_url'] = $resultado['path'];
+                $uploadedArquivos[] = $resultado['absolute_path'];
+            }
+        }
+
+        return $input;
+    }
+
+    private function salvarImagemTemplateUpload(array $arquivo, $tipo, $templateId)
+    {
+        $rotulo = $tipo === 'imagem_fundo' ? 'imagem de fundo' : ($tipo === 'assinatura' ? 'assinatura' : 'logo');
+
+        if (!isset($arquivo['error']) || (int) $arquivo['error'] !== UPLOAD_ERR_OK) {
+            return array('ok' => false, 'message' => 'Upload de ' . $rotulo . ' inválido.');
+        }
+
+        if (empty($arquivo['tmp_name']) || !is_uploaded_file($arquivo['tmp_name'])) {
+            return array('ok' => false, 'message' => 'Arquivo de ' . $rotulo . ' inválido.');
+        }
+
+        $tamanho = isset($arquivo['size']) ? (int) $arquivo['size'] : 0;
+        if ($tamanho <= 0) {
+            return array('ok' => false, 'message' => 'O arquivo de ' . $rotulo . ' está vazio.');
+        }
+
+        if ($tamanho > 2 * 1024 * 1024) {
+            return array('ok' => false, 'message' => 'A ' . $rotulo . ' deve ter no máximo 2 MB.');
+        }
+
+        $nomeOriginal = isset($arquivo['name']) ? (string) $arquivo['name'] : '';
+        $extensao = strtolower((string) pathinfo($nomeOriginal, PATHINFO_EXTENSION));
+        $extensoesPermitidas = $tipo === 'assinatura'
+            ? array('jpg', 'jpeg', 'png', 'webp', 'gif')
+            : array('jpg', 'jpeg', 'png', 'webp');
+        if (!in_array($extensao, $extensoesPermitidas, true)) {
+            $formatos = $tipo === 'assinatura' ? 'JPG, JPEG, PNG, WEBP ou GIF' : 'JPG, JPEG, PNG ou WEBP';
+            return array('ok' => false, 'message' => 'Formato de ' . $rotulo . ' não permitido. Use ' . $formatos . '.');
+        }
+
+        $mime = $this->detectarMimeType($arquivo['tmp_name']);
+        $mimesPermitidos = $tipo === 'assinatura'
+            ? array('image/jpeg', 'image/png', 'image/webp', 'image/gif')
+            : array('image/jpeg', 'image/png', 'image/webp');
+        if (!in_array(strtolower((string) $mime), $mimesPermitidos, true)) {
+            return array('ok' => false, 'message' => 'Tipo de arquivo de ' . $rotulo . ' não permitido.');
+        }
+
+        $templateId = (int) $templateId;
+        if ($templateId <= 0) {
+            return array('ok' => false, 'message' => 'Não foi possível identificar o template para salvar o arquivo.');
+        }
+
+        $diretorioAbsoluto = $this->publicRootPath() . '/' . ($tipo === 'assinatura' ? 'assets/uploads/certificados/assinaturas' : 'uploads/certificados/templates/' . $templateId);
+        if (!is_dir($diretorioAbsoluto) && !@mkdir($diretorioAbsoluto, 0775, true) && !is_dir($diretorioAbsoluto)) {
+            return array('ok' => false, 'message' => 'Não foi possível criar a pasta de uploads do template.');
+        }
+
+        try {
+            $nomeSeguro = $this->nomeArquivoUploadTemplate($tipo, $extensao, $templateId);
+        } catch (Exception $exception) {
+            $nomeSeguro = $this->nomeArquivoUploadTemplateFallback($tipo, $extensao, $templateId);
+        }
+
+        $destinoAbsoluto = $diretorioAbsoluto . '/' . $nomeSeguro;
+        if (!move_uploaded_file($arquivo['tmp_name'], $destinoAbsoluto)) {
+            return array('ok' => false, 'message' => 'Não foi possível salvar a ' . $rotulo . ' enviada.');
+        }
+
+        return array(
+            'ok' => true,
+            'path' => $tipo === 'assinatura'
+                ? '/assets/uploads/certificados/assinaturas/' . $nomeSeguro
+                : '/uploads/certificados/templates/' . $templateId . '/' . $nomeSeguro,
+            'absolute_path' => $destinoAbsoluto,
+        );
+    }
+
+    private function normalizarHtmlCertificadoLegado($html)
+    {
+        $html = trim((string) $html);
+        if ($html === '') {
+            return $html;
+        }
+
+        $temLegacy = stripos($html, 'border:2px solid #0f2742') !== false
+            || stripos($html, 'border:2px solid #d8bd72') !== false
+            || stripos($html, 'border:1px solid #0f2742') !== false
+            || stripos($html, 'border-top:1px solid #111827') !== false
+            || stripos($html, 'border-top:1px solid #d8c39b') !== false
+            || stripos($html, 'certificado-linha-topo') !== false;
+
+        if (!$temLegacy) {
+            return $html;
+        }
+
+        $html = preg_replace(
+            '/^<table cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse; font-family:Georgia, \'Times New Roman\', serif; color:#111827; background:#ffffff;">\s*<tr>\s*<td style="border:2px solid #0f2742; padding:6px;">\s*<table cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse;">\s*<tr>\s*<td style="border:2px solid #d8bd72; padding:6px;">\s*<table cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse;">\s*<tr>\s*<td style="border:1px solid #0f2742; padding:18px 30px 18px 30px;">\s*/is',
+            '<div class="certificado-documento">',
+            $html,
+            1
+        );
+
+        $html = preg_replace(
+            '/\s*<\/td>\s*<\/tr>\s*<\/table>\s*<\/td>\s*<\/tr>\s*<\/table>\s*<\/td>\s*<\/tr>\s*<\/table>\s*$/is',
+            '</div>',
+            $html,
+            1
+        );
+
+        $html = str_replace(
+            '<div style="border-top:1px solid #111827; padding-top:5px; font-size:11.5px; line-height:15px; color:#111827; text-align:center;">',
+            '<div style="width:65%; margin:0 auto; border-top:1px solid #111827; padding-top:5px; font-size:11.5px; line-height:15px; color:#111827; text-align:center;">',
+            $html
+        );
+
+        return $html;
+    }
+
+    private function nomeArquivoUploadTemplate($tipo, $extensao, $templateId = null)
+    {
+        $prefixo = $tipo === 'imagem_fundo' ? 'fundo' : ($tipo === 'assinatura' ? 'assinatura-template-' . (int) $templateId : 'logo');
+        return $prefixo . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $extensao;
+    }
+
+    private function nomeArquivoUploadTemplateFallback($tipo, $extensao, $templateId = null)
+    {
+        $prefixo = $tipo === 'imagem_fundo' ? 'fundo' : ($tipo === 'assinatura' ? 'assinatura-template-' . (int) $templateId : 'logo');
+        return $prefixo . '-' . date('YmdHis') . '-' . mt_rand(100000, 999999) . '.' . $extensao;
+    }
+
+    private function removerUploadsTemporarios(array $arquivos)
+    {
+        foreach ($arquivos as $arquivo) {
+            $arquivo = str_replace('\\', '/', (string) $arquivo);
+            if ($arquivo === '') {
+                continue;
+            }
+
+            if (is_file($arquivo)) {
+                @unlink($arquivo);
+            }
+        }
+    }
+
+    private function detectarMimeType($arquivoTmp)
+    {
+        if (!is_file($arquivoTmp)) {
+            return null;
+        }
+
+        if (function_exists('finfo_open')) {
+            $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $mime = @finfo_file($finfo, $arquivoTmp);
+                @finfo_close($finfo);
+                if (is_string($mime) && $mime !== '') {
+                    return $mime;
+                }
+            }
+        }
+
+        if (function_exists('mime_content_type')) {
+            $mime = @mime_content_type($arquivoTmp);
+            if (is_string($mime) && $mime !== '') {
+                return $mime;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizarImagemPublica($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return null;
+        }
+
+        if (preg_match('#^data:#i', $valor) || preg_match('#^https?://#i', $valor)) {
+            return $valor;
+        }
+
+        if (preg_match('/^[a-z][a-z0-9+.-]*:/i', $valor)) {
+            return null;
+        }
+
+        $valor = str_replace('\\', '/', $valor);
+
+        $basePublic = str_replace('\\', '/', BASE_PATH . '/public_html');
+        if (strpos($valor, $basePublic) === 0) {
+            $valor = substr($valor, strlen($basePublic));
+        }
+
+        if (strpos($valor, 'public_html/') === 0) {
+            $valor = substr($valor, strlen('public_html'));
+        }
+        if (strpos($valor, 'public/') === 0) {
+            $valor = substr($valor, strlen('public'));
+        }
+
+        $valor = preg_replace('#/+#', '/', $valor);
+        if ($valor === '') {
+            return null;
+        }
+
+        if ($valor[0] !== '/') {
+            $valor = '/' . ltrim($valor, '/');
+        }
+
+        return $valor;
+    }
+
+    private function publicRootPath()
+    {
+        $candidatos = array(
+            BASE_PATH . '/public_html',
+            BASE_PATH . '/public',
+            BASE_PATH,
+        );
+
+        foreach ($candidatos as $candidato) {
+            if (is_dir($candidato)) {
+                return $candidato;
+            }
+        }
+
+        return BASE_PATH;
     }
 
     private function validate(array $payload, $id = 0)

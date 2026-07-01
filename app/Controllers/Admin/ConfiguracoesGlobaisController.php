@@ -76,7 +76,13 @@ class ConfiguracoesGlobaisController extends Controller
 
     public function salvarInstitucional(Request $request)
     {
-        $result = $this->service->saveInstitucional($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
+        $result = $this->service->saveInstitucional(
+            $request->all(),
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent(),
+            isset($_FILES) ? $_FILES : array()
+        );
         return $this->handleSaveResult($result, '/admin/configuracoes-globais');
     }
 
