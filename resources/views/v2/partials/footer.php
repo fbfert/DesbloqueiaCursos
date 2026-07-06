@@ -24,21 +24,25 @@ $areaHref = isset($areaHref) ? (string) $areaHref : '/meus-cursos';
       </div>
       <div class="v2-footer-col">
         <h4>Institucional</h4>
-        <a href="/como-funciona">Como funciona</a>
-        <a href="/sobre">Sobre</a>
-        <a href="/contato">Contato</a>
-        <a href="/v2/certificados/validar">Validar certificado</a>
+        <a href="<?php echo Helpers::e($comoFuncionaSalaHref); ?>">Como funciona a Sala Virtual</a>
+        <a href="<?php echo Helpers::e($quemSomosHref); ?>">Quem somos</a>
+        <a href="<?php echo Helpers::e($ondeEstamosHref); ?>">Onde estamos</a>
+        <a href="<?php echo Helpers::e($certificadosHref); ?>">Validar certificado</a>
       </div>
       <div class="v2-footer-col">
         <h4>Minha área</h4>
-        <a href="<?php echo Helpers::e($areaHref); ?>">Acessar área atual</a>
-        <a href="/meus-cursos">Meus cursos</a>
-        <a href="/minha-conta">Minha conta</a>
+        <a href="<?php echo Helpers::e($areaHref); ?>">Acessar minha área</a>
+        <a href="<?php echo Helpers::e($pedidosHref); ?>">Meus pedidos</a>
+        <a href="<?php echo Helpers::e($contaHref); ?>">Minha conta</a>
       </div>
     </div>
     <div class="v2-footer-bottom">
-      <span>© 2026 Desbloqueia Cursos</span>
-      <span>Home V2 integrada com dados reais do backend</span>
+      <span class="v2-footer-legal-text">2026 Desbloqueia Cursos | CP Educa Cursos LTDA, CNPJ 65.513.089/0001-35 | +55 49 991581411 | desbloqueiacursos@gmail.com</span>
+      <nav class="v2-footer-legal" aria-label="Links legais">
+        <a href="<?php echo Helpers::e($termosHref); ?>">Termos de uso</a>
+        <a href="<?php echo Helpers::e($privacidadeHref); ?>">Política de privacidade</a>
+        <a href="<?php echo Helpers::e($removaMeHref); ?>">Remova-me</a>
+      </nav>
     </div>
   </div>
 </footer>
