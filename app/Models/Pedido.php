@@ -69,6 +69,61 @@ class Pedido
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Nomes reais dos cursos por pedido do usuário autenticado (área do aluno V2).
+     *
+     * Uma única consulta agrupada, filtrada pela MESMA regra de propriedade de
+     * `forUsuario()` (comprador OU pagador da sessão) e respeitando itens/cursos
+     * excluídos (`deleted_at IS NULL`). Evita N+1 na listagem de pedidos.
+     *
+     * Retorna um mapa `pedido_id => array de nomes de curso distintos`
+     * (deduplicados por curso, na ordem alfabética do nome).
+     */
+    public function cursosNomesPorUsuario($usuarioId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT pi.pedido_id AS pedido_id,
+                    pi.curso_evento_id AS curso_id,
+                    ce.nome AS curso_nome
+             FROM pedidos p
+             INNER JOIN pedido_itens pi
+                ON pi.pedido_id = p.id
+               AND pi.deleted_at IS NULL
+             INNER JOIN cursos_eventos ce
+                ON ce.id = pi.curso_evento_id
+               AND ce.deleted_at IS NULL
+             WHERE p.deleted_at IS NULL
+               AND (p.comprador_usuario_id = :usuario_id OR p.pagador_usuario_id = :usuario_id)
+             ORDER BY pi.pedido_id ASC, ce.nome ASC'
+        );
+
+        $stmt->execute(array('usuario_id' => (int) $usuarioId));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $mapa = array();
+        $vistos = array();
+        foreach ($rows as $row) {
+            $pedidoId = (int) $row['pedido_id'];
+            $cursoId = (int) $row['curso_id'];
+            $nome = trim((string) $row['curso_nome']);
+            if ($pedidoId <= 0 || $nome === '') {
+                continue;
+            }
+            if (!isset($mapa[$pedidoId])) {
+                $mapa[$pedidoId] = array();
+                $vistos[$pedidoId] = array();
+            }
+            // Deduplica por curso (um pedido pode ter vários itens do mesmo curso).
+            if (isset($vistos[$pedidoId][$cursoId])) {
+                continue;
+            }
+            $vistos[$pedidoId][$cursoId] = true;
+            $mapa[$pedidoId][] = $nome;
+        }
+
+        return $mapa;
+    }
+
     public function pendentesParaMeusCursos($usuarioId, $limit = 5)
     {
         $limit = (int) $limit;

@@ -1,11 +1,15 @@
 <?php
 use App\Core\Helpers;
+use App\Support\V2Nav;
 
 $usuarioPrimeiroNome = isset($usuarioPrimeiroNome) ? (string) $usuarioPrimeiroNome : '';
 $loggedIn = !empty($loggedIn);
-$areaHref = isset($areaHref) ? (string) $areaHref : '/meus-cursos';
-$loginHref = isset($loginHref) ? (string) $loginHref : '/login';
-$registerHref = isset($registerHref) ? (string) $registerHref : '/cadastro';
+$areaHref = isset($areaHref) ? (string) $areaHref : V2Nav::ALUNO;
+$loginHref = isset($loginHref) ? (string) $loginHref : V2Nav::LOGIN;
+$registerHref = isset($registerHref) ? (string) $registerHref : V2Nav::CADASTRO;
+$catalogoHref = isset($catalogoHref) ? (string) $catalogoHref : V2Nav::CATALOGO;
+$categoriesHref = isset($categoriesHref) ? (string) $categoriesHref : V2Nav::CATEGORIAS;
+$certificadosHref = isset($certificadosHref) ? (string) $certificadosHref : V2Nav::CERTIFICADOS;
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $currentPath = $currentPath ?: '/';
 $homeNavClass = isset($homeNavClass) ? (string) $homeNavClass : (($currentPath === '/v2' || $currentPath === '/v2/') ? ' is-active' : '');
@@ -30,6 +34,12 @@ $certNavClass = isset($certNavClass) ? (string) $certNavClass : (strpos($current
           <span class="v2-avatar" aria-hidden="true"><?php echo Helpers::e(function_exists('mb_substr') ? mb_substr($usuarioPrimeiroNome !== '' ? $usuarioPrimeiroNome : 'A', 0, 1, 'UTF-8') : substr($usuarioPrimeiroNome !== '' ? $usuarioPrimeiroNome : 'A', 0, 1)); ?></span>
           Minha área
         </a>
+        <form method="post" action="/v2/logout" class="v2-logout-form" data-native-submit>
+          <?php echo \App\Core\Csrf::field(); ?>
+          <button type="submit" class="v2-btn v2-btn-ghost v2-btn-sm v2-btn-icon" title="Sair" aria-label="Sair da conta">
+            <i class="ti ti-logout" aria-hidden="true"></i>
+          </button>
+        </form>
       <?php else: ?>
         <a href="<?php echo Helpers::e($loginHref); ?>" class="v2-btn v2-btn-ghost v2-btn-sm">Entrar</a>
         <a href="<?php echo Helpers::e($registerHref); ?>" class="v2-btn v2-btn-primary v2-btn-sm">Cadastrar</a>

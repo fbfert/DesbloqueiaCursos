@@ -4,7 +4,7 @@ namespace App\Support;
 
 class HtmlSanitizer
 {
-    private const DISALLOWED_CONTENT_TAGS = array('script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'svg', 'math', 'canvas');
+    private const DISALLOWED_CONTENT_TAGS = array('script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'svg', 'math', 'canvas', 'head', 'title', 'meta', 'link', 'base', 'noscript');
 
     private const PROFILES = array(
         'minimal' => array(
@@ -488,7 +488,11 @@ class HtmlSanitizer
         }
 
         $scheme = strtolower((string) $parsed['scheme']);
-        return in_array($scheme, array('http', 'https', 'mailto'), true);
+        // Esquemas seguros (não executáveis): http/https/mailto/tel. `tel:` é
+        // usado em conteúdo institucional real (telefone clicável) e não permite
+        // execução de script — adição estritamente aditiva, mantém o bloqueio de
+        // javascript:/data: acima.
+        return in_array($scheme, array('http', 'https', 'mailto', 'tel'), true);
     }
 
     private static function unwrapNode(\DOMNode $node)

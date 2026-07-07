@@ -10,6 +10,8 @@ $statusFluxo = isset($situacao['status_fluxo']) ? (string) $situacao['status_flu
 $loggedIn = !empty($loggedIn);
 $usuarioNome = isset($usuarioNome) ? (string) $usuarioNome : '';
 $usuarioEmail = isset($usuarioEmail) ? (string) $usuarioEmail : '';
+// Destino de continuidade de pagamento construído no backend (rota interna fixa).
+$continuarPagamentoUrl = isset($continuarPagamentoUrl) ? (string) $continuarPagamentoUrl : '';
 $etapaAtual = 1;
 
 $pf = function ($chave, $fallback = '') use ($pagadorPrefill) {
@@ -50,7 +52,9 @@ $mostrarForm = $loggedIn && !in_array($statusFluxo, array('matriculado', 'penden
       <i class="ti ti-clock-hour-4"></i>
       <span><strong>Você possui uma inscrição pendente para este curso.</strong> Continue o pagamento para concluir sua matrícula.</span>
     </div>
-    <div class="v2-quiz-actions"><a class="v2-btn v2-btn-primary" href="/checkout/resumo?pedido_id=<?php echo (int) ($situacao['pedido_id'] ?? 0); ?>">Continuar pagamento</a></div>
+    <?php if ($continuarPagamentoUrl !== ''): ?>
+      <div class="v2-quiz-actions"><a class="v2-btn v2-btn-primary" href="<?php echo Helpers::e($continuarPagamentoUrl); ?>">Continuar pagamento</a></div>
+    <?php endif; ?>
   <?php elseif (in_array($statusFluxo, array('cancelado', 'expirado', 'falhou', 'reprovado'), true)): ?>
     <div class="v2-block v2-callout v2-callout-info" role="status">
       <i class="ti ti-info-circle"></i>

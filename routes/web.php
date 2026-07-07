@@ -12,6 +12,7 @@ use App\Controllers\V2\AulaController as V2AulaController;
 use App\Controllers\V2\QuizController as V2QuizController;
 use App\Controllers\V2\AtividadeController as V2AtividadeController;
 use App\Controllers\V2\CertificadoValidacaoController as V2CertificadoValidacaoController;
+use App\Controllers\V2\InstitucionalController as V2InstitucionalController;
 use App\Controllers\PagesController;
 use App\Controllers\AuthController;
 use App\Controllers\Admin\RbacController;
@@ -60,11 +61,28 @@ use App\Controllers\Professor\AcademicoController as ProfessorAcademicoControlle
 use App\Controllers\Professor\FinanceiroController as ProfessorFinanceiroController;
 use App\Controllers\AvisosController;
 
-$app->get('/', array(HomeController::class, 'index'));
+// Fase 2.13 — Home da raiz "/" selecionável por configuração (reversível, sem
+// alterar código). Padrão: Home V1. Para virar ao V2 após homologação, defina
+// HOME_VERSION=v2 no .env (config/app.php → 'home_version'). Nenhuma rota é
+// removida; V1 e V2 seguem acessíveis nos seus próprios caminhos.
+$app->get('/', function ($request) {
+    $homeVersion = (require BASE_PATH . '/config/app.php')['home_version'];
+    if ($homeVersion === 'v2') {
+        return (new V2HomeController())->index($request);
+    }
+    return (new HomeController())->index($request);
+});
 $app->get('/v2', array(V2HomeController::class, 'index'));
 $app->get('/v2/catalogo', array(V2CatalogoController::class, 'index'));
 $app->get('/v2/curso', array(V2CursoController::class, 'index'));
 $app->get('/v2/login', array(V2LoginController::class, 'show'));
+// Fase 2.13.1 — tela V2 de escolha pós-login (Minha Área × Catálogo). Só é
+// alcançada após login direto em /v2/login sem redirect válido. Exige sessão.
+$app->get('/v2/pos-login', array(V2LoginController::class, 'posLogin'), array('auth.v2'));
+// Logout V2 — encerra a sessão do aluno e retorna sempre a /v2/login (nunca ao
+// V1). Somente POST com CSRF (auto) + auth.v2: não há logout inseguro por GET e
+// só usuário autenticado alcança a rota. Delega ao AuthService existente.
+$app->post('/v2/logout', array(V2LoginController::class, 'logout'), array('auth.v2'));
 $app->get('/v2/cadastro', array(V2CadastroController::class, 'show'));
 $app->get('/v2/recuperar-senha', array(V2RecuperarSenhaController::class, 'show'));
 $app->get('/v2/aluno', array(V2AlunoController::class, 'index'));
@@ -77,14 +95,49 @@ $app->get('/v2/atividade', array(V2AtividadeController::class, 'index'));
 $app->post('/v2/atividade/enviar', array(V2AtividadeController::class, 'enviar'));
 $app->get('/v2/certificados/validar', array(V2CertificadoValidacaoController::class, 'index'));
 $app->post('/v2/certificados/validar', array(V2CertificadoValidacaoController::class, 'index'));
+// Fase 2.13B — páginas institucionais EDITÁVEIS no V2. O conteúdo real vem do
+// mesmo cadastro do backend (tabela `paginas`, editada em /admin/paginas); a V2
+// só consulta e sanitiza. As rotas casam com o slug real de cada página, então
+// edições do admin refletem na V2 sem mudança de código.
+$app->get('/v2/quem-somos', array(V2InstitucionalController::class, 'quemSomos'));
+$app->get('/v2/como-funciona-a-sala-virtual', array(V2InstitucionalController::class, 'comoFuncionaSalaVirtual'));
+$app->get('/v2/termos-de-uso', array(V2InstitucionalController::class, 'termosDeUso'));
+$app->get('/v2/politica-de-privacidade', array(V2InstitucionalController::class, 'politicaDePrivacidade'));
+$app->get('/v2/onde-estamos', array(V2InstitucionalController::class, 'ondeEstamos'));
+$app->get('/v2/remova-me', array(V2InstitucionalController::class, 'removaMe'));
+// Compatibilidade — rotas demonstrativas antigas redirecionam (301) à canônica
+// V2 equivalente (sem loop, sem voltar ao V1).
+$app->get('/v2/sobre', array(V2InstitucionalController::class, 'sobre'));
+$app->get('/v2/contato', array(V2InstitucionalController::class, 'contato'));
+$app->get('/v2/como-funciona', array(V2InstitucionalController::class, 'comoFunciona'));
 // Checkout V2 (Fase 2.12A) — casca de apresentação sobre o MESMO CheckoutController.
 // O modo V2 é detectado pelo caminho (/v2/checkout...); CSRF automático nos POST.
 $app->get('/v2/checkout', array(CheckoutController::class, 'entradaCheckoutV2'));
-$app->get('/v2/checkout/inscricao', array(CheckoutController::class, 'inscricao'));
-$app->post('/v2/checkout/inscricao', array(CheckoutController::class, 'inscricao'));
-$app->get('/v2/checkout/participantes', array(CheckoutController::class, 'participantes'));
-$app->post('/v2/checkout/participantes', array(CheckoutController::class, 'participantes'));
-$app->get('/v2/checkout/resumo', array(CheckoutController::class, 'resumo'));
+// Fase 2.13 — etapas V2 protegidas por auth.v2 (visitante → /v2/login?redirect=...,
+// nunca /login do V1). O middleware preserva o destino V2 original em GET.
+$app->get('/v2/checkout/inscricao', array(CheckoutController::class, 'inscricao'), array('auth.v2'));
+$app->post('/v2/checkout/inscricao', array(CheckoutController::class, 'inscricao'), array('auth.v2'));
+$app->get('/v2/checkout/participantes', array(CheckoutController::class, 'participantes'), array('auth.v2'));
+$app->post('/v2/checkout/participantes', array(CheckoutController::class, 'participantes'), array('auth.v2'));
+$app->get('/v2/checkout/resumo', array(CheckoutController::class, 'resumo'), array('auth.v2'));
+// Fase 2.12B — Etapa V2 de pagamento (somente GET/leitura). Exige sessão via
+// 'auth' (nenhum dado de pedido é exposto a anônimo). O início real do
+// AbacatePay é feito por POST HTML nativo ao endpoint legado já existente
+// (/aluno/pedidos/pagar/abacatepay); não há POST V2 dedicado.
+$app->get('/v2/checkout/pagamento', array(CheckoutController::class, 'pagamento'), array('auth.v2'));
+// Fase 2.12C — Comprovante PIX em visual V2. GET apenas apresenta o que o backend
+// já autoriza (mesma checagem de propriedade de detalharCheckout); exige sessão
+// via 'auth', portanto nenhum dado de pedido é exposto a anônimo. O POST de envio
+// tem rota V2 dedicada e fina (enviarComprovanteV2) que delega INTEGRALMENTE o
+// arquivo/payload ao mesmo ComprovantePixService do fluxo legado e faz PRG para
+// uma URL interna fixa V2. CSRF automático no POST (rota normal, não postWithoutCsrf).
+// O caminho de envio é /v2/checkout/comprovante/enviar: NÃO há diretório físico
+// 'comprovante' (evita o DirectorySlash do Apache que converteria POST em GET).
+$app->get('/v2/checkout/comprovante', array(CheckoutController::class, 'comprovante'), array('auth.v2'));
+$app->post('/v2/checkout/comprovante/enviar', array(CheckoutController::class, 'enviarComprovanteV2'), array('auth.v2'));
+// Confirmação V2 pós-envio (somente leitura). Mantém o aluno no namespace /v2/;
+// revalida a propriedade do pedido em detalharCheckout.
+$app->get('/v2/checkout/comprovante/enviado', array(CheckoutController::class, 'comprovanteEnviadoV2'), array('auth.v2'));
 $app->get('/categorias', array(PublicCategoriasController::class, 'index'));
 $app->get('/categorias/{slug}/cursos', array(PublicCategoriasController::class, 'cursos'));
 $app->get('/cursos', array(PublicCursosController::class, 'index'));

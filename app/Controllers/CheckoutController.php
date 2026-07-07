@@ -18,6 +18,7 @@ use App\Services\InscricaoService;
 use App\Services\PedidoService;
 use App\Services\CursoService;
 use App\Services\Payments\AbacatePayService;
+use App\Support\V2ErrorPage;
 
 class CheckoutController extends Controller
 {
@@ -55,9 +56,11 @@ class CheckoutController extends Controller
         $curso = $this->cursoService->showPublic($cursoId, $turmaId ?: null);
 
         if (empty($curso['curso'])) {
-            return new Response(View::render('errors/404', array(
-                'title' => 'Curso nao encontrado',
-            )), 404);
+            return V2ErrorPage::notFound(
+                $request->path(),
+                'Curso não encontrado',
+                'O curso solicitado não está disponível para inscrição.'
+            );
         }
 
         if (!empty($curso['curso']['usar_turmas']) && empty($curso['curso']['turma_selecionada'])) {
@@ -90,6 +93,17 @@ class CheckoutController extends Controller
         if (in_array($statusFluxo, array('matriculado', 'pendente_pagamento'), true)) {
             $errors = Session::pullFlash('errors', array());
 
+            // Destino de continuidade do pagamento construído no BACKEND a partir
+            // do pedido já autorizado por situacaoAlunoNoCurso() (mesma checagem
+            // comprador/pagador de detalharCheckout). Em modo V2 aponta para a
+            // etapa de resumo V2 (/v2/checkout/resumo?pedido_id=N), que revalida a
+            // propriedade e faz o único encaminhamento controlado ao pagamento
+            // legado. Caminho interno fixo; nunca usa redirect/next/return/URL.
+            $pedidoPendenteId = (int) ($situacaoInscricao['pedido_id'] ?? 0);
+            $continuarPagamentoUrl = $pedidoPendenteId > 0
+                ? $this->urlResumo($request, $pedidoPendenteId)
+                : '';
+
             return $this->renderCheckout($request, 'inscricao', array(
                 'title' => 'Inscricao',
                 'curso' => $curso['curso'],
@@ -102,6 +116,7 @@ class CheckoutController extends Controller
                 'situacaoInscricao' => $situacaoInscricao,
                 'inscricaoPendente' => $statusFluxo === 'pendente_pagamento',
                 'inscricaoMatriculada' => $statusFluxo === 'matriculado',
+                'continuarPagamentoUrl' => $continuarPagamentoUrl,
                 'success' => Session::pullFlash('success'),
             ));
         }
@@ -143,9 +158,11 @@ class CheckoutController extends Controller
 
         $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
         if (empty($pedido['pedido'])) {
-            return new Response(View::render('errors/404', array(
-                'title' => 'Pedido nao encontrado',
-            )), 404);
+            return V2ErrorPage::notFound(
+                $request->path(),
+                'Pedido não encontrado',
+                'Este pedido não está disponível ou não pertence à sua conta.'
+            );
         }
 
         $quantidade = 1;
@@ -208,9 +225,11 @@ class CheckoutController extends Controller
 
         $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
         if (empty($pedido['pedido'])) {
-            return new Response(View::render('errors/404', array(
-                'title' => 'Pedido nao encontrado',
-            )), 404);
+            return V2ErrorPage::notFound(
+                $request->path(),
+                'Pedido não encontrado',
+                'Este pedido não está disponível ou não pertence à sua conta.'
+            );
         }
 
         $pedidoGateway = strtolower(trim((string) ($pedido['pedido']['payment_gateway'] ?? '')));
@@ -239,8 +258,84 @@ class CheckoutController extends Controller
             'usuarioNome' => Session::get('usuario_nome'),
             'usuarioEmail' => Session::get('usuario_email'),
             'cupomPromocional' => Session::get('cupom_promocional_codigo', ''),
-            // Apenas para a casca V2: rota oficial atual para seguir o pagamento.
-            'continuarPagamentoUrl' => $this->urlContinuarPagamentoLegado($pedidoId),
+            // Destino de continuidade construído no BACKEND. Em modo V2 aponta para
+            // a etapa V2 de pagamento (/v2/checkout/pagamento?pedido_id=N), que
+            // revalida a propriedade do pedido e apresenta os meios reais. Fora do
+            // V2 mantém a rota legada intacta. Caminho interno fixo; nunca usa
+            // redirect/next/return/URL do usuário.
+            'continuarPagamentoUrl' => $this->emModoV2($request)
+                ? $this->urlPagamento($request, $pedidoId)
+                : $this->urlContinuarPagamentoLegado($pedidoId),
+            'success' => Session::pullFlash('success'),
+            'errors' => Session::pullFlash('errors', array()),
+        ));
+    }
+
+    // ------------------------------------------------------------------
+    // Fase 2.12B — Etapa V2 de PAGAMENTO (apresentação e início).
+    //
+    // Casca visual V2 sobre o MESMO mecanismo de checkout. Somente leitura:
+    // carrega o pedido pela MESMA autorização de detalharCheckout() (sessão +
+    // comprador/pagador), apresenta status/total reais e os meios de pagamento
+    // já habilitados no backend. Não cria transação, não gera PIX/QR, não
+    // confirma pagamento e não altera regra alguma de pedido/preço.
+    //
+    // Início do AbacatePay: delegado por POST HTML nativo (CSRF automático) ao
+    // endpoint real já existente (/aluno/pedidos/pagar/abacatepay), que decide
+    // reutilizar ou criar o checkout e redireciona ao provider. PIX/manual:
+    // encaminha à rota legada oficial de comprovante. GET nunca escreve.
+    // ------------------------------------------------------------------
+    public function pagamento(Request $request)
+    {
+        $pedidoId = (int) $this->pedidoIdFromRequest($request);
+        if ($pedidoId <= 0) {
+            return $this->redirect($this->urlCatalogoCheckout($request));
+        }
+
+        // Autorização real: mesma checagem de propriedade usada em todo o
+        // checkout (sessão + comprador/pagador). A rota exige 'auth', então
+        // usuário anônimo já foi redirecionado ao login pelo middleware.
+        $usuarioId = Session::get('usuario_id');
+        $pedido = $this->pedidoService->detalharCheckout($pedidoId, $usuarioId);
+        if (empty($pedido['pedido'])) {
+            return V2ErrorPage::notFound(
+                $request->path(),
+                'Pedido não encontrado',
+                'Este pedido não está disponível ou não pertence à sua conta.'
+            );
+        }
+
+        $pedidoGateway = strtolower(trim((string) ($pedido['pedido']['payment_gateway'] ?? '')));
+        $abacatepayAtivo = $this->abacatePayService->isEnabled();
+
+        Logger::info('checkout.pagamento.v2', array(
+            'pedido_id' => $pedidoId,
+            'abacatepay_ativo' => $abacatepayAtivo ? 1 : 0,
+            'pedido_gateway_atual' => $pedidoGateway !== '' ? $pedidoGateway : null,
+            'status' => (string) ($pedido['pedido']['status'] ?? ''),
+        ));
+
+        return $this->renderCheckout($request, 'pagamento', array(
+            'title' => 'Pagamento',
+            'pedido' => $pedido['pedido'],
+            'canSeePix' => !empty($pedido['can_see_pix']),
+            'abacatepayEnabled' => $abacatepayAtivo,
+            'pedidoSemCobranca' => ((float) $pedido['pedido']['total'] <= 0.0),
+            'comprovanteAguardandoAprovacao' => !empty($pedido['pedido']['comprovante_aguardando_aprovacao']),
+            'pedidoPagoOuAprovado' => in_array((string) $pedido['pedido']['status'], array('aprovado', 'pago'), true),
+            'pedidoGateway' => $pedidoGateway,
+            'loggedIn' => Session::get('usuario_id') !== null,
+            'usuarioNome' => Session::get('usuario_nome'),
+            'usuarioEmail' => Session::get('usuario_email'),
+            // Rotas/ação oficiais atuais construídas no BACKEND (caminhos internos
+            // fixos, escapados na view). A V2 apenas as apresenta.
+            'abacatepayActionUrl' => '/aluno/pedidos/pagar/abacatepay',
+            // Fase 2.12C — no V2 o envio de comprovante passa a ser a etapa V2
+            // dedicada; fora do V2, mantém a rota legada intacta.
+            'comprovanteUrl' => $this->emModoV2($request)
+                ? '/v2/checkout/comprovante?pedido_id=' . $pedidoId
+                : '/checkout/comprovante?pedido_id=' . $pedidoId,
+            'resumoUrl' => $this->urlResumo($request, $pedidoId),
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
         ));
@@ -415,20 +510,36 @@ class CheckoutController extends Controller
 
     public function comprovante(Request $request)
     {
+        $emV2 = $this->emModoV2($request);
+
         $pedidoId = (int) $this->pedidoIdFromRequest($request);
         if ($pedidoId <= 0) {
-            return $this->redirect('/cursos');
+            return $this->redirect($emV2 ? $this->urlCatalogoCheckout($request) : '/cursos');
         }
 
+        // O POST só é processado no fluxo legado (rota /checkout/comprovante). No
+        // V2 o envio tem rota dedicada (enviarComprovanteV2); aqui o método V2 é
+        // sempre GET/leitura.
         if ($request->method() === 'POST') {
             return $this->enviarComprovante($request, $pedidoId);
         }
 
+        // Autorização real: mesma checagem de propriedade de todo o checkout
+        // (sessão + comprador/pagador). No V2 a rota exige 'auth'; anônimo já foi
+        // redirecionado ao login pelo middleware.
         $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
         if (empty($pedido['pedido'])) {
-            return new Response(View::render('errors/404', array(
-                'title' => 'Pedido nao encontrado',
-            )), 404);
+            return V2ErrorPage::notFound(
+                $request->path(),
+                'Pedido não encontrado',
+                'Este pedido não está disponível ou não pertence à sua conta.'
+            );
+        }
+
+        if ($emV2) {
+            // Casca V2: NÃO redireciona a pedido pago/cancelado para a tela legada
+            // de sucesso; a própria view V2 apresenta o estado real permitido.
+            return $this->renderCheckout($request, 'comprovante', $this->dadosComprovanteV2($request, $pedido, $pedidoId));
         }
 
         if (in_array((string) $pedido['pedido']['status'], array('aprovado', 'pago'), true)) {
@@ -447,6 +558,172 @@ class CheckoutController extends Controller
         ));
     }
 
+    /**
+     * Envio V2 do comprovante PIX (Fase 2.12C). Rota fina e dedicada
+     * (/v2/checkout/comprovante/enviar). Revalida a propriedade e delega
+     * INTEGRALMENTE o arquivo/payload ao mesmo fluxo real do legado
+     * (enviarComprovante → ComprovantePixService::enviarUpload). Só difere no
+     * destino de retorno, que é uma URL interna fixa V2 (PRG). Nenhuma regra de
+     * upload/validação/status/armazenamento é reimplementada aqui.
+     */
+    public function enviarComprovanteV2(Request $request)
+    {
+        // O formulário V2 envia pedido_id no CORPO (campo oculto), pois a action
+        // não carrega query string. Resolve do corpo primeiro e só então recorre
+        // ao localizador padrão (query/sessão). pedido_id é apenas localizador; a
+        // propriedade é revalidada em enviarComprovante via detalharCheckout.
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        if ($pedidoId <= 0) {
+            $pedidoId = (int) $this->pedidoIdFromRequest($request);
+        }
+        if ($pedidoId <= 0) {
+            // Sem localizador válido: volta à Minha Área V2 (namespace /v2/), nunca
+            // ao catálogo nem ao fluxo V1.
+            return $this->redirect('/v2/aluno/?aba=pedidos');
+        }
+
+        return $this->enviarComprovante($request, $pedidoId, true);
+    }
+
+    /**
+     * Monta os dados de apresentação da casca V2 de comprovante a partir do
+     * pedido JÁ autorizado por detalharCheckout(). Deriva os estados (enviar,
+     * reenvio, em análise, pago, bloqueado) das MESMAS regras reais do backend;
+     * não expõe caminho de arquivo, id de arquivo, MIME interno, hash nem dados
+     * de gateway.
+     */
+    private function dadosComprovanteV2(Request $request, array $pedido, $pedidoId)
+    {
+        $p = $pedido['pedido'];
+        $status = strtolower(trim((string) ($p['status'] ?? '')));
+        $canSeePix = !empty($pedido['can_see_pix']);
+
+        $pago = in_array($status, array('aprovado', 'pago'), true);
+        $bloqueado = in_array($status, array('cancelado', 'expirado', 'reembolsado'), true);
+        $aguardando = !empty($p['comprovante_aguardando_aprovacao']);
+        $temComprovanteAtual = !empty($p['comprovante_atual']);
+
+        // Gate real de upload (espelha ComprovantePixService::pedidoPodeReceberComprovante).
+        $podeReceber = in_array($status, array('aguardando_pagamento', 'comprovante_enviado', 'pendencia', 'aguardando_reenvio'), true);
+
+        // Estado de reenvio: pedido devolvido/pendente com comprovante anterior.
+        $reenvio = in_array($status, array('aguardando_reenvio', 'pendencia'), true);
+
+        // Formulário de upload apenas quando o backend realmente aceita e o pedido
+        // não está pago/bloqueado/em análise. Em análise (aguardando) não renderiza
+        // novo upload — o backend continua sendo a segunda barreira no POST.
+        $podeEnviar = $canSeePix && $podeReceber && !$pago && !$bloqueado && !$aguardando;
+
+        // Exige motivo do reenvio quando já há comprovante anterior (mesma regra do
+        // service, que rejeita reenvio sem motivo).
+        $exigeMotivoReenvio = $podeEnviar && ($temComprovanteAtual || $reenvio);
+
+        // Instrução PIX real já presente no fluxo legado (mesma chave). Exibida só
+        // quando o envio é possível e o usuário tem acesso ao pedido.
+        $pixKey = 'cpeducacursos@gmail.com';
+
+        return array(
+            'title' => 'Enviar comprovante PIX',
+            'pedido' => $p,
+            'canSeePix' => $canSeePix,
+            'loggedIn' => Session::get('usuario_id') !== null,
+            'usuarioNome' => Session::get('usuario_nome'),
+            'usuarioEmail' => Session::get('usuario_email'),
+            'comprovanteStatus' => isset($p['comprovante_atual']['status']) ? (string) $p['comprovante_atual']['status'] : '',
+            'pixKey' => $pixKey,
+            'pedidoPago' => $pago,
+            'pedidoBloqueado' => $bloqueado,
+            'comprovanteAguardando' => $aguardando,
+            'podeEnviarComprovante' => $podeEnviar,
+            'exigeMotivoReenvio' => $exigeMotivoReenvio,
+            'estadoReenvio' => $reenvio,
+            // Ação e navegação: caminhos internos fixos, escapados na view. O
+            // pedido_id vai na query string E no campo oculto (o handler resolve os
+            // dois); segue apenas como localizador, com a propriedade revalidada.
+            'enviarUrl' => '/v2/checkout/comprovante/enviar?pedido_id=' . (int) $pedidoId,
+            'pagamentoUrl' => $this->urlPagamento($request, $pedidoId),
+            'success' => Session::pullFlash('success'),
+            'errors' => Session::pullFlash('errors', array()),
+        );
+    }
+
+    /**
+     * Confirmação V2 do envio de comprovante (pós-POST, somente leitura). Mantém o
+     * aluno no namespace /v2/ com uma tela institucional própria. Consulta os dados
+     * REAIS do pedido autenticado (detalharCheckout revalida a propriedade); pedido
+     * inexistente/alheio → 404 sem dados. Não permite novo upload nem altera status.
+     */
+    public function comprovanteEnviadoV2(Request $request)
+    {
+        $pedidoId = (int) $this->pedidoIdFromRequest($request);
+        if ($pedidoId <= 0) {
+            return $this->redirect('/v2/aluno/?aba=pedidos');
+        }
+
+        $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
+        if (empty($pedido['pedido'])) {
+            return V2ErrorPage::notFound(
+                $request->path(),
+                'Pedido não encontrado',
+                'Este pedido não está disponível ou não pertence à sua conta.'
+            );
+        }
+
+        $p = $pedido['pedido'];
+        $status = strtolower(trim((string) ($p['status'] ?? '')));
+
+        // Pedido já pago/aprovado: não há comprovante em análise a confirmar → Minha Área.
+        if (in_array($status, array('aprovado', 'pago'), true)) {
+            return $this->redirect('/v2/aluno/?aba=pedidos');
+        }
+
+        // Sem comprovante real registrado: evita confirmar algo que não aconteceu.
+        // Encaminha à etapa de envio V2 (mesmo pedido), sem expor dados fictícios.
+        if (empty($p['comprovante_atual'])) {
+            return $this->redirect('/v2/checkout/comprovante?pedido_id=' . $pedidoId);
+        }
+
+        return $this->renderCheckout($request, 'comprovante-enviado', $this->dadosComprovanteEnviadoV2($p, $pedidoId));
+    }
+
+    /**
+     * Dados de apresentação da confirmação V2 a partir do pedido JÁ autorizado.
+     * Expõe apenas: código público, curso(s), total, status "Em análise" e a
+     * data/hora real do envio. Sem caminho de arquivo, id de arquivo, gateway,
+     * PIX automático ou detalhe técnico de armazenamento.
+     */
+    private function dadosComprovanteEnviadoV2(array $p, $pedidoId)
+    {
+        $cursos = array();
+        if (isset($p['itens']) && is_array($p['itens'])) {
+            foreach ($p['itens'] as $item) {
+                $nome = trim((string) ($item['curso_nome'] ?? ''));
+                if ($nome !== '' && !in_array($nome, $cursos, true)) {
+                    $cursos[] = $nome;
+                }
+            }
+        }
+
+        $enviadoEmRaw = isset($p['comprovante_atual']['enviado_em']) ? (string) $p['comprovante_atual']['enviado_em'] : '';
+        $enviadoEm = '';
+        if ($enviadoEmRaw !== '') {
+            $ts = strtotime($enviadoEmRaw);
+            $enviadoEm = $ts ? date('d/m/Y H:i', $ts) : '';
+        }
+
+        return array(
+            'title' => 'Comprovante enviado com sucesso',
+            'pedidoCodigo' => (string) ($p['codigo'] ?? ''),
+            'cursos' => $cursos,
+            'totalFormatado' => 'R$ ' . number_format((float) ($p['total'] ?? 0), 2, ',', '.'),
+            'statusLabel' => 'Em análise',
+            'enviadoEm' => $enviadoEm,
+            // Caminhos internos fixos, escapados na view.
+            'minhaAreaHref' => '/v2/aluno/?aba=pedidos',
+            'success' => Session::pullFlash('success'),
+        );
+    }
+
     public function sucesso(Request $request)
     {
         $pedidoId = (int) $this->pedidoIdFromRequest($request);
@@ -458,9 +735,11 @@ class CheckoutController extends Controller
 
         $pedido = $pedidoId > 0 ? $this->pedidoService->detalharCheckout($pedidoId, $usuarioId, true) : array('pedido' => null);
         if (empty($pedido['pedido'])) {
-            return new Response(View::render('errors/404', array(
-                'title' => 'Pedido nao encontrado',
-            )), 404);
+            return V2ErrorPage::notFound(
+                $request->path(),
+                'Pedido não encontrado',
+                'Este pedido não está disponível ou não pertence à sua conta.'
+            );
         }
         $proximasAcoes = !empty($pedido['pedido']) ? $this->carregarProximasAcoesCheckout($pedido['pedido']) : array();
 
@@ -668,32 +947,51 @@ class CheckoutController extends Controller
         return $this->redirect($this->urlResumo($request, $pedidoId));
     }
 
-    private function enviarComprovante(Request $request, $pedidoId)
+    private function enviarComprovante(Request $request, $pedidoId, $v2 = false)
     {
+        // Destinos de retorno: URLs internas fixas. No V2, sempre a própria etapa
+        // de comprovante V2 (PRG); fora do V2, o fluxo legado inalterado. Nenhum
+        // destino vem de redirect/next/return/URL do usuário.
+        $comprovanteUrl = $v2
+            ? '/v2/checkout/comprovante?pedido_id=' . (int) $pedidoId
+            : '/checkout/comprovante?pedido_id=' . (int) $pedidoId;
+        // Envio bem-sucedido: no V2, tela de confirmação própria (namespace /v2/);
+        // fora do V2, o sucesso legado inalterado.
+        $enviadoUrl = $v2
+            ? '/v2/checkout/comprovante/enviado?pedido_id=' . (int) $pedidoId
+            : '/checkout/sucesso?pedido_id=' . (int) $pedidoId;
+        // Pedido já pago/aprovado (sem comprovante a enviar): no V2, Minha Área;
+        // fora do V2, o sucesso legado.
+        $pagoUrl = $v2
+            ? '/v2/aluno/?aba=pedidos'
+            : '/checkout/sucesso?pedido_id=' . (int) $pedidoId;
+
         if (!Session::get('usuario_id')) {
             Session::flash('errors', array('auth' => 'Faça login para enviar o comprovante.'));
-            return $this->redirect('/login');
+            return $this->redirect($v2 ? '/v2/login' : '/login');
         }
 
         $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
         if (empty($pedido['pedido'])) {
             Session::flash('errors', array('pedido' => 'Você nao tem permissao para acessar este pedido.'));
-            return $this->redirect('/cursos');
+            // Falha de autorização no V2 permanece no namespace /v2/ (Minha Área),
+            // nunca catálogo nem V1.
+            return $this->redirect($v2 ? '/v2/aluno/?aba=pedidos' : '/cursos');
         }
 
         if (in_array((string) $pedido['pedido']['status'], array('aprovado', 'pago'), true)) {
             Session::flash('success', 'Pedido aprovado automaticamente. Não há comprovante PIX para enviar.');
-            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
+            return $this->redirect($pagoUrl);
         }
 
         if (!isset($_FILES['comprovante']) || empty($_FILES['comprovante']['tmp_name'])) {
             Session::flash('errors', array('comprovante' => 'Selecione um arquivo de comprovante.'));
-            return $this->redirect('/checkout/comprovante?pedido_id=' . $pedidoId);
+            return $this->redirect($comprovanteUrl);
         }
 
         if ((int) $_FILES['comprovante']['size'] <= 0) {
             Session::flash('errors', array('comprovante' => 'O arquivo enviado nao e valido.'));
-            return $this->redirect('/checkout/comprovante?pedido_id=' . $pedidoId);
+            return $this->redirect($comprovanteUrl);
         }
 
         try {
@@ -716,16 +1014,18 @@ class CheckoutController extends Controller
                 'line' => $exception->getLine(),
             ));
             Session::flash('errors', array('Não foi possível salvar o comprovante. Verifique o arquivo enviado e tente novamente.'));
-            return $this->redirect('/checkout/comprovante?pedido_id=' . $pedidoId);
+            return $this->redirect($comprovanteUrl);
         }
 
         if (empty($resultado['ok'])) {
             Session::flash('errors', array('comprovante' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel enviar o comprovante.'));
-            return $this->redirect('/checkout/comprovante?pedido_id=' . $pedidoId);
+            return $this->redirect($comprovanteUrl);
         }
 
-        Session::flash('success', 'Comprovante enviado. Agora acompanhe em Meus Cursos.');
-        return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
+        Session::flash('success', $v2
+            ? 'Comprovante enviado com sucesso. Aguarde a aprovação do administrador.'
+            : 'Comprovante enviado. Agora acompanhe em Meus Cursos.');
+        return $this->redirect($enviadoUrl);
     }
 
     private function pedidoIdFromRequest(Request $request)
@@ -1038,12 +1338,24 @@ class CheckoutController extends Controller
     {
         $cursoId = (int) $request->query('curso_id', 0);
         $turmaId = (int) $request->query('turma_id', 0);
+        // Sem curso válido no contexto → catálogo V2 (caminho interno fixo).
+        // Evita introduzir curso_id=0 e a 404 subsequente; não cria pedido nem
+        // usa redirect/next/return/URL do usuário. A rota /v2/checkout/inscricao
+        // preserva seu próprio comportamento seguro para curso_id inválido.
+        if ($cursoId <= 0) {
+            return $this->redirect($this->urlCatalogoCheckout($request));
+        }
         return $this->redirect($this->urlInscricao($request, $cursoId, $turmaId));
     }
 
     private function emModoV2(Request $request)
     {
-        return strpos((string) $request->path(), '/v2/checkout') === 0;
+        // Correspondência estrita de segmento: apenas o próprio /v2/checkout ou
+        // subcaminhos reais dentro de /v2/checkout/. Evita falsos positivos por
+        // prefixo ambíguo (ex.: /v2/checkout-falso, /v2/checkoutx). Request::path()
+        // já normaliza removendo a barra final. Nunca usa origem/redirect/next/URL.
+        $path = (string) $request->path();
+        return $path === '/v2/checkout' || strpos($path, '/v2/checkout/') === 0;
     }
 
     /** Renderiza a view legada OU a casca V2 (sem layout legado), conforme o modo. */
@@ -1072,6 +1384,14 @@ class CheckoutController extends Controller
     private function urlResumo(Request $request, $pedidoId)
     {
         $base = $this->emModoV2($request) ? '/v2/checkout/resumo' : '/checkout/resumo';
+        return $base . '?pedido_id=' . (int) $pedidoId;
+    }
+
+    private function urlPagamento(Request $request, $pedidoId)
+    {
+        // Só existe a etapa dedicada de pagamento no fluxo V2. Fora do V2, o
+        // destino oficial de pagamento continua sendo o resumo legado.
+        $base = $this->emModoV2($request) ? '/v2/checkout/pagamento' : '/checkout/resumo';
         return $base . '?pedido_id=' . (int) $pedidoId;
     }
 

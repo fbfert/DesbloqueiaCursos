@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
 use App\Services\AuthService;
+use App\Support\SafeRedirect;
 
 class AuthController extends Controller
 {
@@ -211,6 +212,13 @@ class AuthController extends Controller
     {
         $origem = trim((string) $request->input('origem', ''));
 
+        // Retorno V2 seguro (Fase 2.13): preserva ?redirect= (validado como
+        // caminho interno /v2/...) para que o reenvio do login mantenha o destino.
+        $retorno = SafeRedirect::v2Path($request->input('redirect', ''));
+        if ($retorno !== null && ($origem === 'v2' || $origem === 'v2_aluno')) {
+            return '/v2/login?redirect=' . rawurlencode($retorno);
+        }
+
         $permitidos = array(
             'v2' => '/v2/login',
             // Veio da Área do Aluno V2: preserva a intenção para o retorno pós-login.
@@ -225,18 +233,38 @@ class AuthController extends Controller
      *
      * Segurança: NÃO aceita URL do usuário. Apenas a flag `origem` é lida e
      * comparada a tokens fixos. Retorna null quando não há origem V2 aplicável,
-     * preservando integralmente o destino padrão do sistema. Hoje só a Área do
-     * Aluno V2 usa este retorno (`v2_aluno` → `/v2/aluno`).
+     * preservando integralmente o destino padrão do sistema (legado).
+     *
+     * Prioridade do pós-login V2:
+     *  1) `?redirect=` válido e interno (/v2/...) → destino solicitado (sem tela);
+     *  2) `origem=v2_aluno` (veio da Área do Aluno V2) → `/v2/aluno`;
+     *  3) `origem=v2` (login iniciado direto em /v2/login) sem redirect válido →
+     *     tela V2 de escolha `/v2/pos-login` (nunca `/` nem o modal legado do V1);
+     *  4) demais origens → null (comportamento legado inalterado).
      */
     private function resolveLoginSuccessRedirect(Request $request)
     {
         $origem = trim((string) $request->input('origem', ''));
 
-        $permitidos = array(
-            'v2_aluno' => '/v2/aluno',
-        );
+        if ($origem !== 'v2' && $origem !== 'v2_aluno') {
+            return null;
+        }
 
-        return isset($permitidos[$origem]) ? $permitidos[$origem] : null;
+        // (1) Destino V2 original preservado em ?redirect=, aceito SOMENTE quando
+        // validado como caminho interno /v2/... . Nunca aceita URL externa/aberta.
+        $retorno = SafeRedirect::v2Path($request->input('redirect', ''));
+        if ($retorno !== null) {
+            return $retorno;
+        }
+
+        // (2) Fluxo da Área do Aluno V2 já tem destino próprio.
+        if ($origem === 'v2_aluno') {
+            return '/v2/aluno';
+        }
+
+        // (3) Login direto no V2 sem destino: tela V2 de escolha (Minha Área /
+        // Catálogo), mantendo o usuário integralmente no ambiente V2.
+        return '/v2/pos-login';
     }
 
     /**
@@ -253,7 +281,19 @@ class AuthController extends Controller
     {
         $origem = trim((string) $request->input('origem', ''));
 
-        return $origem === 'v2' ? $alvoV2 : $alvoPadrao;
+        if ($origem !== 'v2') {
+            return $alvoPadrao;
+        }
+
+        // Fase 2.13: propaga o retorno V2 seguro (?redirect=) através do fluxo de
+        // cadastro/recuperação, para que após o login o usuário volte ao destino
+        // original. Só quando o alvo é V2 e o retorno é interno /v2/... válido.
+        $retorno = SafeRedirect::v2Path($request->input('redirect', ''));
+        if ($retorno !== null && strpos($alvoV2, '/v2/') === 0 && strpos($alvoV2, '?') === false) {
+            return $alvoV2 . '?redirect=' . rawurlencode($retorno);
+        }
+
+        return $alvoV2;
     }
 
     private function flashData(array $data)

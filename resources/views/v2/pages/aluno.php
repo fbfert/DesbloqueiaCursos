@@ -99,11 +99,35 @@ $inicial = function_exists('mb_substr') ? mb_substr($primeiroNome, 0, 1, 'UTF-8'
           </div>
         <?php else: ?>
           <?php foreach ($pedidos as $pedido): ?>
+            <?php
+              $temResumo = isset($pedido['resumo_v2_href']) && $pedido['resumo_v2_href'] !== '';
+              $multiplos = !empty($pedido['multiplos_cursos']);
+              $tituloCurso = (string) ($pedido['titulo_curso'] ?? '');
+            ?>
             <div class="v2-pedido">
               <div class="v2-pedido-top">
-                <div>
-                  <span class="v2-pedido-cod">Pedido <?php echo Helpers::e((string) $pedido['codigo']); ?></span>
-                  <?php if ($pedido['data'] !== ''): ?><span class="v2-muted v2-sm"><?php echo Helpers::e((string) $pedido['data']); ?></span><?php endif; ?>
+                <div style="min-width:0;">
+                  <!-- Curso é a informação dominante do card -->
+                  <h3 class="v2-pedido-curso">
+                    <?php if ($temResumo): ?>
+                      <a class="v2-pedido-curso-link" href="<?php echo Helpers::e((string) $pedido['resumo_v2_href']); ?>">
+                        <?php echo Helpers::e($tituloCurso); ?>
+                        <i class="ti ti-arrow-right" aria-hidden="true"></i>
+                      </a>
+                    <?php else: ?>
+                      <?php echo Helpers::e($tituloCurso); ?>
+                    <?php endif; ?>
+                  </h3>
+                  <?php if ($multiplos && !empty($pedido['cursos_nomes'])): ?>
+                    <ul class="v2-pedido-cursos-lista">
+                      <?php foreach ($pedido['cursos_nomes'] as $nomeCurso): ?>
+                        <li><?php echo Helpers::e((string) $nomeCurso); ?></li>
+                      <?php endforeach; ?>
+                    </ul>
+                  <?php endif; ?>
+                  <!-- Código público e data como informação secundária -->
+                  <span class="v2-pedido-cod">Pedido #<?php echo Helpers::e((string) $pedido['codigo']); ?></span>
+                  <?php if ($pedido['data'] !== ''): ?><span class="v2-muted v2-sm"> · <?php echo Helpers::e((string) $pedido['data']); ?></span><?php endif; ?>
                 </div>
                 <span class="v2-badge <?php echo Helpers::e((string) $pedido['status_classe']); ?>"><?php echo Helpers::e((string) $pedido['status_label']); ?></span>
               </div>
@@ -111,11 +135,15 @@ $inicial = function_exists('mb_substr') ? mb_substr($primeiroNome, 0, 1, 'UTF-8'
                 <?php if ($pedido['total_itens'] > 0): ?><span><i class="ti ti-package"></i><?php echo (int) $pedido['total_itens']; ?> <?php echo $pedido['total_itens'] === 1 ? 'item' : 'itens'; ?></span><?php endif; ?>
                 <span><i class="ti ti-cash"></i><?php echo Helpers::e((string) $pedido['total_formatado']); ?></span>
               </div>
+              <?php if ($temResumo): ?>
+                <div class="v2-aluno-card-actions" style="margin-top:10px;">
+                  <a href="<?php echo Helpers::e((string) $pedido['resumo_v2_href']); ?>" class="v2-btn v2-btn-primary v2-btn-sm">
+                    <i class="ti ti-arrow-right"></i> Continuar pedido
+                  </a>
+                </div>
+              <?php endif; ?>
             </div>
           <?php endforeach; ?>
-          <p class="v2-muted v2-sm" style="margin-top:10px;">
-            Para detalhes e ações dos pedidos, acesse a <a href="/aluno/meus-cursos">sua página completa</a>.
-          </p>
         <?php endif; ?>
       </section>
 

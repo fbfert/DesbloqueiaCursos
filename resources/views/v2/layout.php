@@ -1,18 +1,28 @@
 <?php
 use App\Core\Helpers;
+use App\Support\V2Nav;
 
 $pageTitle = isset($pageTitle) && trim((string) $pageTitle) !== '' ? (string) $pageTitle : 'Desbloqueia Cursos';
 $pageDescription = isset($pageDescription) ? (string) $pageDescription : '';
-$homeHref = isset($homeHref) ? (string) $homeHref : '/v2/';
-$catalogoHref = isset($catalogoHref) ? (string) $catalogoHref : '/cursos';
-$categoriasHref = isset($categoriasHref) ? (string) $categoriasHref : '/categorias';
-$certificadosHref = isset($certificadosHref) ? (string) $certificadosHref : '/v2/certificados/validar';
-$sobreHref = isset($sobreHref) ? (string) $sobreHref : '/sobre';
-$contatoHref = isset($contatoHref) ? (string) $contatoHref : '/contato';
-$loginHref = isset($loginHref) ? (string) $loginHref : '/login';
-$registerHref = isset($registerHref) ? (string) $registerHref : '/cadastro';
-$areaHref = isset($areaHref) ? (string) $areaHref : '/meus-cursos';
+
+// Fase 2.13 — navegação V2 centralizada (V2Nav). Sobrescreve quaisquer hrefs
+// herdados que apontariam ao V1 (ex.: catalogo/categorias/login). `areaHref`
+// (papel-dependente) e `homeHref` são preservados quando já informados.
+$homeHref = isset($homeHref) && (string) $homeHref !== '' ? (string) $homeHref : V2Nav::HOME;
+$areaHref = isset($areaHref) && (string) $areaHref !== '' ? (string) $areaHref : V2Nav::ALUNO;
 $loggedIn = !empty($loggedIn);
+$v2Nav = V2Nav::links($areaHref, $loggedIn);
+$catalogoHref = $v2Nav['catalogoHref'];
+$categoriasHref = $v2Nav['categoriasHref'];
+$categoriesHref = $v2Nav['categoriesHref'];
+$certificadosHref = $v2Nav['certificadosHref'];
+$sobreHref = $v2Nav['sobreHref'];
+$contatoHref = $v2Nav['contatoHref'];
+$comoFuncionaHref = $v2Nav['comoFuncionaHref'];
+$loginHref = $v2Nav['loginHref'];
+$registerHref = $v2Nav['registerHref'];
+$pedidosHref = $v2Nav['pedidosHref'];
+$contaHref = $v2Nav['contaHref'];
 $usuarioPrimeiroNome = isset($usuarioPrimeiroNome) ? (string) $usuarioPrimeiroNome : '';
 $heroStats = isset($heroStats) && is_array($heroStats) ? $heroStats : null;
 $disableV2AutoRenderHome = !empty($disableV2AutoRenderHome);

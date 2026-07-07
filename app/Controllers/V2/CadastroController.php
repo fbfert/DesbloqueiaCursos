@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Support\SafeRedirect;
 
 /**
  * Cadastro V2 (Fase 2.5) — apenas renderização visual.
@@ -27,6 +28,11 @@ class CadastroController extends Controller
     {
         $usuarioId = (int) Session::get('usuario_id', 0);
 
+        // Retorno V2 seguro (Fase 2.13) propagado do login para manter o destino
+        // após cadastro → login. Validado como caminho interno /v2/... .
+        $redirectSeguro = SafeRedirect::v2Path($request->query('redirect', ''));
+        $redirectQuery = $redirectSeguro !== null ? '?redirect=' . rawurlencode($redirectSeguro) : '';
+
         $data = array(
             'title' => 'Criar conta — Desbloqueia Cursos',
             'pageTitle' => 'Criar conta — Desbloqueia Cursos',
@@ -39,7 +45,8 @@ class CadastroController extends Controller
             // Endpoint e navegação reais (não inventar rotas).
             'cadastroAction' => '/cadastro',
             'homeHref' => '/v2/',
-            'loginHref' => '/v2/login',
+            'loginHref' => '/v2/login' . $redirectQuery,
+            'redirectSeguro' => $redirectSeguro !== null ? $redirectSeguro : '',
             'termosHref' => '/termos-de-uso',
             'privacidadeHref' => '/politica-de-privacidade',
 
@@ -63,6 +70,7 @@ class CadastroController extends Controller
             return '/professor/dashboard';
         }
 
-        return '/meus-cursos';
+        // Fase 2.13: aluno permanece no ambiente V2.
+        return '/v2/aluno/';
     }
 }

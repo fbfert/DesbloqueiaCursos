@@ -127,7 +127,7 @@ $ctaHref = (string) $curso['cta_href'];
       <?php if (!empty($curso['descricao'])): ?>
         <div class="v2-block v2-curso-prose">
           <h2 class="v2-h3" style="margin-bottom:8px;">Sobre o curso</h2>
-          <p class="v2-muted"><?php echo nl2br(Helpers::e((string) $curso['descricao'])); ?></p>
+          <div class="v2-muted v2-richtext"><?php echo Helpers::renderSafeHtml((string) $curso['descricao']); ?></div>
         </div>
       <?php endif; ?>
 
@@ -135,7 +135,7 @@ $ctaHref = (string) $curso['cta_href'];
       <?php if (!empty($curso['objetivo_geral'])): ?>
         <div class="v2-block v2-curso-prose">
           <h2 class="v2-h3" style="margin-bottom:8px;">Objetivo geral</h2>
-          <p class="v2-muted"><?php echo nl2br(Helpers::e((string) $curso['objetivo_geral'])); ?></p>
+          <div class="v2-muted v2-richtext"><?php echo Helpers::renderSafeHtml((string) $curso['objetivo_geral']); ?></div>
         </div>
       <?php endif; ?>
 
@@ -143,7 +143,7 @@ $ctaHref = (string) $curso['cta_href'];
       <?php if (!empty($curso['publico_alvo'])): ?>
         <div class="v2-block v2-curso-prose">
           <h2 class="v2-h3" style="margin-bottom:8px;">Público-alvo</h2>
-          <p class="v2-muted"><?php echo nl2br(Helpers::e((string) $curso['publico_alvo'])); ?></p>
+          <div class="v2-muted v2-richtext"><?php echo Helpers::renderSafeHtml((string) $curso['publico_alvo']); ?></div>
         </div>
       <?php endif; ?>
 
@@ -152,7 +152,7 @@ $ctaHref = (string) $curso['cta_href'];
         <div class="v2-block v2-curso-prose">
           <h2 class="v2-h3" style="margin-bottom:8px;">Pré-requisitos</h2>
           <?php if (!empty($curso['pre_requisitos_texto'])): ?>
-            <p class="v2-muted"><?php echo nl2br(Helpers::e((string) $curso['pre_requisitos_texto'])); ?></p>
+            <div class="v2-muted v2-richtext"><?php echo Helpers::renderSafeHtml((string) $curso['pre_requisitos_texto']); ?></div>
           <?php endif; ?>
           <?php if (!empty($curso['pre_requisitos_itens'])): ?>
             <ul class="v2-learn">
@@ -168,7 +168,7 @@ $ctaHref = (string) $curso['cta_href'];
       <?php if (!empty($curso['ementa'])): ?>
         <div class="v2-block v2-curso-prose">
           <h2 class="v2-h3" style="margin-bottom:8px;">Ementa</h2>
-          <p class="v2-muted"><?php echo nl2br(Helpers::e((string) $curso['ementa'])); ?></p>
+          <div class="v2-muted v2-richtext"><?php echo Helpers::renderSafeHtml((string) $curso['ementa']); ?></div>
         </div>
       <?php endif; ?>
 
@@ -217,7 +217,7 @@ $ctaHref = (string) $curso['cta_href'];
       <?php if (!empty($curso['metodologia'])): ?>
         <div class="v2-block v2-curso-prose">
           <h2 class="v2-h3" style="margin-bottom:8px;">Metodologia</h2>
-          <p class="v2-muted"><?php echo nl2br(Helpers::e((string) $curso['metodologia'])); ?></p>
+          <div class="v2-muted v2-richtext"><?php echo Helpers::renderSafeHtml((string) $curso['metodologia']); ?></div>
         </div>
       <?php endif; ?>
 
@@ -237,7 +237,7 @@ $ctaHref = (string) $curso['cta_href'];
       <?php if (!empty($curso['avaliacao'])): ?>
         <div class="v2-block v2-curso-prose">
           <h2 class="v2-h3" style="margin-bottom:8px;">Avaliação</h2>
-          <p class="v2-muted"><?php echo nl2br(Helpers::e((string) $curso['avaliacao'])); ?></p>
+          <div class="v2-muted v2-richtext"><?php echo Helpers::renderSafeHtml((string) $curso['avaliacao']); ?></div>
         </div>
       <?php endif; ?>
 

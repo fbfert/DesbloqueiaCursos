@@ -73,6 +73,11 @@ $erroDe = function ($campo) use ($errors) {
 
     <form method="post" action="<?php echo Helpers::e($cadastroAction); ?>" id="v2-cadastro-real" data-native-submit novalidate>
       <input type="hidden" name="origem" value="v2">
+      <?php // Retorno V2 seguro (validado no backend como caminho interno /v2/...). ?>
+      <?php $redirectSeguro = isset($redirectSeguro) ? (string) $redirectSeguro : ''; ?>
+      <?php if ($redirectSeguro !== ''): ?>
+        <input type="hidden" name="redirect" value="<?php echo Helpers::e($redirectSeguro); ?>">
+      <?php endif; ?>
 
       <div class="v2-field<?php echo $erroDe('nome') !== '' ? ' has-error' : ''; ?>">
         <label for="v2-cad-nome">Nome</label>

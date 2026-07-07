@@ -67,6 +67,11 @@ $loginDescribedBy = $temErros ? 'v2-login-erros' : 'v2-login-ajuda';
     <form method="post" action="<?php echo Helpers::e($loginAction); ?>" id="v2-login-real" data-native-submit novalidate>
       <?php // Flag interna em lista branca: permite ao servidor retornar à tela V2 em caso de erro. ?>
       <input type="hidden" name="origem" value="<?php echo Helpers::e($origemFlag); ?>">
+      <?php // Retorno V2 seguro (validado no backend como caminho interno /v2/...). ?>
+      <?php $redirectSeguro = isset($redirectSeguro) ? (string) $redirectSeguro : ''; ?>
+      <?php if ($redirectSeguro !== ''): ?>
+        <input type="hidden" name="redirect" value="<?php echo Helpers::e($redirectSeguro); ?>">
+      <?php endif; ?>
 
       <div class="v2-field<?php echo $temErros ? ' has-error' : ''; ?>" id="v2-f-login">
         <label for="v2-login-login">E-mail ou CPF</label>

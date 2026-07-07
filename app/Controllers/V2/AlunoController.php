@@ -67,7 +67,10 @@ class AlunoController extends Controller
         $inscricoes = $this->carregarInscricoes($usuarioId);
         $cursos = $this->normalizarCursos($inscricoes);
         $certificados = $this->normalizarCertificados($inscricoes);
-        $pedidos = $this->normalizarPedidos($this->pedidoModel->forUsuario($usuarioId));
+        $pedidos = $this->normalizarPedidos(
+            $this->pedidoModel->forUsuario($usuarioId),
+            $this->pedidoModel->cursosNomesPorUsuario($usuarioId)
+        );
         $perfil = $this->normalizarPerfil($usuarioId, $usuarioNome);
 
         $abas = array(
@@ -172,26 +175,78 @@ class AlunoController extends Controller
         return $certs;
     }
 
-    private function normalizarPedidos(array $pedidos)
+    private function normalizarPedidos(array $pedidos, array $cursosNomesPorPedido = array())
     {
         $itens = array();
         foreach ($pedidos as $p) {
             if (!is_array($p)) {
                 continue;
             }
+
+            $pedidoId = isset($p['id']) ? (int) $p['id'] : 0;
+            $status = isset($p['status']) ? (string) $p['status'] : '';
+            $total = isset($p['total']) ? (float) $p['total'] : 0.0;
+
+            // Nomes reais dos cursos vêm SEMPRE dos itens reais do pedido
+            // autorizado (mesma regra de propriedade de forUsuario). Nunca de
+            // query string, JS ou nome de participante.
+            $cursosNomes = ($pedidoId > 0 && isset($cursosNomesPorPedido[$pedidoId]) && is_array($cursosNomesPorPedido[$pedidoId]))
+                ? array_values($cursosNomesPorPedido[$pedidoId])
+                : array();
+            $qtdCursos = count($cursosNomes);
+
+            if ($qtdCursos === 1) {
+                $tituloCurso = (string) $cursosNomes[0];
+            } elseif ($qtdCursos > 1) {
+                $tituloCurso = 'Cursos deste pedido';
+            } else {
+                // Fallback honesto: nenhum item de curso disponível para o pedido.
+                $tituloCurso = 'Pedido sem curso identificado';
+            }
+
+            // Link para o Resumo V2 gerado no BACKEND apenas quando o pedido
+            // pertence ao usuário (garantido por forUsuario), possui id válido,
+            // tem cobrança e está em estado que o fluxo atual permite retomar o
+            // checkout (mesma regra de PedidoService::pedidoPodeSerFinalizado).
+            // Caminho interno fixo, codificado com http_build_query; a rota de
+            // resumo revalida a propriedade no clique.
+            $podeRetomar = $this->pedidoPodeRetomarCheckout($status) && $total > 0.0 && $pedidoId > 0;
+            $resumoHref = $podeRetomar
+                ? '/v2/checkout/resumo?' . http_build_query(array('pedido_id' => $pedidoId))
+                : '';
+
             $itens[] = array(
                 'codigo' => isset($p['codigo']) ? (string) $p['codigo'] : '',
                 'data' => isset($p['created_at']) ? $this->formatarData($p['created_at']) : '',
-                'total' => isset($p['total']) ? (float) $p['total'] : 0.0,
-                'total_formatado' => $this->formatarMoeda(isset($p['total']) ? (float) $p['total'] : 0.0),
-                'status' => isset($p['status']) ? (string) $p['status'] : '',
-                'status_label' => $this->statusPedidoLabel(isset($p['status']) ? (string) $p['status'] : ''),
-                'status_classe' => $this->statusPedidoClasse(isset($p['status']) ? (string) $p['status'] : ''),
+                'total' => $total,
+                'total_formatado' => $this->formatarMoeda($total),
+                'status' => $status,
+                'status_label' => $this->statusPedidoLabel($status),
+                'status_classe' => $this->statusPedidoClasse($status),
                 'total_itens' => isset($p['total_itens']) ? (int) $p['total_itens'] : 0,
+                'cursos_nomes' => $cursosNomes,
+                'titulo_curso' => $tituloCurso,
+                'multiplos_cursos' => $qtdCursos > 1,
+                'resumo_v2_href' => $resumoHref,
             );
         }
 
         return $itens;
+    }
+
+    /**
+     * Estados em que o fluxo atual permite retomar/continuar o checkout.
+     * Espelha PedidoService::pedidoPodeSerFinalizado() (fonte de verdade do
+     * backend). Estados como pago, aprovado, cancelado, expirado, em_analise e
+     * comprovante_enviado NÃO retomam pagamento e não recebem link de resumo.
+     */
+    private function pedidoPodeRetomarCheckout($status)
+    {
+        return in_array(
+            (string) $status,
+            array('rascunho', 'pendencia', 'aguardando_reenvio', 'aguardando_pagamento'),
+            true
+        );
     }
 
     private function normalizarPerfil($usuarioId, $usuarioNome)

@@ -134,6 +134,15 @@
 .v2-bnav-item span { font-size: 0.62rem; font-weight: 600; }
 .v2-bnav-item.is-active, .v2-bnav-item:hover { color: var(--v2-laranja); text-decoration: none; }
 
+/* Logout V2 — botão de sair no header (desktop) e na navegação inferior (mobile).
+   Reaproveita o design system V2 (v2-btn/ghost, v2-bnav-item); apenas ajusta o
+   formato quadrado do ícone no header e neutraliza o <button>/<form> no mobile. */
+.v2-logout-form { display: flex; margin: 0; }
+.v2-btn-icon { width: 38px; padding: 0; gap: 0; }
+.v2-btn-icon i { font-size: 18px; }
+.v2-bnav-logout { flex: 1; display: flex; margin: 0; padding: 0; }
+.v2-bnav-logout .v2-bnav-item { flex: 1; background: transparent; border: 0; cursor: pointer; font: inherit; }
+
 /* Topbar simples (mobile) para páginas internas */
 .v2-topbar { display: flex; align-items: center; gap: 10px; height: 56px; border-bottom: 1px solid var(--v2-border); background: var(--v2-surface); }
 @media (min-width: 768px) { .v2-topbar { display: none; } }
@@ -705,6 +714,21 @@
 .v2-app .v2-curso-rate { font-size: 0.9rem; margin: 4px 0 2px; }
 .v2-app .v2-curso-prose p { max-width: 68ch; }
 .v2-app .v2-curso-prose p + p { margin-top: 10px; }
+/* Fase 2.13.1 — cartões de escolha pós-login V2. */
+.v2-app .v2-poslogin-card { transition: border-color .15s ease, transform .15s ease; }
+.v2-app .v2-poslogin-card:hover { border-color: var(--v2-laranja); transform: translateY(-2px); text-decoration: none; }
+.v2-app .v2-poslogin-card:focus-visible { outline: 2px solid var(--v2-laranja); outline-offset: 2px; }
+/* Fase 2.13 — HTML editorial sanitizado (descrição do curso e afins). */
+.v2-app .v2-richtext { max-width: 68ch; }
+.v2-app .v2-richtext p { margin: 0 0 10px; }
+.v2-app .v2-richtext p:last-child { margin-bottom: 0; }
+.v2-app .v2-richtext ul, .v2-app .v2-richtext ol { margin: 0 0 10px; padding-left: 22px; }
+.v2-app .v2-richtext li { margin: 2px 0; }
+.v2-app .v2-richtext h2, .v2-app .v2-richtext h3, .v2-app .v2-richtext h4 { font-family: 'Sora', sans-serif; margin: 14px 0 6px; color: var(--v2-carvao); }
+.v2-app .v2-richtext a { color: var(--v2-roxo); text-decoration: underline; text-underline-offset: 2px; }
+.v2-app .v2-richtext a:hover { color: var(--v2-laranja); }
+.v2-app .v2-richtext blockquote { margin: 0 0 10px; padding: 6px 12px; border-left: 3px solid var(--v2-border); color: var(--v2-text-2); }
+.v2-app .v2-richtext strong, .v2-app .v2-richtext b { font-weight: 700; }
 
 /* Capa: badges no canto superior */
 .v2-app .v2-cover { position: relative; }
@@ -889,8 +913,17 @@
 .v2-app .v2-aluno-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
 
 /* Pedidos */
-.v2-app .v2-pedido-cod { display: block; font-size: 0.72rem; font-weight: 700; color: var(--v2-roxo); letter-spacing: .03em; }
 .v2-app .v2-pedido-top { align-items: flex-start; }
+/* Curso como informação dominante do card de pedido */
+.v2-app .v2-pedido-curso { font-family: 'Sora', sans-serif; font-size: 0.98rem; font-weight: 700; line-height: 1.25; color: var(--v2-carvao); margin: 0 0 4px; }
+.v2-app .v2-pedido-curso-link { display: inline-flex; align-items: center; gap: 4px; color: var(--v2-roxo); text-decoration: underline; text-underline-offset: 2px; }
+.v2-app .v2-pedido-curso-link:hover { color: var(--v2-laranja); }
+.v2-app .v2-pedido-curso-link:focus-visible { outline: 2px solid var(--v2-laranja); outline-offset: 2px; border-radius: 4px; }
+.v2-app .v2-pedido-curso-link i { font-size: 0.9em; }
+.v2-app .v2-pedido-cursos-lista { margin: 2px 0 6px; padding-left: 18px; list-style: disc; }
+.v2-app .v2-pedido-cursos-lista li { font-size: 0.85rem; color: var(--v2-text-2); line-height: 1.4; }
+/* Código público e data como metadado secundário */
+.v2-app .v2-pedido-cod { display: inline; font-size: 0.72rem; font-weight: 700; color: var(--v2-text-2); letter-spacing: .03em; }
 
 /* Certificados (cartão completo) */
 .v2-app .v2-cert-block { flex-direction: column; align-items: stretch; }
@@ -1164,6 +1197,45 @@ body.v2-modal-open { overflow: hidden; }
 @media (min-width: 560px) { .v2-app .v2-cert-result-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .v2-app .v2-cert-result-grid > div { display: flex; flex-direction: column; }
 .v2-app .v2-cert-result-grid b { font-size: 0.95rem; }
+
+/* ============================================================
+   PÁGINAS INSTITUCIONAIS V2 (Fase 2.13B) — conteúdo real do backend
+   Casca de leitura confortável para HTML sanitizado (Termos, Privacidade,
+   Quem somos, Onde estamos, Como funciona, Remova-me). Escopo .v2-app · v2-.
+   ============================================================ */
+.v2-app .v2-instit { padding-bottom: 32px; max-width: 100%; }
+.v2-app .v2-instit-head { padding: 8px 0 14px; }
+.v2-app .v2-instit-head .v2-h1 { margin-bottom: 6px; }
+.v2-app .v2-instit-resumo { margin: 0; font-size: 0.98rem; max-width: 72ch; }
+.v2-app .v2-instit-card {
+  background: var(--v2-surface); border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-lg); padding: 20px; max-width: 100%;
+}
+@media (min-width: 768px) { .v2-app .v2-instit-card { padding: 28px 32px; } }
+
+/* Tipografia do conteúdo administrável (v2-prose) */
+.v2-app .v2-prose { color: var(--v2-text); font-size: 1rem; line-height: 1.7; max-width: 74ch; }
+.v2-app .v2-prose > *:first-child { margin-top: 0; }
+.v2-app .v2-prose > *:last-child { margin-bottom: 0; }
+.v2-app .v2-prose p { margin: 0 0 14px; color: var(--v2-text-2); }
+.v2-app .v2-prose h2 { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--v2-carvao); margin: 26px 0 10px; }
+.v2-app .v2-prose h3 { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.08rem; color: var(--v2-carvao); margin: 20px 0 8px; }
+.v2-app .v2-prose h4 { font-weight: 700; font-size: 1rem; color: var(--v2-carvao); margin: 16px 0 6px; }
+.v2-app .v2-prose ul, .v2-app .v2-prose ol { margin: 0 0 14px; padding-left: 22px; color: var(--v2-text-2); }
+.v2-app .v2-prose li { margin: 4px 0; }
+.v2-app .v2-prose a { color: var(--v2-laranja); text-decoration: underline; text-underline-offset: 2px; }
+.v2-app .v2-prose a:hover { text-decoration: none; }
+.v2-app .v2-prose a:focus-visible { outline: 2px solid var(--v2-laranja); outline-offset: 2px; border-radius: 4px; }
+.v2-app .v2-prose strong, .v2-app .v2-prose b { color: var(--v2-carvao); font-weight: 700; }
+.v2-app .v2-prose blockquote { margin: 0 0 14px; padding: 8px 16px; border-left: 3px solid var(--v2-border); color: var(--v2-text-2); }
+.v2-app .v2-prose hr { border: 0; border-top: 1px solid var(--v2-border); margin: 20px 0; }
+.v2-app .v2-prose table { width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 0.92rem; display: block; overflow-x: auto; }
+.v2-app .v2-prose th, .v2-app .v2-prose td { border: 1px solid var(--v2-border); padding: 8px 10px; text-align: left; vertical-align: top; }
+.v2-app .v2-prose th { background: var(--v2-surface-2); font-weight: 700; }
+
+/* Embed de mapa (whitelist Google Maps) */
+.v2-app .v2-instit-map { margin-top: 22px; border-radius: var(--v2-radius); overflow: hidden; border: 1px solid var(--v2-border); line-height: 0; }
+.v2-app .v2-instit-map iframe { display: block; width: 100%; }
 
 /* ============================================================
    FICHA DE CURSO V2 INTEGRADA (Fase 2.3) — indicador de turma

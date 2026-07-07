@@ -80,9 +80,9 @@ class Router
                 }
             }
 
-            return new Response(View::render('errors/404', array(
-                'title' => 'Pagina nao encontrada',
-            )), 404);
+            // Fase 2.13 — 404 no ambiente V2 mantém o visual V2; fora do V2,
+            // permanece a página legada.
+            return \App\Support\V2ErrorPage::notFound($request->path());
         }
 
         $route = $this->routes[$key];
@@ -259,6 +259,7 @@ class Router
 
             $map = array(
                 'auth' => '\\App\\Middleware\\AuthenticateMiddleware',
+                'auth.v2' => '\\App\\Middleware\\V2AuthenticateMiddleware',
                 'csrf' => '\\App\\Middleware\\CsrfMiddleware',
                 'permission' => '\\App\\Middleware\\PermissionMiddleware',
             );

@@ -1,7 +1,10 @@
 <?php
 use App\Core\Helpers;
 $etapaAtual = isset($etapaAtual) ? (int) $etapaAtual : 1;
-$etapas = array(1 => 'Inscrição', 2 => 'Participantes', 3 => 'Resumo');
+// As páginas que precisam de etapas adicionais (ex.: Pagamento) injetam
+// $etapas antes de incluir este partial. Sem injeção, mantém as 3 etapas
+// originais do pré-pagamento — comportamento inalterado para as telas 2.12A.
+$etapas = isset($etapas) && is_array($etapas) ? $etapas : array(1 => 'Inscrição', 2 => 'Participantes', 3 => 'Resumo');
 ?>
 <ol class="v2-steps" aria-label="Etapas do checkout">
   <?php foreach ($etapas as $num => $rotulo): ?>
