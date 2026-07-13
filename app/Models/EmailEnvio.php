@@ -260,6 +260,89 @@ class EmailEnvio
         return $row ? (int) $row['total'] : 0;
     }
 
+    /**
+     * Destinatarios de uma entidade (ex.: um lote de comunicado de turma), com o status de cada um.
+     */
+    public function listByEntidade($entidadeTipo, $entidadeId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM emails_envios
+             WHERE entidade_tipo = :entidade_tipo
+               AND entidade_id = :entidade_id
+             ORDER BY destinatario_nome ASC, id ASC'
+        );
+
+        $stmt->execute(array(
+            'entidade_tipo' => (string) $entidadeTipo,
+            'entidade_id' => (int) $entidadeId,
+        ));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Proximos e-mails ainda nao enviados de uma entidade. Usado para processar o envio em lotes.
+     */
+    public function pendentesByEntidade($entidadeTipo, $entidadeId, $limit = 10)
+    {
+        $limit = (int) $limit;
+        if ($limit <= 0) {
+            $limit = 10;
+        }
+        if ($limit > 50) {
+            $limit = 50;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT id, destinatario_email, destinatario_nome, assunto, contexto_json
+             FROM emails_envios
+             WHERE entidade_tipo = :entidade_tipo
+               AND entidade_id = :entidade_id
+               AND status = "pendente"
+             ORDER BY id ASC
+             LIMIT :limit'
+        );
+
+        $stmt->bindValue(':entidade_tipo', (string) $entidadeTipo);
+        $stmt->bindValue(':entidade_id', (int) $entidadeId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Placar de envio de uma entidade: quantos enviados, falhos e pendentes.
+     */
+    public function resumoByEntidade($entidadeTipo, $entidadeId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT
+                COUNT(*) AS total,
+                COALESCE(SUM(status = "enviado"), 0) AS enviados,
+                COALESCE(SUM(status = "falhou"), 0) AS falhas,
+                COALESCE(SUM(status = "pendente"), 0) AS pendentes
+             FROM emails_envios
+             WHERE entidade_tipo = :entidade_tipo
+               AND entidade_id = :entidade_id'
+        );
+
+        $stmt->execute(array(
+            'entidade_tipo' => (string) $entidadeTipo,
+            'entidade_id' => (int) $entidadeId,
+        ));
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return array(
+            'total' => $row ? (int) $row['total'] : 0,
+            'enviados' => $row ? (int) $row['enviados'] : 0,
+            'falhas' => $row ? (int) $row['falhas'] : 0,
+            'pendentes' => $row ? (int) $row['pendentes'] : 0,
+        );
+    }
+
     public function markRequeued($emailEnvioId)
     {
         $stmt = Database::connection()->prepare(

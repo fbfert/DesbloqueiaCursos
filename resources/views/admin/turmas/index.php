@@ -29,6 +29,11 @@ $renderAcoes = function (array $turma, $canManage) {
     $html = '<div class="split-actions">';
     $html .= '<a href="/admin/turmas/show?turma_id=' . (int) $turma['id'] . '">Ver</a>';
 
+    if (empty($turma['deleted_at'])) {
+        $html .= '<a href="/admin/turmas/inscritos?turma_id=' . (int) $turma['id'] . '">Ver Inscritos</a>';
+        $html .= '<a href="/admin/turmas/emails?turma_id=' . (int) $turma['id'] . '">E-mail</a>';
+    }
+
     if ($canManage && empty($turma['deleted_at'])) {
         $html .= '<a href="/admin/turmas/editar?turma_id=' . (int) $turma['id'] . '">Editar</a>';
         $html .= '<form method="post" action="/admin/turmas/status" class="admin-form js-turma-status-form">';

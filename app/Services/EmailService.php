@@ -691,6 +691,41 @@ class EmailService
         } else {
             $rendered = View::render($template, $data, false, 'emails');
         }
+        // Auditoria e validação de placeholders antes do disparo (não expõe valores/tokens).
+        $conteudoPlaceholders = ($modelo && trim((string) ($modelo['corpo_html'] ?? '')) !== '')
+            ? ((string) ($modelo['assunto'] ?? '') . ' ' . (string) ($modelo['corpo_html'] ?? ''))
+            : (string) $assunto;
+        $analisePlaceholders = $this->modeloService->analisarPlaceholders($conteudoPlaceholders, $data, (string) $evento);
+        $decisaoPlaceholders = empty($analisePlaceholders['criticos_pendentes']) ? 'liberado' : 'bloqueado';
+
+        Logger::info('emails.placeholders.auditoria', array(
+            'evento' => $evento,
+            'template' => $template,
+            'modelo_id' => isset($modelo['id']) ? (int) $modelo['id'] : null,
+            'destinatario_email' => strtolower(trim((string) $destinatarioEmail)),
+            'encontrados' => $analisePlaceholders['encontrados'],
+            'resolvidos' => $analisePlaceholders['resolvidos'],
+            'sem_contexto' => $analisePlaceholders['sem_contexto'],
+            'desconhecidos' => $analisePlaceholders['desconhecidos'],
+            'criticos_pendentes' => $analisePlaceholders['criticos_pendentes'],
+            'decisao' => $decisaoPlaceholders,
+        ));
+
+        if ($decisaoPlaceholders === 'bloqueado') {
+            Logger::error('emails.placeholders.bloqueado', array(
+                'evento' => $evento,
+                'template' => $template,
+                'destinatario_email' => strtolower(trim((string) $destinatarioEmail)),
+                'criticos_pendentes' => $analisePlaceholders['criticos_pendentes'],
+            ));
+
+            return array(
+                'ok' => false,
+                'blocked' => true,
+                'message' => 'Envio bloqueado: um dado obrigatório do e-mail não pôde ser preparado. Verifique o modelo e o contexto.',
+            );
+        }
+
         $config = $this->configuration();
 
         $payload = array(
@@ -920,6 +955,152 @@ class EmailService
             ));
 
             return array('ok' => false, 'message' => $exception->getMessage(), 'email_id' => $emailId);
+        }
+    }
+
+    /**
+     * Enfileira um e-mail de conteudo livre sem envia-lo (status "pendente").
+     *
+     * Diferente de sendCustomHtml(), que envia na hora, aqui o disparo fica a cargo de
+     * sendQueuedCustomHtml(), permitindo processar destinatarios em lotes sem estourar o
+     * tempo limite da requisicao. O assunto ja e renderizado por destinatario; o corpo e
+     * renderizado no envio, a partir do HTML guardado pelo chamador.
+     */
+    public function queueCustomHtml(
+        $evento,
+        $template,
+        $destinatarioEmail,
+        $destinatarioNome,
+        $assunto,
+        array $data = array(),
+        $entidadeTipo = null,
+        $entidadeId = null,
+        $actorUserId = null
+    ) {
+        $destinatarioEmail = strtolower(trim((string) $destinatarioEmail));
+        if ($destinatarioEmail === '' || !filter_var($destinatarioEmail, FILTER_VALIDATE_EMAIL)) {
+            return array('ok' => false, 'message' => 'Destinatário inválido.');
+        }
+
+        $contextoRenderizacao = $this->modeloService->buildContext($data);
+        $assuntoFinal = $this->modeloService->renderPlaceholders($assunto, $contextoRenderizacao);
+
+        $emailId = $this->emailModel->create(array(
+            'usuario_id' => $actorUserId,
+            'entidade_tipo' => $entidadeTipo,
+            'entidade_id' => $entidadeId,
+            'evento' => $evento,
+            'template' => $template,
+            'destinatario_email' => $destinatarioEmail,
+            'destinatario_nome' => $destinatarioNome,
+            'assunto' => $assuntoFinal,
+            'contexto_json' => json_encode($data),
+            'status' => 'pendente',
+        ));
+
+        Logger::info('emails.fila.criada', array('email_id' => $emailId, 'evento' => $evento));
+
+        return array('ok' => true, 'email_id' => $emailId);
+    }
+
+    /**
+     * Envia um e-mail ja enfileirado por queueCustomHtml(), renderizando o corpo informado
+     * com o contexto salvo naquele destinatario.
+     */
+    public function sendQueuedCustomHtml($emailEnvioId, $html, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $emailEnvioId = (int) $emailEnvioId;
+        if ($emailEnvioId <= 0) {
+            return array('ok' => false, 'message' => 'E-mail inválido.');
+        }
+
+        $stored = $this->emailModel->findById($emailEnvioId);
+        if (!$stored) {
+            return array('ok' => false, 'message' => 'E-mail não encontrado.');
+        }
+
+        $status = isset($stored['status']) ? (string) $stored['status'] : '';
+        if (!in_array($status, array('pendente', 'falhou'), true)) {
+            return array('ok' => false, 'message' => 'Este e-mail já foi enviado.', 'email_id' => $emailEnvioId);
+        }
+
+        if (trim((string) $html) === '') {
+            $erro = 'Corpo do e-mail vazio.';
+            $this->emailModel->markFailed($emailEnvioId, $erro);
+            return array('ok' => false, 'message' => $erro, 'email_id' => $emailEnvioId);
+        }
+
+        $data = array();
+        if (!empty($stored['contexto_json'])) {
+            $decoded = json_decode((string) $stored['contexto_json'], true);
+            if (is_array($decoded)) {
+                $data = $decoded;
+            }
+        }
+
+        $contextoRenderizacao = $this->modeloService->buildContext($data);
+        $rendered = $this->modeloService->renderPlaceholders($html, $contextoRenderizacao);
+        $assunto = isset($stored['assunto']) ? (string) $stored['assunto'] : '';
+
+        $config = $this->configuration();
+        $this->logRuntimeDiagnostics($config);
+
+        if (empty($config['enabled']) || empty($config['host'])) {
+            $erro = 'Configuração SMTP indisponível.';
+            $this->emailModel->markFailed($emailEnvioId, $erro);
+            Logger::error('emails.falhou', array('email_id' => $emailEnvioId, 'erro' => $erro));
+
+            return array('ok' => false, 'message' => $erro, 'email_id' => $emailEnvioId);
+        }
+
+        $evento = isset($stored['evento']) ? (string) $stored['evento'] : '';
+
+        try {
+            $response = $this->sendSmtpMessage($config, array(
+                'from_email' => $config['from_email'],
+                'from_name' => $config['from_name'],
+                'reply_to' => $config['reply_to'],
+                'to_email' => $stored['destinatario_email'],
+                'to_name' => isset($stored['destinatario_nome']) ? $stored['destinatario_nome'] : null,
+                'subject' => $assunto,
+                'html' => $rendered,
+            ));
+
+            $this->emailModel->markSent($emailEnvioId, $response);
+
+            $this->auditService->record(
+                'emails.enviado',
+                'email',
+                $emailEnvioId,
+                array('evento' => $evento, 'destinatario_email' => $stored['destinatario_email']),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::info('emails.enviado', array('email_id' => $emailEnvioId, 'evento' => $evento));
+
+            return array('ok' => true, 'email_id' => $emailEnvioId, 'response' => $response);
+        } catch (Exception $exception) {
+            $this->emailModel->markFailed($emailEnvioId, $exception->getMessage());
+
+            $this->auditService->record(
+                'emails.falhou',
+                'email',
+                $emailEnvioId,
+                array('erro' => $exception->getMessage()),
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+
+            Logger::error('emails.falhou', array(
+                'email_id' => $emailEnvioId,
+                'evento' => $evento,
+                'erro' => $exception->getMessage(),
+            ));
+
+            return array('ok' => false, 'message' => $exception->getMessage(), 'email_id' => $emailEnvioId);
         }
     }
 

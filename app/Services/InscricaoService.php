@@ -378,6 +378,49 @@ class InscricaoService
         );
     }
 
+    /**
+     * Inscritos de uma turma especifica, para a tela academica em /admin/turmas/inscritos.
+     *
+     * Diferente de listarBackoffice(), aqui o escopo e sempre uma unica turma e nao ha dado
+     * financeiro (pedido/pagador), por isso a tela vive sob conteudo.ver e nao sob pedidos.ver.
+     */
+    public function listarInscritosDaTurma($turmaId, array $filters = array(), $page = 1, $perPage = 20)
+    {
+        $turmaId = (int) $turmaId;
+
+        $page = (int) $page;
+        if ($page <= 0) {
+            $page = 1;
+        }
+
+        $perPage = (int) $perPage;
+        if ($perPage <= 0) {
+            $perPage = 20;
+        }
+        if ($perPage > 100) {
+            $perPage = 100;
+        }
+
+        $total = $this->inscricaoModel->countInscritosDaTurma($turmaId, $filters);
+        $pages = $perPage > 0 ? max(1, (int) ceil($total / $perPage)) : 1;
+        if ($page > $pages) {
+            $page = $pages;
+        }
+
+        $offset = ($page - 1) * $perPage;
+
+        return array(
+            'inscritos' => $this->inscricaoModel->listInscritosDaTurma($turmaId, $filters, $perPage, $offset),
+            'resumo' => $this->inscricaoModel->resumoInscritosDaTurma($turmaId, $filters),
+            'pagination' => array(
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $perPage,
+                'pages' => $pages,
+            ),
+        );
+    }
+
     public function listarDoUsuario($usuarioId)
     {
         return array('inscricoes' => $this->inscricaoModel->forUsuario($usuarioId));

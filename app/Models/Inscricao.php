@@ -7,6 +7,19 @@ use PDO;
 
 class Inscricao
 {
+    /** Valores aceitos no filtro de status da listagem de inscritos (espelha o ENUM da coluna). */
+    const STATUS_INSCRITOS = array(
+        'pendente',
+        'com_pendencia',
+        'ativa',
+        'em_andamento',
+        'cancelada',
+        'reprovada',
+        'concluida',
+        'concluida_sem_certificado',
+        'certificado_emitido',
+    );
+
     public function updateProgress($inscricaoId, $percentual, $aptoCertificado = null, $concluidaEm = null)
     {
         $sql = 'UPDATE inscricoes
@@ -411,6 +424,125 @@ class Inscricao
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * WHERE comum da listagem de inscritos de uma turma.
+     * Nao expoe dados de pedido/pagador: a tela e academica, nao financeira.
+     */
+    private function inscritosDaTurmaBaseSql($turmaId, array $filters, array &$params)
+    {
+        $sql = ' FROM inscricoes i
+                 INNER JOIN usuarios u ON u.id = i.usuario_id
+                 WHERE i.turma_id = :turma_id
+                   AND i.deleted_at IS NULL';
+
+        $params['turma_id'] = (int) $turmaId;
+
+        $q = isset($filters['q']) ? trim((string) $filters['q']) : '';
+        if ($q !== '') {
+            $sql .= ' AND (u.nome LIKE :q OR u.email LIKE :q OR u.telefone LIKE :q)';
+            $params['q'] = '%' . $q . '%';
+        }
+
+        $status = isset($filters['status']) ? trim((string) $filters['status']) : '';
+        if ($status !== '' && in_array($status, self::STATUS_INSCRITOS, true)) {
+            $sql .= ' AND i.status = :status';
+            $params['status'] = $status;
+        }
+
+        return $sql;
+    }
+
+    public function countInscritosDaTurma($turmaId, array $filters = array())
+    {
+        $params = array();
+        $sql = 'SELECT COUNT(*) AS total' . $this->inscritosDaTurmaBaseSql($turmaId, $filters, $params);
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return isset($row['total']) ? (int) $row['total'] : 0;
+    }
+
+    public function listInscritosDaTurma($turmaId, array $filters = array(), $limit = 20, $offset = 0)
+    {
+        $sortMap = array(
+            'nome' => 'u.nome',
+            'email' => 'u.email',
+            'status' => 'i.status',
+            'progresso' => 'i.percentual_progresso',
+            'nota' => 'i.nota_final',
+            'created_at' => 'i.created_at',
+        );
+
+        $sortBy = isset($filters['sort_by']) ? (string) $filters['sort_by'] : 'nome';
+        $sortDir = strtolower(isset($filters['sort_dir']) ? (string) $filters['sort_dir'] : 'asc');
+        if (!isset($sortMap[$sortBy])) {
+            $sortBy = 'nome';
+        }
+        if ($sortDir !== 'desc') {
+            $sortDir = 'asc';
+        }
+
+        $limit = (int) $limit;
+        if ($limit <= 0) {
+            $limit = 20;
+        }
+        if ($limit > 200) {
+            $limit = 200;
+        }
+
+        $offset = (int) $offset;
+        if ($offset < 0) {
+            $offset = 0;
+        }
+
+        $params = array();
+        $sql = 'SELECT i.id, i.usuario_id, i.status, i.percentual_progresso, i.presenca_percentual,
+                       i.nota_final, i.apto_certificado, i.concluida_em, i.created_at,
+                       u.nome, u.email, u.telefone'
+            . $this->inscritosDaTurmaBaseSql($turmaId, $filters, $params)
+            . ' ORDER BY ' . $sortMap[$sortBy] . ' ' . strtoupper($sortDir) . ', i.id DESC
+                LIMIT :limit OFFSET :offset';
+
+        $stmt = Database::connection()->prepare($sql);
+
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Placar por status dos inscritos da turma, respeitando a busca aplicada.
+     */
+    public function resumoInscritosDaTurma($turmaId, array $filters = array())
+    {
+        $filtersSemStatus = $filters;
+        unset($filtersSemStatus['status']);
+
+        $params = array();
+        $sql = 'SELECT i.status, COUNT(*) AS total'
+            . $this->inscritosDaTurmaBaseSql($turmaId, $filtersSemStatus, $params)
+            . ' GROUP BY i.status';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        $resumo = array('total' => 0);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $resumo[(string) $row['status']] = (int) $row['total'];
+            $resumo['total'] += (int) $row['total'];
+        }
+
+        return $resumo;
+    }
+
     public function allForBackoffice()
     {
         $stmt = Database::connection()->query(
@@ -441,7 +573,9 @@ class Inscricao
                     pp.nome AS participante_nome, pp.cpf AS participante_cpf,
                     u.id AS aluno_id, u.nome AS aluno_nome, u.email AS aluno_email, u.cpf AS aluno_cpf,
                     ce.nome AS curso_nome, ce.modalidade AS curso_modalidade, ce.tipo AS curso_tipo,
-                    t.nome AS turma_nome, t.codigo AS turma_codigo, t.periodo AS turma_periodo, t.horario AS turma_horario,
+                    t.nome AS turma_nome, t.codigo AS turma_codigo,
+                    t.data_inicio AS turma_data_inicio, t.data_fim AS turma_data_fim,
+                    t.hora_inicio AS turma_hora_inicio, t.hora_fim AS turma_hora_fim,
                     c.id AS certificado_id, c.codigo AS certificado_codigo, c.status AS certificado_status,
                     c.emitido_em AS certificado_emitido_em
              FROM inscricoes i

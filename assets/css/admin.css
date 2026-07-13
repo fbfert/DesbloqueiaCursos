@@ -1,0 +1,4489 @@
+.app-admin {
+    --admin-bg: #f3f5f9;
+    --admin-panel: #ffffff;
+    --admin-panel-muted: #f8faff;
+    --admin-border: #d8deea;
+    --admin-text: #1f2937;
+    --admin-muted: #5b6576;
+    --admin-primary: #4c1d95;
+    --admin-primary-strong: #3b1475;
+    --admin-sidebar-start: #101827;
+    --admin-sidebar-end: #1f2c3f;
+    --admin-sidebar-text: #d9e3f1;
+    --admin-sidebar-muted: #99a9bf;
+    min-width: 0;
+    overflow-x: hidden;
+    background: var(--admin-bg);
+    color: var(--admin-text);
+}
+
+.app-admin .site-main,
+.app-admin .site-main--admin {
+    width: 100%;
+    max-width: none;
+}
+
+.app-admin .admin-shell {
+    display: grid;
+    grid-template-columns: 292px minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+.app-admin .admin-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 24px 18px;
+    border-right: 1px solid #223045;
+    background: linear-gradient(180deg, var(--admin-sidebar-start) 0%, var(--admin-sidebar-end) 100%);
+    color: var(--admin-sidebar-text);
+}
+
+.app-admin .admin-sidebar .brand {
+    color: #ffffff;
+    font-size: 21px;
+}
+
+.app-admin .admin-sidebar__brand {
+    margin-bottom: 22px;
+}
+
+.app-admin .admin-sidebar__brand p {
+    margin: 6px 0 0;
+    color: var(--admin-sidebar-muted);
+    font-size: 13px;
+}
+
+.app-admin .admin-nav-group {
+    margin: 0 0 18px;
+}
+
+.app-admin .admin-nav-group h2 {
+    margin: 0 0 8px;
+    color: var(--admin-sidebar-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-admin .admin-nav {
+    display: grid;
+    gap: 8px;
+}
+
+.app-admin .admin-nav__link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 9px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #edf3fc;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.app-admin .admin-nav__link:hover,
+.app-admin .admin-nav__link.is-active {
+    border-color: rgba(133, 82, 255, 0.45);
+    background: rgba(133, 82, 255, 0.2);
+}
+
+.app-admin .admin-nav__icon {
+    width: 18px;
+    text-align: center;
+}
+
+.app-admin .admin-shell__main {
+    min-width: 0;
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
+.app-admin .admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--admin-border);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+}
+
+.app-admin .admin-topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.app-admin .admin-topbar__module {
+    display: grid;
+    gap: 2px;
+}
+
+.app-admin .admin-topbar__module small {
+    color: var(--admin-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .admin-topbar__module strong {
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.app-admin .admin-topbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.app-admin .admin-topbar__actions form {
+    margin: 0;
+}
+
+.app-admin .admin-topbar__actions button {
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--admin-primary);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.app-admin .admin-topbar__menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    min-height: 38px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--admin-text);
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.app-admin .breadcrumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: var(--admin-muted);
+    font-size: 13px;
+}
+
+.app-admin .breadcrumbs a {
+    color: #334155;
+    text-decoration: none;
+}
+
+.app-admin .site-main--admin {
+    padding: 22px;
+}
+
+.app-admin .admin-section,
+.app-admin .status-card,
+.app-admin .panel {
+    container-type: inline-size;
+}
+
+.app-admin .admin-page {
+    display: grid;
+    gap: 16px;
+}
+
+.app-admin .admin-category-thumb-col {
+    width: 25%;
+    max-width: 25%;
+}
+
+.app-admin .admin-category-thumb {
+    width: 100%;
+    max-width: 220px;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.06);
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-admin .admin-category-thumb img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.app-admin .admin-category-thumb--empty span {
+    font-size: 0.75rem;
+    color: rgba(15, 23, 42, 0.55);
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .app-admin .admin-category-thumb-col {
+        width: 120px;
+        max-width: 120px;
+    }
+
+    .app-admin .admin-category-thumb {
+        max-width: 120px;
+    }
+}
+
+.app-admin .admin-page__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    background: var(--admin-panel);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.app-admin .admin-page__header > div:first-child {
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.app-admin .admin-page__header > .admin-page__actions {
+    margin-left: auto;
+}
+
+.app-admin .admin-page__cta-panel {
+    display: grid;
+    justify-items: end;
+    gap: 6px;
+    margin-left: auto;
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 106, 0, 0.16);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255, 106, 0, 0.08), rgba(255, 255, 255, 0.96));
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.app-admin .admin-page__cta-label {
+    color: var(--admin-muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-admin .admin-page__cta-help {
+    max-width: 220px;
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: right;
+}
+
+.app-admin .admin-presentes-page .admin-page__content {
+    align-items: stretch;
+}
+
+.app-admin .admin-presentes-page .admin-presentes-new-card {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    min-width: min(100%, 360px);
+    padding: 16px 18px;
+    border: 1px solid rgba(76, 29, 149, 0.14);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.app-admin .admin-presentes-page .admin-presentes-new-card__eyebrow {
+    color: var(--admin-primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-admin .admin-presentes-page .admin-presentes-new-card__title {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
+    color: var(--admin-text);
+}
+
+.app-admin .admin-presentes-page .admin-presentes-new-card__description {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.app-admin .admin-presentes-page .admin-presentes-new-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.app-admin .admin-presentes-page .admin-presentes-filters {
+    display: grid;
+    gap: 14px;
+}
+
+.app-admin .admin-presentes-page .admin-presentes-filters__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.app-admin .admin-presentes-page .admin-presentes-filters__eyebrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    color: var(--admin-primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-admin .admin-presentes-page .admin-presentes-filters__title {
+    display: block;
+    font-size: 16px;
+    line-height: 1.35;
+    color: var(--admin-text);
+}
+
+.app-admin .admin-presentes-page .admin-presentes-filters__summary {
+    margin: 6px 0 0;
+    color: var(--admin-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.app-admin .admin-presentes-page .admin-presentes-filters__toggle {
+    white-space: nowrap;
+    align-self: flex-start;
+}
+
+.app-admin .admin-presentes-page .admin-presentes-filters__body[hidden] {
+    display: none;
+}
+
+.app-admin .admin-page__title {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.15;
+}
+
+.app-admin .admin-page__subtitle {
+    margin: 0;
+    color: var(--admin-muted);
+    max-width: 72ch;
+}
+
+.app-admin .admin-page__header--with-metrics .admin-page__metrics {
+    flex: 1 1 100%;
+}
+
+.app-admin .admin-page__metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+}
+
+.app-admin .admin-page__metric {
+    display: grid;
+    gap: 4px;
+    padding: 14px 15px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: #fbfcfe;
+}
+
+.app-admin .admin-page__metric-label {
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.app-admin .admin-page__metric-value {
+    font-size: 28px;
+    line-height: 1.05;
+    font-weight: 700;
+    color: var(--admin-text);
+}
+
+.app-admin .admin-page__metric-help {
+    color: var(--admin-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.app-admin .admin-pedidos-page {
+    gap: 12px;
+}
+
+.app-admin .admin-pedidos-page .status-card,
+.app-admin .admin-pedidos-page .admin-section {
+    padding: 12px;
+}
+
+.app-admin .admin-pedidos-page .admin-page__metrics {
+    gap: 10px;
+}
+
+.app-admin .admin-pedidos-page .admin-page__metric {
+    gap: 3px;
+    padding: 11px 12px;
+}
+
+.app-admin .admin-pedidos-page .admin-page__metric-value {
+    font-size: 24px;
+}
+
+.app-admin .admin-pedidos-page .admin-page__metric-help {
+    line-height: 1.2;
+}
+
+.app-admin .admin-pedidos-page .quick-actions--dashboard {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.app-admin .admin-pedidos-page .quick-actions--dashboard .admin-shortcut {
+    min-height: 92px;
+    gap: 6px;
+    padding: 10px 11px;
+}
+
+.app-admin .admin-pedidos-page .quick-actions--dashboard .admin-shortcut span {
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.app-admin .admin-pedidos-page .quick-actions--dashboard .admin-shortcut small {
+    padding: 5px 8px;
+    line-height: 1.15;
+}
+
+.app-admin .admin-pedidos-page .admin-filters__row {
+    gap: 10px 12px;
+}
+
+.app-admin .admin-pedidos-page .admin-filters__row label {
+    gap: 4px;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__filter-actions,
+.app-admin .admin-pedidos-page .admin-pedidos__pagination-row {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__cell-stack {
+    display: grid;
+    gap: 2px;
+    line-height: 1.2;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__cell-stack small {
+    color: var(--admin-muted);
+    line-height: 1.15;
+}
+
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista th,
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    vertical-align: top;
+}
+
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(1),
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(2),
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(5),
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(6),
+.app-admin .admin-pedidos-page .admin-table--pedidos-lista td:nth-child(8) {
+    line-height: 1.2;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__actions-body {
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__delete-form {
+    gap: 6px;
+}
+
+.app-admin .admin-pedidos-page .admin-pedidos__delete-form textarea {
+    min-height: 64px;
+}
+
+.app-admin .admin-turmas__details > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.app-admin .admin-turmas__details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-admin .admin-turmas__details > summary h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.app-admin .admin-turmas__details > summary h2::after {
+    content: '▸';
+    color: var(--admin-primary);
+    font-size: 14px;
+}
+
+.app-admin .admin-turmas__details[open] > summary h2::after {
+    content: '▾';
+}
+
+.app-admin .admin-turmas__details-body {
+    margin-top: 12px;
+}
+
+.app-admin .admin-page__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.app-admin .admin-cupons__action-form {
+    display: inline;
+    margin: 0;
+}
+
+.app-admin .admin-action-link {
+    display: inline;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: var(--admin-primary);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.4;
+    cursor: pointer;
+    text-decoration: none;
+    vertical-align: baseline;
+}
+
+.app-admin .admin-action-link:hover,
+.app-admin .admin-action-link:focus-visible {
+    text-decoration: underline;
+}
+
+.app-admin .admin-action-link--danger {
+    color: #b42318;
+}
+
+.app-admin .admin-action-link--danger:hover,
+.app-admin .admin-action-link--danger:focus-visible {
+    color: #991b1b;
+}
+
+.app-admin .button-link--danger {
+    border: 1px solid #eaa0a0;
+    background: #fff5f5;
+    color: #b42318;
+}
+
+.app-admin .button-link--danger:hover {
+    border-color: #dc2626;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.app-admin .admin-pedidos__bulk-warning {
+    display: grid;
+    gap: 10px;
+    max-width: 720px;
+}
+
+.app-admin .admin-pedidos__bulk-warning p {
+    margin: 0;
+    color: var(--admin-muted);
+}
+
+.app-admin .admin-pedidos__bulk-warning .button-link {
+    width: fit-content;
+}
+
+.app-admin .admin-pedidos__actions-details {
+    display: grid;
+    gap: 0;
+}
+
+.app-admin .admin-pedidos__actions-details > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    font-weight: 700;
+}
+
+.app-admin .admin-pedidos__actions-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-admin .admin-pedidos__actions-details > summary::after {
+    content: '▸';
+    color: var(--admin-primary);
+    font-size: 14px;
+}
+
+.app-admin .admin-pedidos__actions-details[open] > summary::after {
+    content: '▾';
+}
+
+.app-admin .admin-pedidos__actions-body {
+    margin-top: 12px;
+    padding: 12px 0 2px;
+}
+
+.app-admin .admin-pedidos__delete-form {
+    display: grid;
+    gap: 8px;
+    max-width: 520px;
+}
+
+.app-admin .admin-pedidos__delete-form textarea {
+    min-height: 74px;
+}
+
+.app-admin .admin-pedidos__delete-form .button-link {
+    width: fit-content;
+}
+
+.app-admin .admin-pedido-cupom-card {
+    display: grid;
+    gap: 12px;
+}
+
+.app-admin .admin-pedido-cupom-card__warning,
+.app-admin .admin-pedido-cupom-card__blocked,
+.app-admin .admin-pedido-cupom-card__current {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--admin-border);
+}
+
+.app-admin .admin-pedido-cupom-card__warning {
+    background: #fff9e6;
+    border-color: #f0d58a;
+    color: #7c5c00;
+}
+
+.app-admin .admin-pedido-cupom-card__blocked {
+    background: #fff0f0;
+    border-color: #e39a9a;
+    color: #991b1b;
+}
+
+.app-admin .admin-pedido-cupom-card__current {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e3a8a;
+}
+
+.app-admin .admin-pedido-cupom-card__details {
+    margin: 0;
+}
+
+.app-admin .admin-pedido-cupom-card__form {
+    display: grid;
+    gap: 8px;
+    max-width: 620px;
+}
+
+.app-admin .admin-pedido-cupom-card__form input,
+.app-admin .admin-pedido-cupom-card__form textarea {
+    width: 100%;
+}
+
+.app-admin .admin-pedido-cupom-card__help {
+    color: var(--admin-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.app-admin .admin-pedido-cupom-card__remove-form {
+    margin-top: 8px;
+}
+
+.app-admin .admin-pending-pix {
+    display: grid;
+    gap: 12px;
+}
+
+.app-admin .admin-pending-pix__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.app-admin .admin-pending-pix__title {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.app-admin .admin-pending-pix__subtitle {
+    margin: 0;
+}
+
+.app-admin .admin-pending-pix__table {
+    min-width: 1080px;
+}
+
+.app-admin .admin-presentes-selected {
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: #fbfcfe;
+}
+
+.app-admin .admin-presentes-selected > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 700;
+}
+
+.app-admin .admin-presentes-selected > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-admin .admin-presentes-selected > summary::after {
+    content: '▸';
+    margin-left: auto;
+    color: var(--admin-primary);
+}
+
+.app-admin .admin-presentes-selected[open] > summary::after {
+    content: '▾';
+}
+
+.app-admin .admin-presentes-selected__body {
+    margin-top: 12px;
+}
+
+.app-admin .admin-pending-pix__empty {
+    margin-bottom: 0;
+}
+
+.app-admin .admin-pending-pix__all {
+    margin-top: 16px;
+}
+
+.app-admin .admin-pending-pix__action-form {
+    display: inline-block;
+    margin-top: 6px;
+}
+
+.app-admin .admin-pending-pix__action-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.app-admin .admin-pending-pix__icon-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
+    border: 1px solid rgba(76, 29, 149, 0.14);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+
+.app-admin .admin-pending-pix__icon-link:hover {
+    transform: translateY(-1px);
+    border-color: rgba(76, 29, 149, 0.24);
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+}
+
+.app-admin .admin-pending-pix__icon {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
+.app-admin .u-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.app-admin .admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .admin-card,
+.app-admin .status-card {
+    padding: 16px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: var(--admin-panel);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.app-admin .admin-card strong,
+.app-admin .status-card strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.app-admin .panel,
+.app-admin .admin-section {
+    padding: 16px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: var(--admin-panel);
+}
+
+.app-admin .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.app-admin .panel-header h2 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.app-admin .page-header {
+    margin: 0;
+}
+
+.app-admin .page-header h1 {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1.15;
+}
+
+.app-admin .page-header p {
+    margin: 6px 0 0;
+    color: var(--admin-muted);
+}
+
+.app-admin .admin-config-frontend {
+    gap: 18px;
+}
+
+.app-admin .admin-config-frontend__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.app-admin .admin-config-frontend__main,
+.app-admin .admin-config-frontend__sidebar {
+    height: 100%;
+}
+
+.app-admin .admin-config-frontend__form {
+    margin-top: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-admin .admin-config-frontend__limit {
+    display: grid;
+    gap: 6px;
+}
+
+.app-admin .admin-config-frontend__limit small {
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.app-admin .admin-config-frontend__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2px;
+}
+
+.app-admin .admin-config-frontend__actions button {
+    min-width: 220px;
+}
+
+.app-admin .admin-config-frontend__summary {
+    display: grid;
+    gap: 14px;
+}
+
+.app-admin .admin-config-frontend__summary div {
+    padding: 12px 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .admin-area-curso {
+    gap: 18px;
+}
+
+.app-admin .admin-area-curso__selector-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+}
+
+.app-admin .admin-area-curso__course-list {
+    display: grid;
+    gap: 8px;
+    max-height: 340px;
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.app-admin .admin-area-curso__course-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--admin-text);
+    text-decoration: none;
+    transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.app-admin .admin-area-curso__course-link:hover {
+    border-color: var(--admin-primary);
+    color: var(--admin-primary);
+    background: #faf8ff;
+    transform: translateY(-1px);
+}
+
+.app-admin .admin-area-curso__course-link span {
+    min-width: 0;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.app-admin .admin-area-curso__course-link.is-active {
+    border-color: var(--admin-primary);
+    background: var(--admin-panel-muted);
+    box-shadow: inset 0 0 0 1px rgba(122, 92, 255, 0.16);
+}
+
+.app-admin .admin-area-curso__course-link strong {
+    font-size: 12px;
+    color: var(--admin-primary);
+    flex-shrink: 0;
+}
+
+.app-admin .admin-area-curso__inativos-details summary {
+    cursor: pointer;
+    user-select: none;
+}
+
+.app-admin .admin-area-curso__inativos-details summary .panel-header {
+    margin-bottom: 0;
+}
+
+.app-admin .admin-table--area-cursos td a {
+    color: var(--admin-primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.app-admin .admin-table--area-cursos td a:hover {
+    text-decoration: underline;
+}
+
+.app-admin .admin-table--area-cursos tr.is-active {
+    background: rgba(122, 92, 255, 0.06);
+}
+
+.app-admin .admin-table--muted {
+    opacity: 0.85;
+}
+
+.app-admin .badge--success {
+    background: #e6f9ed;
+    color: #1a7a42;
+}
+
+.app-admin .badge--warn {
+    background: #fff4e5;
+    color: #92400e;
+}
+
+.app-admin .admin-area-curso__tabs {
+    padding: 10px;
+}
+
+.app-admin .admin-area-curso__tablinks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.app-admin .admin-area-curso__tablink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--admin-text);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.app-admin .admin-area-curso__tablink.is-active,
+.app-admin .admin-area-curso__tablink:hover {
+    border-color: var(--admin-primary);
+    background: #f3ecff;
+    color: var(--admin-primary-strong);
+}
+
+.app-admin .area-curso-workspace {
+    display: grid;
+    gap: 16px;
+}
+
+.app-admin .area-curso-workspace__header,
+.app-admin .area-curso-workspace__tabs {
+    padding: 16px 18px;
+}
+
+.app-admin .area-curso-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.app-admin .area-curso-header__content {
+    min-width: 0;
+}
+
+.app-admin .area-curso-header__eyebrow {
+    margin: 0 0 4px;
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .area-curso-header__title {
+    margin: 0;
+    font-size: 26px;
+    color: var(--admin-text);
+}
+
+.app-admin .area-curso-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    flex-wrap: wrap;
+}
+
+.app-admin .area-curso-heading__text {
+    min-width: 0;
+}
+
+.app-admin .area-curso-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.app-admin .area-curso-tooltip__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--admin-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--admin-primary-strong);
+    font-size: 12px;
+    font-weight: 800;
+    cursor: help;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.app-admin .area-curso-tooltip__button:hover {
+    border-color: var(--admin-primary);
+    background: #f3ecff;
+}
+
+.app-admin .area-curso-tooltip__button:focus-visible {
+    outline: 2px solid var(--admin-primary);
+    outline-offset: 2px;
+}
+
+.app-admin .area-curso-tooltip__bubble {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    z-index: 10;
+    width: max-content;
+    max-width: min(320px, 78vw);
+    padding: 10px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: #1f2937;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.4;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 4px);
+    transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
+}
+
+.app-admin .area-curso-tooltip__bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    border-width: 7px 7px 0 7px;
+    border-style: solid;
+    border-color: #1f2937 transparent transparent transparent;
+    transform: translateX(-50%);
+}
+
+.app-admin .area-curso-tooltip:hover .area-curso-tooltip__bubble,
+.app-admin .area-curso-tooltip:focus-within .area-curso-tooltip__bubble {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+}
+
+.app-admin .area-curso-header__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.app-admin .area-curso-header__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.app-admin .area-curso-tabs__mobile {
+    display: none;
+}
+
+.app-admin .area-curso-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.app-admin .area-curso-tabs__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--admin-text);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.app-admin .area-curso-tabs__link.is-active,
+.app-admin .area-curso-tabs__link:hover {
+    border-color: var(--admin-primary);
+    background: #f3ecff;
+    color: var(--admin-primary-strong);
+}
+
+.app-admin .area-curso-tab-panel {
+    display: none;
+}
+
+.app-admin .area-curso-tab-panel.is-active {
+    display: block;
+}
+
+.app-admin .area-curso-tab-panel .status-card {
+    margin-bottom: 0;
+}
+
+.app-admin .admin-area-curso__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.8fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.app-admin .admin-area-curso__main {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+}
+
+.app-admin .admin-area-curso__aside {
+    display: grid;
+    gap: 16px;
+    align-self: start;
+    position: sticky;
+    top: 92px;
+}
+
+.app-admin .admin-area-curso__section {
+    scroll-margin-top: 110px;
+}
+
+.app-admin .area-curso-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .area-curso-overview-card {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .area-curso-overview-card small {
+    display: block;
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .area-curso-overview-card strong {
+    font-size: 17px;
+}
+
+.app-admin .area-curso-section-heading {
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.app-admin .area-curso-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.app-admin .area-curso-course-lock {
+    display: grid;
+    gap: 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .area-curso-course-lock__label {
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .area-curso-course-lock__name {
+    font-size: 16px;
+    color: var(--admin-text);
+}
+
+.app-admin .area-curso-course-lock__help {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 13px;
+}
+
+.app-admin .area-curso-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .area-curso-summary-card {
+    display: grid;
+    gap: 4px;
+    padding: 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .area-curso-summary-card small {
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .area-curso-summary-card strong {
+    font-size: 18px;
+    color: var(--admin-text);
+}
+
+.app-admin .area-curso-summary-card span {
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.app-admin .area-curso-table-card {
+    overflow: hidden;
+}
+
+.app-admin .area-curso-empty-state {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+    padding: 16px;
+    border: 1px dashed var(--admin-border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.75);
+}
+
+.app-admin .area-curso-conteudo__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.app-admin .area-curso-conteudo__module-list {
+    display: grid;
+    gap: 16px;
+}
+
+.app-admin .area-curso-conteudo-module {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.app-admin .area-curso-conteudo-module.is-selected {
+    border-color: rgba(12, 91, 79, 0.28);
+    box-shadow: 0 0 0 1px rgba(12, 91, 79, 0.06);
+}
+
+.app-admin .area-curso-conteudo-module__header,
+.app-admin .area-curso-conteudo-item__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.app-admin .area-curso-conteudo-module__title-row,
+.app-admin .area-curso-conteudo-item__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.app-admin .area-curso-conteudo-module__title-link {
+    color: var(--admin-text);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+}
+
+.app-admin .area-curso-conteudo-module__title-link:hover {
+    text-decoration: underline;
+}
+
+.app-admin .area-curso-conteudo-module__meta,
+.app-admin .area-curso-conteudo-item__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.app-admin .area-curso-conteudo-module__items {
+    display: grid;
+    gap: 12px;
+}
+
+.app-admin .area-curso-conteudo-item {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .area-curso-conteudo-item__body {
+    display: grid;
+    gap: 10px;
+}
+
+.app-admin .area-curso-conteudo-item__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.app-admin .area-curso-conteudo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.app-admin .area-curso-conteudo-actions form {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+.app-admin .area-curso-conteudo-item__move-form {
+    display: inline-grid;
+    grid-template-columns: minmax(180px, 240px) auto;
+    gap: 6px;
+    align-items: end;
+}
+
+.app-admin .area-curso-conteudo-item__move-form label {
+    min-width: 180px;
+}
+
+.app-admin .area-curso-conteudo-item__move-form small {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.app-admin .area-curso-conteudo-item__move-form .button-link {
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.1;
+}
+
+.app-admin .area-curso-conteudo-actions .button-link {
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.app-admin .area-curso-conteudo__toolbar .button-link {
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 13px;
+    line-height: 1.1;
+}
+
+.app-admin .admin-area-curso-conteudo-page {
+    display: grid;
+    gap: 12px;
+}
+
+.app-admin .admin-area-curso-conteudo-page__header {
+    align-items: flex-start;
+}
+
+.app-admin .admin-area-curso-conteudo-page__alert {
+    margin: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-page__empty {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+    border: 1px dashed var(--admin-border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.app-admin .admin-area-curso-conteudo__module-list {
+    display: grid;
+    gap: 12px;
+}
+
+.app-admin .admin-area-curso-conteudo-module {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.app-admin .admin-area-curso-conteudo-module.is-selected {
+    border-color: rgba(12, 91, 79, 0.28);
+    box-shadow: 0 0 0 1px rgba(12, 91, 79, 0.06);
+}
+
+.app-admin .admin-area-curso-conteudo-module__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.app-admin .admin-area-curso-conteudo-module__summary {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-module__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+}
+
+.app-admin .admin-area-curso-conteudo-module__description {
+    line-height: 1.35;
+}
+
+.app-admin .admin-area-curso-conteudo-module__order-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.app-admin .admin-area-curso-conteudo-module__items {
+    display: grid;
+    gap: 10px;
+}
+
+.app-admin .admin-area-curso-conteudo-module__items-header {
+    align-items: center;
+}
+
+.app-admin .admin-area-curso-conteudo-module__empty {
+    margin: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-module__footer {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived,
+.app-admin .admin-area-curso-conteudo__archived-modules,
+.app-admin .admin-area-curso-conteudo__delete-details {
+    display: grid;
+    gap: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived > summary,
+.app-admin .admin-area-curso-conteudo__archived-modules > summary,
+.app-admin .admin-area-curso-conteudo__delete-details > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    font-weight: 700;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived > summary::-webkit-details-marker,
+.app-admin .admin-area-curso-conteudo__archived-modules > summary::-webkit-details-marker,
+.app-admin .admin-area-curso-conteudo__delete-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived > summary::after,
+.app-admin .admin-area-curso-conteudo__archived-modules > summary::after,
+.app-admin .admin-area-curso-conteudo__delete-details > summary::after {
+    content: '▸';
+    color: var(--admin-primary);
+    font-size: 14px;
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived[open] > summary::after,
+.app-admin .admin-area-curso-conteudo__archived-modules[open] > summary::after,
+.app-admin .admin-area-curso-conteudo__delete-details[open] > summary::after {
+    content: '▾';
+}
+
+.app-admin .admin-area-curso-conteudo-module__archived-body,
+.app-admin .admin-area-curso-conteudo__archived-modules-body {
+    margin-top: 10px;
+}
+
+.app-admin .admin-area-curso-conteudo__toolbar,
+.app-admin .admin-area-curso-conteudo__bottom-toolbar {
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .button-link {
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.1;
+}
+
+.app-admin .admin-area-curso-conteudo-page .area-curso-conteudo-actions {
+    gap: 6px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .area-curso-conteudo-actions .button-link {
+    min-height: 32px;
+    padding: 5px 9px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .area-curso-conteudo-module__items .table-wrap,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados {
+    margin: 0;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens th,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados th,
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    vertical-align: top;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(1) {
+    min-width: 240px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(2) {
+    min-width: 150px;
+    max-width: 340px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(5),
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td:nth-child(4),
+.app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td:nth-child(5) {
+    min-width: 300px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__cell-title {
+    display: block;
+    line-height: 1.2;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__cell-muted {
+    margin-top: 3px;
+    line-height: 1.25;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form {
+    display: inline-grid;
+    grid-template-columns: minmax(180px, 240px) auto;
+    gap: 6px;
+    align-items: end;
+    margin-top: 6px;
+    max-width: 380px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form label {
+    min-width: 180px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form small {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form .button-link {
+    min-height: 32px;
+    padding: 5px 9px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__order-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__delete-form {
+    display: grid;
+    gap: 6px;
+    min-width: 280px;
+    margin-top: 8px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__delete-form textarea {
+    min-height: 64px;
+}
+
+.app-admin .admin-area-curso__report-lists {
+    display: grid;
+    gap: 16px;
+}
+
+.app-admin .admin-area-curso__delivery-detail {
+    border-color: rgba(12, 91, 79, 0.16);
+    background: linear-gradient(180deg, rgba(244, 249, 247, 0.96), rgba(255, 255, 255, 0.99));
+}
+
+.app-admin .admin-area-curso__delivery-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.app-admin .admin-area-curso__delivery-meta,
+.app-admin .admin-area-curso__delivery-content,
+.app-admin .admin-area-curso__delivery-history {
+    display: grid;
+    gap: 10px;
+}
+
+.app-admin .admin-area-curso__delivery-box {
+    padding: 14px;
+    border: 1px solid rgba(12, 91, 79, 0.12);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.app-admin .admin-area-curso__delivery-actions {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 12px;
+}
+
+.app-admin .admin-area-curso__delivery-form {
+    padding: 14px;
+    border: 1px solid rgba(12, 91, 79, 0.12);
+    border-radius: 14px;
+    background: #fff;
+}
+
+@media (max-width: 1080px) {
+    .app-admin .area-curso-summary-grid,
+    .app-admin .area-curso-overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .app-admin .area-curso-section-heading {
+        align-items: stretch;
+    }
+
+    .app-admin .area-curso-actions {
+        justify-content: flex-start;
+    }
+
+    .app-admin .area-curso-conteudo-actions {
+        justify-content: flex-start;
+    }
+
+    .app-admin .area-curso-conteudo__toolbar {
+        justify-content: flex-start;
+    }
+
+    .app-admin .area-curso-summary-grid,
+    .app-admin .area-curso-overview-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .area-curso-conteudo-item__move-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.app-admin .history-list {
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.app-admin .history-list li {
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 1px solid rgba(12, 91, 79, 0.08);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.app-admin .history-list__action {
+    font-weight: 700;
+}
+
+.app-admin .history-list__meta {
+    font-size: 12px;
+    color: var(--admin-muted);
+}
+
+@media (max-width: 1600px) {
+    .app-admin .admin-pedidos-page .quick-actions--dashboard {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1400px) {
+    .app-admin .admin-pedidos-page .admin-page__metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-pedidos-page .quick-actions--dashboard {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form {
+        grid-template-columns: minmax(160px, 1fr) auto;
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-titulo {
+        width: 26%;
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-acoes {
+        width: 48%;
+    }
+}
+
+@media (max-width: 880px) {
+    .app-admin .admin-pedidos-page .admin-page__metrics,
+    .app-admin .admin-pedidos-page .quick-actions--dashboard {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-pedidos-page .admin-pedidos__pagination-row,
+    .app-admin .admin-pedidos-page .admin-pedidos__filter-actions {
+        justify-content: flex-start;
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo-item__move-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-main,
+    .app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-move {
+        flex-wrap: wrap;
+    }
+
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(1),
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(2),
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-itens td:nth-child(5),
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td:nth-child(4),
+    .app-admin .admin-area-curso-conteudo-page .admin-table--conteudo-arquivados td:nth-child(5) {
+        min-width: 0;
+    }
+}
+
+.app-admin .admin-area-curso__placeholder {
+    border-style: dashed;
+}
+
+.app-admin .admin-area-curso__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.app-admin .admin-area-curso__actions a {
+    min-height: 38px;
+    padding: 7px 11px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: var(--admin-panel-muted);
+    color: var(--admin-text);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.app-admin .admin-area-curso__actions a:hover {
+    border-color: var(--admin-primary);
+    background: #f1ebff;
+}
+
+.app-admin .admin-area-curso__legacy {
+    border-color: rgba(122, 92, 255, 0.28);
+    background: linear-gradient(180deg, rgba(122, 92, 255, 0.04), rgba(122, 92, 255, 0));
+}
+
+.app-admin .admin-area-curso__legacy-details > summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.app-admin .admin-area-curso__legacy-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-admin .admin-area-curso__legacy-details > summary h2::after {
+    content: '▾';
+    margin-left: 8px;
+    color: var(--admin-primary);
+    font-size: 13px;
+}
+
+.app-admin .admin-area-curso__legacy-details:not([open]) > summary h2::after {
+    content: '▸';
+}
+
+.app-admin .admin-area-curso__legacy-details[open] > .admin-area-curso__anchors--secondary {
+    margin-top: 8px;
+}
+
+.app-admin .admin-area-curso__anchors--secondary {
+    margin: 0 0 14px;
+}
+
+.app-admin .admin-area-curso__form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+
+.app-admin .admin-area-curso__materials-form {
+    gap: 14px;
+}
+
+.app-admin .admin-area-curso__materials-form small {
+    display: block;
+    margin-top: 6px;
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.app-admin .admin-area-curso__delete-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+}
+
+.app-admin .admin-area-curso__anchors {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.app-admin .admin-area-curso__anchors a {
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: var(--admin-panel-muted);
+    color: var(--admin-text);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.app-admin .admin-area-curso__anchors a:hover {
+    border-color: var(--admin-primary);
+    background: #f1ebff;
+}
+
+.app-admin .admin-area-curso__summary .detail-list {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.app-admin .admin-area-curso__summary .detail-list div {
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .admin-area-curso__aula-materiais {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .admin-area-curso__aula-materiais-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.app-admin .admin-area-curso__aula-materiais-actions a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--admin-text);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.app-admin .admin-area-curso__aula-materiais-actions a:hover {
+    border-color: var(--admin-primary);
+    background: #f4edff;
+}
+
+.app-admin .admin-area-curso__aula-materiais-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.app-admin .admin-area-curso__inline-action {
+    display: inline-grid;
+    grid-template-columns: auto;
+    gap: 6px;
+    align-items: center;
+}
+
+.app-admin .admin-area-curso__inline-action input[type="text"] {
+    min-width: 150px;
+}
+
+.app-admin .admin-area-curso__material-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.app-admin .badge--soft {
+    background: #f1ebff;
+    border-color: rgba(122, 92, 255, 0.18);
+    color: var(--admin-primary-strong);
+}
+
+.app-admin .badge--warning {
+    background: #fff7e6;
+    border-color: rgba(234, 134, 19, 0.25);
+    color: #9a5a00;
+}
+
+.app-admin .admin-config-frontend__summary strong {
+    margin-bottom: 4px;
+}
+
+.app-admin .admin-config-frontend__summary span {
+    display: block;
+    color: var(--admin-muted);
+    line-height: 1.5;
+}
+
+.app-admin .admin-kpi-value,
+.app-admin .dashboard-kpi__value {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    font-weight: 700;
+}
+
+.app-admin .admin-section {
+    padding: 16px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: var(--admin-panel);
+}
+
+.app-admin .admin-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.app-admin .admin-section__title {
+    margin: 0;
+    font-size: 17px;
+}
+
+.app-admin .admin-filters {
+    display: grid;
+    gap: 12px;
+}
+
+.app-admin .admin-filters__row,
+.app-admin .form-grid,
+.app-admin .admin-form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .admin-filters label,
+.app-admin .form-grid label,
+.app-admin .admin-form label {
+    display: grid;
+    gap: 6px;
+    font-weight: 700;
+}
+
+.app-admin .admin-filters .cta-group {
+    align-items: center;
+}
+
+.app-admin .admin-filters input,
+.app-admin .admin-filters select,
+.app-admin .admin-filters textarea,
+.app-admin .form-grid input,
+.app-admin .form-grid select,
+.app-admin .form-grid textarea,
+.app-admin .admin-form input,
+.app-admin .admin-form select,
+.app-admin .admin-form textarea {
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 11px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--admin-text);
+    font: inherit;
+}
+
+.app-admin .form-grid textarea,
+.app-admin .admin-form textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.app-admin .form-grid > button,
+.app-admin .admin-form > button {
+    min-height: 40px;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--admin-primary);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.app-admin .form-grid .checkbox,
+.app-admin .admin-form .checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.app-admin .form-grid .checkbox input,
+.app-admin .admin-form .checkbox input {
+    width: auto;
+    min-height: auto;
+    margin: 0;
+}
+
+.app-admin .full {
+    grid-column: 1 / -1;
+}
+
+.app-admin .admin-actions,
+.app-admin .split-actions,
+.app-admin .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.app-admin .admin-cupons__escopo-opcoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    align-items: center;
+    grid-column: 1 / -1;
+}
+
+.app-admin .admin-cupons__cursos-bloco {
+    display: grid;
+    gap: 10px;
+    grid-column: 1 / -1;
+}
+
+.app-admin .admin-cupons__curso-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-admin .admin-cupons__curso-grid small {
+    color: var(--admin-muted);
+    font-weight: 600;
+}
+
+.app-admin .grid-forms {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .admin-mt-8 {
+    margin-top: 8px;
+}
+
+.app-admin .admin-mt-12 {
+    margin-top: 12px;
+}
+
+.app-admin .admin-mt-16 {
+    margin-top: 16px;
+}
+
+.app-admin .split-actions form {
+    margin: 0;
+}
+
+.app-admin .split-actions a,
+.app-admin .split-actions button,
+.app-admin .admin-actions a,
+.app-admin .admin-actions button {
+    min-height: 36px;
+    padding: 7px 11px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--admin-text);
+    text-decoration: none;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.app-admin .split-actions button,
+.app-admin .admin-actions button {
+    background: var(--admin-primary);
+    border-color: var(--admin-primary);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.app-admin .split-actions button:hover,
+.app-admin .admin-actions button:hover {
+    background: var(--admin-primary-strong);
+    border-color: var(--admin-primary-strong);
+}
+
+.app-admin .table-wrap {
+    overflow-x: auto;
+}
+
+.app-admin .rateio-participants {
+    overflow-x: auto;
+}
+
+.app-admin .table-wrapper {
+    overflow-x: auto;
+}
+
+.app-admin .admin-table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.app-admin .admin-table th,
+.app-admin .admin-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--admin-border);
+    text-align: left;
+    vertical-align: top;
+    font-size: 13px;
+}
+
+.app-admin .admin-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--admin-panel-muted);
+    color: var(--admin-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .admin-table tbody tr:hover {
+    background: #f9fbff;
+}
+
+.app-admin .admin-table td small {
+    display: inline-block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--admin-muted);
+}
+
+.app-admin .table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+}
+
+.app-admin .table th,
+.app-admin .table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--admin-border);
+    text-align: left;
+    vertical-align: top;
+    font-size: 13px;
+}
+
+.app-admin .table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--admin-panel-muted);
+    color: var(--admin-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .table tbody tr:hover {
+    background: #f9fbff;
+}
+
+.app-admin .admin-table--pedidos-lista th:nth-child(1),
+.app-admin .admin-table--pedidos-lista td:nth-child(1) {
+    min-width: 120px;
+}
+
+.app-admin .admin-table--pedidos-lista th:nth-child(2),
+.app-admin .admin-table--pedidos-lista td:nth-child(2) {
+    min-width: 240px;
+}
+
+.app-admin .admin-table--pedidos-lista th:nth-child(5),
+.app-admin .admin-table--pedidos-lista td:nth-child(5),
+.app-admin .admin-table--pedidos-lista th:nth-child(6),
+.app-admin .admin-table--pedidos-lista td:nth-child(6) {
+    min-width: 130px;
+}
+
+.app-admin .admin-table--pedidos-lista th:nth-child(8),
+.app-admin .admin-table--pedidos-lista td:nth-child(8) {
+    min-width: 160px;
+}
+
+.app-admin .admin-table--pedidos-excluidos th:nth-child(1),
+.app-admin .admin-table--pedidos-excluidos td:nth-child(1) {
+    min-width: 120px;
+}
+
+.app-admin .admin-table--pedidos-excluidos th:nth-child(2),
+.app-admin .admin-table--pedidos-excluidos td:nth-child(2) {
+    min-width: 240px;
+}
+
+.app-admin .admin-table--pedidos-excluidos th:nth-child(3),
+.app-admin .admin-table--pedidos-excluidos td:nth-child(3) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--pedidos-excluidos th:nth-child(7),
+.app-admin .admin-table--pedidos-excluidos td:nth-child(7) {
+    min-width: 280px;
+}
+
+.app-admin .admin-table--pedido-itens th:nth-child(1),
+.app-admin .admin-table--pedido-itens td:nth-child(1),
+.app-admin .admin-table--pedido-itens th:nth-child(2),
+.app-admin .admin-table--pedido-itens td:nth-child(2) {
+    min-width: 210px;
+}
+
+.app-admin .admin-table--pedido-participantes th:nth-child(1),
+.app-admin .admin-table--pedido-participantes td:nth-child(1),
+.app-admin .admin-table--pedido-participantes th:nth-child(3),
+.app-admin .admin-table--pedido-participantes td:nth-child(3) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--pedido-inscricoes th:nth-child(2),
+.app-admin .admin-table--pedido-inscricoes td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--pedido-comprovantes th:nth-child(4),
+.app-admin .admin-table--pedido-comprovantes td:nth-child(4) {
+    min-width: 220px;
+}
+
+.app-admin .admin-pedido-show__top {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.15fr);
+    align-items: start;
+}
+
+.app-admin .admin-pedido-comprovante-card {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+}
+
+.app-admin .admin-pedido-comprovante-meta {
+    display: grid;
+    gap: 4px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: var(--admin-muted);
+    font-size: 13px;
+}
+
+.app-admin .admin-pedido-comprovante-actions {
+    margin: 8px 0 12px;
+}
+
+.app-admin .admin-pedido-comprovante-zoom {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.app-admin .admin-pedido-comprovante-viewer {
+    overflow: auto;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: #fff;
+    width: 100%;
+    max-width: none;
+}
+
+.app-admin .admin-pedido-comprovante-frame {
+    width: 100%;
+    height: clamp(720px, 85vh, 1800px);
+    min-height: 720px;
+    border: 0;
+    background: #fff;
+}
+
+.app-admin .admin-table--pedido-historico th:nth-child(3),
+.app-admin .admin-table--pedido-historico td:nth-child(3) {
+    min-width: 260px;
+}
+
+.app-admin .admin-table--financeiro-apuracoes th:nth-child(1),
+.app-admin .admin-table--financeiro-apuracoes td:nth-child(1),
+.app-admin .admin-table--financeiro-repasses th:nth-child(1),
+.app-admin .admin-table--financeiro-repasses td:nth-child(1) {
+    min-width: 120px;
+}
+
+.app-admin .admin-table--financeiro-repasses th:nth-child(2),
+.app-admin .admin-table--financeiro-repasses td:nth-child(2) {
+    min-width: 200px;
+}
+
+.app-admin .admin-table--financeiro-repasses th:nth-child(8),
+.app-admin .admin-table--financeiro-repasses td:nth-child(8),
+.app-admin .admin-table--financeiro-repasses th:nth-child(9),
+.app-admin .admin-table--financeiro-repasses td:nth-child(9) {
+    min-width: 130px;
+}
+
+.app-admin .admin-table--financeiro-perfis th:nth-child(1),
+.app-admin .admin-table--financeiro-perfis td:nth-child(1) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--cupons-lista th:nth-child(1),
+.app-admin .admin-table--cupons-lista td:nth-child(1) {
+    min-width: 140px;
+}
+
+.app-admin .admin-table--cupons-lista th:nth-child(2),
+.app-admin .admin-table--cupons-lista td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--cupons-lista th:nth-child(8),
+.app-admin .admin-table--cupons-lista td:nth-child(8) {
+    min-width: 140px;
+}
+
+.app-admin .admin-table--cupons-usos th:nth-child(2),
+.app-admin .admin-table--cupons-usos td:nth-child(2) {
+    min-width: 240px;
+}
+
+.app-admin .admin-table--cupons-historico th:nth-child(2),
+.app-admin .admin-table--cupons-historico td:nth-child(2) {
+    min-width: 260px;
+}
+
+.app-admin .table--certificados-lista th:nth-child(2),
+.app-admin .table--certificados-lista td:nth-child(2),
+.app-admin .table--certificados-lista th:nth-child(3),
+.app-admin .table--certificados-lista td:nth-child(3) {
+    min-width: 220px;
+}
+
+.app-admin .table--certificados-historico th:nth-child(2),
+.app-admin .table--certificados-historico td:nth-child(2) {
+    min-width: 260px;
+}
+
+.app-admin .table--certificados-validacoes th:nth-child(2),
+.app-admin .table--certificados-validacoes td:nth-child(2) {
+    min-width: 160px;
+}
+
+.app-admin .admin-pendencias-modal-source {
+    display: none;
+}
+
+.app-admin .admin-modal[hidden] {
+    display: none;
+}
+
+.app-admin .admin-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.app-admin .admin-modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.app-admin .admin-modal__dialog {
+    position: relative;
+    z-index: 1;
+    width: min(860px, 100%);
+    max-height: 86vh;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.app-admin .admin-modal__header,
+.app-admin .admin-modal__footer {
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.app-admin .admin-modal__footer {
+    border-top: 1px solid rgba(15, 23, 42, 0.10);
+    border-bottom: 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.app-admin .admin-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.app-admin .admin-modal__header h2 {
+    margin: 0;
+}
+
+.app-admin .admin-modal__close {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.06);
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.app-admin .admin-modal__body {
+    padding: 20px 22px;
+    overflow: auto;
+}
+
+.app-admin .admin-pendencias-modal__text {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.04);
+    line-height: 1.6;
+    white-space: normal;
+}
+
+.app-admin .admin-modal-open {
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .app-admin .admin-modal {
+        padding: 12px;
+        align-items: flex-end;
+    }
+
+    .app-admin .admin-modal__dialog {
+        max-height: 92vh;
+        border-radius: 18px 18px 0 0;
+    }
+}
+
+.app-admin .admin-table--area-modulos th:nth-child(1),
+.app-admin .admin-table--area-modulos td:nth-child(1),
+.app-admin .admin-table--area-aulas th:nth-child(1),
+.app-admin .admin-table--area-aulas td:nth-child(1),
+.app-admin .admin-table--area-materiais th:nth-child(1),
+.app-admin .admin-table--area-materiais td:nth-child(1),
+.app-admin .admin-table--area-links th:nth-child(1),
+.app-admin .admin-table--area-links td:nth-child(1) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--area-links th:nth-child(3),
+.app-admin .admin-table--area-links td:nth-child(3) {
+    min-width: 280px;
+}
+
+.app-admin .admin-table--area-participantes th:nth-child(1),
+.app-admin .admin-table--area-participantes td:nth-child(1) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--rbac-perfis th:nth-child(2),
+.app-admin .admin-table--rbac-perfis td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--rbac-permissoes th:nth-child(2),
+.app-admin .admin-table--rbac-permissoes td:nth-child(2),
+.app-admin .admin-table--rbac-permissoes th:nth-child(4),
+.app-admin .admin-table--rbac-permissoes td:nth-child(4) {
+    min-width: 240px;
+}
+
+.app-admin .admin-table--usuarios-lista th a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.app-admin .table-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.app-admin .table-actions a {
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.app-admin .admin-table--usuarios-lista th a:hover {
+    text-decoration: underline;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(1),
+.app-admin .admin-table--usuarios-lista td:nth-child(1) {
+    min-width: 70px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(2),
+.app-admin .admin-table--usuarios-lista td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(3),
+.app-admin .admin-table--usuarios-lista td:nth-child(3) {
+    min-width: 260px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(4),
+.app-admin .admin-table--usuarios-lista td:nth-child(4) {
+    min-width: 150px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(5),
+.app-admin .admin-table--usuarios-lista td:nth-child(5) {
+    min-width: 220px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(6),
+.app-admin .admin-table--usuarios-lista td:nth-child(6) {
+    min-width: 110px;
+}
+
+.app-admin .admin-table--usuarios-lista th:nth-child(7),
+.app-admin .admin-table--usuarios-lista td:nth-child(7) {
+    min-width: 110px;
+}
+
+.app-admin .usuarios-acoes-col {
+    white-space: nowrap;
+}
+
+.app-admin .usuarios-filtros-row {
+    grid-template-columns: 2fr 1fr 1fr;
+}
+
+.app-admin .usuarios-filtros-acoes {
+    margin-top: 8px;
+}
+
+.app-admin .admin-table--catalogo-categorias th:nth-child(2),
+.app-admin .admin-table--catalogo-categorias td:nth-child(2),
+.app-admin .admin-table--catalogo-categorias th:nth-child(3),
+.app-admin .admin-table--catalogo-categorias td:nth-child(3) {
+    min-width: 180px;
+}
+
+.app-admin .admin-table--catalogo-cursos th:nth-child(2),
+.app-admin .admin-table--catalogo-cursos td:nth-child(2),
+.app-admin .admin-table--catalogo-cursos th:nth-child(4),
+.app-admin .admin-table--catalogo-cursos td:nth-child(4) {
+    min-width: 210px;
+}
+
+.app-admin .admin-table--catalogo-turmas th:nth-child(2),
+.app-admin .admin-table--catalogo-turmas td:nth-child(2),
+.app-admin .admin-table--catalogo-turmas th:nth-child(4),
+.app-admin .admin-table--catalogo-turmas td:nth-child(4) {
+    min-width: 200px;
+}
+
+.app-admin .admin-table--catalogo-destaques th:nth-child(2),
+.app-admin .admin-table--catalogo-destaques td:nth-child(2),
+.app-admin .admin-table--catalogo-destaques th:nth-child(3),
+.app-admin .admin-table--catalogo-destaques td:nth-child(3) {
+    min-width: 220px;
+}
+
+.app-admin .muted {
+    color: var(--admin-muted);
+}
+
+.app-admin .admin-quick-summary {
+    display: grid;
+    gap: 14px;
+}
+
+.app-admin .admin-quick-summary__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.app-admin .admin-quick-summary__title {
+    margin: 0;
+    font-size: 16px;
+    color: var(--admin-text);
+}
+
+.app-admin .admin-dashboard-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.app-admin .admin-dashboard-metric-card {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid #e7ebf3;
+    border-radius: 12px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .admin-dashboard-metric-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--admin-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .admin-dashboard-metric-value {
+    min-width: 0;
+    font-size: 21px;
+    line-height: 1.15;
+    font-weight: 800;
+    color: var(--admin-text);
+    overflow-wrap: anywhere;
+}
+
+.app-admin .admin-dashboard-metric-help {
+    font-size: 12px;
+    color: var(--admin-muted);
+}
+
+.app-admin .quick-actions .card-link {
+    min-height: 42px;
+    padding: 9px 11px;
+    border-radius: 10px;
+}
+
+.app-admin .quick-actions--dashboard {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: stretch;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 112px;
+    padding: 16px 16px 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, var(--admin-panel-muted) 100%);
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+    text-align: left;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    overflow: hidden;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: var(--admin-primary);
+    opacity: 0.12;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut:hover {
+    transform: translateY(-1px);
+    border-color: #c7d0e0;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut span {
+    position: relative;
+    display: block;
+    padding-right: 20px;
+    color: var(--admin-text);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut small {
+    position: relative;
+    display: inline-flex;
+    align-self: flex-start;
+    max-width: 100%;
+    padding: 6px 10px;
+    border: 1px solid rgba(76, 29, 149, 0.12);
+    border-radius: 999px;
+    background: #eef2ff;
+    color: var(--admin-primary-strong);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: normal;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut small .badge {
+    flex: 0 0 auto;
+    margin-right: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut--alert::before {
+    background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+    opacity: 0.22;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut--alert small {
+    border-color: rgba(217, 119, 6, 0.16);
+    background: #fff4e5;
+    color: #8a4b00;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut--form {
+    cursor: default;
+    text-decoration: none;
+    justify-content: flex-start;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut--form .admin-shortcut__footer {
+    margin-top: auto;
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.app-admin .quick-actions--dashboard .admin-shortcut--form .admin-shortcut__button {
+    align-self: flex-start;
+    margin-top: 8px;
+}
+
+.app-admin .status-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .permission-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .permission-group {
+    padding: 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .permission-group h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+.app-admin .detail-list {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+}
+
+.app-admin .detail-list div {
+    padding: 8px 10px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .detail-list dt {
+    font-size: 12px;
+    color: var(--admin-muted);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.app-admin .detail-list dd {
+    margin: 4px 0 0;
+    font-weight: 600;
+}
+
+.app-admin .alert {
+    padding: 10px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.app-admin .alert-success {
+    border-color: #9adbb0;
+    background: #effbf2;
+}
+
+.app-admin .alert-danger {
+    border-color: #e39a9a;
+    background: #fff0f0;
+}
+
+.app-admin .alert-info {
+    padding: 10px 12px;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #eff6ff;
+    color: #1e3a8a;
+}
+
+.app-admin .alert-warning {
+    padding: 10px 12px;
+    border: 1px solid #f0d58a;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #fff9e6;
+    color: #7c5c00;
+}
+
+.app-admin .badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--admin-border);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.app-admin .badge--status {
+    gap: 6px;
+}
+
+.app-admin .badge--status-aprovado {
+    background: #effbf2;
+    border-color: #9adbb0;
+    color: #166534;
+}
+
+.app-admin .badge--status-pendente {
+    background: #fff9e6;
+    border-color: #f0d58a;
+    color: #7c5600;
+}
+
+.app-admin .badge--status-reprovado {
+    background: #fff0f0;
+    border-color: #e39a9a;
+    color: #9f1239;
+}
+
+.app-admin .admin-filter-grid,
+.app-admin .admin-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.app-admin .admin-presentes-page .admin-filter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.app-admin .admin-page__content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+}
+
+.app-admin .admin-filter-grid label,
+.app-admin .admin-form-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.app-admin .admin-filter-grid label span,
+.app-admin .admin-form-grid label span {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--admin-muted);
+}
+
+.app-admin .admin-filter-grid input,
+.app-admin .admin-filter-grid select,
+.app-admin .admin-form-grid input,
+.app-admin .admin-form-grid select,
+.app-admin .admin-form-grid textarea {
+    width: 100%;
+}
+
+.app-admin .admin-filter-grid__actions,
+.app-admin .admin-page__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.app-admin .admin-form-grid__full {
+    grid-column: 1 / -1;
+}
+
+.app-admin .admin-presentes-page .admin-filter-grid__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+}
+
+.app-admin .admin-grid--metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .admin-metric-card {
+    padding: 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.app-admin .admin-metric-card strong {
+    display: block;
+    font-size: 16px;
+    line-height: 1.35;
+    color: var(--admin-text);
+}
+
+.app-admin .admin-metric-card span {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--admin-muted);
+}
+
+.app-admin .admin-summary-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .admin-summary-list div {
+    padding: 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    background: #fff;
+    text-align: center;
+}
+
+.app-admin .admin-summary-list strong {
+    display: block;
+    font-size: 20px;
+    line-height: 1.2;
+}
+
+.app-admin .admin-summary-list span {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--admin-muted);
+}
+
+.app-admin .admin-warning-box {
+    padding: 12px 14px;
+    border: 1px solid #f0d58a;
+    border-radius: 12px;
+    background: #fff9e6;
+    color: #7c5c00;
+    font-weight: 600;
+}
+
+.app-admin .button-link--danger {
+    border-color: #e39a9a;
+    color: #9f1239;
+    background: #fff0f0;
+}
+
+.app-admin .button-link--danger:hover,
+.app-admin .button-link--danger:focus-visible {
+    border-color: #d87373;
+    background: #ffe4e4;
+}
+
+@media (max-width: 1600px) {
+    .app-admin .quick-actions--dashboard {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1680px) {
+    .app-admin .site-main--admin {
+        padding: 28px 34px;
+    }
+
+    .app-admin .admin-section,
+    .app-admin .status-card,
+    .app-admin .panel {
+        padding: 18px;
+    }
+
+    .app-admin .admin-page {
+        gap: 18px;
+    }
+
+    .app-admin .admin-table,
+    .app-admin .table {
+        min-width: 0;
+    }
+
+    .app-admin .admin-table th,
+    .app-admin .admin-table td,
+    .app-admin .table th,
+    .app-admin .table td {
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 1400px) {
+    .app-admin .admin-shell {
+        grid-template-columns: 264px minmax(0, 1fr);
+    }
+
+    .app-admin .admin-page__metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-grid--metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-summary-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .status-grid,
+    .app-admin .admin-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .quick-actions--dashboard {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-area-curso__layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso__aside {
+        position: static;
+    }
+
+    .app-admin .admin-area-curso__stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-area-curso__report-lists {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-area-curso__delivery-grid {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        align-items: start;
+    }
+
+    .app-admin .admin-area-curso__delivery-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+@media (max-width: 1200px) {
+    .app-admin .admin-shell {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+        z-index: 60;
+    }
+
+    .app-admin .admin-shell.sidebar-open .admin-sidebar {
+        transform: translateX(0);
+    }
+
+    .app-admin .admin-topbar__menu-toggle {
+        display: inline-flex;
+    }
+
+    .app-admin .form-grid,
+    .app-admin .admin-form-grid,
+    .app-admin .admin-filters__row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-area-curso__selector-form,
+    .app-admin .admin-area-curso__form,
+    .app-admin .admin-area-curso__delete-form,
+    .app-admin .admin-area-curso__anchors {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso__tablinks,
+    .app-admin .admin-area-curso__actions {
+        flex-direction: column;
+    }
+
+    .app-admin .area-curso-header {
+        flex-direction: column;
+    }
+
+    .app-admin .area-curso-header__actions {
+        justify-content: flex-start;
+    }
+
+    .app-admin .area-curso-tabs__mobile {
+        display: block;
+    }
+
+    .app-admin .area-curso-tabs__toggle {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .app-admin .area-curso-tabs {
+        display: none;
+        flex-direction: column;
+    }
+
+    .app-admin .area-curso-tabs.is-open {
+        display: flex;
+    }
+
+    .app-admin .area-curso-tabs__link {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .app-admin .permission-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .app-admin .admin-page__header {
+        padding: 16px;
+    }
+
+    .app-admin .admin-page__cta-panel {
+        justify-items: start;
+        margin-left: 0;
+    }
+
+    .app-admin .admin-page__cta-help {
+        max-width: none;
+        text-align: left;
+    }
+
+    .app-admin .admin-presentes-page .admin-page__content {
+        flex-direction: column;
+    }
+
+    .app-admin .admin-presentes-page .admin-presentes-new-card {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .app-admin .admin-presentes-page .admin-presentes-filters__toggle {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .app-admin .admin-presentes-page .admin-filter-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-page__metrics {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-grid--metrics {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-page__title {
+        font-size: 24px;
+    }
+
+    .app-admin .admin-page__metric-value {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 880px) {
+    .app-admin .site-main--admin {
+        padding: 14px;
+    }
+
+    .app-admin .admin-page__header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .app-admin .admin-page__content {
+        flex-direction: column;
+    }
+
+    .app-admin .admin-page__actions {
+        justify-content: flex-start;
+    }
+
+    .app-admin .admin-presentes-page .admin-presentes-filters__header {
+        align-items: stretch;
+    }
+
+    .app-admin .admin-area-curso__selector-form,
+    .app-admin .admin-area-curso__form,
+    .app-admin .admin-area-curso__delete-form,
+    .app-admin .admin-area-curso__anchors {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso__tablinks,
+    .app-admin .admin-area-curso__actions {
+        flex-direction: column;
+    }
+
+    .app-admin .area-curso-header {
+        flex-direction: column;
+    }
+
+    .app-admin .area-curso-header__actions {
+        justify-content: flex-start;
+    }
+
+    .app-admin .area-curso-tabs__mobile {
+        display: block;
+    }
+
+    .app-admin .area-curso-tabs__toggle {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .app-admin .area-curso-tabs {
+        display: none;
+        flex-direction: column;
+    }
+
+    .app-admin .area-curso-tabs.is-open {
+        display: flex;
+    }
+
+    .app-admin .area-curso-tabs__link {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .app-admin .status-grid,
+    .app-admin .admin-kpi-grid,
+    .app-admin .grid-2,
+    .app-admin .grid-forms,
+    .app-admin .quick-actions--dashboard,
+    .app-admin .permission-grid,
+    .app-admin .form-grid,
+    .app-admin .admin-form-grid,
+    .app-admin .admin-filters__row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-grid--metrics,
+    .app-admin .admin-summary-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-quick-summary__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .app-admin .admin-dashboard-metrics {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .detail-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-pedido-show__top {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-pedido-comprovante-frame {
+        height: clamp(560px, 75vh, 1200px);
+        min-height: 560px;
+    }
+
+    .app-admin .admin-area-curso__stats {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-area-curso__report-lists {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ---------- imagens nos módulos de frontend ---------- */
+.app-admin .module-image-box {
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 18px;
+    padding: 16px;
+    background: rgba(248, 250, 252, 0.72);
+    margin: 12px 0;
+}
+
+.app-admin .module-image-box h2 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+}
+
+.app-admin .module-image-box p {
+    margin: 0 0 12px;
+    color: #64748b;
+}
+
+.app-admin .module-image-box__preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.app-admin .module-image-box__preview img {
+    max-width: 220px;
+    max-height: 90px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    padding: 8px;
+}
+
+.app-admin .module-image-box__preview span {
+    font-size: .85rem;
+    color: #475569;
+    word-break: break-all;
+}
+
+.app-admin .avisos-autocomplete {
+    position: relative;
+    z-index: 20;
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+.app-admin .avisos-autocomplete[hidden] {
+    display: none;
+}
+
+.app-admin .avisos-autocomplete__item,
+.app-admin .avisos-autocomplete__empty {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px 14px;
+    color: #0F172A;
+}
+
+.app-admin .avisos-autocomplete__item strong,
+.app-admin .avisos-autocomplete__empty {
+    display: block;
+    line-height: 1.4;
+}
+
+.app-admin .avisos-autocomplete__item span,
+.app-admin .avisos-autocomplete__item small {
+    display: block;
+    margin-top: 4px;
+    color: #64748B;
+}
+
+.app-admin .avisos-autocomplete__item:hover,
+.app-admin .avisos-autocomplete__item:focus-visible {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    outline: none;
+}
+
+.app-admin #aviso-aluno-resumo {
+    overflow: hidden;
+}
+/* Conteúdo do curso: refinamentos compactos para a área administrativa */
+.app-admin .admin-area-curso-conteudo-page .admin-compact-toolbar {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 5px 8px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-icon-btn [aria-hidden="true"] {
+    line-height: 1;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-main {
+    flex-wrap: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-move {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    align-items: center;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-move label {
+    min-width: 160px;
+    max-width: 220px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-actions-move select {
+    min-height: 32px;
+    padding: 4px 8px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table,
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-ordem {
+    width: 54px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-titulo {
+    width: 32%;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-tipo {
+    width: 13%;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-status {
+    width: 11%;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-col-acoes {
+    width: 42%;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table th,
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table td,
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table th,
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table td {
+    vertical-align: top;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table td:nth-child(1),
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table td:nth-child(1) {
+    width: 72px;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table td:nth-child(2),
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table td:nth-child(2) {
+    min-width: 220px;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-modulos-table td:nth-child(5),
+.app-admin .admin-area-curso-conteudo-page .admin-conteudo-itens-table td:nth-child(5) {
+    width: 42%;
+    white-space: nowrap;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-area-curso-conteudo__cell-title-text {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
+.app-admin .admin-area-curso-conteudo-page .admin-archived-section {
+    margin-top: 10px;
+}
+
+.app-admin .tutor-norminha-admin {
+    gap: 12px;
+}
+
+.app-admin .tutor-norminha-admin__notice {
+    display: grid;
+    gap: 8px;
+}
+
+.app-admin .tutor-norminha-admin__notice p {
+    margin: 0;
+}
+
+.app-admin .tutor-norminha-admin__notice code {
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #f3e8ff;
+    color: #5b21b6;
+}
+
+.app-admin .tutor-norminha-admin__filters .admin-form-grid {
+    align-items: end;
+}
+
+.app-admin .tutor-norminha-admin__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.app-admin .tutor-norminha-admin__status-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.app-admin .tutor-norminha-admin__preview {
+    max-width: 280px;
+}
+
+.app-admin .tutor-norminha-admin__preview summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--admin-primary);
+}
+
+.app-admin .tutor-norminha-admin__preview > div {
+    margin-top: 8px;
+    padding: 10px 11px;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    background: var(--admin-panel-muted);
+}
+
+.app-admin .tutor-norminha-admin__preview p {
+    margin: 6px 0 0;
+    color: var(--admin-muted);
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
+.app-admin .tutor-norminha-admin__audio-player {
+    width: 100%;
+    max-width: 280px;
+}
+
+.app-admin .tutor-norminha-admin__preview-panel {
+    display: grid;
+    gap: 14px;
+}
+
+.app-admin .tutor-norminha-admin__section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.app-admin .tutor-norminha-admin__section-head p {
+    margin: 6px 0 0;
+}
+
+.app-admin .tutor-norminha-admin__preview-shell,
+.app-admin .tutor-norminha-admin__config-preview-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.app-admin .tutor-norminha-admin__preview-avatar-box,
+.app-admin .tutor-norminha-admin__config-preview-avatar,
+.app-admin .tutor-norminha-admin__preview-copy,
+.app-admin .tutor-norminha-admin__config-preview-copy {
+    display: grid;
+    gap: 10px;
+}
+
+.app-admin .tutor-norminha-admin__preview-avatar-frame {
+    position: relative;
+    width: 100%;
+    min-height: 220px;
+    border: 1px solid var(--admin-border);
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fffdfc 0%, #fff6fb 100%);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 107, 153, 0.06);
+}
+
+.app-admin .tutor-norminha-admin__preview-avatar-frame.is-speaking {
+    box-shadow: inset 0 0 0 1px rgba(255, 107, 153, 0.18);
+}
+
+.app-admin .tutor-norminha-admin__preview-avatar-image {
+    width: 100%;
+    height: 100%;
+    max-width: 220px;
+    max-height: 220px;
+    object-fit: contain;
+    padding: 14px;
+}
+
+.app-admin .tutor-norminha-admin__preview-avatar-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    padding: 18px;
+    color: var(--admin-muted);
+    font-size: 13px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.app-admin .tutor-norminha-admin__preview-eyebrow {
+    color: var(--admin-primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-admin .tutor-norminha-admin__preview-title {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.3;
+}
+
+.app-admin .tutor-norminha-admin__preview-text {
+    margin: 0;
+    color: var(--admin-muted);
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
+
+.app-admin .tutor-norminha-admin__preview-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.app-admin .tutor-norminha-admin__preview-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 107, 153, 0.18);
+    border-radius: 999px;
+    background: #fff8fb;
+    color: var(--admin-text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.app-admin .tutor-norminha-admin__preview-actions,
+.app-admin .tutor-norminha-admin__config-preview-button-wrap {
+    display: grid;
+    gap: 8px;
+}
+
+.app-admin .tutor-norminha-admin__preview-warning {
+    padding: 12px 14px;
+    border: 1px solid #f0d58a;
+    border-radius: 12px;
+    background: #fff9e6;
+    color: #7c5c00;
+    font-weight: 600;
+}
+
+.app-admin .tutor-norminha-admin__config-preview-avatars {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.app-admin .tutor-norminha-admin__config-preview-avatar {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+}
+
+.app-admin .tutor-norminha-admin__config-preview-avatar img {
+    width: 100%;
+    min-height: 150px;
+    object-fit: contain;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 107, 153, 0.10);
+    background: #fff;
+    padding: 10px;
+}
+
+.app-admin .tutor-norminha-admin__config-preview-copy {
+    padding: 12px 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 16px;
+    background: #fbfcfe;
+}
+
+.app-admin .tutor-norminha-admin__config-preview-copy .tutor-norminha-admin__preview-text {
+    color: var(--admin-text);
+}
+
+.app-admin .admin-table--tutor-norminha td:nth-child(8) {
+    min-width: 260px;
+}
+
+.app-admin .admin-table--tutor-norminha td:nth-child(10) {
+    min-width: 280px;
+}
+
+@media (max-width: 768px) {
+    .app-admin .tutor-norminha-admin__actions {
+        flex-direction: column;
+    }
+
+    .app-admin .tutor-norminha-admin__preview {
+        max-width: none;
+    }
+
+    .app-admin .tutor-norminha-admin__audio-player {
+        max-width: 240px;
+    }
+
+    .app-admin .tutor-norminha-admin__preview-shell,
+    .app-admin .tutor-norminha-admin__config-preview-shell {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .tutor-norminha-admin__config-preview-avatars {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .tutor-norminha-admin__preview-avatar-frame {
+        min-height: 180px;
+    }
+
+    .app-admin .tutor-norminha-admin__preview-avatar-image {
+        max-width: 180px;
+        max-height: 180px;
+    }
+}
+
+.app-admin .admin-pedidos-recuperacao-page {
+    gap: 14px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .admin-page__header {
+    align-items: center;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .admin-page__subtitle {
+    max-width: 80ch;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-section-kicker {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--admin-primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-section-title {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.25;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-summary,
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guides,
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-filters-card,
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-send-card,
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-pagination {
+    padding: 14px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpis {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi {
+    display: grid;
+    gap: 8px;
+    min-height: 118px;
+    padding: 14px 14px 13px;
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__label {
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    margin-top: 2px;
+    background: rgba(91, 101, 118, 0.3);
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__dot--success {
+    background: #2f9e54;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__dot--warning {
+    background: #d97706;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__dot--danger {
+    background: #dc2626;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__dot--info {
+    background: #2563eb;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__dot--neutral {
+    background: #64748b;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__value {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 800;
+    color: var(--admin-text);
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__value--text {
+    font-size: 22px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi__note {
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi--success {
+    border-color: rgba(47, 158, 84, 0.16);
+    background: linear-gradient(180deg, rgba(47, 158, 84, 0.06), #ffffff 42%);
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi--warning {
+    border-color: rgba(217, 119, 6, 0.16);
+    background: linear-gradient(180deg, rgba(217, 119, 6, 0.06), #ffffff 42%);
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi--danger {
+    border-color: rgba(220, 38, 38, 0.16);
+    background: linear-gradient(180deg, rgba(220, 38, 38, 0.06), #ffffff 42%);
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi--info {
+    border-color: rgba(37, 99, 235, 0.16);
+    background: linear-gradient(180deg, rgba(37, 99, 235, 0.06), #ffffff 42%);
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpi--neutral {
+    border-color: rgba(100, 116, 139, 0.16);
+    background: linear-gradient(180deg, rgba(100, 116, 139, 0.05), #ffffff 42%);
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    background: #fbfcfe;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide strong {
+    margin: 0;
+    display: block;
+    font-size: 14px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide p,
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide ul {
+    margin: 0;
+    color: var(--admin-text);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide ul {
+    padding-left: 18px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide li + li {
+    margin-top: 6px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide__label {
+    display: inline-block;
+    margin-right: 4px;
+    color: var(--admin-muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-command {
+    margin: 0;
+    padding: 12px;
+    border-radius: 10px;
+    background: #111827;
+    color: #f9fafb;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-filters,
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-send-form {
+    display: grid;
+    gap: 12px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-filters__row,
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-send-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-filters__actions,
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-bulk-actions {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-send-checkbox {
+    align-self: end;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table-wrap {
+    margin-top: 2px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table th,
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    vertical-align: top;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(1) {
+    width: 72px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(2),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(3),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(4),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(5) {
+    min-width: 160px;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(6),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(7),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(10),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(11),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(12),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(13),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(14),
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table td:nth-child(15) {
+    white-space: nowrap;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-cell {
+    display: grid;
+    gap: 2px;
+    line-height: 1.2;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-code {
+    font-weight: 800;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-meta {
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.15;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-money--due {
+    font-weight: 800;
+    color: #8a4b00;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-checkbox-cell {
+    vertical-align: middle;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--admin-border);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-badge--success {
+    background: #e6f9ed;
+    border-color: #9adbb0;
+    color: #166534;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-badge--warning {
+    background: #fff4e5;
+    border-color: #f0d58a;
+    color: #92400e;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-badge--danger {
+    background: #fff0f0;
+    border-color: #e39a9a;
+    color: #9f1239;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-badge--info {
+    background: #eef4ff;
+    border-color: #9db5ff;
+    color: #1d4ed8;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-badge--neutral {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+.app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-pagination__row {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 1400px) {
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpis {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 980px) {
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-filters__row,
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-send-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-kpis,
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guide-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-section-head,
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-pagination__row {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-summary,
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-guides,
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-filters-card,
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-send-card,
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-pagination {
+        padding: 12px;
+    }
+
+    .app-admin .admin-pedidos-recuperacao-page .pedidos-recuperacao-table {
+        min-width: 1180px;
+    }
+}
+
+/* Comunicados por e-mail da turma: barra de progresso do envio em lotes. */
+.app-admin .turma-email-progresso__barra {
+    width: 100%;
+    height: 10px;
+    margin: 8px 0 10px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.app-admin .turma-email-progresso__preenchimento {
+    height: 100%;
+    width: 0;
+    background: #2563eb;
+    border-radius: 999px;
+    transition: width 240ms ease;
+}
+
+.app-admin .turma-email-progresso__texto {
+    margin: 0 0 4px;
+    font-weight: 600;
+}
+
+.app-admin .email-preview {
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    overflow-x: auto;
+}

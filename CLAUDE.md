@@ -73,6 +73,12 @@ Migrations: arquivos SQL simples e numerados em `sql/` (ex.: `054_pedido_recuper
 - Editor rico usa **CKEditor 5 local** (`public_html/assets/vendor/ckeditor5/`, build Classic 41.4.2, GPL — sem CDN, sem licenseKey). Integração em `public_html/assets/js/conteudo-editor.js` + `conteudo-editor.css`, carregado por `resources/views/layout.php` com versionamento via querystring (`?v=...`).
 - HTML do editor é sempre processado por `Helpers::decodeEditorHtml()` → `App\Support\HtmlSanitizer::clean()` → `Helpers::renderSafeHtml()` antes de ser exibido. Tags/atributos perigosos (`script`, `iframe`, `object`, `embed`, `form`, `input`, `on*`, `javascript:`/`data:` em `href`/`src`) são removidos pelo sanitizer — qualquer alteração no editor ou no sanitizer deve preservar esse comportamento.
 
+### E-mails
+
+- Envio transacional em `EmailService` (SMTP próprio, sem lib externa). Cada e-mail é uma linha em `emails_envios`, com `entidade_tipo`/`entidade_id` para vincular à origem, e a fila/reenvio ficam em `/admin/emails/fila`.
+- **Não há worker de fila rodando no servidor.** Envios em massa não podem ser feitos dentro de um único request (estouram o tempo limite do PHP). O padrão adotado é enfileirar (`EmailService::queueCustomHtml`) e processar em lotes via AJAX (`EmailService::sendQueuedCustomHtml`) — ver comunicados de turma em `TurmaEmailService` e `docs/2026-07-13-turmas-emails-e-inscritos.md`.
+- Corpo vindo de editor sempre passa por `Helpers::decodeEditorHtml()` → `HtmlSanitizer::clean()` antes de gravar/enviar.
+
 ### Armazenamento
 
 - `config/storage.php` define caminhos absolutos para `storage/{app,logs,tmp,uploads,cache,private_uploads,trash}`, todos **fora** de `public_html`. Acesso a arquivos privados (comprovantes PIX, certificados, materiais) deve passar por rotas controladas, nunca por link direto.
