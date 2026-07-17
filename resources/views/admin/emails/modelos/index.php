@@ -1,5 +1,10 @@
 <?php use App\Core\Helpers; ?>
 <?php $isSuperAdmin = !empty($is_superadmin); ?>
+<style>
+.email-modelos-nome-link { color: inherit; text-decoration: none; }
+.email-modelos-nome-link:hover,
+.email-modelos-nome-link:focus { color: var(--cor-laranja, #FF6A00); text-decoration: underline; }
+</style>
 <div class="admin-page">
     <section class="admin-page__header">
         <div>
@@ -21,6 +26,28 @@
             <p class="muted">Os gatilhos automáticos continuam ligados ao fluxo do sistema.</p>
         </div>
 
+        <form method="get" action="/admin/emails/modelos" class="admin-form" style="margin-bottom:12px;">
+            <div class="split-actions">
+                <label style="flex:1;min-width:260px;">
+                    Buscar
+                    <input type="text" name="q" value="<?php echo Helpers::e($busca ?? ''); ?>" placeholder="Buscar por nome, assunto, código ou conteúdo">
+                </label>
+            </div>
+            <div class="cta-group">
+                <button type="submit" class="button-link button-link--primary">Buscar</button>
+                <?php if (!empty($busca)): ?>
+                    <a class="button-link button-link--ghost" href="/admin/emails/modelos">Limpar</a>
+                <?php endif; ?>
+            </div>
+        </form>
+
+        <?php if (!empty($busca)): ?>
+            <p class="muted" style="margin:0 0 12px 0;">
+                Exibindo <?php echo (int) count($modelos); ?> resultado(s) para
+                &ldquo;<?php echo Helpers::e($busca); ?>&rdquo;.
+            </p>
+        <?php endif; ?>
+
         <div class="table-wrapper">
             <table class="admin-table">
                 <thead>
@@ -38,7 +65,13 @@
                 <tbody>
                     <?php if (empty($modelos)): ?>
                         <tr>
-                            <td colspan="8">Nenhum modelo de e-mail encontrado.</td>
+                            <td colspan="8">
+                                <?php if (!empty($busca)): ?>
+                                    Nenhum modelo de e-mail foi encontrado para a busca informada.
+                                <?php else: ?>
+                                    Nenhum modelo de e-mail encontrado.
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endif; ?>
 
@@ -52,10 +85,24 @@
                             }
                         }
                         $ativo = !empty($modelo['ativo']);
+
+                        // Reutiliza exatamente a rota/parâmetros da ação "Editar" existente.
+                        $editUrl = null;
+                        if (!empty($modelo['id'])) {
+                            $editUrl = '/admin/emails/modelos/editar?modelo_id=' . (int) $modelo['id'];
+                        } elseif (!empty($modelo['is_default_event'])) {
+                            $editUrl = '/admin/emails/modelos/editar?evento=' . urlencode((string) ($modelo['evento'] ?? ''));
+                        }
                         ?>
                         <tr>
                             <td>
-                                <strong><?php echo Helpers::e($modelo['nome'] ?? ''); ?></strong><br>
+                                <?php if ($editUrl !== null): ?>
+                                    <a class="email-modelos-nome-link" href="<?php echo Helpers::e($editUrl); ?>">
+                                        <strong><?php echo Helpers::e($modelo['nome'] ?? ''); ?></strong>
+                                    </a><br>
+                                <?php else: ?>
+                                    <strong><?php echo Helpers::e($modelo['nome'] ?? ''); ?></strong><br>
+                                <?php endif; ?>
                                 <span class="muted"><?php echo Helpers::e($modelo['gatilho_descricao'] ?? ''); ?></span>
                             </td>
                             <td><code><?php echo Helpers::e($modelo['evento'] ?? ''); ?></code></td>

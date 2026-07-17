@@ -1,0 +1,950 @@
+/* ============================================================
+   Home v3 — nova capa pública (Commit 1: fundação)
+   - Todos os seletores usam o prefixo `.dbc-` para não colidir
+     com `frontend.css` / `frontend-v2.css` / `app.css`.
+   - Variáveis próprias sob `:root`, derivadas das variáveis
+     globais já existentes (com fallback) — acompanham
+     automaticamente o tema (incluindo dark mode) do restante
+     do site.
+   - Carregado apenas quando templateVisualPortal() === 'v3'
+     e a rota é a Home pública (ver resources/views/layout.php).
+   - Mobile-first: estilos base = mobile; breakpoints em
+     640px / 768px / 1024px, alinhados ao restante do frontend.
+   ============================================================ */
+
+:root {
+    --dbc-bg: var(--cor-fundo, #0b1220);
+    --dbc-bg-elevated: var(--cor-painel, #1e293b);
+    --dbc-surface: rgba(255, 255, 255, 0.04);
+    --dbc-surface-strong: rgba(255, 255, 255, 0.08);
+    --dbc-text: var(--cor-texto, #f8fafc);
+    --dbc-text-muted: var(--cor-texto-muted, #94a3b8);
+    --dbc-primary: var(--cor-primaria, #ff6a00);
+    --dbc-secondary: var(--cor-secundaria, #e100ff);
+    --dbc-accent: var(--cor-aqua, #00e6d2);
+    --dbc-border: var(--cor-borda, rgba(255, 255, 255, 0.08));
+    --dbc-radius-lg: 20px;
+    --dbc-radius-md: 14px;
+    --dbc-radius-sm: 10px;
+    --dbc-gap: var(--frontend-card-gap, clamp(16px, 2vw, 24px));
+    --dbc-section-gap: var(--frontend-section-gap, clamp(32px, 5vw, 64px));
+    --dbc-max-width: 1200px;
+    --dbc-shadow: 0 20px 50px rgba(8, 12, 24, 0.35);
+    --dbc-font-heading: 'Sora', 'Inter', sans-serif;
+    --dbc-font-body: 'Inter', sans-serif;
+}
+
+/* ---------- estrutura comum ---------- */
+
+.dbc-section {
+    width: 100%;
+    max-width: var(--dbc-max-width);
+    margin: 0 auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.dbc-section + .dbc-section {
+    margin-top: var(--dbc-section-gap);
+}
+
+.dbc-section__header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: var(--dbc-gap);
+    text-align: center;
+}
+
+/* ORPHAN: não usado por nenhum componente v3 — remover se não utilizado até deploy */
+.dbc-eyebrow {
+    display: inline-block;
+    align-self: center;
+    font-family: var(--dbc-font-body);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dbc-accent);
+}
+
+.dbc-section__title {
+    font-family: var(--dbc-font-heading);
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    font-weight: 800;
+    color: var(--dbc-text);
+    margin: 0;
+}
+
+/* ORPHAN: não usado por nenhum componente v3 — remover se não utilizado até deploy */
+.dbc-section__subtitle {
+    font-family: var(--dbc-font-body);
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    color: var(--dbc-text-muted);
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+/* ORPHAN: não usado por nenhum componente v3 — remover se não utilizado até deploy */
+.dbc-section__footer {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--dbc-gap);
+}
+
+/* ---------- botões ---------- */
+
+.dbc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0.85rem 1.6rem;
+    border-radius: 999px;
+    font-family: var(--dbc-font-body);
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.dbc-btn--primary {
+    background: linear-gradient(135deg, var(--dbc-primary) 0%, var(--dbc-secondary) 100%);
+    color: #ffffff;
+}
+
+.dbc-btn--secondary {
+    background: var(--dbc-surface-strong);
+    color: var(--dbc-text);
+    border-color: var(--dbc-border);
+}
+
+/* ORPHAN: não usado por nenhum componente v3 — remover se não utilizado até deploy */
+.dbc-btn--ghost {
+    background: transparent;
+    color: var(--dbc-text);
+    border-color: var(--dbc-border);
+}
+
+.dbc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--dbc-shadow);
+}
+
+/* ---------- grid utilitário ---------- */
+
+/* ORPHAN: não usado por nenhum componente v3 — remover se não utilizado até deploy */
+.dbc-grid {
+    display: grid;
+    gap: var(--dbc-gap);
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+    /* ORPHAN: não usado por nenhum componente v3 — remover se não utilizado até deploy */
+    .dbc-grid--2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    /* ORPHAN: não usado por nenhum componente v3 — remover se não utilizado até deploy */
+    .dbc-grid--3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* ORPHAN: não usado por nenhum componente v3 — remover se não utilizado até deploy */
+    .dbc-grid--4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ============================================================
+   .dbc-hero — primeira dobra
+   ============================================================ */
+
+.dbc-hero {
+    padding-top: clamp(32px, 6vw, 72px);
+}
+
+.dbc-hero__inner {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(24px, 4vw, 48px);
+    align-items: center;
+}
+
+.dbc-hero__content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+}
+
+.dbc-hero__eyebrow {
+    font-family: var(--dbc-font-body);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dbc-accent);
+}
+
+.dbc-hero__headline {
+    font-family: var(--dbc-font-heading);
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--dbc-text);
+    margin: 0;
+}
+
+.dbc-hero__headline em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--dbc-primary) 0%, var(--dbc-secondary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.dbc-hero__subheadline {
+    font-family: var(--dbc-font-body);
+    font-size: clamp(1rem, 2.4vw, 1.2rem);
+    color: var(--dbc-text-muted);
+    margin: 0;
+}
+
+.dbc-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.dbc-hero__badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.dbc-hero__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: var(--dbc-surface);
+    border: 1px solid var(--dbc-border);
+    color: var(--dbc-text-muted);
+    font-family: var(--dbc-font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.dbc-hero__image {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 220px;
+    border-radius: var(--dbc-radius-lg);
+    overflow: hidden;
+    background: var(--dbc-surface);
+    background: color-mix(in srgb, var(--dbc-primary) 16%, var(--dbc-bg-elevated) 84%);
+    border: 1px solid var(--dbc-border);
+}
+
+.dbc-hero__image-icon {
+    width: clamp(96px, 18vw, 160px);
+    height: clamp(96px, 18vw, 160px);
+    color: var(--dbc-primary);
+    opacity: 0.85;
+}
+
+@media (min-width: 1024px) {
+    .dbc-hero__inner {
+        grid-template-columns: 3fr 2fr;
+        text-align: left;
+    }
+
+    .dbc-hero__content {
+        text-align: left;
+        align-items: flex-start;
+    }
+
+    .dbc-hero__actions,
+    .dbc-hero__badges {
+        justify-content: flex-start;
+    }
+
+    .dbc-hero__image {
+        min-height: 320px;
+    }
+}
+
+/* ============================================================
+   .dbc-credibilidade — números de confiança
+   ============================================================ */
+
+.dbc-credibilidade__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--dbc-gap);
+}
+
+.dbc-credibilidade__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: clamp(16px, 3vw, 24px);
+    border-radius: var(--dbc-radius-md);
+    background: var(--dbc-surface);
+    border: 1px solid var(--dbc-border);
+    text-align: center;
+}
+
+.dbc-credibilidade__numero {
+    font-family: var(--dbc-font-heading);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    color: var(--dbc-primary);
+}
+
+.dbc-credibilidade__label {
+    font-family: var(--dbc-font-body);
+    font-size: 0.9rem;
+    color: var(--dbc-text-muted);
+}
+
+@media (min-width: 768px) {
+    .dbc-credibilidade__grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ============================================================
+   .dbc-destaques — cursos em destaque (estilo vitrine)
+   ============================================================ */
+
+.dbc-destaques__track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(220px, 280px);
+    gap: var(--dbc-gap);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.dbc-course-card {
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--dbc-radius-md);
+    background: var(--dbc-bg-elevated);
+    border: 1px solid var(--dbc-border);
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--dbc-text);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dbc-course-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--dbc-shadow);
+}
+
+.dbc-course-card__media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: var(--dbc-surface);
+    overflow: hidden;
+}
+
+.dbc-course-card__media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dbc-course-card__media--placeholder {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--dbc-primary) 22%, var(--dbc-bg-elevated) 78%) 0%, color-mix(in srgb, var(--dbc-secondary) 22%, var(--dbc-bg-elevated) 78%) 100%);
+}
+
+.dbc-course-card__badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: var(--dbc-primary);
+    color: #ffffff;
+    font-family: var(--dbc-font-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.dbc-course-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    flex: 1;
+}
+
+.dbc-course-card__category {
+    font-family: var(--dbc-font-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--dbc-accent);
+}
+
+.dbc-course-card__title {
+    font-family: var(--dbc-font-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.dbc-course-card__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: var(--dbc-font-body);
+    font-size: 0.8rem;
+    color: var(--dbc-text-muted);
+}
+
+.dbc-course-card__meta-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.dbc-course-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+.dbc-course-card__price-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.dbc-course-card__price {
+    font-family: var(--dbc-font-heading);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--dbc-text);
+}
+
+.dbc-course-card__price--old {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--dbc-text-muted);
+    text-decoration: line-through;
+}
+
+.dbc-course-card__cta {
+    flex-shrink: 0;
+    font-family: var(--dbc-font-body);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--dbc-primary);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.dbc-course-card__cta:hover {
+    text-decoration: underline;
+}
+
+@media (min-width: 1024px) {
+    .dbc-destaques__track {
+        grid-auto-flow: row;
+        grid-template-columns: repeat(4, 1fr);
+        overflow-x: visible;
+        margin: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/* ============================================================
+   .dbc-categorias — categorias de cursos
+   ============================================================ */
+
+.dbc-categorias__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--dbc-gap);
+}
+
+.dbc-category-card {
+    position: relative;
+    display: block;
+    border-radius: var(--dbc-radius-md);
+    overflow: hidden;
+    aspect-ratio: 1;
+    text-decoration: none;
+    background: var(--dbc-surface);
+    border: 1px solid var(--dbc-border);
+}
+
+.dbc-category-card img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dbc-category-card__placeholder {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--dbc-primary) 22%, var(--dbc-bg-elevated) 78%) 0%, color-mix(in srgb, var(--dbc-secondary) 22%, var(--dbc-bg-elevated) 78%) 100%);
+}
+
+.dbc-category-card__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 2px;
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(11, 18, 32, 0) 40%, rgba(11, 18, 32, 0.85) 100%);
+}
+
+.dbc-category-card__title {
+    font-family: var(--dbc-font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.dbc-category-card__count {
+    font-family: var(--dbc-font-body);
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+@media (min-width: 640px) {
+    .dbc-categorias__grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .dbc-categorias__grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+/* ============================================================
+   .dbc-como-funciona — passo a passo
+   ============================================================ */
+
+.dbc-como-funciona__steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--dbc-gap);
+}
+
+.dbc-step {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: clamp(16px, 3vw, 24px);
+    border-radius: var(--dbc-radius-md);
+    background: var(--dbc-surface);
+    border: 1px solid var(--dbc-border);
+}
+
+.dbc-step__number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--dbc-primary) 0%, var(--dbc-secondary) 100%);
+    color: #ffffff;
+    font-family: var(--dbc-font-heading);
+    font-weight: 800;
+}
+
+.dbc-step__title {
+    font-family: var(--dbc-font-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--dbc-text);
+    margin: 0;
+}
+
+.dbc-step__text {
+    font-family: var(--dbc-font-body);
+    font-size: 0.9rem;
+    color: var(--dbc-text-muted);
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .dbc-como-funciona__steps {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .dbc-como-funciona__steps {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ============================================================
+   .dbc-diferenciais — diferenciais do portal
+   ============================================================ */
+
+.dbc-diferenciais__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--dbc-gap);
+}
+
+.dbc-diferencial {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: clamp(16px, 3vw, 24px);
+    border-radius: var(--dbc-radius-md);
+    background: var(--dbc-surface);
+    border: 1px solid var(--dbc-border);
+}
+
+.dbc-diferencial__icon {
+    width: 36px;
+    height: 36px;
+    color: var(--dbc-primary);
+}
+
+.dbc-diferencial__title {
+    font-family: var(--dbc-font-heading);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dbc-text);
+    margin: 0;
+}
+
+.dbc-diferencial__text {
+    font-family: var(--dbc-font-body);
+    font-size: 0.9rem;
+    color: var(--dbc-text-muted);
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .dbc-diferenciais__grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .dbc-diferenciais__grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ============================================================
+   .dbc-quem-somos — institucional
+   ============================================================ */
+
+.dbc-quem-somos__inner {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 4vw, 48px);
+    align-items: center;
+}
+
+.dbc-quem-somos__media {
+    width: 100%;
+    max-width: 480px;
+    border-radius: var(--dbc-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--dbc-shadow);
+}
+
+.dbc-quem-somos__media img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.dbc-quem-somos__content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+}
+
+.dbc-quem-somos__title {
+    font-family: var(--dbc-font-heading);
+    font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+    font-weight: 800;
+    color: var(--dbc-text);
+    margin: 0;
+}
+
+.dbc-quem-somos__text {
+    font-family: var(--dbc-font-body);
+    font-size: 0.95rem;
+    color: var(--dbc-text-muted);
+    margin: 0;
+}
+
+@media (min-width: 1024px) {
+    .dbc-quem-somos__inner {
+        flex-direction: row;
+    }
+
+    .dbc-quem-somos__media,
+    .dbc-quem-somos__content {
+        flex: 1;
+        max-width: none;
+    }
+
+    .dbc-quem-somos__content {
+        text-align: left;
+    }
+}
+
+/* ============================================================
+   .dbc-depoimentos — carrossel de depoimentos
+   ============================================================ */
+
+.dbc-depoimentos__track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(260px, 360px);
+    gap: var(--dbc-gap);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.dbc-testimonial {
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: clamp(16px, 3vw, 24px);
+    border-radius: var(--dbc-radius-md);
+    background: var(--dbc-bg-elevated);
+    border: 1px solid var(--dbc-border);
+}
+
+.dbc-testimonial__quote {
+    font-family: var(--dbc-font-body);
+    font-size: 0.95rem;
+    color: var(--dbc-text);
+    margin: 0;
+}
+
+.dbc-testimonial__footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dbc-testimonial__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--dbc-surface);
+}
+
+.dbc-testimonial__author {
+    font-family: var(--dbc-font-heading);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--dbc-text);
+}
+
+.dbc-testimonial__role {
+    font-family: var(--dbc-font-body);
+    font-size: 0.8rem;
+    color: var(--dbc-text-muted);
+}
+
+@media (min-width: 768px) {
+    .dbc-depoimentos__track {
+        grid-auto-flow: row;
+        grid-template-columns: repeat(2, 1fr);
+        overflow-x: visible;
+        margin: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+@media (min-width: 1024px) {
+    .dbc-depoimentos__track {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ============================================================
+   .dbc-faq — perguntas frequentes
+   ============================================================ */
+
+.dbc-faq__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.dbc-faq-item {
+    border: 1px solid var(--dbc-border);
+    border-radius: var(--dbc-radius-md);
+    background: var(--dbc-surface);
+    overflow: hidden;
+}
+
+.dbc-faq-item__question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: clamp(14px, 2.5vw, 18px);
+    font-family: var(--dbc-font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--dbc-text);
+    cursor: pointer;
+    list-style: none;
+}
+
+.dbc-faq-item__question::-webkit-details-marker {
+    display: none;
+}
+
+.dbc-faq-item__question::marker {
+    content: '';
+}
+
+.dbc-faq-item__icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: var(--dbc-accent);
+    transition: transform 0.2s ease;
+}
+
+.dbc-faq-item[open] .dbc-faq-item__icon {
+    transform: rotate(45deg);
+}
+
+.dbc-faq-item__answer {
+    padding: 0 clamp(14px, 2.5vw, 18px) clamp(14px, 2.5vw, 18px);
+    font-family: var(--dbc-font-body);
+    font-size: 0.9rem;
+    color: var(--dbc-text-muted);
+    margin: 0;
+}
+
+/* ============================================================
+   .dbc-cta-final — chamada final
+   ============================================================ */
+
+.dbc-cta-final {
+    border-radius: var(--dbc-radius-lg);
+    padding: clamp(28px, 6vw, 56px) clamp(20px, 5vw, 48px);
+    background: linear-gradient(135deg, var(--dbc-primary) 0%, var(--dbc-secondary) 100%);
+    text-align: center;
+}
+
+.dbc-cta-final__inner {
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+}
+
+.dbc-cta-final__title {
+    font-family: var(--dbc-font-heading);
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+}
+
+.dbc-cta-final__subtitle {
+    font-family: var(--dbc-font-body);
+    font-size: clamp(0.95rem, 2vw, 1.05rem);
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+}
+
+.dbc-cta-final__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.dbc-cta-final .dbc-btn--secondary,
+.dbc-cta-final .dbc-btn--ghost {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+}
+
+.dbc-cta-final .dbc-btn--primary {
+    background: #ffffff;
+    color: var(--dbc-primary);
+}
+
+@media (max-width: 767px) {
+    .dbc-cta-final {
+        /* Espaço para o widget flutuante do Tutor Norminha (.norminha-tutor),
+           fixo no canto inferior direito, não cobrir os botões finais. */
+        padding-bottom: calc(200px + env(safe-area-inset-bottom));
+    }
+}
+
+/* ---------- preferências de movimento ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .dbc-btn,
+    .dbc-course-card,
+    .dbc-faq-item__icon {
+        transition: none;
+    }
+}

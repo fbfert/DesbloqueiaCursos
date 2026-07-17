@@ -19,15 +19,23 @@ $categoriesCount = count($categories);
 $topCount = count($topCourses);
 $heroStatItems = array();
 
+// Apenas apresentação: os cards de alunos e certificados exibem o total real + 750.
+// O card de cursos mantém o valor real. Não altera dados no banco.
+// Valores nulos/ausentes são tratados como zero antes da soma.
+$totalAlunosReal = ($heroStats && isset($heroStats['alunos'])) ? (int) $heroStats['alunos'] : 0;
+$totalCertificadosReal = ($heroStats && isset($heroStats['certificados'])) ? (int) $heroStats['certificados'] : 0;
+$totalAlunosExibidos = max(0, $totalAlunosReal) + 750;
+$totalCertificadosExibidos = max(0, $totalCertificadosReal) + 750;
+
 if ($heroStats && (isset($heroStats['alunos']) || isset($heroStats['cursos']) || isset($heroStats['certificados']))) {
     if (!empty($heroStats['alunos'])) {
-        $heroStatItems[] = array('valor' => number_format((int) $heroStats['alunos'], 0, ',', '.'), 'rotulo' => 'alunos');
+        $heroStatItems[] = array('valor' => number_format($totalAlunosExibidos, 0, ',', '.'), 'rotulo' => 'alunos');
     }
     if (!empty($heroStats['cursos'])) {
         $heroStatItems[] = array('valor' => number_format((int) $heroStats['cursos'], 0, ',', '.'), 'rotulo' => 'cursos');
     }
     if (!empty($heroStats['certificados'])) {
-        $heroStatItems[] = array('valor' => number_format((int) $heroStats['certificados'], 0, ',', '.'), 'rotulo' => 'certificados');
+        $heroStatItems[] = array('valor' => number_format($totalCertificadosExibidos, 0, ',', '.'), 'rotulo' => 'certificados');
     }
 } else {
     if ($featuredCount > 0) {
@@ -52,7 +60,7 @@ if ($heroStats && (isset($heroStats['alunos']) || isset($heroStats['cursos']) ||
 
 <section class="v2-hero">
   <div class="v2-container">
-    <div class="v2-hero-inner">
+    <div class="v2-hero-inner v2-hero-inner--no-visual">
       <div class="v2-hero-text">
         <span class="v2-hero-tag"><i class="ti ti-bolt"></i> Sua próxima fase começa aqui</span>
         <h1 class="v2-h1"><?php echo Helpers::e($heroTitulo); ?></h1>
@@ -74,13 +82,6 @@ if ($heroStats && (isset($heroStats['alunos']) || isset($heroStats['cursos']) ||
             <a href="<?php echo Helpers::e($registerHref); ?>" class="v2-btn v2-btn-ghost">Criar conta</a>
           <?php endif; ?>
         </div>
-      </div>
-
-      <div class="v2-hero-visual" aria-hidden="true">
-        <i class="ti ti-school"></i>
-        <div class="v2-float" style="top:22px;left:20px;"><i class="ti ti-certificate" style="color:#FF6A00"></i> Certificado incluso</div>
-        <div class="v2-float" style="bottom:24px;right:18px;"><i class="ti ti-stack" style="color:#4B008E"></i> <?php echo number_format($featuredCount, 0, ',', '.'); ?> destaques reais</div>
-        <div class="v2-float" style="bottom:30px;left:24px;"><i class="ti ti-layout-grid" style="color:#0f766e"></i> <?php echo number_format($categoriesCount, 0, ',', '.'); ?> categorias</div>
       </div>
     </div>
 

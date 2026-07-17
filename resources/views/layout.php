@@ -211,9 +211,12 @@ if (!$isAdmin) {
     <?php endif; ?>
     <?php if ($isAdmin || $isProfessor): ?>
         <link rel="stylesheet" href="/assets/css/conteudo-editor.css?v=20260529">
+        <link rel="stylesheet" href="/assets/css/email-modelo-editor.css?v=20260707">
         <script src="/assets/vendor/ckeditor5/ckeditor.js?v=41.4.2" defer></script>
         <script src="/assets/vendor/ckeditor5/translations/pt-br.js?v=41.4.2" defer></script>
         <script src="/assets/js/conteudo-editor.js?v=20260529-ckeditor5" defer></script>
+        <script src="/assets/js/email-modelo-editor.js?v=20260707" defer></script>
+        <script src="/assets/js/email-doc-editor.js?v=20260707b" defer></script>
     <?php endif; ?>
     <?php if ($useFrontendTheme && $shouldLoadConteudoAudio): ?>
         <script src="/assets/js/conteudo-audio.js?v=20260529" defer></script>

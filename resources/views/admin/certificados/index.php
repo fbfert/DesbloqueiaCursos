@@ -32,11 +32,6 @@
 
 <section class="card-grid">
     <article class="status-card">
-        <strong>Emissão Rápida Individual</strong>
-        <span>Localize o aluno, selecione as inscrições e emita os certificados em uma única operação.</span>
-        <a href="/admin/certificados/emissao-rapida-individual">Abrir emissão rápida</a>
-    </article>
-    <article class="status-card">
         <strong>Aptos para emissão</strong>
         <span><?php echo count($aptos); ?> inscrições aptas</span>
         <a href="/admin/certificados/emitir">Emitir agora</a>

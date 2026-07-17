@@ -823,7 +823,10 @@ class PedidoRecuperacaoService
             'link_descadastro_recuperacao' => $linkDescadastro,
         ));
 
-        $emailData = array(
+        // Mescla o contexto textual já montado (aluno_nome, aluno_email,
+        // pedido_codigo, curso_nome, etc.) com os dados estruturados do envio.
+        // Sem isto, {{aluno_nome}}, {{pedido_codigo}} e {{curso_nome}} chegavam vazios.
+        $emailData = array_merge($contexto, array(
             'pedido' => $pedido,
             'aluno' => $aluno,
             'link_pedido' => $pedidoResumoUrl,
@@ -836,7 +839,7 @@ class PedidoRecuperacaoService
             'data_pedido' => !empty($pedido['created_at']) ? date('d/m/Y', strtotime((string) $pedido['created_at'])) : '',
             'data_expiracao' => !empty($pedido['data_expiracao_pagamento']) ? date('d/m/Y', strtotime((string) $pedido['data_expiracao_pagamento'])) : '',
             'whatsapp_atendimento' => !empty($contexto['whatsapp_atendimento']) ? $contexto['whatsapp_atendimento'] : '',
-        );
+        ));
 
         if ($dryRun) {
             return $this->logAndReturn(

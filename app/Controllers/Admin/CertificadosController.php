@@ -141,26 +141,62 @@ class CertificadosController extends Controller
     public function emissaoRapidaIndividual(Request $request)
     {
         $busca = trim((string) $request->query('q', ''));
-        $usuarioId = (int) $request->query('usuario_id', 0);
+        $usuarioIdBruto = $request->query('usuario_id', null);
+        $usuarioId = 0;
         $alunosEncontrados = array();
+        $errosBoundary = array();
 
-        if ($usuarioId <= 0 && $busca !== '') {
-            $alunosEncontrados = $this->certificadoService->buscarAlunosEmissaoRapida($busca, 20);
-            if (count($alunosEncontrados) === 1) {
-                $usuarioId = (int) $alunosEncontrados[0]['id'];
-                $alunosEncontrados = array();
+        // Aceita apenas inteiro positivo em usuario_id; qualquer outro valor é ignorado
+        // com aviso amigável, sem gerar notice/erro de conversão.
+        if ($usuarioIdBruto !== null && $usuarioIdBruto !== '') {
+            if (is_numeric($usuarioIdBruto) && (int) $usuarioIdBruto > 0 && (string) (int) $usuarioIdBruto === (string) $usuarioIdBruto) {
+                $usuarioId = (int) $usuarioIdBruto;
+            } else {
+                $errosBoundary[] = 'Identificador de aluno inválido.';
             }
         }
 
         $alunoSelecionado = null;
         $inscricoesAluno = array();
-        if ($usuarioId > 0) {
-            $alunoSelecionado = $this->certificadoService->buscarAlunoEmissaoRapidaPorId($usuarioId);
-            if ($alunoSelecionado) {
-                $inscricoesAluno = $this->certificadoService->carregarInscricoesAlunoEmissaoRapida($usuarioId);
-            } else {
-                Session::flash('errors', array('Aluno não encontrado.'));
+
+        try {
+            if ($usuarioId <= 0 && $busca !== '') {
+                $alunosEncontrados = $this->certificadoService->buscarAlunosEmissaoRapida($busca, 20);
+                if (count($alunosEncontrados) === 1) {
+                    $usuarioId = (int) $alunosEncontrados[0]['id'];
+                    $alunosEncontrados = array();
+                }
             }
+
+            if ($usuarioId > 0) {
+                $alunoSelecionado = $this->certificadoService->buscarAlunoEmissaoRapidaPorId($usuarioId);
+                if ($alunoSelecionado) {
+                    $inscricoesAluno = $this->certificadoService->carregarInscricoesAlunoEmissaoRapida($usuarioId);
+                } else {
+                    $errosBoundary[] = 'Aluno não encontrado.';
+                }
+            }
+        } catch (\Throwable $exception) {
+            // Não mascara a causa raiz: registra a exceção real com contexto suficiente
+            // para manutenção e exibe apenas mensagem genérica segura ao administrador.
+            Logger::error('admin.certificados.emissao_rapida_individual.falhou', array(
+                'usuario_id' => $usuarioId,
+                'busca_preenchida' => $busca !== '' ? 1 : 0,
+                'rota' => '/admin/certificados/emissao-rapida-individual',
+                'actor_user_id' => (int) Session::get('usuario_id', 0),
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+                'trace' => $exception->getTraceAsString(),
+            ));
+
+            $alunoSelecionado = null;
+            $inscricoesAluno = array();
+            $errosBoundary[] = 'Não foi possível carregar as inscrições do aluno no momento. Tente novamente ou contate o suporte técnico.';
+        }
+
+        if (!empty($errosBoundary)) {
+            Session::flash('errors', $errosBoundary);
         }
 
         return $this->view('admin/certificados/emissao_rapida_individual', array(

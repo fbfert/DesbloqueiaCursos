@@ -542,8 +542,62 @@ class CertificadoService
         $inscricao['motivos_pendencias_texto'] = $motivoTexto;
         $inscricao['motivo_resumido'] = $motivoExibicao;
         $inscricao['certificado_emitido'] = $certificadoEmitido ? 1 : 0;
+        $inscricao['turma_periodo'] = $this->formatarPeriodoTurma(
+            $inscricao['turma_data_inicio'] ?? null,
+            $inscricao['turma_data_fim'] ?? null
+        );
+        $inscricao['turma_horario'] = $this->formatarHorarioTurma(
+            $inscricao['turma_hora_inicio'] ?? null,
+            $inscricao['turma_hora_fim'] ?? null
+        );
 
         return $inscricao;
+    }
+
+    private function formatarPeriodoTurma($dataInicio, $dataFim)
+    {
+        $inicio = $this->formatarDataBr($dataInicio);
+        $fim = $this->formatarDataBr($dataFim);
+
+        if ($inicio !== '' && $fim !== '') {
+            return $inicio === $fim ? $inicio : $inicio . ' a ' . $fim;
+        }
+
+        return $inicio !== '' ? $inicio : $fim;
+    }
+
+    private function formatarHorarioTurma($horaInicio, $horaFim)
+    {
+        $inicio = $this->formatarHoraBr($horaInicio);
+        $fim = $this->formatarHoraBr($horaFim);
+
+        if ($inicio !== '' && $fim !== '') {
+            return $inicio === $fim ? $inicio : $inicio . ' às ' . $fim;
+        }
+
+        return $inicio !== '' ? $inicio : $fim;
+    }
+
+    private function formatarDataBr($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '' || strpos($valor, '0000-00-00') === 0) {
+            return '';
+        }
+
+        $timestamp = strtotime($valor);
+        return $timestamp !== false ? date('d/m/Y', $timestamp) : '';
+    }
+
+    private function formatarHoraBr($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return '';
+        }
+
+        $timestamp = strtotime($valor);
+        return $timestamp !== false ? date('H:i', $timestamp) : '';
     }
 
     private function descricaoInscricaoEmissaoRapida(array $inscricao)

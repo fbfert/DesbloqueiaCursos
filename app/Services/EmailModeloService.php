@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Core\Helpers;
 use App\Core\Logger;
 use App\Models\EmailModelo;
+use App\Support\EmailHtmlDocument;
+use App\Support\EmailPlaceholders;
 
 class EmailModeloService
 {
@@ -19,7 +21,7 @@ class EmailModeloService
         $this->auditService = new AuditService();
     }
 
-    public function listar()
+    public function listar($busca = '')
     {
         $defaults = $this->allDefaults();
 
@@ -52,7 +54,7 @@ class EmailModeloService
                 return strcmp($leftName, $rightName);
             });
 
-            return $modelos;
+            return $this->filtrarModelos($modelos, $busca);
         } catch (\Throwable $exception) {
             Logger::error('emails.modelo.listar.erro', array(
                 'message' => $exception->getMessage(),
@@ -65,7 +67,7 @@ class EmailModeloService
                 $fallback[] = $this->normalizeModel($default);
             }
 
-            return $fallback;
+            return $this->filtrarModelos($fallback, $busca);
         }
     }
 
@@ -146,7 +148,7 @@ class EmailModeloService
             $template = $stored ? (string) $stored['template'] : trim((string) ($data['template'] ?? ''));
             $nome = trim((string) ($data['nome'] ?? ''));
             $assunto = trim((string) ($data['assunto'] ?? ''));
-            $corpoHtml = isset($data['corpo_html']) ? trim((string) $data['corpo_html']) : '';
+            $corpoHtml = isset($data['corpo_html']) ? EmailHtmlDocument::sanitize(trim((string) $data['corpo_html'])) : '';
             $gatilhoDescricao = trim((string) ($data['gatilho_descricao'] ?? ''));
             $variaveisJson = $this->normalizeVariablesJson(isset($data['variaveis_disponiveis']) ? $data['variaveis_disponiveis'] : (isset($data['variaveis_json']) ? $data['variaveis_json'] : null));
             $ativo = !empty($data['ativo']) ? 1 : 0;
@@ -178,6 +180,20 @@ class EmailModeloService
                 if ($exists && (int) $exists['id'] !== $id) {
                     $errors['evento'] = 'Já existe um modelo com este evento.';
                 }
+            }
+
+            // Bloqueio de placeholders estruturalmente inválidos (corrompidos/desbalanceados).
+            $problemasPlaceholder = array_merge(
+                EmailPlaceholders::structuralIssues($corpoHtml),
+                EmailPlaceholders::structuralIssues($assunto)
+            );
+            if (!empty($problemasPlaceholder)) {
+                $problemasPlaceholder = array_values(array_unique($problemasPlaceholder));
+                $errors['corpo_html'] = 'Placeholders inválidos no conteúdo: ' . implode(' ', $problemasPlaceholder) . ' Corrija antes de salvar.';
+                Logger::warning('emails.modelo.placeholder_invalido', array(
+                    'modelo_evento' => $evento,
+                    'problemas' => $problemasPlaceholder,
+                ));
             }
 
             if ($errors) {
@@ -390,7 +406,7 @@ class EmailModeloService
             return '';
         }
 
-        $flat = $this->flattenContext($this->buildContext($context));
+        $flat = $this->resolverContextoFlat($context);
 
         return preg_replace_callback('/\{\{([a-zA-Z0-9_.]+)\}\}|\{([a-zA-Z0-9_.]+)\}/', function ($matches) use ($flat) {
             $key = !empty($matches[1]) ? $matches[1] : $matches[2];
@@ -879,6 +895,77 @@ HTML,
         return $merged;
     }
 
+    public function filtrarModelos(array $modelos, $busca)
+    {
+        $termo = $this->normalizarTextoBusca($busca);
+        if ($termo === '') {
+            return $modelos;
+        }
+
+        $filtrados = array();
+        foreach ($modelos as $modelo) {
+            if ($this->modeloCorrespondeBusca($modelo, $termo)) {
+                $filtrados[] = $modelo;
+            }
+        }
+
+        return $filtrados;
+    }
+
+    private function modeloCorrespondeBusca(array $modelo, $termo)
+    {
+        $ativo = !empty($modelo['ativo']);
+        $status = $ativo ? 'ativo ativado habilitado' : 'inativo desativado desabilitado';
+
+        $campos = array(
+            isset($modelo['nome']) ? (string) $modelo['nome'] : '',
+            isset($modelo['assunto']) ? (string) $modelo['assunto'] : '',
+            isset($modelo['evento']) ? (string) $modelo['evento'] : '',
+            isset($modelo['template']) ? (string) $modelo['template'] : '',
+            isset($modelo['gatilho_descricao']) ? (string) $modelo['gatilho_descricao'] : '',
+            isset($modelo['corpo_html']) ? strip_tags((string) $modelo['corpo_html']) : '',
+            isset($modelo['variaveis_disponiveis']) ? (string) $modelo['variaveis_disponiveis'] : '',
+            $status,
+        );
+
+        foreach ($campos as $campo) {
+            if ($campo === '') {
+                continue;
+            }
+
+            if (strpos($this->normalizarTextoBusca($campo), $termo) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizarTextoBusca($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') {
+            return '';
+        }
+
+        if (function_exists('mb_strtolower')) {
+            $valor = mb_strtolower($valor, 'UTF-8');
+        } else {
+            $valor = strtolower($valor);
+        }
+
+        $acentos = array(
+            'Ã¡' => 'a', 'Ã ' => 'a', 'Ã£' => 'a', 'Ã¢' => 'a', 'Ã¤' => 'a',
+            'Ã©' => 'e', 'Ã¨' => 'e', 'Ãª' => 'e', 'Ã«' => 'e',
+            'Ã­' => 'i', 'Ã¬' => 'i', 'Ã®' => 'i', 'Ã¯' => 'i',
+            'Ã³' => 'o', 'Ã²' => 'o', 'Ãµ' => 'o', 'Ã´' => 'o', 'Ã¶' => 'o',
+            'Ãº' => 'u', 'Ã¹' => 'u', 'Ã»' => 'u', 'Ã¼' => 'u',
+            'Ã§' => 'c', 'Ã±' => 'n',
+        );
+
+        return strtr($valor, $acentos);
+    }
+
     private function normalizeModel(array $modelo)
     {
         $variaveis = $this->decodeVariables(isset($modelo['variaveis_json']) ? $modelo['variaveis_json'] : null);
@@ -934,6 +1021,8 @@ HTML,
                 isset($data['inscricao']['participante_nome']) ? $data['inscricao']['participante_nome'] : null,
                 isset($data['inscricao']['pagador_nome']) ? $data['inscricao']['pagador_nome'] : null,
                 isset($data['certificado']['nome_participante']) ? $data['certificado']['nome_participante'] : null,
+                isset($data['aluno']['nome']) ? $data['aluno']['nome'] : null,
+                isset($data['pedido']['pagador_nome']) ? $data['pedido']['pagador_nome'] : null,
             );
 
             foreach ($candidatosNome as $candidato) {
@@ -958,6 +1047,8 @@ HTML,
                 isset($data['pagador_email']) ? $data['pagador_email'] : null,
                 isset($data['inscricao']['aluno_email']) ? $data['inscricao']['aluno_email'] : null,
                 isset($data['inscricao']['pagador_email']) ? $data['inscricao']['pagador_email'] : null,
+                isset($data['aluno']['email']) ? $data['aluno']['email'] : null,
+                isset($data['pedido']['pagador_email']) ? $data['pedido']['pagador_email'] : null,
             );
 
             foreach ($candidatosEmail as $candidato) {
@@ -1013,10 +1104,16 @@ HTML,
         $candidatos = array(
             isset($data['certificado_url_download']) ? trim((string) $data['certificado_url_download']) : '',
             isset($data['certificado_pdf_url']) ? trim((string) $data['certificado_pdf_url']) : '',
+            isset($data['inscricao']['certificado_url_download']) ? trim((string) $data['inscricao']['certificado_url_download']) : '',
+            isset($data['inscricao']['certificado_pdf_url']) ? trim((string) $data['inscricao']['certificado_pdf_url']) : '',
         );
 
         if (isset($data['certificado']) && is_array($data['certificado']) && !empty($data['certificado']['codigo'])) {
             $candidatos[] = Helpers::url('certificados/pdf?codigo=' . urlencode((string) $data['certificado']['codigo']));
+        }
+
+        if (isset($data['inscricao']) && is_array($data['inscricao']) && !empty($data['inscricao']['certificado_codigo'])) {
+            $candidatos[] = Helpers::url('certificados/pdf?codigo=' . urlencode((string) $data['inscricao']['certificado_codigo']));
         }
 
         if (!empty($data['certificado_codigo'])) {
@@ -1106,6 +1203,163 @@ HTML,
         return json_encode($values, JSON_UNESCAPED_UNICODE);
     }
 
+    private function montarMapaFlat(array $context)
+    {
+        $flat = $this->flattenContext($this->buildContext($context));
+
+        foreach (EmailPlaceholders::aliasGroups() as $grupo) {
+            $valor = null;
+            foreach ($grupo as $chave) {
+                if (isset($flat[$chave]) && $flat[$chave] !== '') {
+                    $valor = $flat[$chave];
+                    break;
+                }
+            }
+            if ($valor === null) {
+                continue;
+            }
+            foreach ($grupo as $chave) {
+                if (!isset($flat[$chave]) || $flat[$chave] === '') {
+                    $flat[$chave] = $valor;
+                }
+            }
+        }
+
+        return $flat;
+    }
+
+    private function resolverContextoFlat(array $context)
+    {
+        $flat = $this->montarMapaFlat($context);
+
+        foreach (EmailPlaceholders::inventory() as $item) {
+            $chave = $item['key'];
+            if ((!isset($flat[$chave]) || $flat[$chave] === '') && $item['fallback'] !== '') {
+                $flat[$chave] = htmlspecialchars((string) $item['fallback'], ENT_QUOTES, 'UTF-8');
+            }
+        }
+
+        return $flat;
+    }
+
+    public function analisarPlaceholders($content, array $context = array(), $evento = '')
+    {
+        $content = (string) $content;
+        $flat = $this->montarMapaFlat($context);
+
+        $encontrados = array();
+        if (preg_match_all('/\{\{([a-zA-Z0-9_.]+)\}\}|\{([a-zA-Z0-9_.]+)\}/', $content, $todos, PREG_SET_ORDER)) {
+            foreach ($todos as $match) {
+                $key = isset($match[1]) && $match[1] !== '' ? $match[1] : (isset($match[2]) ? $match[2] : '');
+                if ($key !== '') {
+                    $encontrados[$key] = true;
+                }
+            }
+        }
+        $encontrados = array_keys($encontrados);
+
+        $resolvidos = array();
+        $semContexto = array();
+        $desconhecidos = array();
+        foreach ($encontrados as $key) {
+            $temValor = isset($flat[$key]) && $flat[$key] !== '';
+            if (!EmailPlaceholders::isKnownKey($key)) {
+                $desconhecidos[] = $key;
+            } elseif ($temValor) {
+                $resolvidos[] = $key;
+            } else {
+                $semContexto[] = $key;
+            }
+        }
+
+        $criticos = array();
+        foreach (EmailPlaceholders::requiredKeysForEvent($evento) as $req) {
+            if (in_array($req, $encontrados, true) && !(isset($flat[$req]) && $flat[$req] !== '')) {
+                $criticos[] = $req;
+            }
+        }
+        $anyReq = EmailPlaceholders::requiredAnyForEvent($evento);
+        if (!empty($anyReq)) {
+            $usado = false;
+            $ok = false;
+            foreach ($anyReq as $req) {
+                if (in_array($req, $encontrados, true)) {
+                    $usado = true;
+                    if (isset($flat[$req]) && $flat[$req] !== '') {
+                        $ok = true;
+                    }
+                }
+            }
+            if ($usado && !$ok) {
+                $criticos[] = implode('|', $anyReq);
+            }
+        }
+
+        return array(
+            'encontrados' => $encontrados,
+            'resolvidos' => $resolvidos,
+            'sem_contexto' => $semContexto,
+            'desconhecidos' => $desconhecidos,
+            'criticos_pendentes' => array_values(array_unique($criticos)),
+        );
+    }
+
+    public function inventarioPlaceholders($evento = null)
+    {
+        return ($evento === null || $evento === '')
+            ? EmailPlaceholders::inventory()
+            : EmailPlaceholders::forEvent($evento);
+    }
+
+    public function analisarModeloParaAdmin($assunto, $corpo, $evento = '')
+    {
+        $tokens = array();
+        foreach (array((string) $assunto, (string) $corpo) as $parte) {
+            if (preg_match_all('/\{\{([a-zA-Z0-9_.]+)\}\}|\{([a-zA-Z0-9_.]+)\}/', $parte, $todos, PREG_SET_ORDER)) {
+                foreach ($todos as $match) {
+                    $key = isset($match[1]) && $match[1] !== '' ? $match[1] : (isset($match[2]) ? $match[2] : '');
+                    if ($key !== '') {
+                        $tokens[$key] = ($match[1] !== '' ? '{{' . $key . '}}' : '{' . $key . '}');
+                    }
+                }
+            }
+        }
+
+        $desconhecidos = array();
+        $incompativeis = array();
+        foreach ($tokens as $key => $literal) {
+            if (!EmailPlaceholders::isKnownKey($key)) {
+                $desconhecidos[] = $literal;
+                continue;
+            }
+            if ($evento !== '' && !$this->placeholderCompativelComEvento($key, $evento)) {
+                $incompativeis[] = $literal;
+            }
+        }
+
+        return array(
+            'desconhecidos' => array_values(array_unique($desconhecidos)),
+            'incompativeis' => array_values(array_unique($incompativeis)),
+        );
+    }
+
+    private function placeholderCompativelComEvento($key, $evento)
+    {
+        foreach (EmailPlaceholders::inventory() as $item) {
+            if ($item['key'] !== $key) {
+                continue;
+            }
+            foreach ($item['eventos'] as $glob) {
+                if (EmailPlaceholders::eventMatches($evento, $glob)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        return true;
+    }
+
     private function flattenContext(array $context, $prefix = '')
     {
         $flat = array();
@@ -1136,7 +1390,12 @@ HTML,
         }
 
         if (is_numeric($value) && preg_match('/(total|valor|preco|desconto|acrescimo|subtotal|pago|pendente|saldo|nao_pago)$/i', (string) $key)) {
-            return htmlspecialchars(number_format((float) $value, 2, ',', '.'), ENT_QUOTES, 'UTF-8');
+            $formatado = number_format((float) $value, 2, ',', '.');
+            $chavesMoeda = array('total', 'valor_total', 'valor_pago', 'valor_pendente');
+            if (in_array(strtolower((string) $key), $chavesMoeda, true)) {
+                $formatado = 'R$ ' . $formatado;
+            }
+            return htmlspecialchars($formatado, ENT_QUOTES, 'UTF-8');
         }
 
         return htmlspecialchars($stringValue, ENT_QUOTES, 'UTF-8');

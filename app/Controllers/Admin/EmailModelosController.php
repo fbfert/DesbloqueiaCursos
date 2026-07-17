@@ -26,11 +26,14 @@ class EmailModelosController extends Controller
 
     public function index(Request $request)
     {
+        $busca = trim((string) $request->query('q', ''));
+
         return $this->view('admin/emails/modelos/index', array(
             'title' => 'Modelos de e-mail',
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
-            'modelos' => $this->service->listar(),
+            'busca' => $busca,
+            'modelos' => $this->service->listar($busca),
             'is_superadmin' => $this->isSuperAdmin(),
         ));
     }
@@ -45,6 +48,8 @@ class EmailModelosController extends Controller
             'action_url' => '/admin/emails/modelos/criar',
             'submit_label' => 'Salvar modelo',
             'form_data' => $this->service->formData(null, $request->query('evento')),
+            'placeholder_inventario' => $this->service->inventarioPlaceholders((string) $request->query('evento', '')),
+            'placeholder_avisos' => array('desconhecidos' => array(), 'incompativeis' => array()),
             'is_superadmin' => $this->isSuperAdmin(),
         ));
     }
@@ -101,6 +106,8 @@ class EmailModelosController extends Controller
             return $this->redirect('/admin/emails/modelos');
         }
 
+        $eventoModelo = (string) ($formData['evento'] ?? '');
+
         return $this->view('admin/emails/modelos/form', array(
             'title' => 'Editar modelo de e-mail',
             'success' => Session::pullFlash('success'),
@@ -109,6 +116,12 @@ class EmailModelosController extends Controller
             'action_url' => '/admin/emails/modelos/editar',
             'submit_label' => 'Atualizar modelo',
             'form_data' => $formData,
+            'placeholder_inventario' => $this->service->inventarioPlaceholders($eventoModelo),
+            'placeholder_avisos' => $this->service->analisarModeloParaAdmin(
+                isset($formData['assunto']) ? $formData['assunto'] : '',
+                isset($formData['corpo_html']) ? $formData['corpo_html'] : '',
+                $eventoModelo
+            ),
             'is_superadmin' => $this->isSuperAdmin(),
         ));
     }

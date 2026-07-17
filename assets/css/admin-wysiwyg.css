@@ -1,0 +1,190 @@
+.app-admin .admin-wysiwyg {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    width: 100%;
+}
+
+.app-admin .admin-wysiwyg__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+    padding: .75rem;
+    border: 1px solid var(--admin-border, #d7deea);
+    border-radius: 12px;
+    background: #f9fbff;
+}
+
+.app-admin .admin-wysiwyg__toolbar.ql-toolbar.ql-snow {
+    border: 1px solid var(--admin-border, #d7deea);
+    border-radius: 12px 12px 0 0;
+    box-shadow: none;
+}
+
+.app-admin .admin-wysiwyg__toolbar-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    padding-right: .5rem;
+    margin-right: .5rem;
+    border-right: 1px solid rgba(0, 0, 0, .08);
+}
+
+.app-admin .admin-wysiwyg__toolbar-group:last-child {
+    border-right: 0;
+    margin-right: 0;
+    padding-right: 0;
+}
+
+.app-admin .admin-wysiwyg__toolbar .ql-formats {
+    margin-right: .5rem;
+}
+
+.app-admin .admin-wysiwyg__toolbar .ql-formats:last-child {
+    margin-right: 0;
+}
+
+.app-admin .admin-wysiwyg__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: .45rem .7rem;
+    border: 1px solid var(--admin-border, #d7deea);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--admin-text, #24324a);
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.app-admin .admin-wysiwyg__button:hover,
+.app-admin .admin-wysiwyg__button:focus-visible {
+    border-color: var(--admin-primary, #2b6cb0);
+    background: #eef5ff;
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.app-admin .admin-wysiwyg__toolbar .ql-picker {
+    color: var(--admin-text, #24324a);
+}
+
+.app-admin .admin-wysiwyg__toolbar .ql-picker-label,
+.app-admin .admin-wysiwyg__toolbar .ql-picker-options {
+    border-color: var(--admin-border, #d7deea);
+}
+
+.app-admin .admin-wysiwyg__editor {
+    min-height: 220px;
+    border-radius: 0 0 12px 12px;
+    background: #fff;
+}
+
+.app-admin .admin-wysiwyg__editor.ql-container.ql-snow {
+    border: 1px solid var(--admin-border, #d7deea);
+    border-top: 0;
+}
+
+.app-admin .admin-wysiwyg__editor .ql-editor {
+    min-height: 220px;
+    padding: 1rem;
+    color: var(--admin-text, #24324a);
+    line-height: 1.6;
+}
+
+.app-admin .admin-wysiwyg__editor:focus {
+    outline: 2px solid rgba(43, 108, 176, .18);
+    outline-offset: 0;
+    border-color: var(--admin-primary, #2b6cb0);
+}
+
+.app-admin .admin-wysiwyg__editor:empty:before {
+    content: attr(data-placeholder);
+    color: #8b97aa;
+}
+
+.app-admin .admin-wysiwyg__hint {
+    font-size: .82rem;
+    color: #6c7a92;
+}
+
+.app-admin .admin-wysiwyg__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+}
+
+.app-admin .admin-wysiwyg__action-button {
+    min-height: 36px;
+}
+
+.app-admin .admin-wysiwyg__html-panel {
+    border: 1px solid var(--admin-border, #d7deea);
+    border-radius: 12px;
+    background: #f9fbff;
+    padding: .75rem .9rem;
+}
+
+.app-admin .admin-wysiwyg__html-panel summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--admin-text, #24324a);
+}
+
+.app-admin .admin-wysiwyg__html-output {
+    width: 100%;
+    min-height: 220px;
+    margin-top: .75rem;
+    padding: .9rem 1rem;
+    border: 1px solid var(--admin-border, #d7deea);
+    border-radius: 10px;
+    background: #fff;
+    color: #1d2b3f;
+    font: 13px/1.5 Consolas, monospace;
+    white-space: pre;
+    overflow: auto;
+    resize: vertical;
+}
+
+.app-admin .admin-wysiwyg.is-ready .admin-wysiwyg__textarea {
+    display: none !important;
+}
+
+.app-admin .admin-wysiwyg--minimal .admin-wysiwyg__editor {
+    min-height: 160px;
+}
+
+.app-admin .admin-wysiwyg--basic .admin-wysiwyg__editor {
+    min-height: 200px;
+}
+
+.app-admin .admin-wysiwyg--full .admin-wysiwyg__editor {
+    min-height: 280px;
+}
+
+@media (max-width: 768px) {
+    .app-admin .admin-wysiwyg__toolbar {
+        padding: .6rem;
+    }
+
+    .app-admin .admin-wysiwyg__button {
+        min-height: 34px;
+        padding: .4rem .65rem;
+        font-size: .84rem;
+    }
+
+    .app-admin .admin-wysiwyg__editor {
+        min-height: 180px;
+        padding: .85rem;
+    }
+
+    .app-admin .admin-wysiwyg__html-output {
+        min-height: 180px;
+        padding: .75rem .85rem;
+    }
+}

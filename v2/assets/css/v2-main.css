@@ -163,6 +163,10 @@
 @media (min-width: 480px) { .v2-hero-actions { flex-direction: row; } }
 
 .v2-hero-visual { display: none; }
+/* Hero sem a ilustração à direita: o conteúdo ocupa uma largura maior no desktop. */
+@media (min-width: 1024px) {
+  .v2-hero-inner--no-visual .v2-hero-text { max-width: 760px; }
+}
 @media (min-width: 1024px) {
   .v2-hero-visual { display: block; flex-shrink: 0; width: 380px; height: 260px; border-radius: var(--v2-radius-lg); position: relative; overflow: hidden;
     background: linear-gradient(135deg, #fff4ec 0%, #f0e8ff 60%, #d1faf5 100%); border: 1px solid var(--v2-border); }
