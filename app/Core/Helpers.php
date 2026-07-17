@@ -142,6 +142,8 @@ class Helpers
             'video' => 'Vídeo',
             'avaliacao_textual' => 'Avaliação textual',
             'etiqueta' => 'Etiqueta',
+            'quiz' => 'Quiz',
+            'html' => 'HTML',
         );
 
         if (isset($mapa[$tipo])) {

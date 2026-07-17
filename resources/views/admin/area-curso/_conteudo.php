@@ -85,6 +85,8 @@ $conteudoFormatTipoLabel = function ($tipo) {
         'link' => 'Link',
         'avaliacao_textual' => 'Avaliação textual',
         'video' => 'Vídeo',
+        'quiz' => 'Quiz',
+        'html' => 'HTML',
     );
 
     $tipo = (string) $tipo;
@@ -99,6 +101,8 @@ $conteudoFormatTipoHint = function ($tipo) {
         'link' => 'Link externo, botão ou embed.',
         'avaliacao_textual' => 'Atividade discursiva com correção.',
         'video' => 'Vídeo incorporado por URL.',
+        'quiz' => 'Atividade de múltipla escolha.',
+        'html' => 'Página HTML/CSS/JS própria, exibida isolada.',
     );
 
     $tipo = (string) $tipo;

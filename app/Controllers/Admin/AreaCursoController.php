@@ -849,6 +849,19 @@ class AreaCursoController extends Controller
         ));
     }
 
+    public function previewConteudoHtml(Request $request)
+    {
+        $html = (string) $request->input('html_conteudo', '');
+        if (trim($html) === '') {
+            $html = '<!doctype html><html><body style="font-family:sans-serif;padding:24px;color:#666;">Cole o HTML no formulário e clique em Pré-visualizar novamente.</body></html>';
+        }
+
+        return new Response($html, 200, array(
+            'Content-Type' => 'text/html; charset=utf-8',
+            'X-Frame-Options' => 'SAMEORIGIN',
+        ));
+    }
+
     public function avaliacoesTextuaisPendentes(Request $request)
     {
         $lista = $this->conteudoAvaliacaoTextualService->listarPendentesProfessor(0);

@@ -24,6 +24,7 @@ $tipoIcone = array(
     'etiqueta' => array('ti-tag', '#faeeda', '#854F0B'),
     'avaliacao_textual' => array('ti-pencil', '#ffe4ea', '#c00030'),
     'quiz' => array('ti-help-circle', '#faeeda', '#854F0B'),
+    'html' => array('ti-code', '#e0f2fe', '#075985'),
 );
 ?>
 

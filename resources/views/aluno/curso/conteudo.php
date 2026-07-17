@@ -1,4 +1,4 @@
-<?php use App\Core\Helpers; use App\Core\Session; ?>
+<?php use App\Core\Helpers; use App\Core\Session; use App\Support\HtmlEmbedRenderer; ?>
 <?php
 if (!isset($frontend_template)) { try { $frontend_template = (new \App\Services\ConfiguracaoGlobalService())->templateVisualPortal(); } catch (\Throwable $e) { $frontend_template = 'v1'; } }
 if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resources/views/v4-claude/aluno/curso/conteudo.php'; return; }
@@ -178,6 +178,17 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $anteriorLabel, $p
             <div class="conteudo-item-rich conteudo-item-rich--reading js-conteudo-texto-audio" data-audio-texto="1">
                 <?php echo $renderRich($conteudoTexto !== '' ? $conteudoTexto : $detalheProfessor, 'full'); ?>
             </div>
+        <?php elseif ($tipo === 'html'): ?>
+            <article class="conteudo-item-html">
+                <iframe
+                    id="conteudo-html-frame-<?php echo $itemId; ?>"
+                    class="js-conteudo-html-frame conteudo-item-html__frame"
+                    sandbox="allow-scripts allow-popups"
+                    title="<?php echo Helpers::e($itemTitulo); ?>"
+                    loading="lazy"
+                    srcdoc="<?php echo Helpers::e(HtmlEmbedRenderer::wrap($conteudoTexto, 'conteudo-html-frame-' . $itemId)); ?>"
+                ></iframe>
+            </article>
         <?php elseif ($tipo === 'arquivo'): ?>
             <article class="conteudo-item-file">
                 <div class="conteudo-item-file__header">
@@ -539,7 +550,7 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $anteriorLabel, $p
     </section>
 
     <section class="study-shell study-shell--actions">
-        <?php if ($tipo === 'texto'): ?>
+        <?php if ($tipo === 'texto' || $tipo === 'html'): ?>
             <div class="conteudo-conclusao-form conteudo-item-concluir-form">
                 <div class="conteudo-conclusao-panel conteudo-conclusao-panel--concluido">
                     <div class="conteudo-conclusao-panel__estado" aria-live="polite">

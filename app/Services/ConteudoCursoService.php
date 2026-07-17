@@ -10,6 +10,7 @@ use App\Models\ConteudoArquivoVersao;
 use App\Models\ConteudoAvaliacaoEntrega;
 use App\Models\ConteudoAvaliacaoTextual;
 use App\Models\ConteudoEtiqueta;
+use App\Models\ConteudoHtml;
 use App\Models\ConteudoItem;
 use App\Models\ConteudoLink;
 use App\Models\ConteudoLogAluno;
@@ -27,7 +28,7 @@ use Exception;
 
 class ConteudoCursoService
 {
-    private const TIPOS_ITEM_VALIDOS = array('etiqueta', 'texto', 'arquivo', 'link', 'avaliacao_textual', 'video', 'quiz');
+    private const TIPOS_ITEM_VALIDOS = array('etiqueta', 'texto', 'arquivo', 'link', 'avaliacao_textual', 'video', 'quiz', 'html');
     private const STATUS_ITEM_VALIDOS = array('rascunho', 'publicado', 'oculto', 'arquivado');
     private const STATUS_MODULO_VALIDOS = array('rascunho', 'publicado', 'oculto', 'arquivado');
     private const STATUS_PROGRESO_VALIDOS = array('nao_iniciado', 'acessado', 'em_andamento', 'concluido', 'pendente_correcao', 'reprovado');
@@ -37,6 +38,7 @@ class ConteudoCursoService
     private $moduloModel;
     private $itemModel;
     private $textoModel;
+    private $htmlModel;
     private $etiquetaModel;
     private $arquivoModel;
     private $arquivoVersaoModel;
@@ -59,6 +61,7 @@ class ConteudoCursoService
         $this->moduloModel = new ConteudoModulo();
         $this->itemModel = new ConteudoItem();
         $this->textoModel = new ConteudoTexto();
+        $this->htmlModel = new ConteudoHtml();
         $this->etiquetaModel = new ConteudoEtiqueta();
         $this->arquivoModel = new ConteudoArquivo();
         $this->arquivoVersaoModel = new ConteudoArquivoVersao();
@@ -1349,6 +1352,14 @@ class ConteudoCursoService
             return;
         }
 
+        if ($tipo === 'html') {
+            $registro = $this->htmlModel->findByItemId($itemIdOrigem);
+            if ($registro && isset($registro['conteudo'])) {
+                $this->htmlModel->upsertByItemId($itemIdDestino, $registro['conteudo']);
+            }
+            return;
+        }
+
         if ($tipo === 'link') {
             $registro = $this->linkModel->findByItemId($itemIdOrigem);
             if ($registro && isset($registro['url'])) {
@@ -1565,6 +1576,9 @@ class ConteudoCursoService
     {
         if ($tipo === 'texto') {
             return $this->textoModel->findByItemId($itemId);
+        }
+        if ($tipo === 'html') {
+            return $this->htmlModel->findByItemId($itemId);
         }
         if ($tipo === 'etiqueta') {
             return $this->etiquetaModel->findByItemId($itemId);
@@ -1788,6 +1802,7 @@ class ConteudoCursoService
             'video'            => 'Vídeo',
             'avaliacao_textual'=> 'Avaliação textual',
             'quiz'             => 'Quiz',
+            'html'             => 'HTML',
         );
 
         $tipo = (string) $tipo;
@@ -1798,6 +1813,9 @@ class ConteudoCursoService
     {
         $tipo = (string) $tipo;
         if ($tipo === 'texto') {
+            return 'Abrir conteúdo';
+        }
+        if ($tipo === 'html') {
             return 'Abrir conteúdo';
         }
         if ($tipo === 'arquivo') {
@@ -1904,6 +1922,20 @@ class ConteudoCursoService
         if ($tipo === 'texto') {
             $conteudo = isset($dados['texto_conteudo']) ? HtmlSanitizer::clean((string) $dados['texto_conteudo'], 'full') : '';
             $this->textoModel->upsertByItemId($itemId, $conteudo);
+            return array('ok' => true);
+        }
+
+        if ($tipo === 'html') {
+            // Diferente dos demais tipos, o HTML aqui NAO passa por HtmlSanitizer::clean():
+            // o objetivo do tipo "html" e permitir paginas completas (CSS/JS proprios) coladas
+            // pelo autor do curso, exibidas ao aluno dentro de um iframe sandboxed
+            // (App\Support\HtmlEmbedRenderer + sandbox="allow-scripts allow-popups", sem
+            // allow-same-origin) - o isolamento de risco fica no iframe, nao na sanitizacao.
+            $conteudo = isset($dados['html_conteudo']) ? (string) $dados['html_conteudo'] : '';
+            if (trim($conteudo) === '') {
+                return array('ok' => false, 'message' => 'Informe o HTML do conteúdo.');
+            }
+            $this->htmlModel->upsertByItemId($itemId, $conteudo);
             return array('ok' => true);
         }
 

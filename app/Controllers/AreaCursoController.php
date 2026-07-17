@@ -478,6 +478,8 @@ class AreaCursoController extends Controller
         $acao = 'visualizou_item';
         if ((string) $item['tipo'] === 'texto') {
             $acao = 'abriu_texto';
+        } elseif ((string) $item['tipo'] === 'html') {
+            $acao = 'abriu_html';
         } elseif ((string) $item['tipo'] === 'video') {
             $acao = 'abriu_video';
         } elseif ((string) $item['tipo'] === 'avaliacao_textual') {
@@ -500,7 +502,7 @@ class AreaCursoController extends Controller
             'user_agent' => $request->userAgent(),
         ));
 
-        if ((string) ($item['tipo'] ?? '') === 'texto' && !$itemJaConcluido) {
+        if (in_array((string) ($item['tipo'] ?? ''), array('texto', 'html'), true) && !$itemJaConcluido) {
             try {
                 $resultadoConclusao = $this->conteudoService->concluirItemAluno(array(
                     'curso_evento_id' => $cursoId,

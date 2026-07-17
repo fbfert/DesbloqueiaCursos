@@ -1,0 +1,21 @@
+.conteudo-item-html {
+    margin: 0;
+}
+
+.conteudo-item-html__frame {
+    display: block;
+    width: 100%;
+    height: 240px;
+    min-height: 240px;
+    max-height: 85vh;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 12px;
+    background: #fff;
+    overflow: auto;
+    transition: height 0.2s ease;
+}
+
+.dc-study-card--html {
+    padding: 0;
+    overflow: hidden;
+}

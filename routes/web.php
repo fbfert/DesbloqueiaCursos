@@ -419,6 +419,7 @@ $app->post('/admin/area-curso/conteudo/itens/ordenar', array(AdminAreaCursoContr
 $app->get('/admin/area-curso/conteudo/itens/criar', array(AdminAreaCursoController::class, 'criarConteudoItem'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/itens/editar', array(AdminAreaCursoController::class, 'editarConteudoItem'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/arquivo/download', array(AdminAreaCursoController::class, 'downloadConteudoArquivo'), array('auth', 'permission:area_curso.gerenciar'));
+$app->post('/admin/area-curso/conteudo/html/preview', array(AdminAreaCursoController::class, 'previewConteudoHtml'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/avaliacoes/pendentes', array(AdminAreaCursoController::class, 'avaliacoesTextuaisPendentes'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/avaliacao/corrigir', array(AdminAreaCursoController::class, 'avaliacaoTextualCorrigir'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/avaliacao/corrigir', array(AdminAreaCursoController::class, 'corrigirAvaliacaoTextual'), array('auth', 'permission:area_curso.gerenciar'));

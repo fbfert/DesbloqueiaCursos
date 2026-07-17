@@ -67,6 +67,8 @@ $formatTipoLabel = function ($tipo) {
         'link' => 'Link',
         'avaliacao_textual' => 'Avaliação textual',
         'video' => 'Vídeo',
+        'quiz' => 'Quiz',
+        'html' => 'HTML',
     );
     $tipo = (string) $tipo;
     return isset($mapa[$tipo]) ? $mapa[$tipo] : ucfirst(str_replace('_', ' ', $tipo));
@@ -80,6 +82,8 @@ $formatTipoHint = function ($tipo) {
         'link' => 'Link externo (nova aba, embed ou botão).',
         'avaliacao_textual' => 'Atividade com envio e correção textual.',
         'video' => 'Vídeo via URL (embed).',
+        'quiz' => 'Atividade de múltipla escolha.',
+        'html' => 'Página HTML/CSS/JS própria, exibida isolada.',
     );
     $tipo = (string) $tipo;
     return isset($mapa[$tipo]) ? $mapa[$tipo] : '';

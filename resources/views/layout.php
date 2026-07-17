@@ -204,6 +204,7 @@ if (!$isAdmin) {
         <?php endif; ?>
     <?php if ($shouldLoadConteudoAudio): ?>
         <link rel="stylesheet" href="/assets/css/conteudo-audio.css?v=20260529">
+        <link rel="stylesheet" href="/assets/css/conteudo-html-embed.css?v=20260717">
     <?php endif; ?>
     <?php endif; ?>
     <?php if ($isAdmin): ?>
@@ -220,6 +221,7 @@ if (!$isAdmin) {
     <?php endif; ?>
     <?php if ($useFrontendTheme && $shouldLoadConteudoAudio): ?>
         <script src="/assets/js/conteudo-audio.js?v=20260529" defer></script>
+        <script src="/assets/js/conteudo-html-embed.js?v=20260717" defer></script>
     <?php endif; ?>
     <?php if ($useFrontendTheme): ?>
         <script src="/assets/js/tutor-norminha.js?v=20260610-4<?php echo $tutorNorminhaJsVersion ? '&amp;f=' . (int) $tutorNorminhaJsVersion : ''; ?>" defer></script>

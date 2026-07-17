@@ -1,4 +1,4 @@
-<?php use App\Core\Helpers; use App\Core\Session; ?>
+<?php use App\Core\Helpers; use App\Core\Session; use App\Support\HtmlEmbedRenderer; ?>
 <?php
 // Visualizador de conteúdo (modo de estudo) — template v4-claude.
 // LÓGICA preservada integralmente do fluxo original; apenas a apresentação muda para dc-.
@@ -101,6 +101,18 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $proximoUrl) {
   <?php if ($tipo === 'texto'): ?>
     <div class="dc-study-card">
       <div class="dc-study-rich js-conteudo-texto-audio" data-audio-texto="1"><?php echo $renderRich($conteudoTexto !== '' ? $conteudoTexto : $detalheProfessor, 'full'); ?></div>
+    </div>
+
+  <?php elseif ($tipo === 'html'): ?>
+    <div class="dc-study-card dc-study-card--html">
+      <iframe
+        id="conteudo-html-frame-<?php echo $itemId; ?>"
+        class="js-conteudo-html-frame conteudo-item-html__frame"
+        sandbox="allow-scripts allow-popups"
+        title="<?php echo Helpers::e($itemTitulo); ?>"
+        loading="lazy"
+        srcdoc="<?php echo Helpers::e(HtmlEmbedRenderer::wrap($conteudoTexto, 'conteudo-html-frame-' . $itemId)); ?>"
+      ></iframe>
     </div>
 
   <?php elseif ($tipo === 'arquivo'): ?>
@@ -394,7 +406,7 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $proximoUrl) {
   <?php endif; ?>
 
   <!-- Conclusão -->
-  <?php if ($tipo === 'texto'): ?>
+  <?php if ($tipo === 'texto' || $tipo === 'html'): ?>
     <div class="dc-conclusao dc-conclusao--done">
       <div class="dc-conclusao__estado"><i class="ti ti-circle-check"></i> Concluído automaticamente</div>
     </div>
