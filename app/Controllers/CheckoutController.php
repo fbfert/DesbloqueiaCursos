@@ -343,26 +343,31 @@ class CheckoutController extends Controller
 
     public function pagarAbacatepay(Request $request)
     {
+        // Endpoint compartilhado (V1 e V2) fora de /v2/checkout/ — emModoV2($request)
+        // nunca reconheceria este próprio path. O formulário V2 (checkout-pagamento.php)
+        // envia um campo oculto indicando a origem; sem ele, mantém o comportamento V1.
+        $emV2 = (bool) $request->input('origem_v2', false);
+
         if (!Session::get('usuario_id')) {
             Session::flash('errors', array('auth' => 'Faça login para continuar.'));
-            return $this->redirect('/login');
+            return $this->redirect($emV2 ? '/v2/login' : '/login');
         }
 
         $pedidoId = (int) $request->input('pedido_id', 0);
         if ($pedidoId <= 0) {
             Session::flash('errors', array('pedido' => 'Pedido inválido.'));
-            return $this->redirect('/meus-cursos');
+            return $this->redirect($emV2 ? '/v2/aluno/' : '/meus-cursos');
         }
 
         if (!$this->abacatePayService->isEnabled()) {
             Session::flash('errors', array('pagamento' => 'O pagamento online está desativado no momento.'));
-            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
         }
 
         $detalhe = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'), true);
         if (empty($detalhe['pedido'])) {
             Session::flash('errors', array('pedido' => 'Você não tem permissão para acessar este pedido.'));
-            return $this->redirect('/meus-cursos');
+            return $this->redirect($emV2 ? '/v2/aluno/' : '/meus-cursos');
         }
 
         $pedido = $detalhe['pedido'];
@@ -389,13 +394,13 @@ class CheckoutController extends Controller
             $finalizacao = $this->pedidoService->finalizarCheckout($pedidoId, Session::get('usuario_id'), $request->ip(), $request->userAgent());
             if (empty($finalizacao['ok'])) {
                 Session::flash('errors', array('pedido' => isset($finalizacao['message']) ? $finalizacao['message'] : 'Não foi possível preparar o pedido para pagamento.'));
-                return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+                return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
             }
 
             $detalhe = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'), true);
             if (empty($detalhe['pedido'])) {
                 Session::flash('errors', array('pedido' => 'Não foi possível recarregar o pedido.'));
-                return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+                return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
             }
 
             $pedido = $detalhe['pedido'];
@@ -414,7 +419,7 @@ class CheckoutController extends Controller
         $checkout = $this->abacatePayService->createCheckout($pedido, $aluno, isset($pedido['itens']) && is_array($pedido['itens']) ? $pedido['itens'] : array());
         if (empty($checkout['ok'])) {
             Session::flash('errors', array('pagamento' => isset($checkout['message']) ? $checkout['message'] : 'Não foi possível iniciar o checkout da AbacatePay.'));
-            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
         }
 
         $registrado = $this->abacatePayService->registrarCheckoutNoPedido(
@@ -427,12 +432,12 @@ class CheckoutController extends Controller
 
         if (empty($registrado['ok'])) {
             Session::flash('errors', array('pagamento' => isset($registrado['message']) ? $registrado['message'] : 'Não foi possível registrar o checkout.'));
-            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
         }
 
         if (empty($checkout['checkout']['url'])) {
             Session::flash('errors', array('pagamento' => 'A URL de pagamento não foi retornada pela AbacatePay.'));
-            return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
+            return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
         }
 
         return $this->redirect($checkout['checkout']['url']);
@@ -793,6 +798,7 @@ class CheckoutController extends Controller
         $errors = $this->validateInscricao($request);
         if (!empty($errors)) {
             Session::flash('errors', $errors);
+            Session::flash('old_input', $request->all());
             $cursoIdErro = (int) $request->input('curso_evento_id', 0);
             $turmaIdErro = (int) $request->input('turma_id', 0);
             return $this->redirect($this->urlInscricao($request, $cursoIdErro, $turmaIdErro));
@@ -825,13 +831,21 @@ class CheckoutController extends Controller
         if ($pagadorTelefone === '' && !empty($pagadorPrefill['telefone'])) {
             $pagadorTelefone = (string) $pagadorPrefill['telefone'];
         }
-        $pagadorCidade = trim((string) $request->input('pagador_cidade', ''));
+        $pagadorCidadeSubmetida = trim((string) $request->input('pagador_cidade', ''));
+        $pagadorEstadoSubmetida = trim((string) $request->input('pagador_estado', ''));
+        $pagadorCidade = $pagadorCidadeSubmetida;
         if ($pagadorCidade === '' && !empty($pagadorPrefill['cidade'])) {
             $pagadorCidade = (string) $pagadorPrefill['cidade'];
         }
-        $pagadorEstado = trim((string) $request->input('pagador_estado', ''));
+        $pagadorEstado = $pagadorEstadoSubmetida;
         if ($pagadorEstado === '' && !empty($pagadorPrefill['estado'])) {
             $pagadorEstado = (string) $pagadorPrefill['estado'];
+        }
+
+        // Cidade/estado digitados no checkout: se o cadastro do aluno ainda não
+        // tem essa informação, aproveita e já preenche, para as próximas compras.
+        if ($pagadorCidadeSubmetida !== '' && $pagadorEstadoSubmetida !== '') {
+            $this->sincronizarCidadeEstadoNoCadastro((int) Session::get('usuario_id', 0), $pagadorCidadeSubmetida, $pagadorEstadoSubmetida);
         }
 
         $resultado = $this->pedidoService->criarCheckoutDraft(array(
@@ -855,6 +869,7 @@ class CheckoutController extends Controller
 
         if (empty($resultado['ok'])) {
             Session::flash('errors', array('pedido' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel iniciar o checkout.'));
+            Session::flash('old_input', $request->all());
             return $this->redirect($this->urlInscricao($request, $cursoId, $turmaId));
         }
 
@@ -1222,6 +1237,36 @@ class CheckoutController extends Controller
         return $prefill;
     }
 
+    /**
+     * Aproveita cidade/estado digitados no checkout para completar o cadastro do
+     * aluno, apenas quando o cadastro ainda não tem essa informação (nunca
+     * sobrescreve um valor já salvo).
+     */
+    private function sincronizarCidadeEstadoNoCadastro($usuarioId, $cidade, $estado)
+    {
+        $usuarioId = (int) $usuarioId;
+        $cidade = trim((string) $cidade);
+        $estado = strtoupper(trim((string) $estado));
+
+        if ($usuarioId <= 0 || $cidade === '' || !preg_match('/^[A-Z]{2}$/', $estado)) {
+            return;
+        }
+
+        $usuario = $this->usuarioModel->findById($usuarioId);
+        if (!$usuario || !empty($usuario['cidade']) || !empty($usuario['estado'])) {
+            return;
+        }
+
+        $this->usuarioModel->updateProfile($usuarioId, array(
+            'nome' => $usuario['nome'],
+            'email' => $usuario['email'],
+            'cpf' => $usuario['cpf'],
+            'telefone' => $usuario['telefone'],
+            'cidade' => $cidade,
+            'estado' => $estado,
+        ));
+    }
+
     private function carregarParticipantePrefill($usuarioId)
     {
         $prefill = array(
@@ -1387,11 +1432,15 @@ class CheckoutController extends Controller
         return $base . '?pedido_id=' . (int) $pedidoId;
     }
 
-    private function urlPagamento(Request $request, $pedidoId)
+    private function urlPagamento(Request $request, $pedidoId, $forcarModoV2 = null)
     {
         // Só existe a etapa dedicada de pagamento no fluxo V2. Fora do V2, o
         // destino oficial de pagamento continua sendo o resumo legado.
-        $base = $this->emModoV2($request) ? '/v2/checkout/pagamento' : '/checkout/resumo';
+        // $forcarModoV2 permite decidir o modo sem depender do path da própria
+        // requisição — necessário em endpoints compartilhados (ex.:
+        // /aluno/pedidos/pagar/abacatepay) que nunca ficam sob /v2/checkout/.
+        $emV2 = $forcarModoV2 !== null ? (bool) $forcarModoV2 : $this->emModoV2($request);
+        $base = $emV2 ? '/v2/checkout/pagamento' : '/checkout/resumo';
         return $base . '?pedido_id=' . (int) $pedidoId;
     }
 

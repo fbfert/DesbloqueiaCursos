@@ -131,8 +131,12 @@ $etapaAtual = 4;
         <div class="v2-block" style="margin-bottom:12px;">
           <h3 class="v2-h3" style="margin:0 0 4px;"><i class="ti ti-credit-card" aria-hidden="true"></i> Pagamento online (PIX ou cartão)</h3>
           <p class="v2-muted v2-sm" style="margin:0 0 10px;">Você será levado ao ambiente seguro do provedor de pagamento para concluir. A liberação pode levar alguns instantes após a confirmação.</p>
-          <form method="post" action="<?php echo Helpers::e($abacatepayActionUrl); ?>" class="v2-pay-form" data-v2-single-submit>
+          <form method="post" action="<?php echo Helpers::e($abacatepayActionUrl); ?>" class="v2-pay-form" data-native-submit data-v2-single-submit>
             <input type="hidden" name="pedido_id" value="<?php echo $pedidoId; ?>">
+            <?php // Este template só é renderizado no fluxo V2 (ver CheckoutController::renderCheckout);
+            // o endpoint de pagamento é compartilhado com o V1 e fica fora de /v2/checkout/,
+            // então precisa desse sinal explícito para saber pra onde voltar em caso de erro. ?>
+            <input type="hidden" name="origem_v2" value="1">
             <button type="submit" class="v2-btn v2-btn-primary">
               <i class="ti ti-arrow-right" aria-hidden="true"></i> <?php echo Helpers::e($rotuloAbacatepay); ?>
             </button>

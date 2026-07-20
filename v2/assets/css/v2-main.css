@@ -757,10 +757,23 @@
 .v2-app .v2-curso-rate { font-size: 0.9rem; margin: 4px 0 2px; }
 .v2-app .v2-curso-prose p { max-width: 68ch; }
 .v2-app .v2-curso-prose p + p { margin-top: 10px; }
-/* Fase 2.13.1 — cartões de escolha pós-login V2. */
-.v2-app .v2-poslogin-card { transition: border-color .15s ease, transform .15s ease; }
-.v2-app .v2-poslogin-card:hover { border-color: var(--v2-laranja); transform: translateY(-2px); text-decoration: none; }
+/* Fase 2.13.1 — tela de escolha pós-login V2 (layout próprio, sem estilo inline). */
+.v2-app .v2-poslogin-wrap { min-height: calc(100vh - var(--v2-bnav-h)); display: flex; align-items: center; justify-content: center; padding: 40px 16px; }
+.v2-app .v2-poslogin { width: 100%; max-width: 720px; margin: 0 auto; }
+.v2-app .v2-poslogin-head { text-align: center; margin-bottom: 28px; }
+.v2-app .v2-poslogin-head .v2-h1 { margin: 12px 0 0; }
+.v2-app .v2-poslogin-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+@media (min-width: 640px) { .v2-app .v2-poslogin-grid { grid-template-columns: repeat(2, 1fr); } }
+.v2-app .v2-poslogin-card {
+  display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+  padding: 28px 24px; margin-bottom: 0; text-decoration: none; color: inherit;
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.v2-app .v2-poslogin-card:hover { border-color: var(--v2-laranja); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(75,0,142,.09); text-decoration: none; }
 .v2-app .v2-poslogin-card:focus-visible { outline: 2px solid var(--v2-laranja); outline-offset: 2px; }
+.v2-app .v2-poslogin-ic { display: inline-flex; width: 52px; height: 52px; border-radius: 14px; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 14px; }
+.v2-app .v2-poslogin-card h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.v2-app .v2-poslogin-card p { margin: 0 0 18px; }
 /* Fase 2.13 — HTML editorial sanitizado (descrição do curso e afins). */
 .v2-app .v2-richtext { max-width: 68ch; }
 .v2-app .v2-richtext p { margin: 0 0 10px; }

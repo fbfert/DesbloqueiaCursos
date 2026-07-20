@@ -14,6 +14,9 @@ $cursoThumb = !empty($curso['thumbnail']) ? (string) $curso['thumbnail'] : '';
 $temaIndex = !empty($curso['id']) ? ((int) $curso['id'] % count($coursePalette)) : 0;
 $tema = $coursePalette[$temaIndex];
 $pagadorPrefill = isset($pagadorPrefill) && is_array($pagadorPrefill) ? $pagadorPrefill : array();
+// Após um erro de validação, o formulário é reaberto com os dados que o aluno
+// digitou (old_input), em vez de voltar a puxar só o que já está no cadastro.
+$oldInput = isset($oldInput) && is_array($oldInput) ? $oldInput : array();
 $errors = isset($errors) && is_array($errors) ? array_values($errors) : array();
 $success = isset($success) ? $success : null;
 $situacao = isset($situacaoInscricao) && is_array($situacaoInscricao) ? $situacaoInscricao : array();
@@ -25,11 +28,17 @@ $usuarioEmail = isset($usuarioEmail) ? (string) $usuarioEmail : '';
 $continuarPagamentoUrl = isset($continuarPagamentoUrl) ? (string) $continuarPagamentoUrl : '';
 $etapaAtual = 1;
 
-$pf = function ($chave, $fallback = '') use ($pagadorPrefill) {
+$pf = function ($chave, $fallback = '') use ($pagadorPrefill, $oldInput) {
+    if (isset($oldInput['pagador_' . $chave]) && (string) $oldInput['pagador_' . $chave] !== '') {
+        return (string) $oldInput['pagador_' . $chave];
+    }
     return isset($pagadorPrefill[$chave]) && (string) $pagadorPrefill[$chave] !== '' ? (string) $pagadorPrefill[$chave] : $fallback;
 };
 $turmaSel = isset($curso['turma_selecionada']) && is_array($curso['turma_selecionada']) ? $curso['turma_selecionada'] : array();
 $estadoAtual = strtoupper((string) $pf('estado'));
+$tipoPedidoAtual = isset($oldInput['tipo_pedido']) ? (string) $oldInput['tipo_pedido'] : 'propria';
+$quantidadeAtual = isset($oldInput['quantidade']) ? (int) $oldInput['quantidade'] : 1;
+$observacoesAtual = isset($oldInput['observacoes_publicas']) ? (string) $oldInput['observacoes_publicas'] : '';
 $mostrarForm = $loggedIn && !in_array($statusFluxo, array('matriculado', 'pendente_pagamento'), true);
 ?>
 <script>window.V2_DISABLE_AUTORENDER_HOME = true;</script>
@@ -157,18 +166,18 @@ $mostrarForm = $loggedIn && !in_array($statusFluxo, array('matriculado', 'penden
         <div class="v2-field">
           <label for="ci-tipo">Tipo do pedido</label>
           <select class="v2-input" id="ci-tipo" name="tipo_pedido">
-            <option value="propria">Compra própria</option>
-            <option value="terceiros">Compra para terceiros</option>
-            <option value="lote">Compra em lote</option>
+            <option value="propria"<?php echo $tipoPedidoAtual === 'propria' ? ' selected' : ''; ?>>Compra própria</option>
+            <option value="terceiros"<?php echo $tipoPedidoAtual === 'terceiros' ? ' selected' : ''; ?>>Compra para terceiros</option>
+            <option value="lote"<?php echo $tipoPedidoAtual === 'lote' ? ' selected' : ''; ?>>Compra em lote</option>
           </select>
         </div>
         <div class="v2-field">
           <label for="ci-qtd">Quantidade de vagas <span class="v2-muted v2-sm">(apenas para terceiros/lote)</span></label>
-          <input class="v2-input" type="number" id="ci-qtd" name="quantidade" min="1" value="1">
+          <input class="v2-input" type="number" id="ci-qtd" name="quantidade" min="1" value="<?php echo (int) max(1, $quantidadeAtual); ?>">
         </div>
         <div class="v2-field">
           <label for="ci-obs">Comentários sobre a inscrição <span class="v2-muted v2-sm">(opcional)</span></label>
-          <textarea class="v2-textarea" id="ci-obs" name="observacoes_publicas" rows="3"></textarea>
+          <textarea class="v2-textarea" id="ci-obs" name="observacoes_publicas" rows="3"><?php echo Helpers::e($observacoesAtual); ?></textarea>
         </div>
       </section>
 

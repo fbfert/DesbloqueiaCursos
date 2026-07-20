@@ -89,9 +89,6 @@ $ctaHref = (string) $curso['cta_href'];
     <div class="v2-course-main">
       <!-- Capa real ou fallback neutro -->
       <div class="v2-cover" style="background:linear-gradient(135deg,<?php echo Helpers::e($theme['g1']); ?>,<?php echo Helpers::e($theme['g2']); ?>);">
-        <?php if (!empty($curso['destaque'])): ?>
-          <div class="v2-thumb-badges"><span class="v2-badge v2-badge-destaque"><i class="ti ti-flame"></i> Destaque</span></div>
-        <?php endif; ?>
         <?php if ($thumb !== ''): ?>
           <img src="<?php echo Helpers::e($thumb); ?>" alt="<?php echo Helpers::e($titulo); ?>" style="width:100%;height:auto;display:block;">
         <?php else: ?>
