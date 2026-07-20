@@ -1062,6 +1062,12 @@ class ConteudoCursoService
             return array('ok' => false, 'message' => 'A conclusão de um quiz é controlada pelo envio das respostas.');
         }
 
+        // Necessário para o registro de progresso (ver registrarProgressoAluno);
+        // sem isso, a atualização era rejeitada silenciosamente como "módulo/item inválido".
+        $dados['modulo_id'] = (int) $item['modulo_id'];
+        $dados['obrigatorio'] = !empty($item['obrigatorio']) ? 1 : 0;
+        $dados['curso_evento_id'] = isset($dados['curso_evento_id']) ? (int) $dados['curso_evento_id'] : (int) $item['curso_evento_id'];
+
         $dados['acao'] = 'desmarcou_conclusao';
         $log = $this->registrarLogAluno($dados);
         if (empty($log['ok'])) {
@@ -1074,9 +1080,12 @@ class ConteudoCursoService
             'concluido_em' => null,
             'ultimo_acesso_em' => isset($dados['ultimo_acesso_em']) ? $dados['ultimo_acesso_em'] : date('Y-m-d H:i:s'),
         )));
+        if (empty($progresso['ok'])) {
+            return $progresso;
+        }
 
         $recalculo = $this->recalcularProgressoInscricao($inscricaoId);
-        return array('ok' => !empty($progresso['ok']), 'log_id' => $log['id'], 'progresso' => $progresso, 'recalculo' => $recalculo);
+        return array('ok' => true, 'log_id' => $log['id'], 'progresso' => $progresso, 'recalculo' => $recalculo);
     }
 
     public function recalcularProgressoInscricao($inscricaoId)

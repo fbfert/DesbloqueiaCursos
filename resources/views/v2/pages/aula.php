@@ -1,5 +1,6 @@
 <?php
 use App\Core\Helpers;
+use App\Support\HtmlEmbedRenderer;
 
 $estado = isset($estado) && is_array($estado) ? $estado : null;
 $cabecalho = isset($cabecalho) && is_array($cabecalho) ? $cabecalho : null;
@@ -13,6 +14,10 @@ $formCtx = isset($formCtx) && is_array($formCtx) ? $formCtx : array();
 $errors = isset($errors) && is_array($errors) ? array_values($errors) : array();
 $success = isset($success) ? $success : null;
 $concluirAction = isset($formCtx['concluir_action']) ? (string) $formCtx['concluir_action'] : '/v2/aula/concluir';
+$overviewUrl = isset($overviewUrl) ? (string) $overviewUrl : $alunoHref;
+// Sem item escolhido, mas com conteúdo publicado: mostra a visão geral (lista
+// de módulos e conteúdos) em vez do estado vazio "conteúdo a caminho".
+$mostrarVisaoGeral = !$itemInacessivel && !$item && $temConteudo;
 ?>
 <script>window.V2_DISABLE_AUTORENDER_ALUNO = true;</script>
 
@@ -57,6 +62,12 @@ $concluirAction = isset($formCtx['concluir_action']) ? (string) $formCtx['conclu
             <p>Este conteúdo não está disponível para você no momento.</p>
             <a href="<?php echo Helpers::e($alunoHref); ?>" class="v2-btn v2-btn-outline"><i class="ti ti-arrow-left"></i> Voltar à minha área</a>
           </div>
+        <?php elseif ($mostrarVisaoGeral): ?>
+          <div class="v2-lms-overview">
+            <h1 class="v2-h2" style="margin:4px 0 2px;"><?php echo Helpers::e((string) ($cabecalho['curso_nome'] ?? 'Conteúdo do curso')); ?></h1>
+            <p class="v2-muted v2-sm" style="margin:0 0 16px;">Escolha um módulo para continuar seus estudos.</p>
+            <?php require BASE_PATH . '/resources/views/v2/partials/lms-arvore.php'; ?>
+          </div>
         <?php elseif (!$item): ?>
           <div class="v2-empty">
             <i class="ti ti-book-2"></i>
@@ -66,6 +77,8 @@ $concluirAction = isset($formCtx['concluir_action']) ? (string) $formCtx['conclu
           </div>
         <?php else: ?>
           <article class="v2-lms-stage">
+            <a href="<?php echo Helpers::e($overviewUrl); ?>" class="v2-lms-back-overview"><i class="ti ti-list"></i> Ver todos os módulos</a>
+
             <?php $tipo = (string) $item['tipo']; ?>
 
             <?php if ($tipo === 'video'): ?>
@@ -78,17 +91,23 @@ $concluirAction = isset($formCtx['concluir_action']) ? (string) $formCtx['conclu
               <?php endif; ?>
             <?php endif; ?>
 
-            <span class="v2-badge v2-badge-novo"><?php echo Helpers::e((string) $item['tipo_label']); ?></span>
             <h1 class="v2-h2" style="margin:8px 0;"><?php echo Helpers::e((string) $item['titulo']); ?></h1>
-            <?php if (!empty($item['status_label'])): ?>
-              <p class="v2-muted v2-sm" style="margin:0 0 8px;">
-                <?php if (!empty($item['concluido'])): ?><i class="ti ti-circle-check-filled" style="color:var(--v2-success);"></i> <?php endif; ?>
-                <?php echo Helpers::e((string) $item['status_label']); ?>
-              </p>
-            <?php endif; ?>
 
             <?php if ($tipo === 'texto' && trim((string) $item['texto_html']) !== ''): ?>
               <div class="v2-lms-prose"><?php echo Helpers::renderSafeHtml((string) $item['texto_html'], 'reading'); ?></div>
+
+            <?php elseif ($tipo === 'html' && trim((string) $item['texto_html']) !== ''): ?>
+              <?php $htmlFrameId = 'conteudo-html-frame-' . (int) $item['id']; ?>
+              <article class="conteudo-item-html">
+                <iframe
+                  id="<?php echo Helpers::e($htmlFrameId); ?>"
+                  class="js-conteudo-html-frame conteudo-item-html__frame"
+                  sandbox="allow-scripts allow-popups"
+                  title="<?php echo Helpers::e((string) $item['titulo']); ?>"
+                  loading="lazy"
+                  srcdoc="<?php echo Helpers::e(HtmlEmbedRenderer::wrap((string) $item['texto_html'], $htmlFrameId)); ?>"
+                ></iframe>
+              </article>
 
             <?php elseif ($tipo === 'arquivo'): ?>
               <div class="v2-lms-material">
@@ -135,7 +154,7 @@ $concluirAction = isset($formCtx['concluir_action']) ? (string) $formCtx['conclu
                 </div>
               </div>
 
-            <?php elseif ($tipo === 'texto'): ?>
+            <?php elseif ($tipo === 'texto' || $tipo === 'html'): ?>
               <p class="v2-muted">Conteúdo sem texto disponível.</p>
             <?php endif; ?>
 
@@ -164,11 +183,11 @@ $concluirAction = isset($formCtx['concluir_action']) ? (string) $formCtx['conclu
             <?php if (!empty($item['concluido'])): ?>
               <div class="v2-lms-complete is-done">
                 <span class="v2-badge v2-badge-novo"><i class="ti ti-circle-check-filled"></i> Concluído</span>
-                <?php if (!empty($item['pode_concluir']) && empty($item['auto_leitura'])): ?>
+                <?php if (!empty($item['pode_concluir'])): ?>
                   <form method="post" action="<?php echo Helpers::e($concluirAction); ?>" data-native-submit class="v2-lms-complete-form">
                     <?php echo $hidden; ?>
                     <input type="hidden" name="acao" value="desmarcar">
-                    <button type="submit" class="v2-btn v2-btn-ghost v2-btn-sm" data-complete-btn>Desmarcar conclusão</button>
+                    <button type="submit" class="v2-btn v2-btn-ghost v2-btn-badge-sm" data-complete-btn>Desmarcar conclusão</button>
                   </form>
                 <?php endif; ?>
               </div>
@@ -195,7 +214,8 @@ $concluirAction = isset($formCtx['concluir_action']) ? (string) $formCtx['conclu
               <?php endif; ?>
             <?php endif; ?>
 
-            <!-- Navegação anterior/próxima (gerada no servidor) -->
+            <!-- Navegação anterior/próxima (gerada no servidor); some no mobile, onde é
+                 substituída pela barra fixa abaixo. -->
             <div class="v2-lms-nav">
               <?php if (!empty($navegacao['anterior'])): ?>
                 <a class="v2-btn v2-btn-ghost v2-btn-sm" href="<?php echo Helpers::e((string) $navegacao['anterior']['url']); ?>"><i class="ti ti-chevron-left"></i> Anterior</a>
@@ -205,48 +225,28 @@ $concluirAction = isset($formCtx['concluir_action']) ? (string) $formCtx['conclu
               <?php endif; ?>
             </div>
           </article>
+
+          <!-- Mobile: substitui o menu inferior padrão do site por navegação do curso -->
+          <nav class="v2-lms-bnav" aria-label="Navegação do curso">
+            <?php if (!empty($navegacao['anterior'])): ?>
+              <a href="<?php echo Helpers::e((string) $navegacao['anterior']['url']); ?>" class="v2-lms-bnav-item"><i class="ti ti-chevron-left"></i><span>Anterior</span></a>
+            <?php else: ?>
+              <span class="v2-lms-bnav-item is-disabled" aria-hidden="true"><i class="ti ti-chevron-left"></i><span>Anterior</span></span>
+            <?php endif; ?>
+            <a href="<?php echo Helpers::e($overviewUrl); ?>" class="v2-lms-bnav-item v2-lms-bnav-item--central"><i class="ti ti-list"></i><span>Módulos</span></a>
+            <?php if (!empty($navegacao['proximo'])): ?>
+              <a href="<?php echo Helpers::e((string) $navegacao['proximo']['url']); ?>" class="v2-lms-bnav-item"><i class="ti ti-chevron-right"></i><span>Próximo</span></a>
+            <?php else: ?>
+              <span class="v2-lms-bnav-item is-disabled" aria-hidden="true"><i class="ti ti-chevron-right"></i><span>Próximo</span></span>
+            <?php endif; ?>
+          </nav>
         <?php endif; ?>
       </div>
 
-      <!-- Sidebar: estrutura do curso (desktop) / accordion (mobile) -->
+      <!-- Sidebar: estrutura do curso (somente desktop; no mobile a visão geral já cobre isso) -->
       <aside class="v2-lms-aside" aria-label="Estrutura do curso">
         <div class="v2-lms-aside-head">Conteúdo do curso</div>
-        <?php if (empty($arvore)): ?>
-          <p class="v2-muted v2-sm" style="padding:12px;">Nenhum módulo publicado ainda.</p>
-        <?php else: ?>
-          <?php foreach ($arvore as $idx => $modulo): ?>
-            <div class="v2-mod<?php echo !empty($modulo['aberto']) ? ' is-open' : ''; ?>">
-              <button type="button" class="v2-mod-head" aria-expanded="<?php echo !empty($modulo['aberto']) ? 'true' : 'false'; ?>">
-                <span class="v2-mod-num"><?php echo (int) $idx + 1; ?></span>
-                <span class="v2-mod-info">
-                  <b><?php echo Helpers::e((string) $modulo['titulo']); ?></b>
-                  <small><?php echo (int) $modulo['concluidos_itens']; ?>/<?php echo (int) $modulo['total_itens']; ?> concluídos</small>
-                </span>
-                <i class="ti ti-chevron-down v2-mod-chev" aria-hidden="true"></i>
-              </button>
-              <div class="v2-mod-items">
-                <?php foreach ($modulo['itens'] as $it): ?>
-                  <?php if (!empty($it['etiqueta'])): ?>
-                    <div class="v2-mod-item" style="opacity:.7;font-weight:600;"><?php echo Helpers::e((string) $it['titulo']); ?></div>
-                  <?php else: ?>
-                    <a class="v2-mod-item<?php echo !empty($it['atual']) ? ' is-current' : ''; ?>"
-                       href="<?php echo Helpers::e((string) $it['url']); ?>"
-                       <?php echo !empty($it['atual']) ? 'aria-current="true"' : ''; ?>>
-                      <?php if (!empty($it['concluido'])): ?>
-                        <i class="ti ti-circle-check-filled" style="color:var(--v2-success);" aria-hidden="true"></i>
-                        <span class="v2-sr-only">Concluído: </span>
-                      <?php else: ?>
-                        <i class="ti ti-circle" aria-hidden="true"></i>
-                      <?php endif; ?>
-                      <span><?php echo Helpers::e((string) $it['titulo']); ?></span>
-                      <small class="v2-muted"><?php echo Helpers::e((string) $it['tipo_label']); ?></small>
-                    </a>
-                  <?php endif; ?>
-                <?php endforeach; ?>
-              </div>
-            </div>
-          <?php endforeach; ?>
-        <?php endif; ?>
+        <?php require BASE_PATH . '/resources/views/v2/partials/lms-arvore.php'; ?>
       </aside>
     </div>
   </div>

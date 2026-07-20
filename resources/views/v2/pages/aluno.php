@@ -58,9 +58,13 @@ $inicial = function_exists('mb_substr') ? mb_substr($primeiroNome, 0, 1, 'UTF-8'
             <?php foreach ($cursos as $index => $curso): ?>
               <?php $tema = $coursePalette[$index % count($coursePalette)]; ?>
               <article class="v2-aluno-card">
-                <div class="v2-thumb" style="background:linear-gradient(135deg,<?php echo Helpers::e($tema['g1']); ?>,<?php echo Helpers::e($tema['g2']); ?>);">
-                  <i class="ti <?php echo Helpers::e($tema['icon']); ?>" style="color:<?php echo Helpers::e($tema['cor']); ?>;"></i>
-                </div>
+                <a href="<?php echo Helpers::e((string) $curso['lms_href']); ?>" class="v2-thumb" aria-label="Acessar curso: <?php echo Helpers::e((string) $curso['nome']); ?>" style="background:linear-gradient(135deg,<?php echo Helpers::e($tema['g1']); ?>,<?php echo Helpers::e($tema['g2']); ?>);">
+                  <?php if (!empty($curso['thumbnail'])): ?>
+                    <img src="<?php echo Helpers::e((string) $curso['thumbnail']); ?>" alt="<?php echo Helpers::e((string) $curso['nome']); ?>" style="width:100%;height:auto;display:block;">
+                  <?php else: ?>
+                    <i class="ti <?php echo Helpers::e($tema['icon']); ?>" style="color:<?php echo Helpers::e($tema['cor']); ?>;"></i>
+                  <?php endif; ?>
+                </a>
                 <div class="v2-card-body">
                   <div class="v2-aluno-card-status">
                     <span class="v2-badge <?php echo Helpers::e((string) $curso['status_classe']); ?>"><?php echo Helpers::e((string) $curso['status_label']); ?></span>

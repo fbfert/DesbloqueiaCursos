@@ -130,6 +130,7 @@ class AlunoController extends Controller
                 'curso_id' => $cursoId,
                 'turma_id' => $turmaId,
                 'nome' => isset($i['curso_nome']) ? (string) $i['curso_nome'] : '',
+                'thumbnail' => isset($i['curso_thumbnail']) ? trim((string) $i['curso_thumbnail']) : '',
                 'turma' => isset($i['turma_nome']) ? (string) $i['turma_nome'] : '',
                 'turma_codigo' => isset($i['turma_codigo']) ? (string) $i['turma_codigo'] : '',
                 'modalidade' => $this->modalidadeLabel(isset($i['curso_modalidade']) ? (string) $i['curso_modalidade'] : ''),

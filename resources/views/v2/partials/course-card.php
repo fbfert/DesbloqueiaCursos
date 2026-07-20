@@ -31,18 +31,21 @@ $ehTop = !empty($curso['eh_top']);
 $destaque = !empty($curso['destaque']);
 $novo = !empty($curso['novo']);
 $desconto = isset($curso['descontoPromocional']) && is_array($curso['descontoPromocional']) ? $curso['descontoPromocional'] : null;
+$hideBadges = !empty($hideBadges);
 $badges = array();
-if ($destaque) {
-    $badges[] = '<span class="v2-badge v2-badge-destaque"><i class="ti ti-flame"></i> Destaque</span>';
-}
-if ($ehTop) {
-    $badges[] = '<span class="v2-badge v2-badge-novo">Top</span>';
-}
-if ($novo) {
-    $badges[] = '<span class="v2-badge v2-badge-novo">Novo</span>';
-}
-if ($desconto && !empty($desconto['desconto_percentual'])) {
-    $badges[] = '<span class="v2-badge v2-badge-gratis">Promoção</span>';
+if (!$hideBadges) {
+    if ($destaque) {
+        $badges[] = '<span class="v2-badge v2-badge-destaque"><i class="ti ti-flame"></i> Destaque</span>';
+    }
+    if ($ehTop) {
+        $badges[] = '<span class="v2-badge v2-badge-novo">Top</span>';
+    }
+    if ($novo) {
+        $badges[] = '<span class="v2-badge v2-badge-novo">Novo</span>';
+    }
+    if ($desconto && !empty($desconto['desconto_percentual'])) {
+        $badges[] = '<span class="v2-badge v2-badge-gratis">Promoção</span>';
+    }
 }
 $meta = array();
 if ($cargaHoraria > 0) {
@@ -79,7 +82,7 @@ if ($valor > 0) {
       </div>
     <?php endif; ?>
     <?php if ($thumb !== ''): ?>
-      <img src="<?php echo Helpers::e($thumb); ?>" alt="<?php echo Helpers::e($title); ?>" style="width:100%;height:100%;object-fit:cover;">
+      <img src="<?php echo Helpers::e($thumb); ?>" alt="<?php echo Helpers::e($title); ?>" style="width:100%;height:auto;display:block;">
     <?php else: ?>
       <i class="ti <?php echo Helpers::e($theme['icon']); ?>" style="color:<?php echo Helpers::e($theme['cor']); ?>;"></i>
     <?php endif; ?>
@@ -97,7 +100,7 @@ if ($valor > 0) {
     </div>
     <div class="v2-card-foot">
       <?php echo $priceHtml; ?>
-      <span class="v2-btn v2-btn-outline v2-btn-sm">Ver curso</span>
+      <span class="v2-btn v2-btn-outline v2-btn-sm">Desbloquear</span>
     </div>
   </div>
 </a>

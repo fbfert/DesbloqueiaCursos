@@ -169,8 +169,9 @@ $temFiltrosAtivos = $buscaAtual !== '' || $categoriaAtual !== '' || $modalidadeA
         </div>
 
         <?php if (!empty($cursos)): ?>
-          <div class="v2-grid" id="v2c-grid">
+          <div class="v2-grid v2-grid-catalogo" id="v2c-grid">
             <?php foreach ($cursos as $index => $curso): ?>
+              <?php $hideBadges = true; ?>
               <?php require BASE_PATH . '/resources/views/v2/partials/course-card.php'; ?>
             <?php endforeach; ?>
           </div>

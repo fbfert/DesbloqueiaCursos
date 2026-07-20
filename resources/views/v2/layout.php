@@ -34,7 +34,7 @@ $categoriesCount = isset($categories) && is_array($categories) ? count($categori
 $topCount = isset($topCourses) && is_array($topCourses) ? count($topCourses) : 0;
 $homeNavClass = $currentPath === '/v2' || $currentPath === '/v2/' ? ' is-active' : '';
 $catalogNavClass = strpos($currentPath, '/cursos') === 0 ? ' is-active' : '';
-$categoriesNavClass = strpos($currentPath, '/categorias') === 0 ? ' is-active' : '';
+$categoriesNavClass = strpos($currentPath, '/v2/categorias') === 0 ? ' is-active' : '';
 $certNavClass = strpos($currentPath, 'certificados/validar') !== false ? ' is-active' : '';
 ?>
 <!doctype html>
@@ -52,6 +52,7 @@ $certNavClass = strpos($currentPath, 'certificados/validar') !== false ? ' is-ac
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
+  <link rel="stylesheet" href="/assets/css/conteudo-html-embed.css?v=20260717">
   <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
 </head>
 <body class="v2-app">
@@ -67,5 +68,6 @@ $certNavClass = strpos($currentPath, 'certificados/validar') !== false ? ' is-ac
   <script>window.V2_DISABLE_AUTORENDER_HOME = true;</script>
   <?php endif; ?>
   <script src="/v2/assets/js/v2-main.js" defer></script>
+  <script src="/assets/js/conteudo-html-embed.js?v=20260717" defer></script>
 </body>
 </html>

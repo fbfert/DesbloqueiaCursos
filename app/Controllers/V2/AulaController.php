@@ -131,26 +131,24 @@ class AulaController extends Controller
                 $itemAtual = $this->montarItem($detalhe['item'], $detalhe['detalhe'], $detalhe['modulo'], $inscricao, $cursoId, $turmaId);
                 $moduloAtualId = (int) ($detalhe['modulo']['id'] ?? $moduloAtualId);
             }
-        } else {
-            // Sem item escolhido: assume o primeiro item acessível (se houver).
-            $primeiro = $this->primeiroItem($modulos);
-            if ($primeiro !== null) {
-                $detalhe = $this->conteudoService->buscarItemPublicadoParaAluno(
-                    (int) $primeiro['item_id'],
-                    $usuarioId,
-                    (int) $inscricao['id'],
-                    $cursoId,
-                    $turmaId > 0 ? $turmaId : null
-                );
-                if (!empty($detalhe['ok'])) {
-                    $itemAtual = $this->montarItem($detalhe['item'], $detalhe['detalhe'], $detalhe['modulo'], $inscricao, $cursoId, $turmaId);
-                    $moduloAtualId = (int) ($detalhe['modulo']['id'] ?? $primeiro['modulo_id']);
-                    $conteudoId = (int) $primeiro['item_id'];
-                }
-            }
+        }
+        // Sem item escolhido na URL: mostra a visão geral (lista de módulos e
+        // conteúdos) em vez de abrir direto o primeiro conteúdo do curso.
+
+        // Suprime a conclusão automática (auto_leitura) por uma única exibição,
+        // logo após o aluno desmarcar manualmente este mesmo item — sem isso, o
+        // próprio carregamento desta página remarcaria o item na hora.
+        $itemSemAutoCompletarId = (int) Session::pullFlash('v2_aula_sem_autocompletar_item_id', 0);
+        if ($itemAtual !== null && $itemSemAutoCompletarId > 0 && (int) $itemAtual['id'] === $itemSemAutoCompletarId) {
+            $itemAtual['auto_leitura'] = false;
         }
 
         $arvore = $this->montarArvore($modulos, $inscricao, $cursoId, $turmaId, $moduloAtualId, $conteudoId);
+        // Visão geral (nenhum módulo indicado na URL): abre o primeiro módulo por
+        // padrão, em vez de mostrar a lista inteira fechada.
+        if ($moduloAtualId <= 0 && $itemAtual === null && !empty($arvore)) {
+            $arvore[0]['aberto'] = true;
+        }
         $navegacao = $this->montarNavegacao($modulos, $inscricao, $cursoId, $turmaId, $conteudoId);
 
         // Contexto mínimo para o formulário POST de conclusão (localizadores;
@@ -164,6 +162,10 @@ class AulaController extends Controller
             'concluir_action' => '/v2/aula/concluir',
         );
 
+        // URL para voltar à visão geral (lista de módulos e conteúdos), preservando
+        // o módulo atual para já abrir expandido quando o aluno voltar.
+        $overviewUrl = $this->urlV2Overview($inscricao, $cursoId, $turmaId, $moduloAtualId);
+
         $data = array_merge($base, array(
             'title' => ($cabecalho['curso_nome'] !== '' ? $cabecalho['curso_nome'] : 'Aula') . ' — Desbloqueia Cursos',
             'pageTitle' => ($cabecalho['curso_nome'] !== '' ? $cabecalho['curso_nome'] : 'Aula') . ' — Desbloqueia Cursos',
@@ -176,6 +178,7 @@ class AulaController extends Controller
             'itemInacessivel' => $itemInacessivel,
             'temConteudo' => !empty($modulos),
             'formCtx' => $formCtx,
+            'overviewUrl' => $overviewUrl,
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
         ));
@@ -263,6 +266,12 @@ class AulaController extends Controller
             Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível atualizar a conclusão do item.'));
         } else {
             Session::flash('success', $acao === 'desmarcar' ? 'Conclusão desmarcada.' : 'Item marcado como concluído.');
+            if ($acao === 'desmarcar') {
+                // Textos/HTML concluem sozinhos ao abrir a página (auto_leitura); sem isso,
+                // o próximo carregamento desta mesma aula remarcaria o item na hora,
+                // escondendo o "Conclusão desmarcada." atrás de "Item marcado como concluído.".
+                Session::flash('v2_aula_sem_autocompletar_item_id', $itemId);
+            }
         }
 
         // Módulo de retorno (revalidado pelo backend).
@@ -304,23 +313,6 @@ class AulaController extends Controller
         return (int) round($p);
     }
 
-    private function primeiroItem(array $modulos)
-    {
-        foreach ($modulos as $modulo) {
-            $itens = !empty($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array();
-            foreach ($itens as $item) {
-                if ((string) ($item['tipo'] ?? '') === 'etiqueta') {
-                    continue; // etiqueta é separador visual, não conteúdo navegável
-                }
-                $itemId = (int) ($item['id'] ?? 0);
-                if ($itemId > 0) {
-                    return array('item_id' => $itemId, 'modulo_id' => (int) ($modulo['id'] ?? 0));
-                }
-            }
-        }
-        return null;
-    }
-
     private function montarItem(array $item, $detalhe, $modulo, array $inscricao, $cursoId, $turmaId)
     {
         $detalhe = is_array($detalhe) ? $detalhe : array();
@@ -328,6 +320,9 @@ class AulaController extends Controller
 
         // Conteúdos textuais já passam pelo sanitizador oficial.
         $texto = $this->valorDetalhe($detalhe, array('conteudo', 'texto', 'descricao', 'corpo', 'html'));
+        if ($tipo === 'texto') {
+            $texto = $this->removerTituloDuplicadoDoTexto($texto, (string) ($item['titulo'] ?? ''));
+        }
         $videoEmbed = $this->valorDetalhe($detalhe, array('embed_html', 'embed', 'html'));
         $videoUrl = $this->valorDetalhe($detalhe, array('url', 'video_url', 'link'));
 
@@ -335,7 +330,7 @@ class AulaController extends Controller
         $ehInterativo = in_array($tipo, $tiposInterativos, true);
         // Conclusão manual só para os tipos que o LMS atual permite concluir
         // (o service `concluirItemAluno` rejeita quiz e avaliacao_textual).
-        $podeConcluir = in_array($tipo, array('texto', 'video', 'arquivo', 'link'), true);
+        $podeConcluir = in_array($tipo, array('texto', 'video', 'arquivo', 'link', 'html'), true);
 
         return array(
             'id' => (int) ($item['id'] ?? 0),
@@ -346,7 +341,7 @@ class AulaController extends Controller
             'status_class' => (string) ($item['status_class'] ?? ''),
             'concluido' => !empty($item['concluido_aluno']),
             'pode_concluir' => $podeConcluir,
-            'auto_leitura' => $tipo === 'texto',
+            'auto_leitura' => $tipo === 'texto' || $tipo === 'html',
             'modulo_titulo' => is_array($modulo) ? (string) ($modulo['titulo'] ?? '') : '',
             'texto_html' => $texto,
             'video_embed' => $videoEmbed,
@@ -364,6 +359,31 @@ class AulaController extends Controller
                 ? $this->urlAtividadeV2($inscricao, $cursoId, $turmaId, (int) (is_array($modulo) ? ($modulo['id'] ?? 0) : 0), (int) ($item['id'] ?? 0))
                 : '',
         );
+    }
+
+    /**
+     * Alguns conteúdos do tipo "texto" começam com um heading (h1-h3) que
+     * apenas repete o título do item — a página já exibe o título separado,
+     * então isso aparece como um título duplicado para o aluno. Remove esse
+     * heading só quando o texto dele é exatamente igual ao título do item
+     * (evita remover headings legítimos que fazem parte do conteúdo).
+     */
+    private function removerTituloDuplicadoDoTexto($texto, $titulo)
+    {
+        $texto = (string) $texto;
+        $titulo = trim((string) $titulo);
+        if ($texto === '' || $titulo === '') {
+            return $texto;
+        }
+
+        if (preg_match('/^\s*<h([1-3])[^>]*>(.*?)<\/h\1>\s*/is', $texto, $m)) {
+            $headingTexto = trim(html_entity_decode(strip_tags($m[2]), ENT_QUOTES, 'UTF-8'));
+            if ($headingTexto !== '' && mb_strtolower($headingTexto) === mb_strtolower($titulo)) {
+                return substr($texto, strlen($m[0]));
+            }
+        }
+
+        return $texto;
     }
 
     private function urlQuizV2(array $inscricao, $cursoId, $turmaId, $moduloId, $itemId)
@@ -459,6 +479,18 @@ class AulaController extends Controller
             . '&turma_id=' . (int) $turmaId
             . '&modulo_id=' . (int) $moduloId
             . '&conteudo_id=' . (int) $itemId;
+    }
+
+    // Visão geral do curso (lista de módulos e conteúdos), sem conteúdo_id.
+    private function urlV2Overview(array $inscricao, $cursoId, $turmaId, $moduloId = 0)
+    {
+        $url = '/v2/aula/?inscricao_id=' . (int) $inscricao['id']
+            . '&curso_id=' . (int) $cursoId
+            . '&turma_id=' . (int) $turmaId;
+        if ((int) $moduloId > 0) {
+            $url .= '&modulo_id=' . (int) $moduloId;
+        }
+        return $url;
     }
 
     private function urlOficialItem(array $inscricao, $cursoId, $turmaId, $moduloId, $itemId)

@@ -45,7 +45,7 @@ class HomeController extends Controller
         if ($usuarioId > 0) {
             $primeiroNome = $this->primeiroNome($usuarioNome);
             $heroTitulo = 'Olá, ' . $primeiroNome . '. Sua jornada continua aqui.';
-            $heroSubtitulo = 'Acesse seus cursos, acompanhe sua evolução e continue de onde parou com a mesma experiência visual da V2.';
+            $heroSubtitulo = '';
         }
 
         $pageTitle = 'Desbloqueia Cursos — Quando aprende de verdade, desbloqueia.';

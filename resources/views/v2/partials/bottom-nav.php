@@ -12,7 +12,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $currentPath = $currentPath ?: '/';
 $homeActive = ($currentPath === '/v2' || $currentPath === '/v2/') ? ' is-active' : '';
 $catalogActive = strpos($currentPath, '/cursos') === 0 ? ' is-active' : '';
-$categoryActive = strpos($currentPath, '/categorias') === 0 ? ' is-active' : '';
+$categoryActive = strpos($currentPath, '/v2/categorias') === 0 ? ' is-active' : '';
 $areaActive = (!$loggedIn && strpos($currentPath, '/login') === 0) || ($loggedIn && (strpos($currentPath, '/meus-cursos') === 0 || strpos($currentPath, '/minha-conta') === 0 || strpos($currentPath, '/admin') === 0 || strpos($currentPath, '/professor') === 0)) ? ' is-active' : '';
 $areaHrefFinal = $loggedIn ? $areaHref : $loginHref;
 $areaLabel = $loggedIn ? 'Área' : 'Entrar';

@@ -163,9 +163,10 @@
 @media (min-width: 480px) { .v2-hero-actions { flex-direction: row; } }
 
 .v2-hero-visual { display: none; }
-/* Hero sem a ilustração à direita: o conteúdo ocupa uma largura maior no desktop. */
+/* Hero sem a ilustração à direita: o conteúdo ocupa a mesma largura do container,
+   igual às seções "Em destaque", "Categorias" e "Top cursos". */
 @media (min-width: 1024px) {
-  .v2-hero-inner--no-visual .v2-hero-text { max-width: 760px; }
+  .v2-hero-inner--no-visual .v2-hero-text { max-width: none; width: 100%; }
 }
 @media (min-width: 1024px) {
   .v2-hero-visual { display: block; flex-shrink: 0; width: 380px; height: 260px; border-radius: var(--v2-radius-lg); position: relative; overflow: hidden;
@@ -193,14 +194,21 @@
 @media (min-width: 1024px) { .v2-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 1280px) { .v2-grid { grid-template-columns: repeat(4, 1fr); } }
 
+/* Página "Cursos" (catálogo): cards mais largos, uma coluna a menos que o padrão. */
+@media (min-width: 1024px) { .v2-grid-catalogo { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .v2-grid-catalogo { grid-template-columns: repeat(3, 1fr); } }
+.v2-grid-catalogo .v2-thumb { min-height: 200px; }
+
 .v2-card {
   display: flex; flex-direction: column; background: var(--v2-surface); border: 1px solid var(--v2-border);
   border-radius: var(--v2-radius-lg); overflow: hidden; cursor: pointer; color: inherit;
   transition: transform .12s ease, box-shadow .15s ease, border-color .15s ease;
 }
 .v2-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(75,0,142,.09); border-color: #d9cfe9; text-decoration: none; }
-.v2-thumb { height: 140px; position: relative; display: flex; align-items: center; justify-content: center; }
+.v2-thumb { min-height: 140px; position: relative; display: flex; align-items: center; justify-content: center; }
 .v2-thumb i { font-size: 46px; opacity: .85; }
+/* "Em destaque": thumb 35% maior que o padrão (140px -> 189px) no desktop; mais alto ainda no mobile (ver bloco MOBILE ≤ 767px). */
+.v2-grid-destaque .v2-thumb { min-height: 189px; }
 .v2-thumb-badges { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
 .v2-card-body { padding: 14px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
 .v2-card-cat { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--v2-laranja); }
@@ -219,16 +227,25 @@
 @media (min-width: 1024px) { .v2-top-courses-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1280px) { .v2-top-courses-list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
-/* Categorias grid */
-.v2-cats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-@media (min-width: 560px) { .v2-cats { grid-template-columns: repeat(3, 1fr); } }
-@media (min-width: 1024px) { .v2-cats { grid-template-columns: repeat(6, 1fr); } }
-.v2-cat { background: var(--v2-surface); border: 1px solid var(--v2-border); border-radius: var(--v2-radius); padding: 16px 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--v2-text); transition: border-color .15s, transform .12s; }
+/* Categorias grid — mesmas colunas e mesmo tamanho de thumb que "Em destaque" (.v2-grid-destaque). */
+.v2-cats { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 560px) { .v2-cats { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .v2-cats { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1280px) { .v2-cats { grid-template-columns: repeat(4, 1fr); } }
+
+/* Página "Categorias" (listagem completa): cards mais largos, uma coluna a menos. */
+@media (min-width: 1024px) { .v2-cats-pagina { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .v2-cats-pagina { grid-template-columns: repeat(3, 1fr); } }
+.v2-cat {
+  background: var(--v2-surface); border: 1px solid var(--v2-border); border-radius: var(--v2-radius-lg);
+  overflow: hidden; display: flex; flex-direction: column; color: var(--v2-text);
+  transition: border-color .15s, transform .12s;
+}
 .v2-cat:hover { border-color: var(--v2-laranja); transform: translateY(-2px); text-decoration: none; }
-.v2-cat-ic { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
-.v2-cat-ic i { font-size: 24px; }
-.v2-cat-nome { font-size: 0.8rem; font-weight: 600; }
-.v2-cat-q { font-size: 0.68rem; color: var(--v2-text-2); }
+.v2-cat-ic { width: 100%; min-height: 189px; display: flex; align-items: center; justify-content: center; }
+.v2-cat-ic i { font-size: 46px; }
+.v2-cat-nome { font-size: 0.95rem; font-weight: 600; padding: 14px 14px 0; }
+.v2-cat-q { font-size: 0.74rem; color: var(--v2-text-2); padding: 0 14px 14px; }
 
 /* ============================================================
    CATÁLOGO (busca + filtros)
@@ -284,8 +301,8 @@
    ============================================================ */
 .v2-course { display: flex; flex-direction: column; gap: 24px; padding: 18px 0 40px; }
 @media (min-width: 1024px) { .v2-course { flex-direction: row; align-items: flex-start; } .v2-course-main { flex: 1; min-width: 0; } .v2-course-aside { width: 340px; flex-shrink: 0; position: sticky; top: calc(var(--v2-nav-h) + 18px); } }
-.v2-cover { height: 200px; border-radius: var(--v2-radius-lg); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-@media (min-width: 768px) { .v2-cover { height: 300px; } }
+.v2-cover { min-height: 200px; border-radius: var(--v2-radius-lg); overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+@media (min-width: 768px) { .v2-cover { min-height: 300px; } }
 .v2-cover i { font-size: 80px; opacity: .8; }
 .v2-course-meta { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0; }
 .v2-course-meta span { font-size: 0.84rem; color: var(--v2-text-2); display: inline-flex; align-items: center; gap: 5px; }
@@ -341,6 +358,12 @@
 .v2-callout-success { background: #d1faf5; color: #007a6a; }
 .v2-callout-warning { background: #fff4ec; color: #cc5500; }
 .v2-callout-danger { background: #ffe4ea; color: #c00030; }
+/* Callout clicável (ex.: CTA "Acesse sua área" no hero logado): mantém a cor do tipo, sem sublinhado. */
+.v2-app a.v2-callout,
+.v2-app a.v2-callout:hover,
+.v2-app a.v2-callout:focus-visible { text-decoration: none; }
+.v2-app a.v2-callout-info, .v2-app a.v2-callout-info:hover { color: var(--v2-roxo); }
+.v2-app a.v2-callout:hover { filter: brightness(0.97); }
 
 /* ============================================================
    CHECKOUT (stepper + passos)
@@ -450,6 +473,10 @@
 .v2-lms-tab { flex: 1; padding: 11px 0; text-align: center; font-size: 0.84rem; font-weight: 600; color: var(--v2-text-2); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; }
 .v2-lms-tab.is-on { color: var(--v2-laranja); border-bottom-color: var(--v2-laranja); }
 .v2-lms-pane { padding: 16px 0; }
+
+/* Concluído + Desmarcar conclusão lado a lado, no mesmo estilo compacto do badge. */
+.v2-lms-complete { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.v2-btn-badge-sm { padding: 3px 12px; min-height: 0; border-radius: 20px; font-size: 0.7rem; font-weight: 700; gap: 4px; }
 
 .v2-mod { border: 1px solid var(--v2-border); border-radius: var(--v2-radius); margin-bottom: 10px; overflow: hidden; }
 .v2-mod-head { display: flex; align-items: center; gap: 10px; padding: 13px 14px; cursor: pointer; background: var(--v2-surface); }
@@ -567,6 +594,18 @@
 @media (max-width: 767px) {
   /* Grid de cursos (catálogo + "Em destaque"): 1 card por linha */
   .v2-app .v2-grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* Categorias: 1 card por linha no mobile, mesma regra do grid de cursos */
+  .v2-app .v2-cats { grid-template-columns: minmax(0, 1fr); }
+
+  /* "Em destaque", Categorias, Meus cursos e Cursos (catálogo): thumb mais alto no mobile (card ocupa a largura toda) */
+  .v2-app .v2-grid-destaque .v2-thumb,
+  .v2-app .v2-cat-ic,
+  .v2-app .v2-aluno-card .v2-thumb,
+  .v2-app .v2-grid-catalogo .v2-thumb { min-height: 240px; }
+
+  /* Página "Categorias" (listagem completa): thumb um pouco mais baixo no mobile que o padrão acima. */
+  .v2-app .v2-cats-pagina .v2-cat-ic { min-height: 190px; }
 
   /* Top cursos e QUALQUER scroller legado: lista vertical, NUNCA carrossel.
      Sobrescreve display:flex / overflow-x / scroll-snap / flex-basis. */
@@ -911,7 +950,7 @@
 @media (min-width: 1200px) { .v2-app .v2-aluno-cursos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 .v2-app .v2-aluno-card { display: flex; flex-direction: column; background: var(--v2-surface); border: 1px solid var(--v2-border); border-radius: var(--v2-radius-lg); overflow: hidden; width: 100%; }
-.v2-app .v2-aluno-card .v2-thumb { height: 120px; }
+.v2-app .v2-aluno-card .v2-thumb { min-height: 189px; }
 .v2-app .v2-aluno-card .v2-card-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .v2-app .v2-aluno-card-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .v2-app .v2-aluno-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
@@ -1021,6 +1060,36 @@ body.v2-modal-open { overflow: hidden; }
 
 /* Respiro inferior no mobile (bottom nav) */
 @media (max-width: 767px) { .v2-app .v2-lms-area { padding-bottom: calc(var(--v2-bnav-h) + 16px); } }
+
+/* Visão geral do curso (lista de módulos como conteúdo principal, sem item escolhido) */
+.v2-app .v2-lms-overview { max-width: 640px; }
+
+/* Link "Ver todos os módulos", acima do conteúdo do item atual */
+.v2-app .v2-lms-back-overview { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; margin-bottom: 12px; }
+
+/* No mobile, dentro da área do curso, a barra abaixo substitui o menu inferior
+   padrão do site (Início/Cursos/Categorias/Área/Sair) por navegação do curso. */
+body:has(.v2-lms-area) .v2-bnav { display: none; }
+
+.v2-app .v2-lms-bnav { display: none; }
+@media (max-width: 767px) {
+  .v2-app .v2-lms-bnav {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: var(--v2-bnav-h);
+    background: var(--v2-surface); border-top: 1px solid var(--v2-border); z-index: 95;
+  }
+  .v2-app .v2-lms-bnav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    color: var(--v2-text-2); font-size: 0.62rem; font-weight: 600;
+  }
+  .v2-app .v2-lms-bnav-item i { font-size: 20px; }
+  .v2-app .v2-lms-bnav-item:hover { color: var(--v2-laranja); text-decoration: none; }
+  .v2-app .v2-lms-bnav-item.is-disabled { opacity: .35; }
+  .v2-app .v2-lms-bnav-item--central { color: var(--v2-laranja); }
+
+  /* A navegação de item inline (fim do conteúdo) fica redundante no mobile,
+     já coberta pela barra fixa acima. */
+  .v2-app .v2-lms-nav { display: none; }
+}
 
 /* ============================================================
    AUTENTICAÇÃO V2 (/v2/login/ /v2/cadastro/ /v2/recuperar-senha/)
@@ -1309,7 +1378,13 @@ body.v2-modal-open { overflow: hidden; }
    Etapas por texto + estado (não só cor). Reutiliza
    .v2-checkout, .v2-block, .v2-field, .v2-input, .v2-btn.
    ============================================================ */
-.v2-app .v2-checkout-hero { margin: 8px 0 6px; }
+.v2-app .v2-checkout-hero { margin: 8px 0 6px; display: flex; gap: 14px; align-items: center; }
+.v2-app .v2-checkout-hero-media {
+  width: 96px; flex-shrink: 0; border-radius: var(--v2-radius-lg); overflow: hidden;
+  display: flex; align-items: center; justify-content: center; min-height: 72px;
+}
+.v2-app .v2-checkout-hero-media i { font-size: 32px; }
+.v2-app .v2-checkout-hero-text { min-width: 0; }
 .v2-app .v2-steps { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 8px 0 16px; counter-reset: none; }
 .v2-app .v2-step { display: flex; align-items: center; gap: 8px; flex: 1 1 0; min-width: 0; padding: 8px 10px; border: 1px solid var(--v2-border); border-radius: 999px; font-size: 0.85rem; }
 .v2-app .v2-step-num { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; background: var(--v2-surface-2); color: var(--v2-text-2); }

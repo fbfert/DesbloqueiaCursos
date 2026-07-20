@@ -3,6 +3,7 @@
 use App\Controllers\HomeController;
 use App\Controllers\V2\HomeController as V2HomeController;
 use App\Controllers\V2\CatalogoController as V2CatalogoController;
+use App\Controllers\V2\CategoriasController as V2CategoriasController;
 use App\Controllers\V2\CursoController as V2CursoController;
 use App\Controllers\V2\LoginController as V2LoginController;
 use App\Controllers\V2\CadastroController as V2CadastroController;
@@ -76,6 +77,7 @@ $app->get('/', function ($request) {
 });
 $app->get('/v2', array(V2HomeController::class, 'index'));
 $app->get('/v2/catalogo', array(V2CatalogoController::class, 'index'));
+$app->get('/v2/categorias', array(V2CategoriasController::class, 'index'));
 $app->get('/v2/curso', array(V2CursoController::class, 'index'));
 $app->get('/v2/login', array(V2LoginController::class, 'show'));
 // Fase 2.13.1 — tela V2 de escolha pós-login (Minha Área × Catálogo). Só é

@@ -13,10 +13,9 @@ namespace App\Support;
  */
 class V2Nav
 {
-    /** Categorias no V2 caem no catálogo V2 (com filtros por categoria). */
     const HOME = '/v2/';
     const CATALOGO = '/v2/catalogo/';
-    const CATEGORIAS = '/v2/catalogo/';
+    const CATEGORIAS = '/v2/categorias/';
     const CERTIFICADOS = '/v2/certificados/validar';
     const LOGIN = '/v2/login';
     const CADASTRO = '/v2/cadastro';

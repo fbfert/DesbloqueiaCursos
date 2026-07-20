@@ -93,7 +93,7 @@ $ctaHref = (string) $curso['cta_href'];
           <div class="v2-thumb-badges"><span class="v2-badge v2-badge-destaque"><i class="ti ti-flame"></i> Destaque</span></div>
         <?php endif; ?>
         <?php if ($thumb !== ''): ?>
-          <img src="<?php echo Helpers::e($thumb); ?>" alt="<?php echo Helpers::e($titulo); ?>" style="width:100%;height:100%;object-fit:cover;">
+          <img src="<?php echo Helpers::e($thumb); ?>" alt="<?php echo Helpers::e($titulo); ?>" style="width:100%;height:auto;display:block;">
         <?php else: ?>
           <i class="ti <?php echo Helpers::e($theme['icon']); ?>" style="color:<?php echo Helpers::e($theme['cor']); ?>;"></i>
         <?php endif; ?>

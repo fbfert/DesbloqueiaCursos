@@ -1,7 +1,18 @@
 <?php
 use App\Core\Helpers;
 
+$coursePalette = isset($coursePalette) && is_array($coursePalette) ? $coursePalette : array(
+    array('icon' => 'ti-scale', 'g1' => '#fff4ec', 'g2' => '#ffe4d3', 'cor' => '#cc5500'),
+    array('icon' => 'ti-speakerphone', 'g1' => '#f0e8ff', 'g2' => '#e4d6ff', 'cor' => '#4B008E'),
+    array('icon' => 'ti-chart-bar', 'g1' => '#d1faf5', 'g2' => '#b8f2ea', 'cor' => '#007a6a'),
+    array('icon' => 'ti-device-laptop', 'g1' => '#e3f0ff', 'g2' => '#cfe4ff', 'cor' => '#1d4ed8'),
+    array('icon' => 'ti-microphone', 'g1' => '#ffe9f0', 'g2' => '#ffd6e3', 'cor' => '#c00057'),
+    array('icon' => 'ti-briefcase', 'g1' => '#eef7df', 'g2' => '#dcefc0', 'cor' => '#3b6d11'),
+);
 $curso = isset($curso) && is_array($curso) ? $curso : array();
+$cursoThumb = !empty($curso['thumbnail']) ? (string) $curso['thumbnail'] : '';
+$temaIndex = !empty($curso['id']) ? ((int) $curso['id'] % count($coursePalette)) : 0;
+$tema = $coursePalette[$temaIndex];
 $pagadorPrefill = isset($pagadorPrefill) && is_array($pagadorPrefill) ? $pagadorPrefill : array();
 $errors = isset($errors) && is_array($errors) ? array_values($errors) : array();
 $success = isset($success) ? $success : null;
@@ -25,9 +36,18 @@ $mostrarForm = $loggedIn && !in_array($statusFluxo, array('matriculado', 'penden
 
 <section class="v2-container v2-checkout">
   <header class="v2-checkout-hero">
-    <span class="v2-badge v2-badge-novo">Checkout</span>
-    <h1 class="v2-h2" style="margin:6px 0;">Inscrição</h1>
-    <p class="v2-muted"><?php echo Helpers::e((string) ($curso['nome'] ?? '')); ?></p>
+    <div class="v2-checkout-hero-media" style="background:linear-gradient(135deg,<?php echo Helpers::e($tema['g1']); ?>,<?php echo Helpers::e($tema['g2']); ?>);">
+      <?php if ($cursoThumb !== ''): ?>
+        <img src="<?php echo Helpers::e($cursoThumb); ?>" alt="<?php echo Helpers::e((string) ($curso['nome'] ?? '')); ?>" style="width:100%;height:auto;display:block;">
+      <?php else: ?>
+        <i class="ti <?php echo Helpers::e($tema['icon']); ?>" style="color:<?php echo Helpers::e($tema['cor']); ?>;"></i>
+      <?php endif; ?>
+    </div>
+    <div class="v2-checkout-hero-text">
+      <span class="v2-badge v2-badge-novo">Checkout</span>
+      <h1 class="v2-h2" style="margin:6px 0;">Inscrição</h1>
+      <p class="v2-muted"><?php echo Helpers::e((string) ($curso['nome'] ?? '')); ?></p>
+    </div>
   </header>
 
   <?php require BASE_PATH . '/resources/views/v2/partials/checkout-steps.php'; ?>
@@ -46,7 +66,12 @@ $mostrarForm = $loggedIn && !in_array($statusFluxo, array('matriculado', 'penden
       <i class="ti ti-circle-check"></i>
       <span><strong>Você já está matriculado neste curso.</strong> Acompanhe o conteúdo na sua área do aluno.</span>
     </div>
-    <div class="v2-quiz-actions"><a class="v2-btn v2-btn-primary" href="/v2/aluno">Ir para minha área</a></div>
+    <?php
+    $acessarCursoUrl = !empty($situacao['inscricao_id']) && !empty($situacao['curso_id'])
+        ? '/v2/aula/?inscricao_id=' . (int) $situacao['inscricao_id'] . '&curso_id=' . (int) $situacao['curso_id'] . '&turma_id=' . (int) ($situacao['turma_id'] ?? 0)
+        : '/v2/aluno/';
+    ?>
+    <div class="v2-quiz-actions"><a class="v2-btn v2-btn-primary" href="<?php echo Helpers::e($acessarCursoUrl); ?>">Acessar Curso</a></div>
   <?php elseif ($statusFluxo === 'pendente_pagamento'): ?>
     <div class="v2-block v2-callout v2-callout-warning" role="status">
       <i class="ti ti-clock-hour-4"></i>

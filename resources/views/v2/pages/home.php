@@ -64,24 +64,16 @@ if ($heroStats && (isset($heroStats['alunos']) || isset($heroStats['cursos']) ||
       <div class="v2-hero-text">
         <span class="v2-hero-tag"><i class="ti ti-bolt"></i> Sua próxima fase começa aqui</span>
         <h1 class="v2-h1"><?php echo Helpers::e($heroTitulo); ?></h1>
-        <p class="v2-hero-sub"><?php echo Helpers::e($heroSubtitulo); ?></p>
-
-        <?php if ($loggedIn): ?>
-          <div class="v2-callout v2-callout-info" style="margin-bottom:16px;">
-            <i class="ti ti-user-check"></i>
-            <span>Olá, <?php echo Helpers::e($usuarioPrimeiroNome !== '' ? $usuarioPrimeiroNome : 'aluno'); ?>. Acesse sua área atual e continue sem perder o contexto dos seus cursos.</span>
-          </div>
+        <?php if (trim((string) $heroSubtitulo) !== ''): ?>
+          <p class="v2-hero-sub"><?php echo Helpers::e($heroSubtitulo); ?></p>
         <?php endif; ?>
 
-        <div class="v2-hero-actions">
-          <a href="<?php echo Helpers::e($catalogoHref); ?>" class="v2-btn v2-btn-primary"><i class="ti ti-search"></i> Explorar cursos</a>
-          <?php if ($loggedIn): ?>
-            <a href="<?php echo Helpers::e($areaHref); ?>" class="v2-btn v2-btn-ghost">Minha área <i class="ti ti-arrow-right"></i></a>
-          <?php else: ?>
-            <a href="<?php echo Helpers::e($loginHref); ?>" class="v2-btn v2-btn-ghost">Entrar <i class="ti ti-arrow-right"></i></a>
-            <a href="<?php echo Helpers::e($registerHref); ?>" class="v2-btn v2-btn-ghost">Criar conta</a>
-          <?php endif; ?>
-        </div>
+        <?php if ($loggedIn): ?>
+          <a href="<?php echo Helpers::e($areaHref); ?>" class="v2-callout v2-callout-info" style="margin-bottom:16px;">
+            <i class="ti ti-user-check"></i>
+            <span>Acesse sua área e continue seus estudos!</span>
+          </a>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -106,8 +98,9 @@ if ($heroStats && (isset($heroStats['alunos']) || isset($heroStats['cursos']) ||
     </div>
 
     <?php if (!empty($featuredCourses)): ?>
-      <div class="v2-grid">
+      <div class="v2-grid v2-grid-destaque">
         <?php foreach ($featuredCourses as $index => $curso): ?>
+          <?php $hideBadges = true; ?>
           <?php require BASE_PATH . '/resources/views/v2/partials/course-card.php'; ?>
         <?php endforeach; ?>
       </div>
@@ -141,7 +134,7 @@ if ($heroStats && (isset($heroStats['alunos']) || isset($heroStats['cursos']) ||
           <a href="<?php echo Helpers::e($categoriaUrl); ?>" class="v2-cat">
             <span class="v2-cat-ic" style="background:linear-gradient(135deg,<?php echo Helpers::e($theme['g1']); ?>,<?php echo Helpers::e($theme['g2']); ?>);">
               <?php if ($categoriaThumb !== ''): ?>
-                <img src="<?php echo Helpers::e($categoriaThumb); ?>" alt="<?php echo Helpers::e($categoriaNome); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">
+                <img src="<?php echo Helpers::e($categoriaThumb); ?>" alt="<?php echo Helpers::e($categoriaNome); ?>" style="width:100%;height:auto;display:block;">
               <?php else: ?>
                 <i class="ti <?php echo Helpers::e($theme['icon']); ?>" style="color:<?php echo Helpers::e($theme['cor']); ?>;"></i>
               <?php endif; ?>
@@ -170,6 +163,7 @@ if ($heroStats && (isset($heroStats['alunos']) || isset($heroStats['cursos']) ||
     <?php if (!empty($topCourses)): ?>
       <div class="v2-top-courses-list">
         <?php foreach ($topCourses as $index => $curso): ?>
+          <?php $hideBadges = true; ?>
           <?php require BASE_PATH . '/resources/views/v2/partials/course-card.php'; ?>
         <?php endforeach; ?>
       </div>
@@ -186,8 +180,7 @@ if ($heroStats && (isset($heroStats['alunos']) || isset($heroStats['cursos']) ||
   <div class="v2-container">
     <div class="v2-block v2-center" style="background:linear-gradient(135deg,#fff4ec,#f0e8ff);">
       <h2 class="v2-h2">Pronto para seguir para a próxima etapa?</h2>
-      <p class="v2-muted" style="margin:8px 0 16px;">A Home V2 já está conectada ao catálogo real do sistema, sem tocar na home original.</p>
-      <div class="v2-hero-actions" style="justify-content:center;">
+      <div class="v2-hero-actions" style="justify-content:center; margin-top:16px;">
         <a href="<?php echo Helpers::e($catalogoHref); ?>" class="v2-btn v2-btn-primary">Explorar cursos</a>
         <?php if ($loggedIn): ?>
           <a href="<?php echo Helpers::e($areaHref); ?>" class="v2-btn v2-btn-ghost">Ir para minha área</a>
