@@ -10,6 +10,7 @@ $perfil = isset($perfil) && is_array($perfil) ? $perfil : array();
 $coursePalette = isset($coursePalette) && is_array($coursePalette) ? $coursePalette : array(array('icon' => 'ti-book', 'g1' => '#fff4ec', 'g2' => '#ffe4d3', 'cor' => '#cc5500'));
 $primeiroNome = isset($usuarioPrimeiroNome) && $usuarioPrimeiroNome !== '' ? (string) $usuarioPrimeiroNome : 'aluno';
 $inicial = function_exists('mb_substr') ? mb_substr($primeiroNome, 0, 1, 'UTF-8') : substr($primeiroNome, 0, 1);
+$errosPagina = isset($errors) && is_array($errors) ? array_values($errors) : array();
 ?>
 <script>window.V2_DISABLE_AUTORENDER_ALUNO = true;</script>
 
@@ -27,6 +28,11 @@ $inicial = function_exists('mb_substr') ? mb_substr($primeiroNome, 0, 1, 'UTF-8'
       <?php if (!empty($success)): ?>
         <div class="v2-callout v2-callout-success" role="status" aria-live="polite" style="margin:12px 0 0;">
           <i class="ti ti-circle-check"></i><span><?php echo Helpers::e((string) $success); ?></span>
+        </div>
+      <?php endif; ?>
+      <?php if (!empty($errosPagina)): ?>
+        <div class="v2-callout v2-callout-danger" role="alert" aria-live="assertive" style="margin:12px 0 0;">
+          <i class="ti ti-alert-triangle"></i><span><?php foreach ($errosPagina as $msgErro): ?><?php echo Helpers::e((string) $msgErro); ?><br><?php endforeach; ?></span>
         </div>
       <?php endif; ?>
 
@@ -139,11 +145,26 @@ $inicial = function_exists('mb_substr') ? mb_substr($primeiroNome, 0, 1, 'UTF-8'
                 <?php if ($pedido['total_itens'] > 0): ?><span><i class="ti ti-package"></i><?php echo (int) $pedido['total_itens']; ?> <?php echo $pedido['total_itens'] === 1 ? 'item' : 'itens'; ?></span><?php endif; ?>
                 <span><i class="ti ti-cash"></i><?php echo Helpers::e((string) $pedido['total_formatado']); ?></span>
               </div>
-              <?php if ($temResumo): ?>
+              <?php if ($temResumo || !empty($pedido['pode_cancelar'])): ?>
                 <div class="v2-aluno-card-actions" style="margin-top:10px;">
-                  <a href="<?php echo Helpers::e((string) $pedido['resumo_v2_href']); ?>" class="v2-btn v2-btn-primary v2-btn-sm">
-                    <i class="ti ti-arrow-right"></i> Continuar pedido
-                  </a>
+                  <?php if ($temResumo): ?>
+                    <a href="<?php echo Helpers::e((string) $pedido['resumo_v2_href']); ?>" class="v2-btn v2-btn-primary v2-btn-sm">
+                      <i class="ti ti-arrow-right"></i> Continuar pedido
+                    </a>
+                  <?php endif; ?>
+                  <?php if (!empty($pedido['pode_cancelar'])): ?>
+                    <details class="v2-pedido-cancelar">
+                      <summary class="v2-btn v2-btn-ghost v2-btn-sm"><i class="ti ti-x"></i> Cancelar pedido</summary>
+                      <form method="post" action="/v2/aluno/pedidos/cancelar" data-native-submit class="v2-pedido-cancelar-form">
+                        <input type="hidden" name="pedido_id" value="<?php echo (int) $pedido['id']; ?>">
+                        <div class="v2-field">
+                          <label for="v2-motivo-<?php echo (int) $pedido['id']; ?>">Motivo do cancelamento</label>
+                          <input class="v2-input" type="text" id="v2-motivo-<?php echo (int) $pedido['id']; ?>" name="motivo_cancelamento" required>
+                        </div>
+                        <button type="submit" class="v2-btn v2-btn-outline v2-btn-sm"><i class="ti ti-check"></i> Confirmar cancelamento</button>
+                      </form>
+                    </details>
+                  <?php endif; ?>
                 </div>
               <?php endif; ?>
             </div>

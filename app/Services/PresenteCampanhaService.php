@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\Helpers;
 use App\Core\Logger;
 use App\Models\CursoEvento;
 use App\Models\EmailModelo;
@@ -539,7 +540,7 @@ class PresenteCampanhaService
                 'nome_curso' => $dados['curso_nome'],
                 'nome_turma' => $dados['turma_nome'] !== '' ? $dados['turma_nome'] : 'Sem turma específica',
                 'prazo_acesso' => $this->formatarPrazoAcesso($dados['acesso_tipo'], $dados['acesso_expira_em'], $dados['acesso_dias']),
-                'link_meus_cursos' => '/meus-cursos',
+                'link_meus_cursos' => Helpers::url('v2/aluno/'),
                 'nome_plataforma' => 'Desbloqueia Cursos',
             ),
             'presente',

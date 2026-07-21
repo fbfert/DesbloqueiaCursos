@@ -425,10 +425,10 @@ class EmailModeloService
 
         $sistema = array(
             'nome' => !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : 'Desbloqueia Cursos',
-            'login_url' => Helpers::url('login'),
-            'meus_cursos_url' => Helpers::url('meus-cursos'),
-            'area_curso_url' => Helpers::url('area-curso'),
-            'home_url' => Helpers::url('/'),
+            'login_url' => Helpers::url('v2/login'),
+            'meus_cursos_url' => Helpers::url('v2/aluno/'),
+            'area_curso_url' => Helpers::url('v2/aluno/'),
+            'home_url' => Helpers::url('v2/'),
             'email_institucional' => !empty($institucional['email_institucional']) ? $institucional['email_institucional'] : null,
             'email_suporte' => !empty($institucional['email_suporte']) ? $institucional['email_suporte'] : null,
             'from_email' => !empty($emailDefaults['from_email']) ? $emailDefaults['from_email'] : null,

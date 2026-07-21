@@ -809,7 +809,7 @@ class PedidoRecuperacaoService
             }
         }
 
-        $pedidoResumoUrl = Helpers::url('checkout/resumo?pedido_id=' . (int) $pedidoId);
+        $pedidoResumoUrl = Helpers::url('v2/checkout/resumo?pedido_id=' . (int) $pedidoId);
         $linkPagamento = $this->resolverLinkPagamento($pedido, $pedidoResumoUrl);
         $linkDescadastro = $this->gerarLinkDescadastro(array(
             'aluno_id' => $alunoId,
@@ -1125,7 +1125,7 @@ class PedidoRecuperacaoService
 
     private function montarContexto(array $pedido, array $item, ?array $aluno, array $input = array())
     {
-        $pedidoResumoUrl = Helpers::url('checkout/resumo?pedido_id=' . (int) $pedido['id']);
+        $pedidoResumoUrl = Helpers::url('v2/checkout/resumo?pedido_id=' . (int) $pedido['id']);
         $valorTotal = $this->resolverValorTotal($pedido);
         $valorPago = $this->resolverValorPago($pedido);
         $valorPendente = max(0.0, $valorTotal - $valorPago);
@@ -1145,7 +1145,7 @@ class PedidoRecuperacaoService
             'data_pedido' => !empty($pedido['created_at']) ? date('d/m/Y', strtotime((string) $pedido['created_at'])) : '',
             'data_expiracao' => !empty($pedido['data_expiracao_pagamento']) ? date('d/m/Y', strtotime((string) $pedido['data_expiracao_pagamento'])) : '',
             'cupom_codigo' => isset($input['cupom_codigo']) ? (string) $input['cupom_codigo'] : '',
-            'whatsapp_atendimento' => Helpers::url('contato'),
+            'whatsapp_atendimento' => Helpers::url('v2/contato'),
             'link_descadastro_recuperacao' => $linkDescadastro,
         );
     }

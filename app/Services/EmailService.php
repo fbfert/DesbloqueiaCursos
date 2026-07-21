@@ -405,7 +405,7 @@ class EmailService
             array(
                 'usuario' => $usuario,
                 'token' => $token,
-                'reset_url' => Helpers::url('recuperar-senha/redefinir?token=' . urlencode($token)),
+                'reset_url' => Helpers::url('v2/recuperar-senha/redefinir?token=' . urlencode($token)),
             ),
             'usuario',
             isset($usuario['id']) ? $usuario['id'] : null,

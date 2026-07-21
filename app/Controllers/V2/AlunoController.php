@@ -10,10 +10,12 @@ use App\Core\View;
 use App\Models\Pedido;
 use App\Services\AuthService;
 use App\Services\InscricaoService;
+use App\Services\PedidoService;
 
 /**
- * Área do Aluno V2 (Fase 2.6) — somente leitura, com dados reais do usuário
- * autenticado atual.
+ * Área do Aluno V2 (Fase 2.6) — leitura, com dados reais do usuário
+ * autenticado atual, mais uma única ação de escrita (cancelar o próprio
+ * pedido, adicionada depois — ver `cancelarPedido()`).
  *
  * Segurança/isolamento:
  * - exige autenticação real reutilizando a MESMA sessão do sistema
@@ -24,9 +26,10 @@ use App\Services\InscricaoService;
  *   string é usado para buscar dados;
  * - reutiliza services/models que já filtram pelo usuário
  *   (`InscricaoService::listarAprovadasDoUsuario`, `Pedido::forUsuario`,
- *   `AuthService::accountData`);
- * - não cria, altera ou remove nada (sem checkout, pagamento, certificado,
- *   matrícula, perfil, LMS).
+ *   `AuthService::accountData`, `PedidoService::registrarStatus`);
+ * - `cancelarPedido()` reutiliza a MESMA regra real de
+ *   `MeusCursosController::cancelarPedido()` (V1): mesma lista de status
+ *   cancelável, mesmo service, mesma checagem de posse do pedido.
  */
 class AlunoController extends Controller
 {
@@ -36,6 +39,8 @@ class AlunoController extends Controller
     private $pedidoModel;
     /** @var AuthService */
     private $authService;
+    /** @var PedidoService */
+    private $pedidoService;
 
     private $abasValidas = array('cursos', 'pedidos', 'certificados', 'perfil');
 
@@ -44,6 +49,7 @@ class AlunoController extends Controller
         $this->inscricaoService = new InscricaoService();
         $this->pedidoModel = new Pedido();
         $this->authService = new AuthService();
+        $this->pedidoService = new PedidoService();
     }
 
     public function index(Request $request)
@@ -91,10 +97,68 @@ class AlunoController extends Controller
             'pedidos' => $pedidos,
             'perfil' => $perfil,
             'success' => Session::pullFlash('success'),
+            'errors' => Session::pullFlash('errors', array()),
             'coursePalette' => $this->coursePalette(),
         ));
 
         return new Response(View::render('v2/aluno', $data, false));
+    }
+
+    /**
+     * POST /v2/aluno/pedidos/cancelar — mesma regra real de
+     * MeusCursosController::cancelarPedido() (V1): exige motivo, só permite
+     * cancelar pedidos em status ainda não confirmado/finalizado, e a posse
+     * do pedido é revalidada dentro de PedidoService::registrarStatus().
+     */
+    public function cancelarPedido(Request $request)
+    {
+        $usuarioId = (int) Session::get('usuario_id', 0);
+        if ($usuarioId <= 0) {
+            return Response::redirect('/v2/login?origem=v2_aluno');
+        }
+
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        $motivo = trim((string) $request->input('motivo_cancelamento', ''));
+        $voltar = '/v2/aluno/?aba=pedidos';
+
+        if ($pedidoId <= 0) {
+            Session::flash('errors', array('Pedido inválido para cancelamento.'));
+            return Response::redirect($voltar);
+        }
+
+        if ($motivo === '') {
+            Session::flash('errors', array('Informe o motivo do cancelamento do pedido.'));
+            return Response::redirect($voltar);
+        }
+
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            Session::flash('errors', array('Pedido não encontrado.'));
+            return Response::redirect($voltar);
+        }
+
+        if (!$this->pedidoPodeSerCanceladoPeloAluno((string) $pedido['status'])) {
+            Session::flash('errors', array('Este pedido não pode mais ser cancelado pelo aluno.'));
+            return Response::redirect($voltar);
+        }
+
+        $observacao = 'Cancelamento solicitado pelo aluno. Motivo: ' . $motivo;
+        $resultado = $this->pedidoService->registrarStatus(
+            $pedidoId,
+            'cancelado',
+            $observacao,
+            $usuarioId,
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($resultado['ok'])) {
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível cancelar o pedido.'));
+            return Response::redirect($voltar);
+        }
+
+        Session::flash('success', 'Pedido cancelado com sucesso.');
+        return Response::redirect($voltar);
     }
 
     private function carregarInscricoes($usuarioId)
@@ -217,6 +281,7 @@ class AlunoController extends Controller
                 : '';
 
             $itens[] = array(
+                'id' => $pedidoId,
                 'codigo' => isset($p['codigo']) ? (string) $p['codigo'] : '',
                 'data' => isset($p['created_at']) ? $this->formatarData($p['created_at']) : '',
                 'total' => $total,
@@ -229,6 +294,7 @@ class AlunoController extends Controller
                 'titulo_curso' => $tituloCurso,
                 'multiplos_cursos' => $qtdCursos > 1,
                 'resumo_v2_href' => $resumoHref,
+                'pode_cancelar' => $pedidoId > 0 && $this->pedidoPodeSerCanceladoPeloAluno($status),
             );
         }
 
@@ -241,6 +307,19 @@ class AlunoController extends Controller
      * backend). Estados como pago, aprovado, cancelado, expirado, em_analise e
      * comprovante_enviado NÃO retomam pagamento e não recebem link de resumo.
      */
+    /**
+     * Espelha a mesma lista usada por MeusCursosController::cancelarPedido()
+     * (V1) — estados em que o aluno ainda pode cancelar o próprio pedido.
+     */
+    private function pedidoPodeSerCanceladoPeloAluno($status)
+    {
+        return in_array(
+            (string) $status,
+            array('rascunho', 'aguardando_pagamento', 'pendencia', 'aguardando_reenvio', 'comprovante_enviado', 'em_analise'),
+            true
+        );
+    }
+
     private function pedidoPodeRetomarCheckout($status)
     {
         return in_array(
@@ -258,8 +337,7 @@ class AlunoController extends Controller
         }
 
         $nome = isset($conta['nome']) && $conta['nome'] !== '' ? (string) $conta['nome'] : $usuarioNome;
-        // Rota real de edição de perfil existente.
-        $editarHref = '/minha-conta';
+        $editarHref = '/v2/minha-conta';
 
         return array(
             'nome' => $nome,

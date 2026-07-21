@@ -38,9 +38,6 @@ $contaHref = isset($contaHref) ? (string) $contaHref : V2Nav::PERFIL;
         <a href="<?php echo Helpers::e($quemSomosHref); ?>">Quem somos</a>
         <a href="<?php echo Helpers::e($ondeEstamosHref); ?>">Onde estamos</a>
         <a href="<?php echo Helpers::e($certificadosHref); ?>">Validar certificado</a>
-        <a href="<?php echo Helpers::e($termosHref); ?>">Termos de Uso</a>
-        <a href="<?php echo Helpers::e($privacidadeHref); ?>">Política de Privacidade</a>
-        <a href="<?php echo Helpers::e($removaMeHref); ?>">Remova-me</a>
       </div>
       <div class="v2-footer-col">
         <h4>Minha área</h4>

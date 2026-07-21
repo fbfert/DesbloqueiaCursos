@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /professor/
+Disallow: /aluno/
+Disallow: /v2/aluno/
+Disallow: /v2/aula/
+Disallow: /v2/quiz
+Disallow: /v2/atividade
+Disallow: /checkout/
+Disallow: /v2/checkout/
+Disallow: /inscricao
+Disallow: /minha-conta
+Disallow: /v2/pos-login
+Disallow: /recuperar-senha/redefinir
+Disallow: /area-curso
+Disallow: /webhooks/
+
+Sitemap: https://desbloqueiacursos.com.br/sitemap.xml

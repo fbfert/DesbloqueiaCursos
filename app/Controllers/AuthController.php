@@ -182,8 +182,9 @@ class AuthController extends Controller
 
     public function resetPassword(Request $request)
     {
+        $token = (string) $request->input('token');
         $result = $this->authService->resetPassword(
-            $request->input('token'),
+            $token,
             $request->input('senha'),
             $request->input('senha_confirmacao'),
             $request->ip(),
@@ -192,12 +193,16 @@ class AuthController extends Controller
 
         if (!$result['ok']) {
             Session::flash('errors', $result['errors']);
-            Session::flash('old', array('token' => $request->input('token')));
-            return $this->redirect('/recuperar-senha/redefinir?token=' . urlencode((string) $request->input('token')));
+            Session::flash('old', array('token' => $token));
+            return $this->redirect($this->resolveOrigemRedirect(
+                $request,
+                '/v2/recuperar-senha/redefinir?token=' . urlencode($token),
+                '/recuperar-senha/redefinir?token=' . urlencode($token)
+            ));
         }
 
         Session::flash('success', 'Senha redefinida com sucesso.');
-        return $this->redirect('/login');
+        return $this->redirect($this->resolveOrigemRedirect($request, '/v2/login', '/login'));
     }
 
     /**

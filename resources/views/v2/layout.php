@@ -28,6 +28,10 @@ $heroStats = isset($heroStats) && is_array($heroStats) ? $heroStats : null;
 $disableV2AutoRenderHome = !empty($disableV2AutoRenderHome);
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $currentPath = $currentPath ?: '/';
+// Auto-referencial (path + querystring atuais): evita conteúdo duplicado
+// entre variações de URL, sem mapear cada página ao seu par V1.
+$currentQuery = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
+$canonicalUrl = Helpers::url(ltrim($currentPath, '/')) . ($currentQuery !== '' ? '?' . $currentQuery : '');
 $contentView = isset($contentView) ? (string) $contentView : BASE_PATH . '/resources/views/v2/pages/home.php';
 $featuredCount = isset($featuredCourses) && is_array($featuredCourses) ? count($featuredCourses) : 0;
 $categoriesCount = isset($categories) && is_array($categories) ? count($categories) : 0;
@@ -46,6 +50,7 @@ $certNavClass = strpos($currentPath, 'certificados/validar') !== false ? ' is-ac
   <?php if ($pageDescription !== ''): ?>
   <meta name="description" content="<?php echo Helpers::e($pageDescription); ?>">
   <?php endif; ?>
+  <link rel="canonical" href="<?php echo Helpers::e($canonicalUrl); ?>">
   <meta name="theme-color" content="#FF6A00">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

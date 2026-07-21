@@ -42,4 +42,31 @@ class RecuperarSenhaController extends Controller
 
         return new Response(View::render('v2/recuperar-senha', $data, false));
     }
+
+    /**
+     * Etapa final (link recebido por e-mail, com `?token=`). O formulário V2
+     * envia POST para o mesmo endpoint real `/recuperar-senha/redefinir`
+     * (`AuthController::resetPassword` → `AuthService::resetPassword`), com o
+     * mesmo campo `token` e a flag `origem=v2` (lista branca interna) para
+     * que erros/succeso voltem pra cá em vez do fluxo legado.
+     */
+    public function redefinir(Request $request)
+    {
+        $data = array(
+            'title' => 'Redefinir senha — Desbloqueia Cursos',
+            'pageTitle' => 'Redefinir senha — Desbloqueia Cursos',
+            'pageDescription' => 'Defina uma nova senha para sua conta.',
+
+            'errors' => Session::pullFlash('errors', array()),
+            'success' => Session::pullFlash('success'),
+            'old' => Session::pullFlash('old', array()),
+
+            'token' => (string) $request->query('token', ''),
+            'redefinirAction' => '/recuperar-senha/redefinir',
+            'homeHref' => '/v2/',
+            'loginHref' => '/v2/login',
+        );
+
+        return new Response(View::render('v2/recuperar-senha-redefinir', $data, false));
+    }
 }

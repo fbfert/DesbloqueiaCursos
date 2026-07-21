@@ -446,6 +446,10 @@
 
 .v2-pedido { background: var(--v2-surface); border: 1px solid var(--v2-border); border-radius: var(--v2-radius-lg); padding: 14px; margin-bottom: 10px; }
 .v2-pedido-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.v2-pedido-cancelar summary { cursor: pointer; list-style: none; }
+.v2-pedido-cancelar summary::-webkit-details-marker { display: none; }
+.v2-pedido-cancelar-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 10px; }
+.v2-pedido-cancelar-form .v2-field { flex: 1 1 200px; margin-bottom: 0; }
 .v2-cert { display: flex; gap: 12px; align-items: center; background: var(--v2-surface); border: 1px solid var(--v2-border); border-radius: var(--v2-radius-lg); padding: 14px; margin-bottom: 10px; }
 .v2-cert.is-locked { opacity: .65; }
 .v2-cert-ic { width: 44px; height: 44px; border-radius: 10px; background: #fff4ec; color: var(--v2-laranja); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }

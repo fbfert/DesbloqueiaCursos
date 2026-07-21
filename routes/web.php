@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\HomeController;
+use App\Controllers\SitemapController;
 use App\Controllers\V2\HomeController as V2HomeController;
 use App\Controllers\V2\CatalogoController as V2CatalogoController;
 use App\Controllers\V2\CategoriasController as V2CategoriasController;
@@ -9,6 +10,7 @@ use App\Controllers\V2\LoginController as V2LoginController;
 use App\Controllers\V2\CadastroController as V2CadastroController;
 use App\Controllers\V2\RecuperarSenhaController as V2RecuperarSenhaController;
 use App\Controllers\V2\AlunoController as V2AlunoController;
+use App\Controllers\V2\ContaController as V2ContaController;
 use App\Controllers\V2\AulaController as V2AulaController;
 use App\Controllers\V2\QuizController as V2QuizController;
 use App\Controllers\V2\AtividadeController as V2AtividadeController;
@@ -75,6 +77,7 @@ $app->get('/', function ($request) {
     }
     return (new HomeController())->index($request);
 });
+$app->get('/sitemap.xml', array(SitemapController::class, 'index'));
 $app->get('/v2', array(V2HomeController::class, 'index'));
 $app->get('/v2/catalogo', array(V2CatalogoController::class, 'index'));
 $app->get('/v2/categorias', array(V2CategoriasController::class, 'index'));
@@ -89,7 +92,11 @@ $app->get('/v2/pos-login', array(V2LoginController::class, 'posLogin'), array('a
 $app->post('/v2/logout', array(V2LoginController::class, 'logout'), array('auth.v2'));
 $app->get('/v2/cadastro', array(V2CadastroController::class, 'show'));
 $app->get('/v2/recuperar-senha', array(V2RecuperarSenhaController::class, 'show'));
+$app->get('/v2/recuperar-senha/redefinir', array(V2RecuperarSenhaController::class, 'redefinir'));
 $app->get('/v2/aluno', array(V2AlunoController::class, 'index'));
+$app->post('/v2/aluno/pedidos/cancelar', array(V2AlunoController::class, 'cancelarPedido'));
+$app->get('/v2/minha-conta', array(V2ContaController::class, 'editar'));
+$app->post('/v2/minha-conta', array(V2ContaController::class, 'atualizar'));
 $app->get('/v2/aula', array(V2AulaController::class, 'index'));
 $app->post('/v2/aula/concluir', array(V2AulaController::class, 'concluir'));
 $app->get('/v2/quiz', array(V2QuizController::class, 'index'));
