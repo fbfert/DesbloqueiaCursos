@@ -554,7 +554,7 @@ class AulaController extends Controller
             'registerHref' => '/v2/cadastro',
             'catalogoHref' => '/v2/catalogo/',
             'categoriasHref' => '/categorias',
-            'certificadosHref' => '/v2/certificados/validar',
+            'certificadosHref' => '/v2/certificados/validar/',
             'sobreHref' => '/sobre',
             'contatoHref' => '/contato',
             'homeHref' => '/v2/',

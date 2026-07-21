@@ -16,7 +16,7 @@ class V2Nav
     const HOME = '/v2/';
     const CATALOGO = '/v2/catalogo/';
     const CATEGORIAS = '/v2/categorias/';
-    const CERTIFICADOS = '/v2/certificados/validar';
+    const CERTIFICADOS = '/v2/certificados/validar/';
     const LOGIN = '/v2/login';
     const CADASTRO = '/v2/cadastro';
     const ALUNO = '/v2/aluno/';

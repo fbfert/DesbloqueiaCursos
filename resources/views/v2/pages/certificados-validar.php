@@ -48,7 +48,7 @@ $temPdf = $certificado && trim((string) ($certificado['pdf_url'] ?? '')) !== '';
         <?php if ($temPdf): ?>
           <a class="v2-btn v2-btn-primary" href="<?php echo Helpers::e((string) $certificado['pdf_url']); ?>"><i class="ti ti-file-certificate"></i> Abrir certificado</a>
         <?php endif; ?>
-        <a class="v2-btn v2-btn-ghost" href="/v2/certificados/validar"><i class="ti ti-refresh"></i> Validar outro certificado</a>
+        <a class="v2-btn v2-btn-ghost" href="/v2/certificados/validar/"><i class="ti ti-refresh"></i> Validar outro certificado</a>
       </div>
     </section>
 
@@ -64,7 +64,7 @@ $temPdf = $certificado && trim((string) ($certificado['pdf_url'] ?? '')) !== '';
     <?php endif; ?>
 
     <section class="v2-block">
-      <form method="post" action="/v2/certificados/validar" class="v2-cert-form" id="v2-cert-validacao-form" data-native-submit>
+      <form method="post" action="/v2/certificados/validar/" class="v2-cert-form" id="v2-cert-validacao-form" data-native-submit>
         <div class="v2-field">
           <label for="v2-cert-codigo">Código do certificado</label>
           <input type="text" id="v2-cert-codigo" name="codigo" class="v2-input"

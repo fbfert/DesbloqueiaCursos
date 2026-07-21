@@ -106,7 +106,7 @@ class ContaController extends Controller
             'registerHref' => '/v2/cadastro',
             'catalogoHref' => '/v2/catalogo/',
             'categoriasHref' => '/v2/categorias/',
-            'certificadosHref' => '/v2/certificados/validar',
+            'certificadosHref' => '/v2/certificados/validar/',
             'sobreHref' => '/sobre',
             'contatoHref' => '/contato',
             'homeHref' => '/v2/',

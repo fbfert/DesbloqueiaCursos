@@ -69,7 +69,7 @@ class HomeController extends Controller
             'registerHref' => '/v2/cadastro',
             'catalogoHref' => '/cursos',
             'categoriasHref' => '/categorias',
-            'certificadosHref' => '/v2/certificados/validar',
+            'certificadosHref' => '/v2/certificados/validar/',
             'sobreHref' => '/sobre',
             'contatoHref' => '/contato',
             'homeHref' => '/v2/',
