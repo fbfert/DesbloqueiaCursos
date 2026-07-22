@@ -1,4 +1,4 @@
-<?php use App\Core\Helpers; use App\Core\Session; use App\Support\HtmlEmbedRenderer; ?>
+<?php use App\Core\Helpers; use App\Core\Session; use App\Support\HtmlEmbedRenderer; use App\Support\VideoEmbedResolver; ?>
 <?php
 // Visualizador de conteúdo (modo de estudo) — template v4-claude.
 // LÓGICA preservada integralmente do fluxo original; apenas a apresentação muda para dc-.
@@ -116,10 +116,26 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $proximoUrl) {
     </div>
 
   <?php elseif ($tipo === 'arquivo'): ?>
+    <?php
+    $arquivoExtensao = trim((string) aluno_conteudo_valor($detalhe, array('extensao'), ''), '. ');
+    $arquivoNome = trim((string) aluno_conteudo_valor($detalhe, array('nome_original', 'nome_arquivo'), ''));
+    $arquivoTamanho = Helpers::formatarTamanhoArquivo(aluno_conteudo_valor($detalhe, array('tamanho_bytes'), 0));
+    $arquivoIcone = Helpers::iconeArquivo($arquivoExtensao);
+    ?>
     <div class="dc-study-card">
       <div class="dc-study-card__head"><strong>Arquivo do conteúdo</strong><span class="dc-badge dc-badge-novo"><?php echo Helpers::e($statusTexto); ?></span></div>
       <?php if ($conteudoTexto !== ''): ?><div class="dc-study-rich" style="margin-bottom:12px;"><?php echo $renderRich($conteudoTexto, 'basic'); ?></div><?php endif; ?>
       <?php if ($arquivoDisponivel): ?>
+        <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid rgba(0,0,0,.08);border-radius:12px;margin-bottom:10px;">
+          <span style="font-size:28px;line-height:1;" aria-hidden="true"><?php echo $arquivoIcone; ?></span>
+          <div style="flex:1;min-width:0;">
+            <strong style="display:block;"><?php echo Helpers::e($arquivoNome !== '' ? $arquivoNome : $itemTitulo); ?></strong>
+            <span style="font-size:.85em;opacity:.75;">
+              <?php echo Helpers::e($arquivoExtensao !== '' ? strtoupper($arquivoExtensao) : ''); ?>
+              <?php echo $arquivoTamanho !== '' ? ' · ' . Helpers::e($arquivoTamanho) : ''; ?>
+            </span>
+          </div>
+        </div>
         <a class="dc-btn dc-btn-primary" href="<?php echo Helpers::e($arquivoUrl); ?>"><i class="ti ti-download"></i> Baixar arquivo</a>
       <?php else: ?>
         <p class="dc-study-note">O arquivo não está disponível no momento.</p>
@@ -127,21 +143,79 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $proximoUrl) {
     </div>
 
   <?php elseif ($tipo === 'link'): ?>
+    <?php
+    $linkUrlRaw = (string) aluno_conteudo_valor($detalhe, array('url'), '');
+    $linkHost = $linkUrlRaw !== '' ? (string) preg_replace('/^www\./', '', (string) parse_url($linkUrlRaw, PHP_URL_HOST)) : '';
+    $linkDescricao = $conteudoTexto !== '' ? $conteudoTexto : $descricaoCurta;
+    ?>
     <div class="dc-study-card">
       <div class="dc-study-card__head"><strong>Link de acesso</strong><span class="dc-badge dc-badge-novo"><?php echo Helpers::e($statusTexto); ?></span></div>
-      <?php if ($conteudoTexto !== ''): ?><div class="dc-study-rich" style="margin-bottom:12px;"><?php echo $renderRich($conteudoTexto, 'basic'); ?></div><?php endif; ?>
+      <?php if ($linkDescricao !== ''): ?><div class="dc-study-rich" style="margin-bottom:12px;"><?php echo $renderRich($linkDescricao, 'basic'); ?></div><?php endif; ?>
       <?php if ($arquivoDisponivel): ?>
+        <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid rgba(0,0,0,.08);border-radius:12px;margin-bottom:10px;">
+          <span style="font-size:24px;line-height:1;" aria-hidden="true">🔗</span>
+          <div style="flex:1;min-width:0;">
+            <strong style="display:block;"><?php echo Helpers::e($itemTitulo); ?></strong>
+            <?php if ($linkHost !== ''): ?><span style="font-size:.85em;opacity:.75;"><?php echo Helpers::e($linkHost); ?></span><?php endif; ?>
+          </div>
+        </div>
         <a class="dc-btn dc-btn-primary" href="<?php echo Helpers::e($arquivoUrl); ?>"><i class="ti ti-external-link"></i> Abrir link</a>
+      <?php else: ?>
+        <p class="dc-study-note">O link não está disponível no momento.</p>
       <?php endif; ?>
     </div>
 
   <?php elseif ($tipo === 'video'): ?>
+    <?php $videoEmbedInfo = $videoEmbed !== '' ? null : VideoEmbedResolver::resolve($videoUrl); ?>
     <div class="dc-study-card">
       <div class="dc-study-card__head"><strong>Vídeo do conteúdo</strong><span class="dc-badge dc-badge-novo"><?php echo Helpers::e($statusTexto); ?></span></div>
       <?php if ($videoEmbed !== ''): ?>
         <div class="dc-study-embed"><?php echo $renderRich($videoEmbed, 'full'); ?></div>
+      <?php elseif ($videoEmbedInfo !== null): ?>
+        <div style="position:relative;width:calc(100% + 32px);margin-left:-16px;margin-right:-16px;padding-top:56.25%;border-radius:12px;overflow:hidden;background:#000;">
+          <iframe
+            src="<?php echo Helpers::e($videoEmbedInfo['embedUrl']); ?>"
+            title="<?php echo Helpers::e($itemTitulo); ?>"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+            style="position:absolute;inset:0;width:100%;height:100%;border:0;"
+          ></iframe>
+        </div>
+        <?php if ($videoUrl !== ''): ?>
+          <p class="dc-study-note" style="margin-top:8px;"><a href="<?php echo Helpers::e($videoUrl); ?>" target="_blank" rel="noopener noreferrer">Abrir no site original ↗</a></p>
+        <?php endif; ?>
       <?php elseif ($videoUrl !== ''): ?>
         <a class="dc-btn dc-btn-primary" href="<?php echo Helpers::e($videoUrl); ?>" target="_blank" rel="noopener noreferrer"><i class="ti ti-player-play"></i> Assistir vídeo</a>
+      <?php else: ?>
+        <p class="dc-study-note">Não há vídeo disponível para este conteúdo.</p>
+      <?php endif; ?>
+      <?php if ($conteudoTexto !== ''): ?><div class="dc-study-note" style="margin-top:10px;"><?php echo $renderRich($conteudoTexto, 'basic'); ?></div><?php endif; ?>
+    </div>
+
+  <?php elseif ($tipo === 'video_incorporado'): ?>
+    <?php
+    $videoIncorporadoConteudo = aluno_conteudo_valor($detalhe, array('conteudo'), '');
+    $videoIncorporadoSrcdoc = $videoIncorporadoConteudo !== ''
+        ? '<style>html,body{margin:0;padding:0;height:100%;overflow:hidden}iframe,video,embed,object{width:100%;height:100%;border:0;display:block}</style>' . $videoIncorporadoConteudo
+        : '';
+    ?>
+    <div class="dc-study-card">
+      <div class="dc-study-card__head"><strong>Vídeo do conteúdo</strong><span class="dc-badge dc-badge-novo"><?php echo Helpers::e($statusTexto); ?></span></div>
+      <?php if ($videoIncorporadoConteudo !== ''): ?>
+        <div style="position:relative;width:calc(100% + 32px);margin-left:-16px;margin-right:-16px;padding-top:56.25%;border-radius:12px;overflow:hidden;background:#000;">
+          <iframe
+            id="conteudo-video-incorporado-frame-<?php echo $itemId; ?>"
+            sandbox="allow-scripts allow-popups"
+            title="<?php echo Helpers::e($itemTitulo); ?>"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            srcdoc="<?php echo Helpers::e($videoIncorporadoSrcdoc); ?>"
+            style="position:absolute;inset:0;width:100%;height:100%;border:0;"
+          ></iframe>
+        </div>
       <?php else: ?>
         <p class="dc-study-note">Não há vídeo disponível para este conteúdo.</p>
       <?php endif; ?>

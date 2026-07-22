@@ -25,6 +25,7 @@ $tipoIcone = array(
     'avaliacao_textual' => array('ti-pencil', '#ffe4ea', '#c00030'),
     'quiz' => array('ti-help-circle', '#faeeda', '#854F0B'),
     'html' => array('ti-code', '#e0f2fe', '#075985'),
+    'video_incorporado' => array('ti-player-play', '#fff4ec', '#FF6A00'),
 );
 ?>
 

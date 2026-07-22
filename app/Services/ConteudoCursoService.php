@@ -19,6 +19,7 @@ use App\Models\ConteudoProgressoAluno;
 use App\Models\ConteudoQuiz;
 use App\Models\ConteudoTexto;
 use App\Models\ConteudoVideo;
+use App\Models\ConteudoVideoIncorporado;
 use App\Models\Inscricao;
 use App\Services\ConteudoQuizService;
 use App\Services\TrashService;
@@ -28,7 +29,7 @@ use Exception;
 
 class ConteudoCursoService
 {
-    private const TIPOS_ITEM_VALIDOS = array('etiqueta', 'texto', 'arquivo', 'link', 'avaliacao_textual', 'video', 'quiz', 'html');
+    private const TIPOS_ITEM_VALIDOS = array('etiqueta', 'texto', 'arquivo', 'link', 'avaliacao_textual', 'video', 'quiz', 'html', 'video_incorporado');
     private const STATUS_ITEM_VALIDOS = array('rascunho', 'publicado', 'oculto', 'arquivado');
     private const STATUS_MODULO_VALIDOS = array('rascunho', 'publicado', 'oculto', 'arquivado');
     private const STATUS_PROGRESO_VALIDOS = array('nao_iniciado', 'acessado', 'em_andamento', 'concluido', 'pendente_correcao', 'reprovado');
@@ -44,6 +45,7 @@ class ConteudoCursoService
     private $arquivoVersaoModel;
     private $linkModel;
     private $videoModel;
+    private $videoIncorporadoModel;
     private $avaliacaoTextualModel;
     private $avaliacaoEntregaModel;
     private $progressoModel;
@@ -67,6 +69,7 @@ class ConteudoCursoService
         $this->arquivoVersaoModel = new ConteudoArquivoVersao();
         $this->linkModel = new ConteudoLink();
         $this->videoModel = new ConteudoVideo();
+        $this->videoIncorporadoModel = new ConteudoVideoIncorporado();
         $this->avaliacaoTextualModel = new ConteudoAvaliacaoTextual();
         $this->avaliacaoEntregaModel = new ConteudoAvaliacaoEntrega();
         $this->progressoModel = new ConteudoProgressoAluno();
@@ -1369,6 +1372,14 @@ class ConteudoCursoService
             return;
         }
 
+        if ($tipo === 'video_incorporado') {
+            $registro = $this->videoIncorporadoModel->findByItemId($itemIdOrigem);
+            if ($registro && isset($registro['conteudo'])) {
+                $this->videoIncorporadoModel->upsertByItemId($itemIdDestino, $registro['conteudo']);
+            }
+            return;
+        }
+
         if ($tipo === 'link') {
             $registro = $this->linkModel->findByItemId($itemIdOrigem);
             if ($registro && isset($registro['url'])) {
@@ -1588,6 +1599,9 @@ class ConteudoCursoService
         }
         if ($tipo === 'html') {
             return $this->htmlModel->findByItemId($itemId);
+        }
+        if ($tipo === 'video_incorporado') {
+            return $this->videoIncorporadoModel->findByItemId($itemId);
         }
         if ($tipo === 'etiqueta') {
             return $this->etiquetaModel->findByItemId($itemId);
@@ -1812,6 +1826,7 @@ class ConteudoCursoService
             'avaliacao_textual'=> 'Avaliação textual',
             'quiz'             => 'Quiz',
             'html'             => 'HTML',
+            'video_incorporado'=> 'Vídeo incorporado',
         );
 
         $tipo = (string) $tipo;
@@ -1834,6 +1849,9 @@ class ConteudoCursoService
             return 'Acessar link';
         }
         if ($tipo === 'video') {
+            return 'Assistir vídeo';
+        }
+        if ($tipo === 'video_incorporado') {
             return 'Assistir vídeo';
         }
         if ($tipo === 'avaliacao_textual') {
@@ -1945,6 +1963,19 @@ class ConteudoCursoService
                 return array('ok' => false, 'message' => 'Informe o HTML do conteúdo.');
             }
             $this->htmlModel->upsertByItemId($itemId, $conteudo);
+            return array('ok' => true);
+        }
+
+        if ($tipo === 'video_incorporado') {
+            // Mesma logica do tipo "html": o codigo de embed (normalmente um
+            // <iframe> do provedor de video) e gravado sem HtmlSanitizer::clean()
+            // e exibido ao aluno dentro de um iframe sandboxed proprio, em caixa
+            // de proporcao 16:9 (ver resources/views/aluno/curso/conteudo.php).
+            $conteudo = isset($dados['video_incorporado_conteudo']) ? (string) $dados['video_incorporado_conteudo'] : '';
+            if (trim($conteudo) === '') {
+                return array('ok' => false, 'message' => 'Informe o código de incorporação (embed) do vídeo.');
+            }
+            $this->videoIncorporadoModel->upsertByItemId($itemId, $conteudo);
             return array('ok' => true);
         }
 

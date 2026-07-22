@@ -1,4 +1,4 @@
-<?php use App\Core\Helpers; use App\Core\Session; use App\Support\HtmlEmbedRenderer; ?>
+<?php use App\Core\Helpers; use App\Core\Session; use App\Support\HtmlEmbedRenderer; use App\Support\VideoEmbedResolver; ?>
 <?php
 if (!isset($frontend_template)) { try { $frontend_template = (new \App\Services\ConfiguracaoGlobalService())->templateVisualPortal(); } catch (\Throwable $e) { $frontend_template = 'v1'; } }
 if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resources/views/v4-claude/aluno/curso/conteudo.php'; return; }
@@ -190,6 +190,12 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $anteriorLabel, $p
                 ></iframe>
             </article>
         <?php elseif ($tipo === 'arquivo'): ?>
+            <?php
+            $arquivoExtensao = trim((string) aluno_conteudo_valor($detalhe, array('extensao'), ''), '. ');
+            $arquivoNome = trim((string) aluno_conteudo_valor($detalhe, array('nome_original', 'nome_arquivo'), ''));
+            $arquivoTamanho = Helpers::formatarTamanhoArquivo(aluno_conteudo_valor($detalhe, array('tamanho_bytes'), 0));
+            $arquivoIcone = Helpers::iconeArquivo($arquivoExtensao);
+            ?>
             <article class="conteudo-item-file">
                 <div class="conteudo-item-file__header">
                     <strong>Arquivo do conteúdo</strong>
@@ -199,7 +205,15 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $anteriorLabel, $p
                     <div class="conteudo-item-file__description"><?php echo $renderRich($conteudoTexto, 'basic'); ?></div>
                 <?php endif; ?>
                 <?php if ($arquivoDisponivel): ?>
-                    <div class="conteudo-item-actions">
+                    <div class="conteudo-item-file__card">
+                        <span class="conteudo-item-file__icon" aria-hidden="true"><?php echo $arquivoIcone; ?></span>
+                        <div class="conteudo-item-file__info">
+                            <strong class="conteudo-item-file__name"><?php echo Helpers::e($arquivoNome !== '' ? $arquivoNome : $itemTitulo); ?></strong>
+                            <span class="conteudo-item-file__specs">
+                                <?php if ($arquivoExtensao !== ''): ?><span class="pill pill--neutral"><?php echo Helpers::e(strtoupper($arquivoExtensao)); ?></span><?php endif; ?>
+                                <?php if ($arquivoTamanho !== ''): ?><span><?php echo Helpers::e($arquivoTamanho); ?></span><?php endif; ?>
+                            </span>
+                        </div>
                         <a class="button-link" href="<?php echo Helpers::e($arquivoUrl); ?>">Baixar arquivo</a>
                     </div>
                 <?php else: ?>
@@ -207,21 +221,34 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $anteriorLabel, $p
                 <?php endif; ?>
             </article>
         <?php elseif ($tipo === 'link'): ?>
+            <?php
+            $linkUrlRaw = (string) aluno_conteudo_valor($detalhe, array('url'), '');
+            $linkHost = $linkUrlRaw !== '' ? (string) preg_replace('/^www\./', '', (string) parse_url($linkUrlRaw, PHP_URL_HOST)) : '';
+            $linkDescricao = $conteudoTexto !== '' ? $conteudoTexto : $descricaoCurta;
+            ?>
             <article class="conteudo-item-link">
                 <div class="conteudo-item-link__meta">
                     <strong>Link de acesso</strong>
                     <span class="pill <?php echo Helpers::e($statusClasse); ?>"><?php echo Helpers::e($statusTexto); ?></span>
                 </div>
-                <?php if ($conteudoTexto !== ''): ?>
-                    <div class="conteudo-item-link__description"><?php echo $renderRich($conteudoTexto, 'basic'); ?></div>
+                <?php if ($linkDescricao !== ''): ?>
+                    <div class="conteudo-item-link__description"><?php echo $renderRich($linkDescricao, 'basic'); ?></div>
                 <?php endif; ?>
                 <?php if ($arquivoDisponivel): ?>
-                    <div class="conteudo-item-actions">
-                        <a class="button-link" href="<?php echo Helpers::e($arquivoUrl); ?>">Abrir link</a>
+                    <div class="conteudo-item-link__card">
+                        <span class="conteudo-item-link__icon" aria-hidden="true">🔗</span>
+                        <div class="conteudo-item-link__info">
+                            <strong class="conteudo-item-link__name"><?php echo Helpers::e($itemTitulo); ?></strong>
+                            <?php if ($linkHost !== ''): ?><span class="conteudo-item-link__host"><?php echo Helpers::e($linkHost); ?></span><?php endif; ?>
+                        </div>
+                        <a class="button-link" href="<?php echo Helpers::e($arquivoUrl); ?>">Abrir link ↗</a>
                     </div>
+                <?php else: ?>
+                    <p class="conteudo-item-note">O link não está disponível no momento.</p>
                 <?php endif; ?>
             </article>
         <?php elseif ($tipo === 'video'): ?>
+            <?php $videoEmbedInfo = $videoEmbed !== '' ? null : VideoEmbedResolver::resolve($videoUrl); ?>
             <article class="conteudo-item-video">
                 <div class="conteudo-item-video__meta">
                     <strong>Vídeo do conteúdo</strong>
@@ -231,9 +258,57 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $anteriorLabel, $p
                     <div class="conteudo-item-video__embed">
                         <?php echo $renderRich($videoEmbed, 'full'); ?>
                     </div>
+                <?php elseif ($videoEmbedInfo !== null): ?>
+                    <div class="conteudo-item-video__player">
+                        <iframe
+                            src="<?php echo Helpers::e($videoEmbedInfo['embedUrl']); ?>"
+                            title="<?php echo Helpers::e($itemTitulo); ?>"
+                            loading="lazy"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            allowfullscreen
+                        ></iframe>
+                    </div>
+                    <?php if ($videoUrl !== ''): ?>
+                        <p class="conteudo-item-video__external">
+                            <a href="<?php echo Helpers::e($videoUrl); ?>" target="_blank" rel="noopener noreferrer">Abrir no site original ↗</a>
+                        </p>
+                    <?php endif; ?>
                 <?php elseif ($videoUrl !== ''): ?>
                     <div class="conteudo-item-actions">
-                        <a class="button-link" href="<?php echo Helpers::e($videoUrl); ?>" target="_blank" rel="noopener noreferrer">Assistir vídeo</a>
+                        <a class="button-link" href="<?php echo Helpers::e($videoUrl); ?>" target="_blank" rel="noopener noreferrer">Assistir vídeo ↗</a>
+                    </div>
+                <?php else: ?>
+                    <p class="conteudo-item-note">Não há vídeo disponível para este conteúdo.</p>
+                <?php endif; ?>
+                <?php if ($conteudoTexto !== ''): ?>
+                    <div class="conteudo-item-note"><?php echo $renderRich($conteudoTexto, 'basic'); ?></div>
+                <?php endif; ?>
+            </article>
+        <?php elseif ($tipo === 'video_incorporado'): ?>
+            <?php
+            $videoIncorporadoConteudo = aluno_conteudo_valor($detalhe, array('conteudo'), '');
+            $videoIncorporadoSrcdoc = $videoIncorporadoConteudo !== ''
+                ? '<style>html,body{margin:0;padding:0;height:100%;overflow:hidden}iframe,video,embed,object{width:100%;height:100%;border:0;display:block}</style>' . $videoIncorporadoConteudo
+                : '';
+            ?>
+            <article class="conteudo-item-video">
+                <div class="conteudo-item-video__meta">
+                    <strong>Vídeo do conteúdo</strong>
+                    <span class="pill <?php echo Helpers::e($statusClasse); ?>"><?php echo Helpers::e($statusTexto); ?></span>
+                </div>
+                <?php if ($videoIncorporadoConteudo !== ''): ?>
+                    <div class="conteudo-item-video__player">
+                        <iframe
+                            id="conteudo-video-incorporado-frame-<?php echo $itemId; ?>"
+                            class="conteudo-item-video__frame"
+                            sandbox="allow-scripts allow-popups"
+                            title="<?php echo Helpers::e($itemTitulo); ?>"
+                            loading="lazy"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen
+                            srcdoc="<?php echo Helpers::e($videoIncorporadoSrcdoc); ?>"
+                        ></iframe>
                     </div>
                 <?php else: ?>
                     <p class="conteudo-item-note">Não há vídeo disponível para este conteúdo.</p>

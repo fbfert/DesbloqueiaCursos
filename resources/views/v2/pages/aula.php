@@ -84,10 +84,47 @@ $mostrarVisaoGeral = !$itemInacessivel && !$item && $temConteudo;
             <?php if ($tipo === 'video'): ?>
               <?php if (trim((string) $item['video_embed']) !== ''): ?>
                 <div class="v2-lms-video-embed"><?php echo Helpers::renderSafeHtml((string) $item['video_embed'], 'full'); ?></div>
+              <?php elseif (!empty($item['video_embed_resolvido'])): ?>
+                <div class="v2-lms-video-player">
+                  <iframe
+                    src="<?php echo Helpers::e($item['video_embed_resolvido']['embedUrl']); ?>"
+                    title="<?php echo Helpers::e((string) $item['titulo']); ?>"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+                <?php if (trim((string) $item['video_url']) !== ''): ?>
+                  <p class="v2-muted v2-sm" style="margin-top:8px;"><a href="<?php echo Helpers::e((string) $item['video_url']); ?>" target="_blank" rel="noopener noreferrer">Abrir no site original ↗</a></p>
+                <?php endif; ?>
               <?php elseif (trim((string) $item['video_url']) !== ''): ?>
                 <div class="v2-lms-material">
                   <a class="v2-btn v2-btn-primary" href="<?php echo Helpers::e((string) $item['video_url']); ?>" target="_blank" rel="noopener noreferrer"><i class="ti ti-player-play"></i> Assistir vídeo</a>
                 </div>
+              <?php else: ?>
+                <p class="v2-muted">Não há vídeo disponível para este conteúdo.</p>
+              <?php endif; ?>
+            <?php endif; ?>
+
+            <?php if ($tipo === 'video_incorporado'): ?>
+              <?php if (trim((string) $item['video_incorporado_conteudo']) !== ''): ?>
+                <?php
+                $videoIncorporadoSrcdoc = '<style>html,body{margin:0;padding:0;height:100%;overflow:hidden}iframe,video,embed,object{width:100%;height:100%;border:0;display:block}</style>' . $item['video_incorporado_conteudo'];
+                ?>
+                <div class="v2-lms-video-player">
+                  <iframe
+                    id="conteudo-video-incorporado-frame-<?php echo (int) $item['id']; ?>"
+                    sandbox="allow-scripts allow-popups"
+                    title="<?php echo Helpers::e((string) $item['titulo']); ?>"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen
+                    srcdoc="<?php echo Helpers::e($videoIncorporadoSrcdoc); ?>"
+                  ></iframe>
+                </div>
+              <?php else: ?>
+                <p class="v2-muted">Não há vídeo disponível para este conteúdo.</p>
               <?php endif; ?>
             <?php endif; ?>
 
@@ -110,25 +147,42 @@ $mostrarVisaoGeral = !$itemInacessivel && !$item && $temConteudo;
               </article>
 
             <?php elseif ($tipo === 'arquivo'): ?>
-              <div class="v2-lms-material">
-                <?php if (trim((string) $item['acao_url']) !== ''): ?>
-                  <a class="v2-btn v2-btn-primary" href="<?php echo Helpers::e((string) $item['acao_url']); ?>"><i class="ti ti-download"></i> Baixar material</a>
-                <?php else: ?>
-                  <p class="v2-muted">O material não está disponível no momento.</p>
-                <?php endif; ?>
-              </div>
-
-            <?php elseif ($tipo === 'link'): ?>
               <?php if (trim((string) $item['texto_html']) !== ''): ?>
                 <div class="v2-lms-prose"><?php echo Helpers::renderSafeHtml((string) $item['texto_html'], 'basic'); ?></div>
               <?php endif; ?>
-              <div class="v2-lms-material">
-                <?php if (trim((string) $item['acao_url']) !== ''): ?>
+              <?php if (trim((string) $item['acao_url']) !== ''): ?>
+                <div class="v2-lms-file-card">
+                  <span class="v2-lms-file-card__icon" aria-hidden="true"><?php echo $item['arquivo_icone']; ?></span>
+                  <div class="v2-lms-file-card__info">
+                    <strong><?php echo Helpers::e($item['arquivo_nome'] !== '' ? $item['arquivo_nome'] : (string) $item['titulo']); ?></strong>
+                    <span class="v2-muted v2-sm">
+                      <?php echo $item['arquivo_extensao'] !== '' ? Helpers::e(strtoupper($item['arquivo_extensao'])) : ''; ?>
+                      <?php echo $item['arquivo_tamanho'] !== '' ? ' · ' . Helpers::e($item['arquivo_tamanho']) : ''; ?>
+                    </span>
+                  </div>
+                  <a class="v2-btn v2-btn-primary" href="<?php echo Helpers::e((string) $item['acao_url']); ?>"><i class="ti ti-download"></i> Baixar material</a>
+                </div>
+              <?php else: ?>
+                <p class="v2-muted">O material não está disponível no momento.</p>
+              <?php endif; ?>
+
+            <?php elseif ($tipo === 'link'): ?>
+              <?php $linkDescricao = trim((string) $item['texto_html']) !== '' ? (string) $item['texto_html'] : (string) $item['descricao_curta']; ?>
+              <?php if (trim($linkDescricao) !== ''): ?>
+                <div class="v2-lms-prose"><?php echo Helpers::renderSafeHtml($linkDescricao, 'basic'); ?></div>
+              <?php endif; ?>
+              <?php if (trim((string) $item['acao_url']) !== ''): ?>
+                <div class="v2-lms-file-card">
+                  <span class="v2-lms-file-card__icon" aria-hidden="true">🔗</span>
+                  <div class="v2-lms-file-card__info">
+                    <strong><?php echo Helpers::e((string) $item['titulo']); ?></strong>
+                    <?php if ($item['link_host'] !== ''): ?><span class="v2-muted v2-sm"><?php echo Helpers::e($item['link_host']); ?></span><?php endif; ?>
+                  </div>
                   <a class="v2-btn v2-btn-primary" href="<?php echo Helpers::e((string) $item['acao_url']); ?>"><i class="ti ti-external-link"></i> Abrir link</a>
-                <?php else: ?>
-                  <p class="v2-muted">O link não está disponível no momento.</p>
-                <?php endif; ?>
-              </div>
+                </div>
+              <?php else: ?>
+                <p class="v2-muted">O link não está disponível no momento.</p>
+              <?php endif; ?>
 
             <?php elseif ($tipo === 'quiz' && trim((string) ($item['quiz_url'] ?? '')) !== ''): ?>
               <div class="v2-block">

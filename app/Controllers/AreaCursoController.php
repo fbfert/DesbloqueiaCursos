@@ -482,6 +482,8 @@ class AreaCursoController extends Controller
             $acao = 'abriu_html';
         } elseif ((string) $item['tipo'] === 'video') {
             $acao = 'abriu_video';
+        } elseif ((string) $item['tipo'] === 'video_incorporado') {
+            $acao = 'abriu_video_incorporado';
         } elseif ((string) $item['tipo'] === 'avaliacao_textual') {
             $acao = 'visualizou_avaliacao_textual';
         }

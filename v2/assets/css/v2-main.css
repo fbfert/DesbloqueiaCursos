@@ -1072,6 +1072,38 @@ body.v2-modal-open { overflow: hidden; }
 .v2-app .v2-lms-demonote { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; }
 .v2-app .v2-lms-material i { display: block; }
 
+/* Player de vídeo (tipo "video" com embed automático e "video_incorporado") — caixa 16:9 */
+.v2-app .v2-lms-video-player {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-top: 56.25%;
+  border-radius: var(--v2-radius-lg);
+  overflow: hidden;
+  background: #000;
+  margin-bottom: 12px;
+}
+.v2-app .v2-lms-video-player iframe {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
+}
+
+/* Card de material (arquivo/link) — ícone + nome + meta + ação */
+.v2-app .v2-lms-file-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--v2-radius-lg);
+  border: 1px solid var(--v2-border);
+  background: var(--v2-surface);
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.v2-app .v2-lms-file-card__icon { font-size: 28px; line-height: 1; flex: 0 0 auto; }
+.v2-app .v2-lms-file-card__info { flex: 1 1 200px; min-width: 0; display: grid; gap: 4px; }
+.v2-app .v2-lms-file-card__info strong { word-break: break-word; }
+.v2-app .v2-lms-file-card .v2-btn { flex: 0 0 auto; }
+
 /* Navegação anterior/próxima — empilha em telas estreitas */
 @media (max-width: 400px) { .v2-app .v2-lms-nav { flex-direction: column; } }
 

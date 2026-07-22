@@ -7,8 +7,10 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Core\Helpers;
 use App\Services\AreaCursoService;
 use App\Services\ConteudoCursoService;
+use App\Support\VideoEmbedResolver;
 
 /**
  * LMS V2 (Fase 2.7) — estritamente LEITURA e NAVEGAÇÃO.
@@ -325,12 +327,23 @@ class AulaController extends Controller
         }
         $videoEmbed = $this->valorDetalhe($detalhe, array('embed_html', 'embed', 'html'));
         $videoUrl = $this->valorDetalhe($detalhe, array('url', 'video_url', 'link'));
+        $videoEmbedResolvido = $videoEmbed === '' ? VideoEmbedResolver::resolve($videoUrl) : null;
+        $videoIncorporadoConteudo = $tipo === 'video_incorporado' ? $this->valorDetalhe($detalhe, array('conteudo')) : '';
+
+        $arquivoExtensao = trim((string) $this->valorDetalhe($detalhe, array('extensao')), '. ');
+        $arquivoNome = trim((string) $this->valorDetalhe($detalhe, array('nome_original', 'nome_arquivo')));
+        $arquivoTamanho = Helpers::formatarTamanhoArquivo($this->valorDetalhe($detalhe, array('tamanho_bytes')));
+        $arquivoIcone = Helpers::iconeArquivo($arquivoExtensao);
+
+        $linkUrlRaw = (string) $this->valorDetalhe($detalhe, array('url'));
+        $linkHost = $linkUrlRaw !== '' ? (string) preg_replace('/^www\./', '', (string) parse_url($linkUrlRaw, PHP_URL_HOST)) : '';
+        $descricaoCurta = trim((string) ($item['descricao_curta'] ?? ''));
 
         $tiposInterativos = array('quiz', 'avaliacao_textual', 'atividade');
         $ehInterativo = in_array($tipo, $tiposInterativos, true);
         // Conclusão manual só para os tipos que o LMS atual permite concluir
         // (o service `concluirItemAluno` rejeita quiz e avaliacao_textual).
-        $podeConcluir = in_array($tipo, array('texto', 'video', 'arquivo', 'link', 'html'), true);
+        $podeConcluir = in_array($tipo, array('texto', 'video', 'arquivo', 'link', 'html', 'video_incorporado'), true);
 
         return array(
             'id' => (int) ($item['id'] ?? 0),
@@ -346,6 +359,14 @@ class AulaController extends Controller
             'texto_html' => $texto,
             'video_embed' => $videoEmbed,
             'video_url' => $videoUrl,
+            'video_embed_resolvido' => $videoEmbedResolvido,
+            'video_incorporado_conteudo' => $videoIncorporadoConteudo,
+            'arquivo_extensao' => $arquivoExtensao,
+            'arquivo_nome' => $arquivoNome,
+            'arquivo_tamanho' => $arquivoTamanho,
+            'arquivo_icone' => $arquivoIcone,
+            'link_host' => $linkHost,
+            'descricao_curta' => $descricaoCurta,
             'acao_url' => (string) ($item['acao_url'] ?? ''),
             'eh_interativo' => $ehInterativo,
             // Rota oficial atual do item no LMS (para abrir a atividade/quiz real).

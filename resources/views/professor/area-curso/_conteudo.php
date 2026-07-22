@@ -69,6 +69,7 @@ $formatTipoLabel = function ($tipo) {
         'video' => 'Vídeo',
         'quiz' => 'Quiz',
         'html' => 'HTML',
+        'video_incorporado' => 'Vídeo incorporado',
     );
     $tipo = (string) $tipo;
     return isset($mapa[$tipo]) ? $mapa[$tipo] : ucfirst(str_replace('_', ' ', $tipo));
@@ -84,6 +85,7 @@ $formatTipoHint = function ($tipo) {
         'video' => 'Vídeo via URL (embed).',
         'quiz' => 'Atividade de múltipla escolha.',
         'html' => 'Página HTML/CSS/JS própria, exibida isolada.',
+        'video_incorporado' => 'Vídeo com embed colado, exibido num player 16:9.',
     );
     $tipo = (string) $tipo;
     return isset($mapa[$tipo]) ? $mapa[$tipo] : '';

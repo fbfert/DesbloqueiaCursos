@@ -29,6 +29,7 @@ $formatTipoHint = function ($tipo) {
         'avaliacao_textual' => 'Atividade com envio e correção textual.',
         'video' => 'Vídeo via URL (embed).',
         'html' => 'Página HTML/CSS/JS própria, exibida isolada (iframe).',
+        'video_incorporado' => 'Vídeo com código de incorporação (embed) colado direto.',
     );
     $tipo = (string) $tipo;
     return isset($mapa[$tipo]) ? $mapa[$tipo] : '';
@@ -96,11 +97,12 @@ $editorValue = function ($value) {
                         <option value="video" title="<?php echo Helpers::e($formatTipoHint('video')); ?>" <?php echo $tipoSelecionado === 'video' ? 'selected' : ''; ?>>Vídeo</option>
                         <option value="quiz" <?php echo $tipoSelecionado === 'quiz' ? 'selected' : ''; ?>>Quiz (múltipla escolha)</option>
                         <option value="html" title="<?php echo Helpers::e($formatTipoHint('html')); ?>" <?php echo $tipoSelecionado === 'html' ? 'selected' : ''; ?>>HTML</option>
+                        <option value="video_incorporado" title="<?php echo Helpers::e($formatTipoHint('video_incorporado')); ?>" <?php echo $tipoSelecionado === 'video_incorporado' ? 'selected' : ''; ?>>Vídeo incorporado</option>
                     </select>
                 </label>
 
                 <div class="muted" style="grid-column: 1 / -1;">
-                    Etiqueta: bloco de orientação exibido ao aluno. | Texto: página de conteúdo com editor. | Arquivo: material para download. | Link: endereço externo, botão ou embed. | Avaliação textual: pergunta discursiva com nota e feedback. | Vídeo: vídeo incorporado por link/embed. | Quiz: atividade de múltipla escolha com correção automática. | HTML: página HTML/CSS/JS própria, colada e exibida isolada.
+                    Etiqueta: bloco de orientação exibido ao aluno. | Texto: página de conteúdo com editor. | Arquivo: material para download. | Link: endereço externo, botão ou embed. | Avaliação textual: pergunta discursiva com nota e feedback. | Vídeo: vídeo incorporado por link/embed. | Quiz: atividade de múltipla escolha com correção automática. | HTML: página HTML/CSS/JS própria, colada e exibida isolada. | Vídeo incorporado: cole o código de embed (iframe) de um provedor de vídeo, exibido num player 16:9.
                 </div>
 
                 <label>
@@ -238,6 +240,18 @@ $editorValue = function ($value) {
                     </div>
                 </div>
 
+                <div id="conteudo-tipo-video_incorporado" class="form-grid" style="grid-column: 1 / -1;">
+                    <h4 style="margin:0;">Vídeo incorporado</h4>
+                    <p class="muted" style="margin:0;">Cole aqui o código de incorporação (embed) fornecido pelo provedor do vídeo (ex.: YouTube, Vimeo, Panda, Wistia — normalmente um <code>&lt;iframe&gt;</code>). O código é gravado como está, sem edição, e exibido ao aluno num player de proporção 16:9, dentro de uma área isolada.</p>
+                    <label class="admin-form-grid__full">
+                        Código de incorporação (embed)
+                        <textarea name="video_incorporado_conteudo" id="conteudo-video-incorporado-source" rows="12" style="font-family: monospace; white-space: pre;" spellcheck="false"><?php echo Helpers::e((string) $value('video_incorporado_conteudo', !empty($detalhe['conteudo']) ? $detalhe['conteudo'] : '')); ?></textarea>
+                    </label>
+                    <div class="cta-group">
+                        <button type="button" id="conteudo-video-incorporado-preview-btn" class="button-link button-link--ghost">Pré-visualizar em nova aba</button>
+                    </div>
+                </div>
+
                 <?php
                 // --- Bloco Quiz ---
                 $quizDetalhe = ($tipoSelecionado === 'quiz' && !empty($detalhe) && isset($detalhe['id'])) ? $detalhe : array();
@@ -355,7 +369,8 @@ $editorValue = function ($value) {
             avaliacao_textual: document.getElementById('conteudo-tipo-avaliacao'),
             arquivo: document.getElementById('conteudo-tipo-arquivo'),
             quiz: document.getElementById('conteudo-tipo-quiz'),
-            html: document.getElementById('conteudo-tipo-html')
+            html: document.getElementById('conteudo-tipo-html'),
+            video_incorporado: document.getElementById('conteudo-tipo-video_incorporado')
         };
 
         Object.keys(blocks).forEach(function (key) {
@@ -415,6 +430,16 @@ $editorValue = function ($value) {
         }
     }
 
+    function previewVideoIncorporado() {
+        var source = document.getElementById('conteudo-video-incorporado-source');
+        var input = document.getElementById('conteudo-html-preview-input');
+        var form = document.getElementById('conteudo-html-preview-form');
+        if (source && input && form) {
+            input.value = source.value;
+            form.submit();
+        }
+    }
+
     function init() {
         toggleTipo();
         bootConteudoEditor();
@@ -429,6 +454,9 @@ $editorValue = function ($value) {
     document.addEventListener('click', function (event) {
         if (event.target && event.target.id === 'conteudo-html-preview-btn') {
             previewHtml();
+        }
+        if (event.target && event.target.id === 'conteudo-video-incorporado-preview-btn') {
+            previewVideoIncorporado();
         }
     });
 

@@ -144,6 +144,7 @@ class Helpers
             'etiqueta' => 'Etiqueta',
             'quiz' => 'Quiz',
             'html' => 'HTML',
+            'video_incorporado' => 'Vídeo incorporado',
         );
 
         if (isset($mapa[$tipo])) {
@@ -152,6 +153,42 @@ class Helpers
 
         $tipo = str_replace('_', ' ', $tipo);
         return $tipo !== '' ? ucwords($tipo) : '-';
+    }
+
+    public static function iconeArquivo($extensao)
+    {
+        $extensao = strtolower(trim((string) $extensao, '. '));
+        $mapa = array(
+            'pdf' => '📄',
+            'doc' => '📝', 'docx' => '📝', 'odt' => '📝', 'rtf' => '📝',
+            'xls' => '📊', 'xlsx' => '📊', 'csv' => '📊', 'ods' => '📊',
+            'ppt' => '📽️', 'pptx' => '📽️', 'odp' => '📽️',
+            'jpg' => '🖼️', 'jpeg' => '🖼️', 'png' => '🖼️', 'gif' => '🖼️', 'webp' => '🖼️', 'svg' => '🖼️',
+            'zip' => '🗜️', 'rar' => '🗜️', '7z' => '🗜️',
+            'mp3' => '🎵', 'wav' => '🎵', 'ogg' => '🎵',
+            'mp4' => '🎬', 'mov' => '🎬', 'avi' => '🎬', 'mkv' => '🎬',
+            'txt' => '📃',
+        );
+
+        return isset($mapa[$extensao]) ? $mapa[$extensao] : '📎';
+    }
+
+    public static function formatarTamanhoArquivo($bytes)
+    {
+        $bytes = (float) $bytes;
+        if ($bytes <= 0) {
+            return '';
+        }
+
+        $unidades = array('B', 'KB', 'MB', 'GB');
+        $i = 0;
+        while ($bytes >= 1024 && $i < count($unidades) - 1) {
+            $bytes /= 1024;
+            $i++;
+        }
+
+        $casas = ($i === 0) ? 0 : 1;
+        return number_format($bytes, $casas, ',', '.') . ' ' . $unidades[$i];
     }
 
     public static function path($relativePath = '')
