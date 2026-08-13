@@ -230,13 +230,22 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $proximoUrl) {
       <?php if (!empty($ultimaEntrega)): ?>
         <div class="dc-callout dc-callout-info" style="flex-direction:column;align-items:stretch;">
           <strong>Última entrega · <?php echo Helpers::e(Helpers::statusLms((string) ($ultimaEntrega['status'] ?? ''))); ?></strong>
+          <?php if (!empty($ultimaEntrega['imagens'])): ?>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;">
+              <?php foreach ($ultimaEntrega['imagens'] as $img): ?>
+                <a href="/aluno/cursos/conteudo/avaliacao/imagem?id=<?php echo (int) $img['id']; ?>" target="_blank" rel="noopener noreferrer" style="display:block;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--dc-border);">
+                  <img src="/aluno/cursos/conteudo/avaliacao/imagem?id=<?php echo (int) $img['id']; ?>" alt="<?php echo Helpers::e((string) ($img['nome_original'] ?? 'Imagem enviada')); ?>" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+                </a>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
           <?php if (!empty($ultimaEntrega['nota'])): ?><span>Nota: <?php echo Helpers::e(number_format((float) $ultimaEntrega['nota'], 2, ',', '.')); ?></span><?php endif; ?>
           <?php if (!empty($ultimaEntrega['feedback'])): ?><span><?php echo nl2br(Helpers::e((string) $ultimaEntrega['feedback'])); ?></span><?php endif; ?>
         </div>
       <?php endif; ?>
 
       <?php if ($avaliacaoPodeEnviar): ?>
-        <form method="post" action="/aluno/cursos/conteudo/avaliacao/enviar">
+        <form method="post" action="/aluno/cursos/conteudo/avaliacao/enviar" enctype="multipart/form-data">
           <?php echo $csrfField; ?>
           <input type="hidden" name="item_id" value="<?php echo (int) $itemId; ?>">
           <input type="hidden" name="modulo_id" value="<?php echo (int) $moduloId; ?>">
@@ -247,233 +256,36 @@ $renderNav = static function ($voltarModuloUrl, $anteriorUrl, $proximoUrl) {
             <label>Resposta</label>
             <textarea class="dc-input" name="resposta" rows="8" required placeholder="Digite sua resposta aqui"></textarea>
           </div>
+          <div class="dc-field">
+            <label>Imagens (opcional)</label>
+            <input class="dc-input" type="file" name="imagens[]" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple id="dc-avaliacao-imagens">
+            <span class="dc-study-note">Até 5 imagens (JPG, PNG ou WEBP), no máximo 1,5 MB cada.</span>
+            <span class="dc-study-note" data-imagens-erro hidden></span>
+          </div>
           <button type="submit" class="dc-btn dc-btn-primary dc-btn-block">Enviar resposta</button>
         </form>
+        <script>
+        (function () {
+            var input = document.getElementById('dc-avaliacao-imagens');
+            if (!input) { return; }
+            var erro = input.form.querySelector('[data-imagens-erro]');
+            input.addEventListener('change', function () {
+                if (input.files && input.files.length > 5) {
+                    if (erro) { erro.textContent = 'Selecione no máximo 5 imagens.'; erro.hidden = false; }
+                    input.value = '';
+                } else if (erro) {
+                    erro.hidden = true;
+                }
+            });
+        })();
+        </script>
       <?php else: ?>
         <p class="dc-study-note">O reenvio desta avaliação não está disponível no momento.</p>
       <?php endif; ?>
     </div>
 
   <?php elseif ($tipo === 'quiz'): ?>
-    <?php
-    // Carregar dados do quiz para o aluno (lógica preservada do fluxo original)
-    $quizService   = new \App\Services\ConteudoQuizService();
-    $quizParaAluno = $quizService->findQuizParaAluno($itemId, (int) Session::get('usuario_id'), $inscricaoId);
-    $tentativaIdAtiva = Session::pullFlash('quiz_tentativa_id');
-    $tentativaIdResultado = Session::pullFlash('quiz_tentativa_id_resultado');
-
-    $tentativaAtiva = null;
-    $resultadoTentativa = null;
-    if ($quizParaAluno) {
-        $quizId = (int) $quizParaAluno['id'];
-        $tentativaModel = new \App\Models\ConteudoQuizTentativa();
-        $tentativaAtiva = $tentativaModel->findEmAndamento($quizId, $inscricaoId);
-        if ($tentativaIdResultado) {
-            $resultadoTentativa = $quizService->obterTentativaParaAluno((int) $tentativaIdResultado, (int) Session::get('usuario_id'));
-        }
-    }
-    ?>
-    <div class="dc-study-card">
-      <div class="dc-study-card__head"><strong>Quiz</strong><span class="dc-badge dc-badge-novo"><?php echo Helpers::e($statusTexto); ?></span></div>
-
-      <?php if (!$quizParaAluno): ?>
-        <p class="dc-study-note">Este quiz ainda não está disponível.</p>
-
-      <?php elseif ($resultadoTentativa): ?>
-        <?php $tent = $resultadoTentativa['tentativa']; $qDados = $resultadoTentativa['quiz']; ?>
-        <?php if (!empty($qDados['exibir_resultado_apos_envio'])): ?>
-          <div class="dc-callout <?php echo !empty($tent['aprovado']) ? 'dc-callout-success' : 'dc-callout-warning'; ?>" style="flex-direction:column;align-items:stretch;">
-            <strong>Você acertou <?php echo (int) $tent['total_acertos']; ?> de <?php echo (int) $tent['total_perguntas']; ?> questões (<?php echo number_format((float) $tent['percentual'], 1); ?>%)</strong>
-            <?php if ($tent['aprovado'] !== null): ?>
-              <span><?php echo !empty($tent['aprovado']) ? 'Aprovado!' : 'Não atingiu o percentual mínimo.'; ?></span>
-            <?php endif; ?>
-          </div>
-        <?php endif; ?>
-
-        <?php if (!empty($qDados['exibir_gabarito_apos_envio']) || !empty($qDados['exibir_comentarios_apos_envio'])): ?>
-          <?php foreach ($resultadoTentativa['perguntas'] as $idxP => $pergunta): ?>
-            <div class="dc-quiz-pergunta">
-              <div class="dc-quiz-enunciado"><?php echo $idxP + 1; ?>. <?php echo nl2br(Helpers::e((string) ($pergunta['enunciado'] ?? ''))); ?></div>
-              <?php $resposta = $pergunta['resposta'] ?? null; ?>
-              <?php foreach ($pergunta['alternativas'] as $alt): ?>
-                <?php
-                $isRespondida = $resposta && (int) ($resposta['alternativa_id'] ?? 0) === (int) $alt['id'];
-                $isCorreta = isset($alt['correta']) && !empty($alt['correta']);
-                $cls = '';
-                if ($isCorreta) { $cls = 'dc-quiz-res-alt--correta'; }
-                elseif ($isRespondida && !$isCorreta) { $cls = 'dc-quiz-res-alt--errada'; }
-                ?>
-                <div class="dc-quiz-res-alt <?php echo $cls; ?>">
-                  <?php if ($isRespondida): ?><i class="ti ti-player-play-filled" style="font-size:12px;"></i><?php endif; ?>
-                  <?php if ($isCorreta): ?><i class="ti ti-circle-check"></i><?php endif; ?>
-                  <span><?php echo Helpers::e((string) ($alt['texto'] ?? '')); ?></span>
-                </div>
-              <?php endforeach; ?>
-              <?php if (!empty($qDados['exibir_comentarios_apos_envio']) && !empty($pergunta['explicacao'])): ?>
-                <p class="dc-study-note" style="font-style:italic;margin-top:6px;"><?php echo Helpers::e((string) $pergunta['explicacao']); ?></p>
-              <?php endif; ?>
-            </div>
-          <?php endforeach; ?>
-        <?php endif; ?>
-
-        <?php if ($quizParaAluno['pode_nova_tentativa']): ?>
-          <form method="post" action="/aluno/cursos/quiz/iniciar" style="margin-top:12px;">
-            <?php echo $csrfField; ?>
-            <input type="hidden" name="item_id" value="<?php echo $itemId; ?>">
-            <input type="hidden" name="modulo_id" value="<?php echo $moduloId; ?>">
-            <input type="hidden" name="inscricao_id" value="<?php echo $inscricaoId; ?>">
-            <input type="hidden" name="curso_id" value="<?php echo $cursoId; ?>">
-            <input type="hidden" name="turma_id" value="<?php echo $turmaId > 0 ? $turmaId : ''; ?>">
-            <button type="submit" class="dc-btn dc-btn-outline dc-btn-block"><i class="ti ti-refresh"></i> Nova tentativa</button>
-          </form>
-        <?php endif; ?>
-
-      <?php elseif ($tentativaAtiva): ?>
-        <?php
-        $respostasModel = new \App\Models\ConteudoQuizResposta();
-        $respostasSalvas = $respostasModel->listForTentativa((int) $tentativaAtiva['id']);
-        $respostasMapa = array();
-        foreach ($respostasSalvas as $r) {
-            $respostasMapa[(int) $r['pergunta_id']] = (int) ($r['alternativa_id'] ?? 0);
-        }
-        $perguntasQuiz = $quizParaAluno['perguntas'];
-        ?>
-        <div class="dc-study-note" style="margin-bottom:10px;">
-          Em andamento — tentativa <?php echo (int) ($tentativaAtiva['numero_tentativa'] ?? 1); ?> · <?php echo count($perguntasQuiz); ?> pergunta(s)
-          <?php if (!empty($quizParaAluno['tentativas_maximas'])): ?> · usadas <?php echo (int) ($quizParaAluno['tentativas_usadas'] ?? 0); ?>/<?php echo (int) $quizParaAluno['tentativas_maximas']; ?><?php endif; ?>
-        </div>
-        <?php if (!empty($quizParaAluno['instrucoes'])): ?>
-          <div class="dc-callout dc-callout-info"><i class="ti ti-info-circle"></i><span><?php echo nl2br(Helpers::e((string) $quizParaAluno['instrucoes'])); ?></span></div>
-        <?php endif; ?>
-
-        <form method="post" action="/aluno/cursos/quiz/enviar" id="quiz-form">
-          <?php echo $csrfField; ?>
-          <input type="hidden" name="tentativa_id" value="<?php echo (int) $tentativaAtiva['id']; ?>">
-          <input type="hidden" name="item_id" value="<?php echo $itemId; ?>">
-          <input type="hidden" name="modulo_id" value="<?php echo $moduloId; ?>">
-          <input type="hidden" name="inscricao_id" value="<?php echo $inscricaoId; ?>">
-          <input type="hidden" name="curso_id" value="<?php echo $cursoId; ?>">
-          <input type="hidden" name="turma_id" value="<?php echo $turmaId > 0 ? $turmaId : ''; ?>">
-
-          <?php foreach ($perguntasQuiz as $idxP => $pergunta): ?>
-            <?php
-            $pid = (int) $pergunta['id'];
-            $respostaSalva = isset($respostasMapa[$pid]) ? $respostasMapa[$pid] : 0;
-            $alts = $pergunta['alternativas'] ?? array();
-            ?>
-            <div class="dc-quiz-pergunta" data-pergunta-id="<?php echo $pid; ?>">
-              <div class="dc-quiz-enunciado" id="pergunta-<?php echo $pid; ?>">
-                <?php echo $idxP + 1; ?>. <?php echo nl2br(Helpers::e((string) ($pergunta['enunciado'] ?? ''))); ?>
-                <?php if (!empty($pergunta['obrigatoria'])): ?><span style="color:var(--dc-coral);" title="Obrigatória">*</span><?php endif; ?>
-              </div>
-              <div role="radiogroup" aria-labelledby="pergunta-<?php echo $pid; ?>">
-                <?php foreach ($alts as $alt): ?>
-                  <label class="dc-quiz-alt">
-                    <input type="radio" name="respostas[<?php echo $pid; ?>]" value="<?php echo (int) $alt['id']; ?>" <?php echo $respostaSalva === (int) $alt['id'] ? 'checked' : ''; ?>>
-                    <span><?php echo Helpers::e((string) ($alt['texto'] ?? '')); ?></span>
-                  </label>
-                <?php endforeach; ?>
-              </div>
-            </div>
-          <?php endforeach; ?>
-
-          <div class="dc-quiz-actions">
-            <button type="submit" class="dc-btn dc-btn-primary" id="quiz-submit-btn"><i class="ti ti-send"></i> Enviar respostas</button>
-            <button type="button" class="dc-btn dc-btn-ghost" id="quiz-save-btn"><i class="ti ti-device-floppy"></i> Salvar e continuar depois</button>
-          </div>
-          <p class="dc-study-note" style="margin-top:8px;">(*) Perguntas obrigatórias</p>
-        </form>
-
-        <script>
-        (function () {
-            var saveBtn = document.getElementById('quiz-save-btn');
-            var submitBtn = document.getElementById('quiz-submit-btn');
-            var form = document.getElementById('quiz-form');
-            if (!saveBtn || !form) { return; }
-
-            saveBtn.addEventListener('click', function () {
-                var formData = new FormData(form);
-                var payload = { respostas: {} };
-                var csrfToken = formData.get('_token') || formData.get('csrf_token') || '';
-                formData.forEach(function (v, k) {
-                    var m = k.match(/^respostas\[(\d+)\]$/);
-                    if (m) { payload.respostas[m[1]] = v; }
-                });
-
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'Salvando...';
-
-                fetch('/aluno/cursos/quiz/rascunho', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                    body: JSON.stringify({
-                        tentativa_id: <?php echo (int) $tentativaAtiva['id']; ?>,
-                        item_id: <?php echo $itemId; ?>,
-                        inscricao_id: <?php echo $inscricaoId; ?>,
-                        curso_id: <?php echo $cursoId; ?>,
-                        turma_id: <?php echo $turmaId > 0 ? $turmaId : 0; ?>,
-                        respostas: payload.respostas,
-                        _token: csrfToken
-                    })
-                })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = data.ok ? 'Salvo!' : 'Erro ao salvar';
-                    setTimeout(function () { saveBtn.textContent = 'Salvar e continuar depois'; }, 2000);
-                })
-                .catch(function () {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = 'Erro ao salvar';
-                });
-            });
-
-            form.addEventListener('submit', function (event) {
-                var perguntas = form.querySelectorAll('[data-pergunta-id]');
-                var faltando = [];
-                perguntas.forEach(function (el) {
-                    var pid = el.getAttribute('data-pergunta-id');
-                    var checked = el.querySelector('input[type="radio"]:checked');
-                    if (!checked) { faltando.push(pid); }
-                });
-                if (faltando.length > 0) {
-                    event.preventDefault();
-                    alert('Por favor, responda todas as perguntas antes de enviar.');
-                    return;
-                }
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Enviando...';
-                }
-            });
-        })();
-        </script>
-
-      <?php else: ?>
-        <?php $tentativas = $quizParaAluno['tentativas_usadas'] ?? 0; ?>
-        <?php if (!empty($quizParaAluno['instrucoes'])): ?>
-          <div class="dc-callout dc-callout-info"><i class="ti ti-info-circle"></i><span><?php echo nl2br(Helpers::e((string) $quizParaAluno['instrucoes'])); ?></span></div>
-        <?php endif; ?>
-        <p class="dc-study-note" style="margin-bottom:12px;">
-          <?php echo (int) $quizParaAluno['total_perguntas']; ?> pergunta(s)
-          <?php if ($quizParaAluno['tentativas_maximas'] !== null): ?> | Tentativas: <?php echo $tentativas; ?>/<?php echo (int) $quizParaAluno['tentativas_maximas']; ?>
-          <?php elseif ($tentativas > 0): ?> | <?php echo $tentativas; ?> tentativa(s) realizada(s)<?php endif; ?>
-        </p>
-        <?php if ($quizParaAluno['pode_nova_tentativa']): ?>
-          <form method="post" action="/aluno/cursos/quiz/iniciar">
-            <?php echo $csrfField; ?>
-            <input type="hidden" name="item_id" value="<?php echo $itemId; ?>">
-            <input type="hidden" name="modulo_id" value="<?php echo $moduloId; ?>">
-            <input type="hidden" name="inscricao_id" value="<?php echo $inscricaoId; ?>">
-            <input type="hidden" name="curso_id" value="<?php echo $cursoId; ?>">
-            <input type="hidden" name="turma_id" value="<?php echo $turmaId > 0 ? $turmaId : ''; ?>">
-            <button type="submit" class="dc-btn dc-btn-primary dc-btn-block"><i class="ti ti-player-play"></i> Iniciar quiz</button>
-          </form>
-        <?php else: ?>
-          <p class="dc-study-note">Você atingiu o número máximo de tentativas para este quiz.</p>
-        <?php endif; ?>
-      <?php endif; ?>
-    </div>
+    <?php require BASE_PATH . '/resources/views/v4-claude/aluno/curso/_quiz.php'; ?>
 
   <?php else: ?>
     <div class="dc-study-card"><p class="dc-study-note">Este conteúdo ainda não possui uma visualização específica.</p></div>

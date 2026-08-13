@@ -5,103 +5,37 @@
  * Execução: php tests/Unit/quiz_system.php
  */
 
-define('BASE_PATH', dirname(dirname(__DIR__)));
+// Bootstrap compartilhado: leitura do .env, conexão PDO, autoloader e
+// helpers describe/it/expect.
+require_once __DIR__ . '/_bootstrap.php';
 
-// Bootstrap mínimo
-$envFile = BASE_PATH . '/.env';
-if (!file_exists($envFile)) {
-    fwrite(STDERR, "ERRO: .env não encontrado\n");
-    exit(1);
-}
-$env = parse_ini_file($envFile, false, INI_SCANNER_RAW);
+$pdo = testes_conectar_banco();
 
-$pdo = new PDO(
-    "mysql:host={$env['DB_HOST']};port={$env['DB_PORT']};dbname={$env['DB_DATABASE']};charset=utf8mb4",
-    $env['DB_USERNAME'], $env['DB_PASSWORD'],
-    array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC)
-);
-
-// Autoloader
-spl_autoload_register(function ($class) {
-    $file = BASE_PATH . '/' . str_replace('\\', '/', str_replace('App\\', 'app/', $class)) . '.php';
-    if (file_exists($file)) {
-        require_once $file;
-    }
-});
-
-require_once BASE_PATH . '/app/Core/Database.php';
-\App\Core\Database::setConnection($pdo);
-
-// Helpers de teste
-$passed  = 0;
-$failed  = 0;
-$current = '';
-
-function describe(string $desc): void
+/**
+ * Cria a cadeia pedido -> item -> participante -> inscrição exigida pelas
+ * chaves estrangeiras de `inscricoes`.
+ */
+function criarInscricaoTeste(PDO $pdo, $usuarioId, $cursoId)
 {
-    global $current;
-    $current = $desc;
-    echo "\n  {$desc}\n";
-}
+    $pdo->prepare('INSERT INTO pedidos (comprador_usuario_id, pagador_usuario_id, codigo, created_at, updated_at)
+                   VALUES (:u, :u2, :c, NOW(), NOW())')
+        ->execute(array('u' => $usuarioId, 'u2' => $usuarioId, 'c' => 'TSTQZ' . substr(uniqid(), -10)));
+    $pedidoId = (int) $pdo->lastInsertId();
 
-function it(string $desc, callable $fn): void
-{
-    global $passed, $failed, $current;
-    try {
-        $fn();
-        echo "    ✓ {$desc}\n";
-        $passed++;
-    } catch (Throwable $e) {
-        echo "    ✗ {$desc}\n";
-        echo "      → " . $e->getMessage() . "\n";
-        $failed++;
-    }
-}
+    $pdo->prepare('INSERT INTO pedido_itens (pedido_id, curso_evento_id, created_at, updated_at) VALUES (:p, :c, NOW(), NOW())')
+        ->execute(array('p' => $pedidoId, 'c' => $cursoId));
+    $itemPedidoId = (int) $pdo->lastInsertId();
 
-function expect($actual): object
-{
-    return new class($actual) {
-        public function __construct(private $value) {}
-        public function toBe($expected): void
-        {
-            if ($this->value !== $expected) {
-                throw new RuntimeException("Expected " . json_encode($expected) . ", got " . json_encode($this->value));
-            }
-        }
-        public function toEqual($expected): void
-        {
-            if ($this->value != $expected) {
-                throw new RuntimeException("Expected " . json_encode($expected) . " (loose), got " . json_encode($this->value));
-            }
-        }
-        public function toBeTrue(): void { $this->toBe(true); }
-        public function toBeFalse(): void { $this->toBe(false); }
-        public function toBeNull(): void { $this->toBe(null); }
-        public function toBeGreaterThan($n): void
-        {
-            if (!($this->value > $n)) {
-                throw new RuntimeException("{$this->value} não é maior que {$n}");
-            }
-        }
-        public function toContain($needle): void
-        {
-            if (!in_array($needle, (array) $this->value, true)) {
-                throw new RuntimeException(json_encode($this->value) . " não contém " . json_encode($needle));
-            }
-        }
-        public function toHaveKey($key): void
-        {
-            if (!array_key_exists($key, (array) $this->value)) {
-                throw new RuntimeException(json_encode(array_keys((array) $this->value)) . " não tem chave {$key}");
-            }
-        }
-        public function notToBeNull(): void
-        {
-            if ($this->value === null) {
-                throw new RuntimeException("Esperava valor não-nulo");
-            }
-        }
-    };
+    $pdo->prepare('INSERT INTO participantes_pedido (pedido_id, pedido_item_id, usuario_id, nome, created_at, updated_at)
+                   VALUES (:p, :i, :u, \'__TestParticipante__\', NOW(), NOW())')
+        ->execute(array('p' => $pedidoId, 'i' => $itemPedidoId, 'u' => $usuarioId));
+    $participanteId = (int) $pdo->lastInsertId();
+
+    $pdo->prepare('INSERT INTO inscricoes (pedido_id, pedido_item_id, participante_pedido_id, curso_evento_id, usuario_id, status, created_at, updated_at)
+                   VALUES (:p, :i, :pa, :c, :u, \'ativa\', NOW(), NOW())')
+        ->execute(array('p' => $pedidoId, 'i' => $itemPedidoId, 'pa' => $participanteId, 'c' => $cursoId, 'u' => $usuarioId));
+
+    return (int) $pdo->lastInsertId();
 }
 
 // ----------------------------------------------------------------
@@ -162,26 +96,20 @@ foreach ($altData2 as $idx => $texto) {
 }
 
 // Criar aluno e inscrição de teste
-$pdo->prepare('INSERT INTO usuarios (nome, email, senha, cpf, status, created_at, updated_at)
+$pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at)
                VALUES (\'__TestAluno__\', \'testquiz@quiz.test\', :pass, \'00000000001\', \'ativo\', NOW(), NOW())')
     ->execute(array('pass' => password_hash('test123', PASSWORD_DEFAULT)));
 $alunoId = (int) $pdo->lastInsertId();
 
-$pdo->prepare('INSERT INTO inscricoes (usuario_id, curso_evento_id, status, created_at, updated_at)
-               VALUES (:uid, :cid, \'aprovada\', NOW(), NOW())')
-    ->execute(array('uid' => $alunoId, 'cid' => $cursoId));
-$inscricaoId = (int) $pdo->lastInsertId();
+$inscricaoId = criarInscricaoTeste($pdo, $alunoId, $cursoId);
 
 // Criar segundo aluno para teste de isolamento
-$pdo->prepare('INSERT INTO usuarios (nome, email, senha, cpf, status, created_at, updated_at)
+$pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at)
                VALUES (\'__TestAluno2__\', \'testquiz2@quiz.test\', :pass, \'00000000002\', \'ativo\', NOW(), NOW())')
     ->execute(array('pass' => password_hash('test123', PASSWORD_DEFAULT)));
 $aluno2Id = (int) $pdo->lastInsertId();
 
-$pdo->prepare('INSERT INTO inscricoes (usuario_id, curso_evento_id, status, created_at, updated_at)
-               VALUES (:uid, :cid, \'aprovada\', NOW(), NOW())')
-    ->execute(array('uid' => $aluno2Id, 'cid' => $cursoId));
-$inscricao2Id = (int) $pdo->lastInsertId();
+$inscricao2Id = criarInscricaoTeste($pdo, $aluno2Id, $cursoId);
 
 // Instanciar service
 $quizService = new \App\Services\ConteudoQuizService();
@@ -409,15 +337,17 @@ it('bloqueia nova tentativa quando limite atingido', function () use ($pdo, $qui
         ->execute(array('p' => $pidL, 'p2' => $pidL));
     $altLId = (int) $pdo->lastInsertId();
 
-    // Inscrição temporária
-    $pdo->prepare('INSERT INTO usuarios (nome, email, senha, cpf, status, created_at, updated_at) VALUES (\'__LimitAluno__\', \'limitquiz@quiz.test\', \'x\', \'99999999999\', \'ativo\', NOW(), NOW())')
+    // Aluno e inscrição temporários (as chaves estrangeiras exigem registros reais)
+    $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at) VALUES (\'__LimitAluno__\', \'limitquiz@quiz.test\', \'x\', \'99999999999\', \'ativo\', NOW(), NOW())')
         ->execute(array());
-    // Simplificar: usar inscrição existente
-    // Criar tentativa diretamente no banco como já corrigida
-    $pdo->prepare('INSERT INTO conteudo_quiz_tentativas (quiz_id, curso_evento_id, inscricao_id, aluno_id, numero_tentativa, status, created_at, updated_at) VALUES (:q, :c, 9999, 9999, 1, \'corrigida\', NOW(), NOW())')
-        ->execute(array('q' => $qidL, 'c' => $cursoId));
+    $limitAlunoId = (int) $pdo->lastInsertId();
+    $limitInscId  = criarInscricaoTeste($pdo, $limitAlunoId, $cursoId);
 
-    $pode = $quizService->podeFazerNovaTentativa($qidL, 9999);
+    // Criar tentativa diretamente no banco como já corrigida
+    $pdo->prepare('INSERT INTO conteudo_quiz_tentativas (quiz_id, curso_evento_id, inscricao_id, aluno_id, numero_tentativa, status, created_at, updated_at) VALUES (:q, :c, :i, :a, 1, \'corrigida\', NOW(), NOW())')
+        ->execute(array('q' => $qidL, 'c' => $cursoId, 'i' => $limitInscId, 'a' => $limitAlunoId));
+
+    $pode = $quizService->podeFazerNovaTentativa($qidL, $limitInscId);
     expect($pode)->toBeFalse();
 });
 
@@ -430,9 +360,7 @@ it('ignora alternativa de outra pergunta silenciosamente', function () use ($qui
     // O service deve ignorar ao gravar (não causar erro)
     // Verificamos indiretamente: iniciar nova tentativa e salvar rascunho com alt inválida
     $pdo = \App\Core\Database::connection();
-    $pdo->prepare('INSERT INTO inscricoes (usuario_id, curso_evento_id, status, created_at, updated_at) VALUES (:uid, :cid, \'aprovada\', NOW(), NOW())')
-        ->execute(array('uid' => $alunoId, 'cid' => $cursoId));
-    $inscAlt = (int) $pdo->lastInsertId();
+    $inscAlt = criarInscricaoTeste($pdo, $alunoId, $cursoId);
 
     $r = $quizService->iniciarOuRetomar(array(
         'quiz_id' => $quizId, 'inscricao_id' => $inscAlt,
@@ -478,12 +406,10 @@ it('quiz obrigatório SEM exige_aprovacao: envio marca concluido', function () u
     $altCorretaP = $pdo->query("SELECT id FROM conteudo_quiz_alternativas WHERE pergunta_id = {$pidP} AND correta = 1 LIMIT 1")->fetchColumn();
 
     // Criar aluno e inscrição
-    $pdo->prepare('INSERT INTO usuarios (nome, email, senha, cpf, status, created_at, updated_at) VALUES (\'__ProgAluno__\', \'progquiz@quiz.test\', \'x\', \'11111111111\', \'ativo\', NOW(), NOW())')
+    $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at) VALUES (\'__ProgAluno__\', \'progquiz@quiz.test\', \'x\', \'11111111111\', \'ativo\', NOW(), NOW())')
         ->execute(array());
     $progAlunoId = (int) $pdo->lastInsertId();
-    $pdo->prepare('INSERT INTO inscricoes (usuario_id, curso_evento_id, status, created_at, updated_at) VALUES (:uid, :cid, \'aprovada\', NOW(), NOW())')
-        ->execute(array('uid' => $progAlunoId, 'cid' => $cursoId));
-    $progInscId = (int) $pdo->lastInsertId();
+    $progInscId = criarInscricaoTeste($pdo, $progAlunoId, $cursoId);
 
     $r = $quizService->iniciarOuRetomar(array(
         'quiz_id' => $qidP, 'inscricao_id' => $progInscId,
@@ -523,12 +449,10 @@ it('quiz obrigatório COM exige_aprovacao: reprovado quando abaixo do mínimo', 
         ->execute(array('p' => $pidR, 'p2' => $pidR));
     $altErrada = (int) $pdo->query("SELECT id FROM conteudo_quiz_alternativas WHERE pergunta_id = {$pidR} AND correta = 0 LIMIT 1")->fetchColumn();
 
-    $pdo->prepare('INSERT INTO usuarios (nome, email, senha, cpf, status, created_at, updated_at) VALUES (\'__ReprovaAluno__\', \'reprova@quiz.test\', \'x\', \'22222222222\', \'ativo\', NOW(), NOW())')
+    $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at) VALUES (\'__ReprovaAluno__\', \'reprova@quiz.test\', \'x\', \'22222222222\', \'ativo\', NOW(), NOW())')
         ->execute(array());
     $raId = (int) $pdo->lastInsertId();
-    $pdo->prepare('INSERT INTO inscricoes (usuario_id, curso_evento_id, status, created_at, updated_at) VALUES (:uid, :cid, \'aprovada\', NOW(), NOW())')
-        ->execute(array('uid' => $raId, 'cid' => $cursoId));
-    $riId = (int) $pdo->lastInsertId();
+    $riId = criarInscricaoTeste($pdo, $raId, $cursoId);
 
     $r = $quizService->iniciarOuRetomar(array(
         'quiz_id' => $qidR, 'inscricao_id' => $riId,
@@ -588,7 +512,4 @@ try {
     echo "  AVISO limpeza: " . $e->getMessage() . "\n";
 }
 
-echo "\n";
-echo str_repeat("=", 40) . "\n";
-echo "Resultado: {$passed} passou | {$failed} falhou\n";
-exit($failed > 0 ? 1 : 0);
+exit(testes_resumo());

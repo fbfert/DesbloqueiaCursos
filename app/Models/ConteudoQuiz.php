@@ -32,11 +32,15 @@ class ConteudoQuiz
              (item_id, instrucoes, tentativas_maximas, percentual_minimo,
               exige_aprovacao, exibir_resultado_apos_envio, exibir_gabarito_apos_envio,
               exibir_comentarios_apos_envio, embaralhar_perguntas, embaralhar_alternativas,
+              duracao_minutos, modo_selecao, acao_ao_expirar, evitar_repeticao_tentativas,
+              permitir_banco_insuficiente, limite_caracteres_discursiva,
               created_at, updated_at)
              VALUES
              (:item_id, :instrucoes, :tentativas_maximas, :percentual_minimo,
               :exige_aprovacao, :exibir_resultado_apos_envio, :exibir_gabarito_apos_envio,
               :exibir_comentarios_apos_envio, :embaralhar_perguntas, :embaralhar_alternativas,
+              :duracao_minutos, :modo_selecao, :acao_ao_expirar, :evitar_repeticao_tentativas,
+              :permitir_banco_insuficiente, :limite_caracteres_discursiva,
               NOW(), NOW())'
         );
         $stmt->execute($this->buildParams($data));
@@ -56,6 +60,12 @@ class ConteudoQuiz
               exibir_comentarios_apos_envio = :exibir_comentarios_apos_envio,
               embaralhar_perguntas = :embaralhar_perguntas,
               embaralhar_alternativas = :embaralhar_alternativas,
+              duracao_minutos = :duracao_minutos,
+              modo_selecao = :modo_selecao,
+              acao_ao_expirar = :acao_ao_expirar,
+              evitar_repeticao_tentativas = :evitar_repeticao_tentativas,
+              permitir_banco_insuficiente = :permitir_banco_insuficiente,
+              limite_caracteres_discursiva = :limite_caracteres_discursiva,
               updated_at = NOW()
              WHERE id = :id AND deleted_at IS NULL'
         );
@@ -97,6 +107,13 @@ class ConteudoQuiz
             'exibir_comentarios_apos_envio' => isset($data['exibir_comentarios_apos_envio']) ? (int) (bool) $data['exibir_comentarios_apos_envio'] : 1,
             'embaralhar_perguntas'          => !empty($data['embaralhar_perguntas']) ? 1 : 0,
             'embaralhar_alternativas'       => !empty($data['embaralhar_alternativas']) ? 1 : 0,
+            // NULL mantem o quiz sem limite de tempo (comportamento legado).
+            'duracao_minutos'               => isset($data['duracao_minutos']) && $data['duracao_minutos'] !== '' && $data['duracao_minutos'] !== null ? (int) $data['duracao_minutos'] : null,
+            'modo_selecao'                  => isset($data['modo_selecao']) && $data['modo_selecao'] !== '' ? (string) $data['modo_selecao'] : 'todas',
+            'acao_ao_expirar'               => isset($data['acao_ao_expirar']) && $data['acao_ao_expirar'] !== '' ? (string) $data['acao_ao_expirar'] : 'enviar_automatico',
+            'evitar_repeticao_tentativas'   => isset($data['evitar_repeticao_tentativas']) ? (int) (bool) $data['evitar_repeticao_tentativas'] : 1,
+            'permitir_banco_insuficiente'   => !empty($data['permitir_banco_insuficiente']) ? 1 : 0,
+            'limite_caracteres_discursiva'  => isset($data['limite_caracteres_discursiva']) && $data['limite_caracteres_discursiva'] !== '' && $data['limite_caracteres_discursiva'] !== null ? (int) $data['limite_caracteres_discursiva'] : null,
         );
     }
 }

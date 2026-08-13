@@ -8,6 +8,102 @@ $turmaId   = isset($turma_id) ? (int) $turma_id : 0;
 $moduloId  = isset($modulo_id) ? (int) $modulo_id : 0;
 $itemId    = (int) ($item['id'] ?? 0);
 $perguntas = isset($quiz['perguntas']) && is_array($quiz['perguntas']) ? $quiz['perguntas'] : array();
+$blocos    = isset($blocos) && is_array($blocos) ? $blocos : array();
+$temas     = isset($temas) && is_array($temas) ? $temas : array();
+$filtros   = isset($filtros) && is_array($filtros) ? $filtros : array();
+$pendentesDiscursivas = isset($pendentes_discursivas) ? (int) $pendentes_discursivas : 0;
+$modoBlocos = (string) ($quiz['modo_selecao'] ?? 'todas') === 'blocos';
+
+$filtroValor = function ($chave) use ($filtros) {
+    return isset($filtros[$chave]) ? (string) $filtros[$chave] : '';
+};
+$temFiltroAtivo = false;
+foreach ($filtros as $valorFiltro) {
+    if ((string) $valorFiltro !== '') {
+        $temFiltroAtivo = true;
+        break;
+    }
+}
+
+$rotulosDificuldade = array('facil' => 'Fácil', 'media' => 'Média', 'dificil' => 'Difícil');
+
+/**
+ * Campos do banco de questões (bloco, tipo, dificuldade, tema, status).
+ */
+$renderCamposBanco = function (array $pergunta = array()) use ($blocos, $rotulosDificuldade) {
+    $blocoAtual       = isset($pergunta['bloco_id']) && $pergunta['bloco_id'] !== null ? (int) $pergunta['bloco_id'] : 0;
+    $tipoAtual        = (string) ($pergunta['tipo'] ?? 'multipla_escolha');
+    $dificuldadeAtual = (string) ($pergunta['dificuldade'] ?? 'media');
+    $statusAtual      = (string) ($pergunta['status'] ?? 'ativo');
+    ob_start();
+    ?>
+    <section class="quiz-question-form__section-card" data-banco-campos>
+        <div class="quiz-question-form__section-card__head">
+            <div>
+                <strong>Banco de questões</strong>
+                <p>Classificação usada no sorteio por blocos e nos filtros.</p>
+            </div>
+        </div>
+        <div class="quiz-question-form__grid">
+            <label>
+                <span>Bloco</span>
+                <select name="bloco_id" data-campo-bloco>
+                    <option value="">Sem bloco (questão avulsa)</option>
+                    <?php foreach ($blocos as $bloco): ?>
+                        <option value="<?php echo (int) $bloco['id']; ?>"
+                                data-tipo="<?php echo Helpers::e((string) $bloco['tipo_questao']); ?>"
+                            <?php echo $blocoAtual === (int) $bloco['id'] ? 'selected' : ''; ?>>
+                            <?php echo Helpers::e((string) $bloco['codigo'] . ' — ' . (string) $bloco['titulo']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label>
+                <span>Tipo</span>
+                <select name="tipo" data-campo-tipo>
+                    <option value="multipla_escolha" <?php echo $tipoAtual === 'multipla_escolha' ? 'selected' : ''; ?>>Múltipla escolha</option>
+                    <option value="discursiva" <?php echo $tipoAtual === 'discursiva' ? 'selected' : ''; ?>>Discursiva</option>
+                </select>
+            </label>
+            <label>
+                <span>Dificuldade</span>
+                <select name="dificuldade">
+                    <?php foreach ($rotulosDificuldade as $valor => $rotulo): ?>
+                        <option value="<?php echo Helpers::e($valor); ?>" <?php echo $dificuldadeAtual === $valor ? 'selected' : ''; ?>><?php echo Helpers::e($rotulo); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label>
+                <span>Tema / objeto de conhecimento</span>
+                <input type="text" name="tema" maxlength="190" value="<?php echo Helpers::e((string) ($pergunta['tema'] ?? '')); ?>">
+            </label>
+            <label>
+                <span>Situação no banco</span>
+                <select name="status_questao">
+                    <option value="ativo" <?php echo $statusAtual === 'ativo' ? 'selected' : ''; ?>>Ativa (entra no sorteio)</option>
+                    <option value="inativo" <?php echo $statusAtual === 'inativo' ? 'selected' : ''; ?>>Inativa (fora do sorteio)</option>
+                </select>
+            </label>
+            <label>
+                <span>Referência / fonte</span>
+                <input type="text" name="referencia" maxlength="120" value="<?php echo Helpers::e((string) ($pergunta['referencia'] ?? '')); ?>">
+            </label>
+        </div>
+
+        <div class="quiz-question-form__grid" data-campos-discursiva<?php echo $tipoAtual === 'discursiva' ? '' : ' hidden'; ?>>
+            <label>
+                <span>Nota máxima da discursiva</span>
+                <input type="number" name="nota_maxima" min="0.01" step="0.01" value="<?php echo Helpers::e((string) ($pergunta['nota_maxima'] ?? '10')); ?>">
+            </label>
+            <label class="quiz-question-form__full">
+                <span>Rubrica / critérios de correção (não aparece para o aluno)</span>
+                <textarea name="rubrica" rows="3"><?php echo Helpers::e((string) ($pergunta['rubrica'] ?? '')); ?></textarea>
+            </label>
+        </div>
+    </section>
+    <?php
+    return ob_get_clean();
+};
 $voltarUrl = '/admin/area-curso?curso_id=' . $cursoId . '&aba=conteudo' . ($moduloId > 0 ? '&modulo_id=' . $moduloId : '');
 $statusConteudo = (string) ($item['status'] ?? '');
 $totalPerguntas = count($perguntas);
@@ -79,6 +175,10 @@ $renderAlternativa = function ($idx, array $alt = array(), $placeholder = 'Nova 
         <div class="quiz-editor-actions quiz-editor-actions--header">
             <a class="button-link button-link--ghost" href="<?php echo Helpers::e($voltarUrl); ?>">Voltar ao conteúdo</a>
             <?php if ($quiz): ?>
+                <a class="button-link button-link--ghost" href="/admin/area-curso/conteudo/quiz/blocos?item_id=<?php echo $itemId; ?>&curso_id=<?php echo $cursoId; ?><?php echo $turmaId > 0 ? '&turma_id=' . $turmaId : ''; ?>">Blocos de sorteio</a>
+                <a class="button-link button-link--ghost" href="/admin/area-curso/conteudo/quiz/discursivas?item_id=<?php echo $itemId; ?>&curso_id=<?php echo $cursoId; ?><?php echo $turmaId > 0 ? '&turma_id=' . $turmaId : ''; ?>">
+                    Discursivas<?php echo $pendentesDiscursivas > 0 ? ' (' . $pendentesDiscursivas . ')' : ''; ?>
+                </a>
                 <a class="button-link button-link--ghost" href="/admin/area-curso/conteudo/quiz/preview?item_id=<?php echo $itemId; ?>&curso_id=<?php echo $cursoId; ?>">Pré-visualizar</a>
                 <a class="button-link button-link--ghost" href="/admin/area-curso/conteudo/quiz/resultados?item_id=<?php echo $itemId; ?>&curso_id=<?php echo $cursoId; ?><?php echo $turmaId > 0 ? '&turma_id=' . $turmaId : ''; ?>">Resultados</a>
             <?php endif; ?>
@@ -117,11 +217,77 @@ $renderAlternativa = function ($idx, array $alt = array(), $placeholder = 'Nova 
                 <p class="quiz-editor-card__subtitle">Visualize, mova e edite as perguntas já salvas no quiz.</p>
             </div>
             <div class="quiz-editor-card__header-actions">
-                <span class="pill pill--soft">Total: <?php echo $totalPerguntas; ?></span>
+                <span class="pill pill--soft"><?php echo $temFiltroAtivo ? 'Filtradas' : 'Total'; ?>: <?php echo $totalPerguntas; ?></span>
                 <span class="pill <?php echo !empty($validacao['ok']) ? 'pill--success' : ($totalPerguntas > 0 ? 'pill--warning' : 'pill--danger'); ?>">Validação: <?php echo Helpers::e(!empty($validacao['ok']) ? 'OK' : ($totalPerguntas > 0 ? 'Pendente' : 'Sem perguntas')); ?></span>
                 <a class="button-link button-link--primary" href="#nova-pergunta">Adicionar pergunta</a>
             </div>
         </div>
+
+        <?php if ($quiz): ?>
+            <form method="get" action="/admin/area-curso/conteudo/quiz/perguntas" class="form-grid quiz-banco-filtros" style="margin-bottom:16px;">
+                <input type="hidden" name="item_id" value="<?php echo $itemId; ?>">
+                <input type="hidden" name="curso_id" value="<?php echo $cursoId; ?>">
+                <input type="hidden" name="turma_id" value="<?php echo $turmaId; ?>">
+                <input type="hidden" name="modulo_id" value="<?php echo $moduloId; ?>">
+
+                <label>
+                    <span>Bloco</span>
+                    <select name="f_bloco">
+                        <option value="">Todos</option>
+                        <option value="sem_bloco" <?php echo $filtroValor('bloco_id') === 'sem_bloco' ? 'selected' : ''; ?>>Sem bloco</option>
+                        <?php foreach ($blocos as $bloco): ?>
+                            <option value="<?php echo (int) $bloco['id']; ?>" <?php echo $filtroValor('bloco_id') === (string) $bloco['id'] ? 'selected' : ''; ?>>
+                                <?php echo Helpers::e((string) $bloco['codigo']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>
+                    <span>Dificuldade</span>
+                    <select name="f_dificuldade">
+                        <option value="">Todas</option>
+                        <?php foreach ($rotulosDificuldade as $valor => $rotulo): ?>
+                            <option value="<?php echo Helpers::e($valor); ?>" <?php echo $filtroValor('dificuldade') === $valor ? 'selected' : ''; ?>><?php echo Helpers::e($rotulo); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>
+                    <span>Tema</span>
+                    <select name="f_tema">
+                        <option value="">Todos</option>
+                        <?php foreach ($temas as $tema): ?>
+                            <option value="<?php echo Helpers::e((string) $tema); ?>" <?php echo $filtroValor('tema') === (string) $tema ? 'selected' : ''; ?>><?php echo Helpers::e((string) $tema); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>
+                    <span>Tipo</span>
+                    <select name="f_tipo">
+                        <option value="">Todos</option>
+                        <option value="multipla_escolha" <?php echo $filtroValor('tipo') === 'multipla_escolha' ? 'selected' : ''; ?>>Múltipla escolha</option>
+                        <option value="discursiva" <?php echo $filtroValor('tipo') === 'discursiva' ? 'selected' : ''; ?>>Discursiva</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Situação</span>
+                    <select name="f_status">
+                        <option value="">Todas</option>
+                        <option value="ativo" <?php echo $filtroValor('status') === 'ativo' ? 'selected' : ''; ?>>Ativa</option>
+                        <option value="inativo" <?php echo $filtroValor('status') === 'inativo' ? 'selected' : ''; ?>>Inativa</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Buscar no enunciado</span>
+                    <input type="search" name="f_busca" value="<?php echo Helpers::e($filtroValor('busca')); ?>" placeholder="Palavra-chave">
+                </label>
+                <div class="cta-group" style="align-self:end;">
+                    <button type="submit" class="button-link button-link--primary">Filtrar</button>
+                    <?php if ($temFiltroAtivo): ?>
+                        <a class="button-link button-link--ghost" href="/admin/area-curso/conteudo/quiz/perguntas?item_id=<?php echo $itemId; ?>&curso_id=<?php echo $cursoId; ?>">Limpar filtros</a>
+                    <?php endif; ?>
+                </div>
+            </form>
+        <?php endif; ?>
 
         <?php if (!empty($perguntas)): ?>
             <div class="quiz-question-list" data-question-list>
@@ -139,8 +305,22 @@ $renderAlternativa = function ($idx, array $alt = array(), $placeholder = 'Nova 
                                     <div class="quiz-question-card__summary-text">
                                         <strong class="quiz-question-card__title"><?php echo Helpers::e($enunciadoResumo !== '' ? $enunciadoResumo : 'Pergunta sem enunciado'); ?></strong>
                                         <div class="quiz-question-card__summary-meta">
-                                            <span class="pill pill--soft"><?php echo $alternativasCount; ?> alternativas</span>
-                                            <span class="pill <?php echo $corretasCount > 0 ? 'pill--success' : 'pill--warning'; ?>"><?php echo $corretasCount; ?> correta(s)</span>
+                                            <?php $tipoPergunta = (string) ($pergunta['tipo'] ?? 'multipla_escolha'); ?>
+                                            <span class="pill <?php echo $tipoPergunta === 'discursiva' ? 'pill--info' : 'pill--soft'; ?>"><?php echo $tipoPergunta === 'discursiva' ? 'Discursiva' : 'Múltipla escolha'; ?></span>
+                                            <?php if (!empty($pergunta['bloco_codigo'])): ?>
+                                                <span class="pill pill--soft">Bloco <?php echo Helpers::e((string) $pergunta['bloco_codigo']); ?></span>
+                                            <?php elseif (empty($pergunta['bloco_id'])): ?>
+                                                <span class="pill pill--warning">Sem bloco</span>
+                                            <?php endif; ?>
+                                            <span class="pill pill--soft"><?php echo Helpers::e($rotulosDificuldade[(string) ($pergunta['dificuldade'] ?? 'media')] ?? 'Média'); ?></span>
+                                            <?php if (!empty($pergunta['tema'])): ?>
+                                                <span class="pill pill--soft"><?php echo Helpers::e((string) $pergunta['tema']); ?></span>
+                                            <?php endif; ?>
+                                            <span class="pill <?php echo (string) ($pergunta['status'] ?? 'ativo') === 'ativo' ? 'pill--success' : 'pill--warning'; ?>"><?php echo (string) ($pergunta['status'] ?? 'ativo') === 'ativo' ? 'Ativa' : 'Inativa'; ?></span>
+                                            <?php if ($tipoPergunta !== 'discursiva'): ?>
+                                                <span class="pill pill--soft"><?php echo $alternativasCount; ?> alternativas</span>
+                                                <span class="pill <?php echo $corretasCount > 0 ? 'pill--success' : 'pill--warning'; ?>"><?php echo $corretasCount; ?> correta(s)</span>
+                                            <?php endif; ?>
                                             <span class="pill pill--soft">Peso <?php echo Helpers::e((string) ($pergunta['peso'] ?? '1')); ?></span>
                                             <span class="pill <?php echo !empty($pergunta['obrigatoria']) ? 'pill--success' : 'pill--warning'; ?>"><?php echo !empty($pergunta['obrigatoria']) ? 'Obrigatória' : 'Opcional'; ?></span>
                                             <span class="pill pill--soft">Ordem <?php echo (int) ($pergunta['ordem'] ?? ($idx + 1)); ?></span>
@@ -203,7 +383,9 @@ $renderAlternativa = function ($idx, array $alt = array(), $placeholder = 'Nova 
                                         </label>
                                     </section>
 
-                                    <section class="quiz-question-form__section-card">
+                                    <?php echo $renderCamposBanco($pergunta); ?>
+
+                                    <section class="quiz-question-form__section-card" data-secao-alternativas<?php echo (string) ($pergunta['tipo'] ?? '') === 'discursiva' ? ' hidden' : ''; ?>>
                                         <div class="quiz-question-form__section-card__head quiz-question-form__section-card__head--split">
                                             <div>
                                                 <strong>Alternativas</strong>
@@ -313,7 +495,9 @@ $renderAlternativa = function ($idx, array $alt = array(), $placeholder = 'Nova 
                     </label>
                 </section>
 
-                <section class="quiz-question-form__section-card">
+                <?php echo $renderCamposBanco(array()); ?>
+
+                <section class="quiz-question-form__section-card" data-secao-alternativas>
                     <div class="quiz-question-form__section-card__head quiz-question-form__section-card__head--split">
                         <div>
                             <strong>Alternativas</strong>
@@ -343,6 +527,63 @@ $renderAlternativa = function ($idx, array $alt = array(), $placeholder = 'Nova 
         </form>
     </section>
 </div>
+
+<script>
+// Alterna os campos conforme o tipo da questão: a discursiva não tem
+// alternativas e exibe rubrica e nota máxima.
+(function () {
+    function aplicarTipo(form) {
+        var seletorTipo = form.querySelector('[data-campo-tipo]');
+        if (!seletorTipo) { return; }
+
+        var discursiva = seletorTipo.value === 'discursiva';
+        var secaoAlternativas = form.querySelector('[data-secao-alternativas]');
+        var camposDiscursiva  = form.querySelector('[data-campos-discursiva]');
+
+        if (secaoAlternativas) { secaoAlternativas.hidden = discursiva; }
+        if (camposDiscursiva)  { camposDiscursiva.hidden = !discursiva; }
+
+        // Campos ocultos não podem bloquear o envio pela validação nativa.
+        if (secaoAlternativas) {
+            secaoAlternativas.querySelectorAll('textarea, input').forEach(function (campo) {
+                if (discursiva) {
+                    if (campo.required) {
+                        campo.dataset.eraObrigatorio = '1';
+                        campo.required = false;
+                    }
+                } else if (campo.dataset.eraObrigatorio === '1') {
+                    campo.required = true;
+                }
+            });
+        }
+    }
+
+    function sincronizarComBloco(form) {
+        var seletorBloco = form.querySelector('[data-campo-bloco]');
+        var seletorTipo  = form.querySelector('[data-campo-tipo]');
+        if (!seletorBloco || !seletorTipo) { return; }
+
+        var opcao = seletorBloco.options[seletorBloco.selectedIndex];
+        var tipoBloco = opcao ? opcao.getAttribute('data-tipo') : '';
+        if (tipoBloco) {
+            seletorTipo.value = tipoBloco;
+        }
+        aplicarTipo(form);
+    }
+
+    document.querySelectorAll('[data-quiz-form]').forEach(function (form) {
+        aplicarTipo(form);
+        var seletorTipo = form.querySelector('[data-campo-tipo]');
+        if (seletorTipo) {
+            seletorTipo.addEventListener('change', function () { aplicarTipo(form); });
+        }
+        var seletorBloco = form.querySelector('[data-campo-bloco]');
+        if (seletorBloco) {
+            seletorBloco.addEventListener('change', function () { sincronizarComBloco(form); });
+        }
+    });
+})();
+</script>
 
 <script>
 (function () {

@@ -7,7 +7,23 @@ $cursoId    = isset($curso_id) ? (int) $curso_id : 0;
 $turmaId    = isset($turma_id) ? (int) $turma_id : 0;
 $itemId     = (int) ($item['id'] ?? 0);
 $filtros    = isset($filtros) && is_array($filtros) ? $filtros : array();
+$tentativas = isset($tentativas) && is_array($tentativas) ? $tentativas : array();
+$pendentesDiscursiva = isset($pendentes_discursiva) ? (int) $pendentes_discursiva : 0;
 $voltarUrl  = '/admin/area-curso?curso_id=' . $cursoId . '&aba=relatorios';
+
+/** Formata segundos em h/min para a coluna de tempo utilizado. */
+$formatarTempo = function ($segundos) {
+    $segundos = (int) $segundos;
+    if ($segundos <= 0) {
+        return '-';
+    }
+    $horas   = (int) floor($segundos / 3600);
+    $minutos = (int) floor(($segundos % 3600) / 60);
+    if ($horas > 0) {
+        return $horas . 'h' . str_pad((string) $minutos, 2, '0', STR_PAD_LEFT);
+    }
+    return $minutos . ' min';
+};
 ?>
 
 <div class="admin-page admin-area-curso">
@@ -117,6 +133,108 @@ $voltarUrl  = '/admin/area-curso?curso_id=' . $cursoId . '&aba=relatorios';
                     <?php endforeach; ?>
                 </tbody>
             </table>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($quiz && !empty($tentativas)): ?>
+        <section class="status-card" style="margin-top:16px;">
+            <header style="display:flex; gap:12px; flex-wrap:wrap; align-items:baseline; justify-content:space-between;">
+                <h2 style="margin:0;">Tentativas em detalhe</h2>
+                <?php if ($pendentesDiscursiva > 0): ?>
+                    <a class="button-link button-link--ghost"
+                       href="/admin/area-curso/conteudo/quiz/discursivas?item_id=<?php echo $itemId; ?>&amp;curso_id=<?php echo $cursoId; ?><?php echo $turmaId > 0 ? '&amp;turma_id=' . $turmaId : ''; ?>">
+                        <?php echo $pendentesDiscursiva; ?> discursiva(s) pendente(s)
+                    </a>
+                <?php endif; ?>
+            </header>
+
+            <div style="overflow-x:auto; margin-top:12px;">
+                <table class="admin-table" style="width:100%; border-collapse:collapse; min-width:900px;">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Tent.</th>
+                            <th>Situação</th>
+                            <th>Objetivas</th>
+                            <th>Nota geral</th>
+                            <th>Desempenho por bloco</th>
+                            <th>Tempo</th>
+                            <th>Discursiva</th>
+                            <th>Sorteio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($tentativas as $tentativa): ?>
+                            <?php
+                            $desempenho = isset($tentativa['desempenho']) && is_array($tentativa['desempenho']) ? $tentativa['desempenho'] : null;
+                            $emAndamento = (string) $tentativa['status'] === 'em_andamento';
+                            ?>
+                            <tr<?php echo !empty($tentativa['e_melhor']) ? ' style="background:rgba(34,197,94,0.06);"' : ''; ?>>
+                                <td>
+                                    <?php echo Helpers::e((string) ($tentativa['aluno_nome'] ?? '-')); ?>
+                                    <?php if (!empty($tentativa['e_melhor'])): ?>
+                                        <br><span class="pill pill--success" style="font-size:0.75em;">Melhor tentativa</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="text-align:center;"><?php echo (int) $tentativa['numero_tentativa']; ?></td>
+                                <td>
+                                    <?php if ($emAndamento): ?>
+                                        <span class="pill pill--info">Em andamento</span>
+                                    <?php elseif (!empty($tentativa['aprovado'])): ?>
+                                        <span class="pill pill--success">Aprovado</span>
+                                    <?php else: ?>
+                                        <span class="pill pill--warning">Não aprovado</span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($tentativa['encerrada_por_tempo'])): ?>
+                                        <br><small class="muted">Encerrada por tempo</small>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="text-align:center;">
+                                    <?php echo (int) $tentativa['total_acertos']; ?> / <?php echo (int) $tentativa['total_objetivas']; ?>
+                                </td>
+                                <td style="text-align:center;">
+                                    <strong><?php echo number_format((float) $tentativa['percentual'], 1); ?>%</strong>
+                                </td>
+                                <td>
+                                    <?php if ($desempenho === null || empty($desempenho['blocos'])): ?>
+                                        <span class="muted">-</span>
+                                    <?php else: ?>
+                                        <?php foreach ($desempenho['blocos'] as $bloco): ?>
+                                            <small style="display:block;">
+                                                <?php echo Helpers::e((string) $bloco['codigo']); ?>:
+                                                <?php echo (int) $bloco['acertos']; ?>/<?php echo (int) $bloco['total']; ?>
+                                                (<?php echo number_format((float) $bloco['percentual'], 0); ?>%)
+                                            </small>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="text-align:center;">
+                                    <?php echo Helpers::e($formatarTempo($tentativa['tempo_utilizado_segundos'] ?? 0)); ?>
+                                    <?php if (!empty($tentativa['duracao_minutos'])): ?>
+                                        <br><small class="muted">de <?php echo (int) $tentativa['duracao_minutos']; ?> min</small>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="text-align:center;">
+                                    <?php $statusDiscursiva = (string) ($tentativa['discursiva_status'] ?? 'nao_aplicavel'); ?>
+                                    <?php if ($statusDiscursiva === 'pendente'): ?>
+                                        <span class="pill pill--warning">Pendente</span>
+                                    <?php elseif ($statusDiscursiva === 'corrigida'): ?>
+                                        <span class="pill pill--success">Corrigida</span>
+                                    <?php else: ?>
+                                        <span class="muted">-</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="text-align:center;">
+                                    <?php echo (int) $tentativa['total_perguntas']; ?> questão(ões)
+                                    <?php if (!empty($tentativa['sorteio_com_repeticao'])): ?>
+                                        <br><span class="pill pill--warning" style="font-size:0.75em;" title="O banco não tinha questões inéditas suficientes">Com reaproveitamento</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </section>
     <?php endif; ?>
 </div>

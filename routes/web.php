@@ -198,6 +198,7 @@ $app->post('/area-curso/conteudo/item/concluir', array(AreaCursoController::clas
 $app->post('/aluno/cursos/conteudo/item/concluir', array(AreaCursoController::class, 'concluirConteudoItem'), array('auth'));
 $app->post('/area-curso/conteudo/avaliacao/enviar', array(AreaCursoController::class, 'enviarConteudoAvaliacao'), array('auth'));
 $app->post('/aluno/cursos/conteudo/avaliacao/enviar', array(AreaCursoController::class, 'enviarConteudoAvaliacao'), array('auth'));
+$app->get('/aluno/cursos/conteudo/avaliacao/imagem', array(AreaCursoController::class, 'entregaAvaliacaoImagem'), array('auth'));
 $app->get('/area-curso/conteudo/arquivo/download', array(AreaCursoController::class, 'downloadConteudoArquivo'), array('auth'));
 $app->get('/aluno/cursos/conteudo/arquivo/download', array(AreaCursoController::class, 'downloadConteudoArquivo'), array('auth'));
 $app->get('/area-curso/conteudo/link/acessar', array(AreaCursoController::class, 'acessarConteudoLink'), array('auth'));
@@ -207,6 +208,8 @@ $app->get('/aluno/cursos/atividade/arquivo', array(AreaCursoController::class, '
 $app->post('/aluno/cursos/quiz/iniciar', array(QuizController::class, 'iniciar'), array('auth'));
 $app->post('/aluno/cursos/quiz/rascunho', array(QuizController::class, 'salvarRascunho'), array('auth'));
 $app->post('/aluno/cursos/quiz/enviar', array(QuizController::class, 'enviar'), array('auth'));
+$app->post('/aluno/cursos/quiz/revisao', array(QuizController::class, 'marcarRevisao'), array('auth'));
+$app->post('/aluno/cursos/quiz/tempo', array(QuizController::class, 'tempo'), array('auth'));
 $app->get('/aluno/cursos/quiz/resultado', array(QuizController::class, 'resultado'), array('auth'));
 $app->post('/avisos/ocultar', array(AvisosController::class, 'ocultar'), array('auth'));
 $app->get('/cadastro', array(AuthController::class, 'showRegister'));
@@ -433,11 +436,19 @@ $app->get('/admin/area-curso/conteudo/avaliacoes/pendentes', array(AdminAreaCurs
 $app->get('/admin/area-curso/conteudo/avaliacao/corrigir', array(AdminAreaCursoController::class, 'avaliacaoTextualCorrigir'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/avaliacao/corrigir', array(AdminAreaCursoController::class, 'corrigirAvaliacaoTextual'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/avaliacao/liberar-reenvio', array(AdminAreaCursoController::class, 'liberarReenvioAvaliacaoTextual'), array('auth', 'permission:area_curso.gerenciar'));
+$app->get('/admin/area-curso/conteudo/avaliacao/imagem', array(AdminAreaCursoController::class, 'entregaAvaliacaoImagem'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/avaliacoes/exportar', array(AdminAreaCursoController::class, 'exportarAvaliacoesConteudoCsv'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/quiz/perguntas', array(AdminQuizController::class, 'editarPerguntas'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/quiz/pergunta/salvar', array(AdminQuizController::class, 'salvarPergunta'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/quiz/pergunta/excluir', array(AdminQuizController::class, 'excluirPergunta'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/quiz/perguntas/reordenar', array(AdminQuizController::class, 'reordenarPerguntas'), array('auth', 'permission:area_curso.gerenciar'));
+$app->get('/admin/area-curso/conteudo/quiz/blocos', array(AdminQuizController::class, 'blocos'), array('auth', 'permission:area_curso.gerenciar'));
+$app->post('/admin/area-curso/conteudo/quiz/bloco/salvar', array(AdminQuizController::class, 'salvarBloco'), array('auth', 'permission:area_curso.gerenciar'));
+$app->post('/admin/area-curso/conteudo/quiz/bloco/excluir', array(AdminQuizController::class, 'excluirBloco'), array('auth', 'permission:area_curso.gerenciar'));
+$app->post('/admin/area-curso/conteudo/quiz/bloco/status', array(AdminQuizController::class, 'alternarStatusBloco'), array('auth', 'permission:area_curso.gerenciar'));
+$app->post('/admin/area-curso/conteudo/quiz/blocos/reordenar', array(AdminQuizController::class, 'reordenarBlocos'), array('auth', 'permission:area_curso.gerenciar'));
+$app->get('/admin/area-curso/conteudo/quiz/discursivas', array(AdminQuizController::class, 'discursivas'), array('auth', 'permission:area_curso.gerenciar'));
+$app->post('/admin/area-curso/conteudo/quiz/discursiva/corrigir', array(AdminQuizController::class, 'corrigirDiscursiva'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/quiz/resultados', array(AdminQuizController::class, 'resultados'), array('auth', 'permission:area_curso.gerenciar'));
 $app->post('/admin/area-curso/conteudo/quiz/reset-aluno', array(AdminQuizController::class, 'resetarAluno'), array('auth', 'permission:area_curso.gerenciar'));
 $app->get('/admin/area-curso/conteudo/quiz/preview', array(AdminQuizController::class, 'preview'), array('auth', 'permission:area_curso.gerenciar'));
@@ -525,6 +536,7 @@ $app->get('/professor/area-curso/conteudo/avaliacoes/pendentes', array(Professor
 $app->get('/professor/area-curso/conteudo/avaliacao/corrigir', array(ProfessorAreaCursoController::class, 'avaliacaoTextualCorrigir'), array('auth', 'permission:area_curso.professor.ver'));
 $app->post('/professor/area-curso/conteudo/avaliacao/corrigir', array(ProfessorAreaCursoController::class, 'corrigirAvaliacaoTextual'), array('auth', 'permission:area_curso.professor.gerenciar'));
 $app->post('/professor/area-curso/conteudo/avaliacao/liberar-reenvio', array(ProfessorAreaCursoController::class, 'liberarReenvioAvaliacaoTextual'), array('auth', 'permission:area_curso.professor.gerenciar'));
+$app->get('/professor/area-curso/conteudo/avaliacao/imagem', array(ProfessorAreaCursoController::class, 'entregaAvaliacaoImagem'), array('auth', 'permission:area_curso.professor.ver'));
 $app->get('/professor/area-curso/conteudo/avaliacoes/exportar', array(ProfessorAreaCursoController::class, 'exportarAvaliacoesConteudoCsv'), array('auth', 'permission:area_curso.professor.ver'));
 $app->get('/professor/area-curso/participantes', array(ProfessorAreaCursoController::class, 'participantes'), array('auth', 'permission:area_curso.professor.ver'));
 $app->get('/professor/area-curso/material', array(ProfessorAreaCursoController::class, 'material'), array('auth', 'permission:area_curso.professor.ver'));

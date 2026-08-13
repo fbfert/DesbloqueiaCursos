@@ -31,4 +31,15 @@ class Database
 
         return self::$connection;
     }
+
+    /**
+     * Injeta a conexao PDO.
+     *
+     * Usado pelos testes (tests/Unit/*), que apontam para um banco de testes
+     * sem depender de config/database.php.
+     */
+    public static function setConnection(?PDO $connection)
+    {
+        self::$connection = $connection;
+    }
 }

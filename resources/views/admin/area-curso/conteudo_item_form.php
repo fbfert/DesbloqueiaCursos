@@ -312,11 +312,68 @@ $editorValue = function ($value) {
                         Embaralhar alternativas de cada pergunta
                     </label>
 
+                    <h4 style="grid-column: 1 / -1; margin:16px 0 0;">Simulado (tempo e banco de questões)</h4>
+                    <p class="muted" style="grid-column: 1 / -1; margin:0;">
+                        Deixe a duração em branco e o modo em “Todas as perguntas” para manter o comportamento
+                        padrão do quiz. Use “Sortear por blocos” para provas longas com banco de questões.
+                    </p>
+
+                    <label>
+                        Duração da prova (minutos)
+                        <input type="number" name="quiz_duracao_minutos" min="1" step="1"
+                               placeholder="Deixe em branco para não ter limite"
+                               value="<?php echo Helpers::e((string) $qVal('duracao_minutos', '')); ?>">
+                        <span class="field-hint">O prazo é controlado no servidor. Ex.: 330 para a PND.</span>
+                    </label>
+
+                    <label>
+                        Modo de seleção das questões
+                        <?php $modoAtual = (string) $qVal('modo_selecao', 'todas'); ?>
+                        <select name="quiz_modo_selecao">
+                            <option value="todas" <?php echo $modoAtual !== 'blocos' ? 'selected' : ''; ?>>Todas as perguntas cadastradas</option>
+                            <option value="blocos" <?php echo $modoAtual === 'blocos' ? 'selected' : ''; ?>>Sortear por blocos (banco de questões)</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Ao esgotar o tempo
+                        <?php $acaoAtual = (string) $qVal('acao_ao_expirar', 'enviar_automatico'); ?>
+                        <select name="quiz_acao_ao_expirar">
+                            <option value="enviar_automatico" <?php echo $acaoAtual !== 'encerrar_sem_envio' ? 'selected' : ''; ?>>Enviar automaticamente o que estiver salvo</option>
+                            <option value="encerrar_sem_envio" <?php echo $acaoAtual === 'encerrar_sem_envio' ? 'selected' : ''; ?>>Encerrar a tentativa sem corrigir</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Limite de caracteres da discursiva
+                        <input type="number" name="quiz_limite_caracteres_discursiva" min="100" step="100"
+                               placeholder="Padrão: 50.000"
+                               value="<?php echo Helpers::e((string) $qVal('limite_caracteres_discursiva', '')); ?>">
+                    </label>
+
+                    <label class="checkbox">
+                        <input type="checkbox" name="quiz_evitar_repeticao_tentativas" value="1" <?php echo $qVal('evitar_repeticao_tentativas', 1) ? 'checked' : ''; ?>>
+                        Evitar repetir questões entre as tentativas do mesmo aluno
+                    </label>
+
+                    <label class="checkbox">
+                        <input type="checkbox" name="quiz_permitir_banco_insuficiente" value="1" <?php echo !empty($qVal('permitir_banco_insuficiente')) ? 'checked' : ''; ?>>
+                        Permitir publicar mesmo com banco insuficiente (exceção consciente)
+                    </label>
+
                     <?php if (!empty($item['id']) && $tipoSelecionado === 'quiz'): ?>
                         <div style="grid-column: 1 / -1; margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
                             <a class="button-link button-link--secondary"
                                href="/admin/area-curso/conteudo/quiz/perguntas?item_id=<?php echo (int) $item['id']; ?>&curso_id=<?php echo $cursoId; ?><?php echo $turmaId > 0 ? '&turma_id=' . $turmaId : ''; ?>">
                                 Editar perguntas
+                            </a>
+                            <a class="button-link button-link--ghost"
+                               href="/admin/area-curso/conteudo/quiz/blocos?item_id=<?php echo (int) $item['id']; ?>&curso_id=<?php echo $cursoId; ?><?php echo $turmaId > 0 ? '&turma_id=' . $turmaId : ''; ?>">
+                                Blocos de sorteio
+                            </a>
+                            <a class="button-link button-link--ghost"
+                               href="/admin/area-curso/conteudo/quiz/discursivas?item_id=<?php echo (int) $item['id']; ?>&curso_id=<?php echo $cursoId; ?><?php echo $turmaId > 0 ? '&turma_id=' . $turmaId : ''; ?>">
+                                Corrigir discursivas
                             </a>
                             <a class="button-link button-link--ghost"
                                href="/admin/area-curso/conteudo/quiz/preview?item_id=<?php echo (int) $item['id']; ?>&curso_id=<?php echo $cursoId; ?>">

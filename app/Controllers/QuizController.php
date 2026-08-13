@@ -84,8 +84,16 @@ class QuizController extends Controller
         $turmaId     = (int) $request->input('turma_id', 0);
         $moduloId    = (int) $request->input('modulo_id', 0);
         $respostas   = $request->input('respostas', array());
+        $discursivas = $request->input('discursivas', array());
+        $revisoes    = $request->input('revisoes', array());
         if (!is_array($respostas)) {
             $respostas = array();
+        }
+        if (!is_array($discursivas)) {
+            $discursivas = array();
+        }
+        if (!is_array($revisoes)) {
+            $revisoes = array();
         }
 
         $contexto = $this->areaCursoService->carregarAluno(
@@ -102,9 +110,43 @@ class QuizController extends Controller
             'aluno_id'     => (int) Session::get('usuario_id'),
             'item_id'      => $itemId,
             'respostas'    => $respostas,
+            'discursivas'  => $discursivas,
+            'revisoes'     => $revisoes,
         ));
 
         return $this->json($resultado);
+    }
+
+    /**
+     * Marca/desmarca uma questão para revisão, sem alterar a resposta.
+     */
+    public function marcarRevisao(Request $request)
+    {
+        $resultado = $this->quizService->marcarParaRevisao(array(
+            'tentativa_id' => (int) $request->input('tentativa_id', 0),
+            'aluno_id'     => (int) Session::get('usuario_id'),
+            'pergunta_id'  => (int) $request->input('pergunta_id', 0),
+            'marcada'      => (bool) $request->input('marcada', false),
+        ));
+
+        return $this->json($resultado);
+    }
+
+    /**
+     * Tempo restante conferido no servidor (o relógio do navegador é apenas
+     * visual). Quando o prazo vence, aplica a regra configurada no quiz.
+     */
+    public function tempo(Request $request)
+    {
+        $tentativaId = (int) $request->input('tentativa_id', 0);
+        $alunoId     = (int) Session::get('usuario_id');
+
+        $dados = $this->quizService->consultarTempo($tentativaId, $alunoId);
+        if (empty($dados['ok'])) {
+            return $this->json($dados);
+        }
+
+        return $this->json($dados);
     }
 
     public function enviar(Request $request)
@@ -116,8 +158,12 @@ class QuizController extends Controller
         $turmaId     = (int) $request->input('turma_id', 0);
         $moduloId    = (int) $request->input('modulo_id', 0);
         $respostas   = $request->input('respostas', array());
+        $discursivas = $request->input('discursivas', array());
         if (!is_array($respostas)) {
             $respostas = array();
+        }
+        if (!is_array($discursivas)) {
+            $discursivas = array();
         }
 
         $contexto = $this->areaCursoService->carregarAluno(
@@ -138,6 +184,7 @@ class QuizController extends Controller
             'item_id'        => $itemId,
             'inscricao_id'   => (int) $inscricao['id'],
             'respostas'      => $respostas,
+            'discursivas'    => $discursivas,
             'ip'             => $request->ip(),
             'user_agent'     => $request->userAgent(),
         ));
@@ -147,7 +194,11 @@ class QuizController extends Controller
             return $this->redirectConteudo($inscricao, $moduloId, $itemId);
         }
 
-        Session::flash('success', 'Quiz enviado com sucesso.');
+        if (!empty($resultado['automatico'])) {
+            Session::flash('success', 'O tempo da prova terminou. As respostas salvas foram enviadas automaticamente.');
+        } else {
+            Session::flash('success', 'Prova enviada com sucesso.');
+        }
         Session::flash('quiz_tentativa_id_resultado', $tentativaId);
         return $this->redirectConteudo($inscricao, $moduloId, $itemId);
     }
