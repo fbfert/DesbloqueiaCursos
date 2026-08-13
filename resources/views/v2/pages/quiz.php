@@ -199,6 +199,10 @@ $hidden = ''
           <?php echo $hidden; ?>
           <input type="hidden" name="tentativa_id" value="<?php echo (int) ($quiz['tentativa_ativa_id'] ?? 0); ?>">
 
+          <p class="v2-muted v2-sm" id="v2-quiz-autosave" role="status" aria-live="polite" style="margin:0 0 10px;">
+            Suas respostas são salvas automaticamente conforme você responde.
+          </p>
+
           <?php if (count($quiz['perguntas'] ?? array()) > 1): ?>
             <div id="v2-quiz-progress" class="v2-quiz-progress" hidden>
               <div class="v2-quiz-progress__bar"><div class="v2-quiz-progress__fill" id="v2-quiz-progress-fill"></div></div>

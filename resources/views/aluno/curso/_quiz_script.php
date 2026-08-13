@@ -45,9 +45,9 @@
                 return dados;
             }
 
-            function salvarRascunho() {
+            function salvarRascunho(aoSair) {
                 var dados = coletarRespostas();
-                return fetch('/aluno/cursos/quiz/rascunho', {
+                var opcoes = {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
                     body: JSON.stringify({
@@ -61,7 +61,10 @@
                         revisoes: dados.revisoes,
                         _token: csrfToken()
                     })
-                }).then(function (r) { return r.json(); });
+                };
+                // keepalive garante a gravação mesmo se a aba estiver fechando.
+                if (aoSair) { opcoes.keepalive = true; }
+                return fetch('/aluno/cursos/quiz/rascunho', opcoes).then(function (r) { return r.json(); });
             }
 
             if (saveBtn) {
@@ -79,6 +82,55 @@
                     });
                 });
             }
+
+            // ---------------- Salvamento automático ----------------
+            // Cada resposta é gravada logo após ser dada: sair da página nunca
+            // pode custar o trabalho já feito.
+            var autosaveTimer = null;
+            var autosaveAviso = document.getElementById('quiz-autosave');
+
+            function avisarAutosave(texto, erro) {
+                if (!autosaveAviso) { return; }
+                autosaveAviso.textContent = texto;
+                autosaveAviso.style.color = erro ? '#dc2626' : '';
+            }
+
+            function salvarAgora(aoSair) {
+                return salvarRascunho(aoSair).then(function (data) {
+                    if (data && data.ok) {
+                        avisarAutosave('Respostas salvas');
+                    } else if (data && data.expirada) {
+                        window.location.reload();
+                    } else {
+                        avisarAutosave('Não foi possível salvar agora. Tentaremos de novo.', true);
+                    }
+                    return data;
+                }).catch(function () {
+                    avisarAutosave('Sem conexão. Suas respostas serão salvas assim que voltar.', true);
+                });
+            }
+
+            function agendarAutosave(atraso) {
+                if (autosaveTimer) { clearTimeout(autosaveTimer); }
+                autosaveTimer = setTimeout(function () {
+                    avisarAutosave('Salvando…');
+                    salvarAgora(false);
+                }, atraso);
+            }
+
+            form.addEventListener('change', function (evento) {
+                var alvo = evento.target;
+                if (alvo && alvo.type === 'radio') { agendarAutosave(600); }
+            });
+            form.addEventListener('input', function (evento) {
+                var alvo = evento.target;
+                if (alvo && String(alvo.tagName).toLowerCase() === 'textarea') { agendarAutosave(2000); }
+            });
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) { salvarAgora(true); }
+            });
+            window.addEventListener('pagehide', function () { salvarAgora(true); });
 
             // ---------------- Índice de questões ----------------
             var itensIndice = {};

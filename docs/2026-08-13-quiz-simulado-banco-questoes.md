@@ -57,6 +57,27 @@ bloco, dificuldade, tema, status e tipo `discursiva` em
 - **Concorrência**: `SELECT … FOR UPDATE` na faixa da inscrição + chave única
   `(quiz_id, inscricao_id, numero_tentativa)`.
 
+## Salvamento automático
+
+Numa prova de 5h30 o aluno não pode perder o que respondeu por sair da página,
+fechar a aba ou cair a conexão. Por isso a resposta é gravada assim que é
+dada, sem depender de nenhum botão:
+
+- **objetiva**: grava ~0,6 s após a escolha;
+- **discursiva**: grava 2 s após a digitação parar (evita salvar a cada tecla);
+- **ao sair da aba ou fechar**: o que estiver pendente é enviado com
+  `keepalive`, que sobrevive ao descarregamento da página;
+- **falha de rede**: a alteração volta para a fila e é reenviada na próxima
+  gravação; a tela avisa em vez de fingir que salvou.
+
+Só o que mudou é enviado — `gravarRespostas` faz upsert apenas das questões
+recebidas, então gravar uma questão nunca apaga as outras. `findQuizParaAluno`
+devolve as respostas já salvas quando existe tentativa aberta, e é isso que faz
+"voltar" reexibir tudo preenchido. O gabarito continua oculto: a tentativa
+ainda não foi enviada.
+
+Coberto por `tests/Unit/quiz_rascunho.php`.
+
 ## Aleatoriedade
 
 `App\Services\Quiz\QuizRandomizerInterface` — produção usa

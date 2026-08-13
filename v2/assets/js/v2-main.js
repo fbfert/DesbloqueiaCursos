@@ -2485,6 +2485,134 @@
 
     initQuizWizardV2();
     initQuizCronometroV2();
+    initQuizAutosaveV2();
+  }
+
+  // Salva a resposta assim que o aluno responde, para que sair da pagina (ou
+  // perder a conexao) nunca custe o trabalho ja feito. Envia so o que mudou;
+  // a correcao continua inteiramente no servidor.
+  function initQuizAutosaveV2() {
+    var form = $("#v2-quiz-answer-form");
+    if (!form) { return; }
+
+    var campoTentativa = form.querySelector('input[name="tentativa_id"]');
+    var tentativaId = campoTentativa ? parseInt(campoTentativa.value, 10) : 0;
+    if (!tentativaId) { return; }
+
+    var aviso = $("#v2-quiz-autosave");
+    var pendentes = { respostas: {}, discursivas: {} };
+    var timer = null;
+    var enviando = false;
+    var textoPadrao = aviso ? aviso.textContent : "";
+
+    function valorDe(nome) {
+      var campo = form.querySelector('input[name="' + nome + '"]');
+      return campo ? campo.value : "";
+    }
+
+    function mostrar(texto, erro) {
+      if (!aviso) { return; }
+      aviso.textContent = texto;
+      aviso.style.color = erro ? "#dc2626" : "";
+    }
+
+    function vazio(obj) {
+      for (var k in obj) { if (Object.prototype.hasOwnProperty.call(obj, k)) { return false; } }
+      return true;
+    }
+
+    function devolver(destino, origem) {
+      for (var k in origem) {
+        if (Object.prototype.hasOwnProperty.call(origem, k) && !Object.prototype.hasOwnProperty.call(destino, k)) {
+          destino[k] = origem[k];
+        }
+      }
+    }
+
+    function enviarPendentes(aoSair) {
+      if (enviando) { return; }
+      if (vazio(pendentes.respostas) && vazio(pendentes.discursivas)) { return; }
+
+      var lote = pendentes;
+      pendentes = { respostas: {}, discursivas: {} };
+      enviando = true;
+      mostrar("Salvando…");
+
+      var opcoes = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tentativa_id: tentativaId,
+          item_id: parseInt(valorDe("item_id"), 10) || 0,
+          inscricao_id: parseInt(valorDe("inscricao_id"), 10) || 0,
+          curso_id: parseInt(valorDe("curso_id"), 10) || 0,
+          turma_id: parseInt(valorDe("turma_id"), 10) || 0,
+          respostas: lote.respostas,
+          discursivas: lote.discursivas,
+          _token: valorDe("_token")
+        })
+      };
+      // keepalive garante o envio mesmo se a aba estiver sendo fechada.
+      if (aoSair) { opcoes.keepalive = true; }
+
+      fetch("/aluno/cursos/quiz/rascunho", opcoes)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          enviando = false;
+          if (data && data.ok) {
+            mostrar("Respostas salvas");
+            return;
+          }
+          if (data && data.expirada) { window.location.reload(); return; }
+          // Falhou: devolve para a fila e tenta de novo na proxima alteracao.
+          devolver(pendentes.respostas, lote.respostas);
+          devolver(pendentes.discursivas, lote.discursivas);
+          mostrar("Não foi possível salvar agora. Tentaremos de novo.", true);
+        })
+        ["catch"](function () {
+          enviando = false;
+          devolver(pendentes.respostas, lote.respostas);
+          devolver(pendentes.discursivas, lote.discursivas);
+          mostrar("Sem conexão. Suas respostas serão salvas assim que voltar.", true);
+        });
+    }
+
+    function agendar(atraso) {
+      if (timer) { clearTimeout(timer); }
+      timer = setTimeout(function () { enviarPendentes(false); }, atraso);
+    }
+
+    // Objetivas: salva quase imediatamente apos a escolha.
+    form.addEventListener("change", function (evento) {
+      var alvo = evento.target;
+      if (!alvo || alvo.type !== "radio") { return; }
+      var m = String(alvo.name || "").match(/^respostas\[(\d+)\]$/);
+      if (!m) { return; }
+      pendentes.respostas[m[1]] = alvo.value;
+      agendar(600);
+    });
+
+    // Discursiva: espera a digitacao parar para nao salvar a cada tecla.
+    form.addEventListener("input", function (evento) {
+      var alvo = evento.target;
+      if (!alvo || String(alvo.tagName).toLowerCase() !== "textarea") { return; }
+      var m = String(alvo.name || "").match(/^discursivas\[(\d+)\]$/);
+      if (!m) { return; }
+      pendentes.discursivas[m[1]] = alvo.value;
+      agendar(2000);
+    });
+
+    // Sair da aba, minimizar ou fechar: grava o que ainda estiver pendente.
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) { enviarPendentes(true); }
+    });
+    window.addEventListener("pagehide", function () { enviarPendentes(true); });
+
+    // No envio final nao ha o que avisar: o proprio POST leva tudo.
+    form.addEventListener("submit", function () {
+      if (timer) { clearTimeout(timer); }
+      mostrar(textoPadrao);
+    });
   }
 
   // Cronometro do simulado. O prazo e do servidor: aqui so exibimos a

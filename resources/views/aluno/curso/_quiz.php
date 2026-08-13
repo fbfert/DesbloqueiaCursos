@@ -246,6 +246,10 @@ $formatarDuracao = function ($minutos) {
         <form method="post" action="/aluno/cursos/quiz/enviar" id="quiz-form" class="conteudo-item-quiz__form">
             <?php echo $csrfField; ?>
             <input type="hidden" name="tentativa_id" value="<?php echo (int) $tentativaAtiva['id']; ?>">
+
+            <p class="muted" id="quiz-autosave" role="status" aria-live="polite" style="font-size:0.85em; margin:0 0 10px;">
+                Suas respostas são salvas automaticamente conforme você responde.
+            </p>
             <input type="hidden" name="item_id" value="<?php echo $itemId; ?>">
             <input type="hidden" name="modulo_id" value="<?php echo $moduloId; ?>">
             <input type="hidden" name="inscricao_id" value="<?php echo $inscricaoId; ?>">

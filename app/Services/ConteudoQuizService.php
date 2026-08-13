@@ -104,7 +104,22 @@ class ConteudoQuizService
             $perguntas       = array();
             $totalPerguntas  = (int) $estrutura['total_questoes'];
         } else {
-            $perguntas      = $this->montarPerguntasParaAluno($quiz, $snapshot);
+            // Com tentativa aberta, as questões voltam com o que já foi
+            // respondido: sair da página e voltar não pode parecer perda de
+            // trabalho. O gabarito continua oculto (a tentativa não foi enviada).
+            $respostasPorPergunta = array();
+            if ($tentativaEmAndamento !== null) {
+                foreach ($this->respostaModel->listForTentativa((int) $tentativaEmAndamento['id']) as $resposta) {
+                    $respostasPorPergunta[(int) $resposta['pergunta_id']] = $resposta;
+                }
+            }
+
+            $perguntas = $this->montarPerguntasParaAluno(
+                $quiz,
+                $snapshot,
+                $tentativaEmAndamento,
+                $respostasPorPergunta
+            );
             $totalPerguntas = count($perguntas);
         }
 
