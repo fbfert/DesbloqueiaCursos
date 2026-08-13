@@ -79,19 +79,93 @@ $hidden = ''
           <?php if (trim((string) ($quiz['instrucoes'] ?? '')) !== ''): ?>
             <div class="v2-quiz-instrucoes"><?php echo nl2br(Helpers::e((string) $quiz['instrucoes'])); ?></div>
           <?php endif; ?>
-          <p class="v2-muted v2-sm">
-            <?php echo (int) ($quiz['total_perguntas'] ?? 0); ?> pergunta(s)
-            <?php if ($quiz['tentativas_maximas'] !== null): ?>
-              · Tentativas: <?php echo (int) ($quiz['tentativas_usadas'] ?? 0); ?>/<?php echo (int) $quiz['tentativas_maximas']; ?>
-            <?php elseif ((int) ($quiz['tentativas_usadas'] ?? 0) > 0): ?>
-              · <?php echo (int) $quiz['tentativas_usadas']; ?> tentativa(s) realizada(s)
-            <?php endif; ?>
-          </p>
+          <?php
+          $estrutura = isset($quiz['estrutura']) && is_array($quiz['estrutura']) ? $quiz['estrutura'] : array();
+          $duracao   = isset($estrutura['duracao_minutos']) ? (int) $estrutura['duracao_minutos'] : 0;
+          $ehProva   = $duracao > 0 || !empty($estrutura['por_blocos']);
+
+          // "5h30" para provas longas; "45 min" para as curtas.
+          $duracaoTexto = '';
+          if ($duracao > 0) {
+              $horas = (int) floor($duracao / 60);
+              $resto = $duracao % 60;
+              $duracaoTexto = $horas > 0
+                  ? ($resto > 0 ? $horas . 'h' . str_pad((string) $resto, 2, '0', STR_PAD_LEFT) : $horas . 'h')
+                  : $duracao . ' min';
+          }
+          ?>
+
+          <?php if ($ehProva): ?>
+            <div class="v2-quiz-estrutura v2-block" style="border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:14px;margin:12px 0;">
+              <p style="font-weight:700;margin:0 0 8px;">Antes de começar</p>
+              <ul style="margin:0;padding-left:18px;">
+                <li>
+                  <strong><?php echo (int) ($estrutura['total_questoes'] ?? $quiz['total_perguntas'] ?? 0); ?></strong> questões
+                  <?php if (!empty($estrutura['total_discursivas'])): ?>
+                    — <?php echo (int) $estrutura['total_objetivas']; ?> objetivas e
+                    <?php echo (int) $estrutura['total_discursivas']; ?> discursiva(s)
+                  <?php endif; ?>
+                </li>
+                <?php if ($duracao > 0): ?>
+                  <li>Duração: <strong><?php echo Helpers::e($duracaoTexto); ?></strong> (<?php echo $duracao; ?> minutos), a partir do início</li>
+                <?php else: ?>
+                  <li>Sem limite de tempo</li>
+                <?php endif; ?>
+                <?php if (!empty($estrutura['exige_aprovacao'])): ?>
+                  <li>Aprovação com no mínimo <strong><?php echo number_format((float) $estrutura['percentual_minimo'], 0); ?>%</strong>
+                    <?php if (!empty($estrutura['total_discursivas'])): ?>
+                      nas questões objetivas. A nota da discursiva não altera a aprovação.
+                    <?php endif; ?>
+                  </li>
+                <?php endif; ?>
+                <?php if (($estrutura['tentativas_restantes'] ?? null) !== null): ?>
+                  <li>Tentativas restantes: <strong><?php echo (int) $estrutura['tentativas_restantes']; ?></strong>
+                    de <?php echo (int) $estrutura['tentativas_maximas']; ?></li>
+                <?php endif; ?>
+                <?php if ($duracao > 0 && (string) ($estrutura['acao_ao_expirar'] ?? '') === 'enviar_automatico'): ?>
+                  <li>Ao esgotar o tempo, as respostas salvas são enviadas automaticamente.</li>
+                <?php endif; ?>
+              </ul>
+
+              <?php if (!empty($estrutura['blocos'])): ?>
+                <p style="font-weight:700;margin:12px 0 4px;">Estrutura da prova</p>
+                <ul style="margin:0;padding-left:18px;">
+                  <?php foreach ($estrutura['blocos'] as $bloco): ?>
+                    <li>
+                      <?php echo Helpers::e((string) $bloco['titulo']); ?>:
+                      <strong><?php echo (int) $bloco['quantidade']; ?></strong>
+                      <?php echo (string) $bloco['tipo_questao'] === 'discursiva' ? 'questão discursiva' : 'questões objetivas'; ?>
+                      <?php if (empty($bloco['conta_para_percentual'])): ?>
+                        <span class="v2-muted">(fora do percentual de aprovação)</span>
+                      <?php endif; ?>
+                    </li>
+                  <?php endforeach; ?>
+                </ul>
+              <?php endif; ?>
+            </div>
+          <?php else: ?>
+            <p class="v2-muted v2-sm">
+              <?php echo (int) ($quiz['total_perguntas'] ?? 0); ?> pergunta(s)
+              <?php if ($quiz['tentativas_maximas'] !== null): ?>
+                · Tentativas: <?php echo (int) ($quiz['tentativas_usadas'] ?? 0); ?>/<?php echo (int) $quiz['tentativas_maximas']; ?>
+              <?php elseif ((int) ($quiz['tentativas_usadas'] ?? 0) > 0): ?>
+                · <?php echo (int) $quiz['tentativas_usadas']; ?> tentativa(s) realizada(s)
+              <?php endif; ?>
+            </p>
+          <?php endif; ?>
+
           <?php if (!empty($quiz['pode_nova_tentativa'])): ?>
             <form method="post" action="<?php echo Helpers::e($iniciarAction); ?>" data-native-submit class="v2-quiz-form">
               <?php echo $hidden; ?>
-              <button type="submit" class="v2-btn v2-btn-primary" data-quiz-btn data-loading-label="Iniciando…"><i class="ti ti-player-play"></i> Iniciar quiz</button>
+              <button type="submit" class="v2-btn v2-btn-primary" data-quiz-btn data-loading-label="Iniciando…">
+                <i class="ti ti-player-play"></i> <?php echo $ehProva ? 'Iniciar prova' : 'Iniciar quiz'; ?>
+              </button>
             </form>
+            <?php if ($duracao > 0): ?>
+              <p class="v2-muted v2-sm" style="margin-top:6px;">
+                O cronômetro começa assim que você iniciar e continua correndo mesmo se você sair da página.
+              </p>
+            <?php endif; ?>
           <?php else: ?>
             <p class="v2-callout v2-callout-danger" role="status"><i class="ti ti-alert-triangle"></i><span>Você atingiu o número máximo de tentativas para este quiz.</span></p>
           <?php endif; ?>
@@ -105,6 +179,18 @@ $hidden = ''
             <span class="v2-muted v2-sm">Tentativas usadas: <?php echo (int) ($quiz['tentativas_usadas'] ?? 0); ?>/<?php echo (int) $quiz['tentativas_maximas']; ?></span>
           <?php endif; ?>
         </div>
+        <?php $tempo = isset($quiz['tempo']) && is_array($quiz['tempo']) ? $quiz['tempo'] : null; ?>
+        <?php if ($tempo !== null): ?>
+          <div id="v2-quiz-cronometro" role="timer" aria-live="polite"
+               data-tentativa="<?php echo (int) ($quiz['tentativa_ativa_id'] ?? 0); ?>"
+               data-restante="<?php echo (int) $tempo['segundos_restantes']; ?>"
+               style="position:sticky;top:0;z-index:5;display:flex;gap:12px;align-items:center;justify-content:space-between;
+                      padding:10px 14px;margin:0 0 12px;border-radius:12px;border:1px solid rgba(0,0,0,.1);background:#fff;">
+            <span class="v2-muted v2-sm" style="margin:0;">Tempo restante</span>
+            <strong id="v2-quiz-cronometro-valor" style="font-size:1.15rem;font-variant-numeric:tabular-nums;">--:--:--</strong>
+          </div>
+        <?php endif; ?>
+
         <?php if (trim((string) ($quiz['instrucoes'] ?? '')) !== ''): ?>
           <div class="v2-quiz-instrucoes"><?php echo nl2br(Helpers::e((string) $quiz['instrucoes'])); ?></div>
         <?php endif; ?>
@@ -113,28 +199,82 @@ $hidden = ''
           <?php echo $hidden; ?>
           <input type="hidden" name="tentativa_id" value="<?php echo (int) ($quiz['tentativa_ativa_id'] ?? 0); ?>">
 
-          <?php foreach (($quiz['perguntas'] ?? array()) as $idxP => $pergunta): ?>
-            <?php $pid = (int) $pergunta['id']; $marcada = (int) ($pergunta['alternativa_id_respondida'] ?? 0); ?>
-            <fieldset class="v2-quiz-pergunta" data-pergunta-id="<?php echo $pid; ?>">
-              <legend class="v2-quiz-enunciado">
-                <span class="v2-quiz-num"><?php echo (int) $idxP + 1; ?></span>
-                <?php echo nl2br(Helpers::e((string) ($pergunta['enunciado'] ?? ''))); ?>
-                <?php if (!empty($pergunta['obrigatoria'])): ?><span class="v2-quiz-obrig" title="Pergunta obrigatória" aria-label="obrigatória">*</span><?php endif; ?>
-              </legend>
-              <div class="v2-quiz-alts">
-                <?php foreach (($pergunta['alternativas'] ?? array()) as $alt): ?>
-                  <?php $aid = (int) $alt['id']; ?>
-                  <label class="v2-quiz-alt">
-                    <input type="radio" name="respostas[<?php echo $pid; ?>]" value="<?php echo $aid; ?>"<?php echo $marcada === $aid ? ' checked' : ''; ?>>
-                    <span class="v2-quiz-alt-text"><?php echo Helpers::e((string) ($alt['texto'] ?? '')); ?></span>
-                  </label>
-                <?php endforeach; ?>
+          <?php if (count($quiz['perguntas'] ?? array()) > 1): ?>
+            <div id="v2-quiz-progress" class="v2-quiz-progress" hidden>
+              <div class="v2-quiz-progress__bar"><div class="v2-quiz-progress__fill" id="v2-quiz-progress-fill"></div></div>
+              <div class="v2-quiz-progress__row">
+                <span class="v2-quiz-progress__text" id="v2-quiz-progress-text"></span>
+                <div class="v2-quiz-progress__dots" id="v2-quiz-progress-dots"></div>
               </div>
-            </fieldset>
-          <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+
+          <?php
+          // Prova longa por blocos: a navegação é por rolagem, não pelo
+          // assistente de uma questão por vez.
+          $modoProva = false;
+          foreach (($quiz['perguntas'] ?? array()) as $p) {
+              if ((string) ($p['tipo'] ?? '') === 'discursiva' || (string) ($p['bloco_codigo'] ?? '') !== '') {
+                  $modoProva = true;
+                  break;
+              }
+          }
+          ?>
+          <div id="v2-quiz-perguntas"<?php echo $modoProva ? ' data-modo-prova="1"' : ''; ?>>
+            <?php $blocoAtual = null; ?>
+            <?php foreach (($quiz['perguntas'] ?? array()) as $idxP => $pergunta): ?>
+              <?php
+              $pid          = (int) $pergunta['id'];
+              $marcada      = (int) ($pergunta['alternativa_id_respondida'] ?? 0);
+              $ehDiscursiva = (string) ($pergunta['tipo'] ?? 'multipla_escolha') === 'discursiva';
+              $codigoBloco  = (string) ($pergunta['bloco_codigo'] ?? '');
+              ?>
+
+              <?php if ($codigoBloco !== '' && $codigoBloco !== $blocoAtual): ?>
+                <?php $blocoAtual = $codigoBloco; ?>
+                <h3 class="v2-quiz-bloco-titulo" style="margin:20px 0 8px;font-size:1rem;">
+                  <?php echo Helpers::e((string) ($pergunta['bloco_titulo'] ?? 'Questões')); ?>
+                </h3>
+              <?php endif; ?>
+
+              <fieldset class="v2-quiz-pergunta" data-pergunta-id="<?php echo $pid; ?>"
+                        data-tipo="<?php echo $ehDiscursiva ? 'discursiva' : 'objetiva'; ?>">
+                <legend class="v2-quiz-enunciado">
+                  <span class="v2-quiz-num"><?php echo (int) $idxP + 1; ?></span>
+                  <?php echo nl2br(Helpers::e((string) ($pergunta['enunciado'] ?? ''))); ?>
+                  <?php if (!empty($pergunta['obrigatoria'])): ?><span class="v2-quiz-obrig" title="Questão obrigatória" aria-label="obrigatória">*</span><?php endif; ?>
+                </legend>
+
+                <?php if ($ehDiscursiva): ?>
+                  <label class="v2-muted v2-sm" for="v2-discursiva-<?php echo $pid; ?>" style="display:block;margin-bottom:4px;">Sua resposta</label>
+                  <textarea id="v2-discursiva-<?php echo $pid; ?>"
+                            name="discursivas[<?php echo $pid; ?>]"
+                            rows="12"
+                            maxlength="<?php echo (int) ($quiz['limite_caracteres_discursiva'] ?? 50000); ?>"
+                            style="width:100%;min-height:220px;padding:10px;border:1px solid rgba(0,0,0,.16);border-radius:10px;"
+                            placeholder="Escreva sua resposta."><?php echo Helpers::e((string) ($pergunta['texto_resposta'] ?? '')); ?></textarea>
+                  <p class="v2-muted v2-sm" style="margin:4px 0 0;">
+                    A nota desta questão é informativa: não altera a aprovação nem o certificado.
+                  </p>
+                <?php else: ?>
+                  <div class="v2-quiz-alts">
+                    <?php foreach (($pergunta['alternativas'] ?? array()) as $alt): ?>
+                      <?php $aid = (int) $alt['id']; ?>
+                      <label class="v2-quiz-alt">
+                        <input type="radio" name="respostas[<?php echo $pid; ?>]" value="<?php echo $aid; ?>"<?php echo $marcada === $aid ? ' checked' : ''; ?>>
+                        <span class="v2-quiz-alt-text"><?php echo Helpers::e((string) ($alt['texto'] ?? '')); ?></span>
+                      </label>
+                    <?php endforeach; ?>
+                  </div>
+                <?php endif; ?>
+              </fieldset>
+            <?php endforeach; ?>
+          </div>
 
           <div class="v2-quiz-actions">
-            <button type="submit" class="v2-btn v2-btn-primary" data-quiz-btn data-loading-label="Enviando…"><i class="ti ti-send"></i> Enviar respostas</button>
+            <button type="button" class="v2-btn v2-btn-ghost" id="v2-quiz-prev-btn" hidden><i class="ti ti-arrow-left"></i> Anterior</button>
+            <button type="button" class="v2-btn v2-btn-primary" id="v2-quiz-next-btn" hidden>Próxima <i class="ti ti-arrow-right"></i></button>
+            <button type="submit" class="v2-btn v2-btn-primary" id="v2-quiz-submit-btn" data-quiz-btn data-loading-label="Enviando…"><i class="ti ti-send"></i> Enviar respostas</button>
             <a class="v2-btn v2-btn-ghost v2-btn-sm" href="<?php echo Helpers::e($voltarAulaUrl); ?>">Voltar à aula</a>
           </div>
           <p class="v2-muted v2-sm" style="margin-top:8px;">(*) Perguntas obrigatórias</p>

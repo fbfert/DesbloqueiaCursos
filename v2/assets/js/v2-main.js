@@ -2482,6 +2482,181 @@
         setTimeout(function () { btn.setAttribute("disabled", "disabled"); }, 0);
       });
     });
+
+    initQuizWizardV2();
+    initQuizCronometroV2();
+  }
+
+  // Cronometro do simulado. O prazo e do servidor: aqui so exibimos a
+  // contagem e, ao zerar, avisamos o servidor para aplicar a regra
+  // configurada (envio automatico do que estiver salvo).
+  function initQuizCronometroV2() {
+    var box = $("#v2-quiz-cronometro");
+    if (!box) { return; }
+
+    var valor = $("#v2-quiz-cronometro-valor");
+    var form = $("#v2-quiz-answer-form");
+    if (!valor || !form) { return; }
+
+    var restante = parseInt(box.getAttribute("data-restante"), 10) || 0;
+    var tentativaId = parseInt(box.getAttribute("data-tentativa"), 10) || 0;
+    var encerrando = false;
+
+    function token() {
+      var campo = form.querySelector('input[name="_token"], input[name="csrf_token"]');
+      return campo ? campo.value : "";
+    }
+
+    function formatar(s) {
+      if (s < 0) { s = 0; }
+      var h = Math.floor(s / 3600);
+      var m = Math.floor((s % 3600) / 60);
+      var seg = s % 60;
+      return [h, m, seg].map(function (n) { return String(n).padStart(2, "0"); }).join(":");
+    }
+
+    function conferirNoServidor() {
+      return fetch("/aluno/cursos/quiz/tempo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": token() },
+        body: JSON.stringify({ tentativa_id: tentativaId, _token: token() })
+      }).then(function (r) { return r.json(); });
+    }
+
+    function encerrarPorTempo() {
+      if (encerrando) { return; }
+      encerrando = true;
+      valor.textContent = "00:00:00";
+      conferirNoServidor()["catch"](function () {})
+        .then(function () {
+          alert("O tempo da prova terminou. Suas respostas salvas foram enviadas automaticamente.");
+          window.location.reload();
+        });
+    }
+
+    valor.textContent = formatar(restante);
+    setInterval(function () {
+      if (encerrando) { return; }
+      restante--;
+      valor.textContent = formatar(restante);
+      if (restante <= 300) { box.style.borderColor = "#dc2626"; }
+      if (restante <= 0) { encerrarPorTempo(); }
+    }, 1000);
+
+    // O relogio do navegador e apenas visual: a cada 60s o servidor confirma
+    // o tempo real restante e informa se a tentativa ja foi encerrada.
+    setInterval(function () {
+      if (encerrando) { return; }
+      conferirNoServidor().then(function (data) {
+        if (!data || !data.ok) { return; }
+        if (data.encerrada) {
+          encerrando = true;
+          window.location.reload();
+          return;
+        }
+        if (data.tempo && typeof data.tempo.segundos_restantes === "number") {
+          restante = data.tempo.segundos_restantes;
+        }
+      })["catch"](function () {});
+    }, 60000);
+  }
+
+  // Uma pergunta por vez (progressive enhancement puro): sem JS, o form
+  // continua com todas as perguntas visíveis e envia normalmente. Nenhuma
+  // correção/nota é calculada no cliente; só esconde/mostra fieldsets.
+  function initQuizWizardV2() {
+    var perguntasWrap = $("#v2-quiz-perguntas");
+    var progress = $("#v2-quiz-progress");
+    var progressFill = $("#v2-quiz-progress-fill");
+    var progressText = $("#v2-quiz-progress-text");
+    var dotsWrap = $("#v2-quiz-progress-dots");
+    var prevBtn = $("#v2-quiz-prev-btn");
+    var nextBtn = $("#v2-quiz-next-btn");
+    var submitBtn = $("#v2-quiz-submit-btn");
+    if (!perguntasWrap || !progress || !prevBtn || !nextBtn) { return; }
+
+    // Simulado por blocos (prova longa com discursiva): a navegacao e por
+    // rolagem, com os titulos de bloco servindo de guia. Uma questao por vez
+    // atrapalharia numa prova de 81 questoes.
+    if (perguntasWrap.getAttribute("data-modo-prova") === "1") { return; }
+
+    var steps = $$(".v2-quiz-pergunta", perguntasWrap);
+    if (steps.length <= 1) { return; }
+
+    function isAnswered(step) {
+      if (step.getAttribute("data-tipo") === "discursiva") {
+        var area = step.querySelector("textarea");
+        return !!(area && area.value.trim().length >= 3);
+      }
+      return !!step.querySelector('input[type="radio"]:checked');
+    }
+
+    var current = steps.length - 1;
+    for (var i = 0; i < steps.length; i++) {
+      if (!isAnswered(steps[i])) { current = i; break; }
+    }
+    var maxReached = current;
+
+    var dots = steps.map(function (step, i) {
+      var dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "v2-quiz-progress__dot";
+      dot.textContent = String(i + 1);
+      dot.setAttribute("aria-label", "Ir para a pergunta " + (i + 1));
+      dot.addEventListener("click", function () {
+        if (i <= maxReached) {
+          current = i;
+          render();
+        }
+      });
+      dotsWrap.appendChild(dot);
+      return dot;
+    });
+
+    function render() {
+      steps.forEach(function (step, i) {
+        step.style.display = i === current ? "" : "none";
+      });
+      progressFill.style.width = (((current + 1) / steps.length) * 100) + "%";
+      progressText.textContent = "Pergunta " + (current + 1) + " de " + steps.length;
+      dots.forEach(function (dot, i) {
+        dot.disabled = i > maxReached;
+        dot.classList.toggle("is-current", i === current);
+        dot.classList.toggle("is-answered", i !== current && isAnswered(steps[i]));
+      });
+      // .v2-btn define display:inline-flex no proprio seletor de classe, que
+      // sobrescreve o [hidden] nativo do navegador (CSS de autor vence CSS de
+      // user-agent mesmo com especificidade igual) - por isso alterna via
+      // style.display em vez da propriedade hidden nesses botoes especificos.
+      prevBtn.style.display = current === 0 ? "none" : "";
+      var isLast = current === steps.length - 1;
+      nextBtn.style.display = isLast ? "none" : "";
+      if (submitBtn) { submitBtn.style.display = isLast ? "" : "none"; }
+    }
+
+    prevBtn.addEventListener("click", function () {
+      if (current > 0) {
+        current--;
+        render();
+      }
+    });
+
+    nextBtn.addEventListener("click", function () {
+      if (!isAnswered(steps[current])) {
+        alert("Selecione uma alternativa antes de continuar.");
+        return;
+      }
+      if (current < steps.length - 1) {
+        current++;
+        if (current > maxReached) { maxReached = current; }
+        render();
+      }
+    });
+
+    progress.hidden = false;
+    prevBtn.hidden = false;
+    nextBtn.hidden = false;
+    render();
   }
 
   /* ---------------- ATIVIDADE DISCURSIVA V2 (Fase 2.10) ------ */
@@ -2501,6 +2676,25 @@
       var upd = function () { out.textContent = String(ta.value.length); };
       upd();
       ta.addEventListener("input", upd);
+    });
+
+    // Validação client-side do limite de 5 imagens (o servidor valida de
+    // novo - isso é só UX, evita o aluno preencher tudo e só descobrir o
+    // limite depois do POST).
+    var MAX_IMAGENS = 5;
+    $$('input[type="file"][name="imagens[]"]').forEach(function (input) {
+      var erro = document.getElementById(input.getAttribute("id") + "-erro") || $("[data-imagens-erro]", input.form);
+      input.addEventListener("change", function () {
+        if (input.files && input.files.length > MAX_IMAGENS) {
+          if (erro) {
+            erro.textContent = "Selecione no máximo " + MAX_IMAGENS + " imagens.";
+            erro.hidden = false;
+          }
+          input.value = "";
+        } else if (erro) {
+          erro.hidden = true;
+        }
+      });
     });
 
     $$("form.v2-atv-form").forEach(function (form) {

@@ -93,13 +93,26 @@ class ConteudoQuizService
         $snapshot = $tentativaEmAndamento
             ? $this->decodeSnapshot($tentativaEmAndamento['quiz_snapshot_json'] ?? null)
             : null;
-        $perguntas = $this->montarPerguntasParaAluno($quiz, $snapshot);
+
+        $estrutura = $this->estruturaDoQuiz($quiz, (int) $inscricaoId);
+
+        // Em modo blocos, antes de iniciar não existe prova montada: as
+        // questões só surgem no sorteio da tentativa. Listar o banco inteiro
+        // aqui daria um total enganoso (o tamanho do banco, não o da prova) e
+        // carregaria enunciados que o aluno ainda não deve receber.
+        if ($tentativaEmAndamento === null && !empty($estrutura['por_blocos'])) {
+            $perguntas       = array();
+            $totalPerguntas  = (int) $estrutura['total_questoes'];
+        } else {
+            $perguntas      = $this->montarPerguntasParaAluno($quiz, $snapshot);
+            $totalPerguntas = count($perguntas);
+        }
 
         $quiz['perguntas']           = $perguntas;
-        $quiz['total_perguntas']     = count($perguntas);
+        $quiz['total_perguntas']     = $totalPerguntas;
         $quiz['tentativas_usadas']   = $this->tentativaModel->countForInscricao((int) $quiz['id'], (int) $inscricaoId);
         $quiz['pode_nova_tentativa'] = $this->podeFazerNovaTentativa((int) $quiz['id'], (int) $inscricaoId);
-        $quiz['estrutura']           = $this->estruturaDoQuiz($quiz, (int) $inscricaoId);
+        $quiz['estrutura']           = $estrutura;
         $quiz['tentativa_em_andamento'] = $tentativaEmAndamento;
         $quiz['tempo']               = $tentativaEmAndamento ? $this->tempoDaTentativa($tentativaEmAndamento) : null;
         $quiz['blocos_snapshot']     = $snapshot && !empty($snapshot['blocos']) ? $snapshot['blocos'] : array();

@@ -234,6 +234,11 @@ class QuizController extends Controller
         if (!is_array($respostas)) {
             $respostas = array();
         }
+        // Simulado por blocos: a discursiva é obrigatória para o envio.
+        $discursivas = $request->input('discursivas', array());
+        if (!is_array($discursivas)) {
+            $discursivas = array();
+        }
 
         // Correção/nota/aprovação/limite/progresso: integralmente no service real.
         $resultado = $this->quizService->enviarTentativa(array(
@@ -242,6 +247,7 @@ class QuizController extends Controller
             'item_id' => $itemId,
             'inscricao_id' => (int) $inscricao['id'],
             'respostas' => $respostas,
+            'discursivas' => $discursivas,
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ));
@@ -344,6 +350,12 @@ class QuizController extends Controller
             'tentativas_maximas' => isset($quizAluno['tentativas_maximas']) && $quizAluno['tentativas_maximas'] !== null
                 ? (int) $quizAluno['tentativas_maximas'] : null,
             'pode_nova_tentativa' => !empty($quizAluno['pode_nova_tentativa']),
+            // Estrutura da prova (duração, blocos, regra de aprovação) para o
+            // painel exibido antes de começar e para o cabeçalho do simulado.
+            'estrutura' => isset($quizAluno['estrutura']) && is_array($quizAluno['estrutura'])
+                ? $quizAluno['estrutura'] : array(),
+            'limite_caracteres_discursiva' => isset($quizAluno['limite_caracteres_discursiva']) && $quizAluno['limite_caracteres_discursiva'] !== null
+                ? (int) $quizAluno['limite_caracteres_discursiva'] : 50000,
         );
 
         // RESULTADO — só quando o aluno acabou de enviar (tentativa_id na URL) e a
@@ -381,6 +393,8 @@ class QuizController extends Controller
                 'tentativa_ativa_id' => (int) $tentativaAtiva['id'],
                 'numero_tentativa' => (int) ($tentativaAtiva['numero_tentativa'] ?? 1),
                 'perguntas' => $this->perguntasParaView($perguntas, false),
+                // Prazo conferido no servidor; o cronômetro da tela é só visual.
+                'tempo' => $dados && !empty($dados['tempo']) ? $dados['tempo'] : null,
             ));
         }
 
@@ -420,6 +434,13 @@ class QuizController extends Controller
                 'alternativas' => $alts,
                 'alternativa_id_respondida' => (int) ($p['alternativa_id_respondida'] ?? 0),
                 'explicacao' => $resultado && isset($p['explicacao']) ? (string) $p['explicacao'] : '',
+                // Simulado por blocos: tipo define se renderiza alternativas ou
+                // campo de texto; a rubrica de correção nunca vem para a view.
+                'tipo' => (string) ($p['tipo'] ?? 'multipla_escolha'),
+                'bloco_codigo' => (string) ($p['bloco_codigo'] ?? ''),
+                'bloco_titulo' => (string) ($p['bloco_titulo'] ?? ''),
+                'texto_resposta' => (string) ($p['texto_resposta'] ?? ''),
+                'marcada_para_revisao' => !empty($p['marcada_para_revisao']),
             );
         }
         return $saida;
