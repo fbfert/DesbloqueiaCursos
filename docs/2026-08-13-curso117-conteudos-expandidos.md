@@ -90,6 +90,50 @@ zero script/iframe, 12/12 com `card-resumo`.
 Backup anterior à gravação:
 `backups/curso117-html-pre-melhoria-20260813-212216.sql`.
 
+## Quiz final: banco triplicado e sorteio ativado
+
+Quiz `id=23`, item 1473 ("Quiz final: validação do curso").
+
+| | Antes | Depois |
+|---|---|---|
+| Questões no banco | 5 | **15** |
+| Aplicadas por tentativa | as 5, sempre as mesmas | **5 sorteadas** |
+| `modo_selecao` | `todas` | `blocos` |
+| Embaralhamento | desligado | perguntas **e** alternativas |
+| Repetição entre tentativas | sempre repetia | evita enquanto houver inéditas |
+
+**Triplicar o banco sozinho não resolveria.** Com `modo_selecao = 'todas'` o
+quiz aplica todas as questões cadastradas em toda tentativa — passar de 5 para
+15 apenas deixaria a prova três vezes maior, sempre igual. Para "sortear
+perguntas diferentes a cada tentativa" foi preciso, além de ampliar o banco:
+
+1. criar o bloco `GERAL` com `quantidade_sortear = 5`;
+2. vincular a ele as 5 questões que já existiam;
+3. mudar o quiz para `modo_selecao = 'blocos'`;
+4. ligar embaralhamento e `evitar_repeticao_tentativas`.
+
+Simulação de 3 tentativas seguidas do mesmo aluno: 15 questões distintas, zero
+repetição. Da 4ª tentativa em diante o banco se esgota, o sistema reaproveita
+questões já vistas e registra a ocorrência em `sorteio_auditoria_json`.
+
+As 10 questões novas cobrem os temas das 12 aulas (uso consciente, construção
+de prompts, verificação e alucinação, privacidade, autoria, revisão espaçada e
+organização) e foram escritas com **4 alternativas**, contra 3 das originais:
+com 3 opções o chute acerta 33% das vezes, com 4 cai para 25%. As 5 antigas
+foram preservadas como estavam.
+
+A tentativa já existente (1 aluno, aprovado com 100%) continua íntegra — o
+snapshot preserva a prova exatamente como foi aplicada.
+
+Backup: `backups/quiz23-pre-expansao-20260813-222924.sql`.
+
+### Ponto em aberto
+
+O quiz tem `tentativas_maximas = NULL` (ilimitadas). Com 15 questões e 5 por
+tentativa, o banco cobre 3 tentativas inéditas; a partir da 4ª haverá
+reaproveitamento. Se a intenção for que ninguém veja questão repetida, basta
+limitar a 3 tentativas — ou ampliar o banco.
+
 ## Carga horária
 
 Mantida em **8h** por decisão do usuário. Registro a ressalva: o curso passou de
