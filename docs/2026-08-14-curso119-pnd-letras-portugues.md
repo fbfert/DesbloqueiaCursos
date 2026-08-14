@@ -114,12 +114,30 @@ Três workflows, todos sem erros:
 
 ## Estado e pendências
 
-O curso está em **rascunho, com valor 0,00 e carga horária 30h** (herdada do
-118). Os itens internos estão publicados, mas o curso não aparece para alunos
-enquanto estiver em rascunho.
+O curso está em **rascunho**, com carga horária 30h (herdada do 118). Os itens
+internos estão publicados, mas o curso não aparece para alunos enquanto estiver
+em rascunho.
 
-**Decisões comerciais pendentes** (não tomadas de propósito): publicar, definir
-preço, carga horária real e turma.
+**Preço definido pelo usuário**: espelha o 118 — `valor 150,00`,
+`valor_promocional 100,00`, `em_promocao = 1`.
+
+Ao aplicar o preço, a comparação campo a campo com o 118 revelou duas
+divergências que não eram decisão comercial e foram corrigidas:
+
+- `categoria_id` estava **NULL** → passou a **15** ("Prova Nacional Docente"),
+  a mesma do 118. Sem categoria o curso não entra nas listagens e filtros;
+- `nota_minima` estava **70,00** → passou a **60,00**, batendo com o
+  `percentual_minimo` do simulado (quiz 25) e com a regra documentada da PND.
+  Hoje é inerte (`exige_avaliacao = 0`), mas divergente seria armadilha futura.
+
+**Ainda pendente, por ser decisão do usuário:**
+
+- **publicar** (`status = 'ativo'`);
+- **turma**: `usar_turmas = 1` e o curso não tem turma. O 118 tem a
+  `PNDPED01-2026A` (13/08 a 31/12/2026). Sem turma não há como matricular;
+- **thumbnail**: o 119 está sem imagem; a do 118 é específica de Pedagogia e
+  copiá-la seria enganoso;
+- **carga horária real** (30h herdada, não recalculada).
 
 **Revisão recomendada antes de divulgar**, por professor da área:
 
