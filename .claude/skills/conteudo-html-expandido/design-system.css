@@ -106,8 +106,15 @@ strong{color:var(--texto);}
 .quadro td{padding:10px 12px;border-top:1px solid var(--border);vertical-align:top;}
 .quadro tr:nth-child(even) td{background:var(--bg);}
 
-/* Barra do radical. O Unicode tem o simbolo &radic; mas nao o vinculo que
-   delimita o radicando: em &radic;(9 + 16) fica ambiguo onde a raiz termina.
-   Uso: &radic;<span class="radical">9 + 16</span> — sem os parenteses, que a
-   barra substitui. Custa zero byte de JS; KaTeX aqui seria 361 KB por pagina. */
+/* Barra do radical. O Unicode tem o simbolo da raiz mas nao o vinculo que
+   delimita o radicando: sem a barra, em raiz de (9 + 16) fica ambiguo onde a
+   raiz termina. Uso: o simbolo da raiz seguido de um span desta classe
+   envolvendo o radicando, sem os parenteses, que a barra substitui.
+   Custa zero byte de JS; KaTeX aqui seria 361 KB por pagina.
+   NAO escrever TAG DE FECHAMENTO neste arquivo, nem dentro de comentario. Este
+   CSS e embutido na propria pagina, dentro da tag de estilo, e o parser HTML4
+   do libxml enxerga o fechamento mesmo ali: uma unica ocorrencia faz a
+   validacao por DOMDocument acusar "Unexpected end tag" em TODAS as aulas do
+   curso, e nao no arquivo que a causou - o que manda procurar no lugar errado.
+   Tag de abertura solta, como a da linha 2, e inofensiva. */
 .radical{border-top:1px solid currentColor;padding:0 .15em 0 .1em;margin-left:-.02em;}
