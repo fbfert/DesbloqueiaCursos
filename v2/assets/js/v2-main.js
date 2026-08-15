@@ -2485,8 +2485,15 @@
 
     initQuizWizardV2();
     initQuizCronometroV2();
+    // O autosave vem antes da prova: ela usa o v2QuizSalvarAgora que ele expoe.
     initQuizAutosaveV2();
+    initQuizProvaV2();
   }
+
+  // Descarrega imediatamente o que estiver na fila do autosave. Fica exposto
+  // aqui porque a navegacao da prova (avancar/voltar/pular) precisa gravar
+  // antes de trocar de questao, sem esperar o debounce.
+  var v2QuizSalvarAgora = null;
 
   // Salva a resposta assim que o aluno responde, para que sair da pagina (ou
   // perder a conexao) nunca custe o trabalho ja feito. Envia so o que mudou;
@@ -2581,6 +2588,11 @@
       if (timer) { clearTimeout(timer); }
       timer = setTimeout(function () { enviarPendentes(false); }, atraso);
     }
+
+    v2QuizSalvarAgora = function () {
+      if (timer) { clearTimeout(timer); timer = null; }
+      enviarPendentes(false);
+    };
 
     // Objetivas: salva quase imediatamente apos a escolha.
     form.addEventListener("change", function (evento) {
@@ -2784,6 +2796,328 @@
     progress.hidden = false;
     prevBtn.hidden = false;
     nextBtn.hidden = false;
+    render();
+  }
+
+  // Simulado: uma questao por vez, navegacao livre (pode pular e voltar, como
+  // em prova de verdade), gravacao a cada troca de questao e conferencia antes
+  // do envio. Progressive enhancement: sem JS a prova continua rolavel e o
+  // envio direto segue funcionando.
+  function initQuizProvaV2() {
+    var wrap = $("#v2-quiz-perguntas");
+    if (!wrap || wrap.getAttribute("data-modo-prova") !== "1") { return; }
+
+    var nav = $("#v2-quiz-prova-nav");
+    var painel = $("#v2-quiz-prova-revisao");
+    var form = $("#v2-quiz-answer-form");
+    if (!nav || !painel || !form) { return; }
+
+    var steps = $$(".v2-quiz-pergunta", wrap);
+    if (steps.length <= 1) { return; }
+
+    var elBloco = $("#v2-quiz-prova-bloco");
+    var elPos = $("#v2-quiz-prova-pos");
+    var elFill = $("#v2-quiz-prova-fill");
+    var elResumo = $("#v2-quiz-prova-resumo");
+    var indice = $("#v2-quiz-prova-indice");
+    var indiceBtn = $("#v2-quiz-prova-indice-btn");
+    var prevBtn = $("#v2-quiz-prova-prev-btn");
+    var nextBtn = $("#v2-quiz-prova-next-btn");
+    var revisarBtn = $("#v2-quiz-prova-revisar-btn");
+    var voltarBtn = $("#v2-quiz-prova-voltar-btn");
+    var submitGenerico = $("#v2-quiz-submit-btn");
+    var resumoRevisao = $("#v2-quiz-prova-revisao-resumo");
+    var listasRevisao = $("#v2-quiz-prova-revisao-listas");
+
+    // Os titulos de bloco impressos entre as questoes so fazem sentido na
+    // rolagem; aqui o bloco aparece no cabecalho da navegacao.
+    $$(".v2-quiz-bloco-titulo", wrap).forEach(function (h) { h.style.display = "none"; });
+
+    var atual = 0;
+    var emRevisao = false;
+
+    function respondida(step) {
+      if (step.getAttribute("data-tipo") === "discursiva") {
+        var area = step.querySelector("textarea");
+        return !!(area && area.value.trim().length >= 3);
+      }
+      return !!step.querySelector('input[type="radio"]:checked');
+    }
+
+    function marcada(step) { return step.getAttribute("data-revisao") === "1"; }
+
+    function contar() {
+      var r = 0, m = 0, faltaDiscursiva = false;
+      steps.forEach(function (s) {
+        if (respondida(s)) { r++; } else if (s.getAttribute("data-tipo") === "discursiva") { faltaDiscursiva = true; }
+        if (marcada(s)) { m++; }
+      });
+      return { respondidas: r, pendentes: steps.length - r, marcadas: m, faltaDiscursiva: faltaDiscursiva };
+    }
+
+    function valorDe(nome) {
+      var campo = form.querySelector('input[name="' + nome + '"]');
+      return campo ? campo.value : "";
+    }
+
+    // Grava o que estiver pendente antes de trocar de questao. Sem isso, o
+    // aluno que responde e avanca rapido dependeria do debounce de 600ms.
+    function gravarPendencias() {
+      if (typeof v2QuizSalvarAgora === "function") {
+        try { v2QuizSalvarAgora(); } catch (e) {}
+      }
+    }
+
+    var botoesIndice = [];
+
+    function montarIndice() {
+      var blocoCorrente = null;
+      var grade = null;
+      steps.forEach(function (step, i) {
+        var codigo = step.getAttribute("data-bloco") || "";
+        if (codigo !== blocoCorrente) {
+          blocoCorrente = codigo;
+          var titulo = document.createElement("p");
+          titulo.className = "v2-quiz-prova-indice__titulo";
+          titulo.textContent = step.getAttribute("data-bloco-titulo") || "Questões";
+          indice.appendChild(titulo);
+          grade = document.createElement("div");
+          grade.className = "v2-quiz-prova-indice__grade";
+          indice.appendChild(grade);
+        }
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "v2-quiz-prova-indice__item";
+        b.textContent = String(i + 1);
+        b.addEventListener("click", function () { irPara(i); });
+        grade.appendChild(b);
+        botoesIndice.push(b);
+      });
+
+      var legenda = document.createElement("p");
+      legenda.className = "v2-muted v2-sm v2-quiz-prova-indice__legenda";
+      legenda.textContent = "Cheia: respondida · Vazia: pendente · Bandeira: marcada para revisão";
+      indice.appendChild(legenda);
+    }
+
+    function pintarIndice() {
+      botoesIndice.forEach(function (b, i) {
+        b.classList.toggle("is-answered", respondida(steps[i]));
+        b.classList.toggle("is-flagged", marcada(steps[i]));
+        b.classList.toggle("is-current", i === atual && !emRevisao);
+        b.setAttribute("aria-label", "Questão " + (i + 1) + (respondida(steps[i]) ? ", respondida" : ", pendente") + (marcada(steps[i]) ? ", marcada para revisão" : ""));
+      });
+    }
+
+    function render() {
+      steps.forEach(function (s, i) { s.style.display = (!emRevisao && i === atual) ? "" : "none"; });
+
+      var c = contar();
+      if (elResumo) {
+        elResumo.textContent = c.respondidas + " de " + steps.length + " respondidas"
+          + (c.pendentes ? " · " + c.pendentes + " pendente" + (c.pendentes > 1 ? "s" : "") : "")
+          + (c.marcadas ? " · " + c.marcadas + " marcada" + (c.marcadas > 1 ? "s" : "") : "");
+      }
+      if (elFill) { elFill.style.width = ((c.respondidas / steps.length) * 100) + "%"; }
+
+      if (!emRevisao) {
+        var step = steps[atual];
+        if (elBloco) { elBloco.textContent = step.getAttribute("data-bloco-titulo") || ""; }
+        if (elPos) { elPos.textContent = "Questão " + (atual + 1) + " de " + steps.length; }
+      }
+
+      // .v2-btn usa display:inline-flex, que vence o [hidden] do navegador;
+      // por isso a alternancia e por style.display nestes botoes.
+      if (prevBtn) { prevBtn.style.display = (emRevisao || atual === 0) ? "none" : ""; }
+      if (nextBtn) { nextBtn.style.display = (emRevisao || atual >= steps.length - 1) ? "none" : ""; }
+      if (revisarBtn) { revisarBtn.style.display = emRevisao ? "none" : ""; }
+      if (submitGenerico) { submitGenerico.style.display = "none"; }
+
+      nav.hidden = emRevisao;
+      painel.hidden = !emRevisao;
+      pintarIndice();
+    }
+
+    function irPara(i) {
+      if (i < 0 || i >= steps.length) { return; }
+      gravarPendencias();
+      atual = i;
+      emRevisao = false;
+      if (indice) { indice.hidden = true; }
+      if (indiceBtn) { indiceBtn.setAttribute("aria-expanded", "false"); }
+      render();
+      nav.scrollIntoView({ block: "start" });
+      var foco = steps[i].querySelector('input[type="radio"], textarea');
+      if (foco) { foco.focus({ preventScroll: true }); }
+    }
+
+    function linhaQuestao(i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "v2-btn v2-btn-ghost v2-btn-sm";
+      b.style.margin = "0 6px 6px 0";
+      b.textContent = "Questão " + (i + 1);
+      b.addEventListener("click", function () { irPara(i); });
+      return b;
+    }
+
+    function abrirRevisao() {
+      gravarPendencias();
+      emRevisao = true;
+
+      var c = contar();
+      resumoRevisao.innerHTML = "";
+      var p = document.createElement("p");
+      p.style.margin = "0 0 10px";
+      p.innerHTML = "<strong>" + c.respondidas + " de " + steps.length + "</strong> questões respondidas.";
+      resumoRevisao.appendChild(p);
+
+      if (c.faltaDiscursiva) {
+        var aviso = document.createElement("p");
+        aviso.className = "v2-callout v2-callout-danger";
+        aviso.setAttribute("role", "alert");
+        aviso.textContent = "A questão discursiva é obrigatória para o envio. Responda antes de enviar a prova.";
+        resumoRevisao.appendChild(aviso);
+      } else if (c.pendentes > 0) {
+        var alerta = document.createElement("p");
+        alerta.className = "v2-callout v2-callout-warning";
+        alerta.setAttribute("role", "status");
+        alerta.textContent = "Você ainda tem " + c.pendentes + " questão(ões) sem resposta. Questão em branco conta como erro.";
+        resumoRevisao.appendChild(alerta);
+      }
+
+      listasRevisao.innerHTML = "";
+      var pendentes = [], marcadas = [];
+      steps.forEach(function (s, i) {
+        if (!respondida(s)) { pendentes.push(i); }
+        if (marcada(s)) { marcadas.push(i); }
+      });
+
+      [["Sem resposta", pendentes], ["Marcadas para revisão", marcadas]].forEach(function (par) {
+        if (!par[1].length) { return; }
+        var t = document.createElement("p");
+        t.style.cssText = "font-weight:700;margin:12px 0 6px;";
+        t.textContent = par[0] + " (" + par[1].length + ")";
+        listasRevisao.appendChild(t);
+        var box = document.createElement("div");
+        par[1].forEach(function (i) { box.appendChild(linhaQuestao(i)); });
+        listasRevisao.appendChild(box);
+      });
+
+      if (!pendentes.length && !marcadas.length) {
+        var ok = document.createElement("p");
+        ok.className = "v2-callout v2-callout-success";
+        ok.setAttribute("role", "status");
+        ok.textContent = "Tudo respondido e nada marcado para revisão.";
+        listasRevisao.appendChild(ok);
+      }
+
+      render();
+      painel.scrollIntoView({ block: "start" });
+    }
+
+    // Marcar para revisao usa a rota que ja existe; o estado fica no servidor,
+    // entao sobrevive a recarregar a pagina ou trocar de aparelho.
+    function alternarMarcacao(step, botao) {
+      var novo = !marcada(step);
+      step.setAttribute("data-revisao", novo ? "1" : "0");
+      botao.setAttribute("aria-pressed", novo ? "true" : "false");
+      var texto = botao.querySelector(".v2-quiz-flag__texto");
+      if (texto) { texto.textContent = novo ? "Marcada para revisão" : "Marcar para revisão"; }
+      pintarIndice();
+      render();
+
+      fetch("/aluno/cursos/quiz/revisao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tentativa_id: parseInt(valorDe("tentativa_id"), 10) || 0,
+          pergunta_id: parseInt(step.getAttribute("data-pergunta-id"), 10) || 0,
+          marcada: novo ? 1 : 0,
+          _token: valorDe("_token")
+        })
+      })["catch"](function () {
+        // A marcacao e auxiliar: se a rede falhar, o valor local continua
+        // valendo para esta sessao e nao vale interromper a prova por isso.
+      });
+    }
+
+    steps.forEach(function (step) {
+      var botao = step.querySelector("[data-flag-pergunta]");
+      if (!botao) { return; }
+      botao.hidden = false;
+      if (marcada(step)) {
+        var t = botao.querySelector(".v2-quiz-flag__texto");
+        if (t) { t.textContent = "Marcada para revisão"; }
+      }
+      botao.addEventListener("click", function () { alternarMarcacao(step, botao); });
+    });
+
+    form.addEventListener("change", function () { render(); });
+    form.addEventListener("input", function (e) {
+      if (e.target && String(e.target.tagName).toLowerCase() === "textarea") { render(); }
+    });
+
+    if (prevBtn) { prevBtn.addEventListener("click", function () { irPara(atual - 1); }); }
+    if (nextBtn) { nextBtn.addEventListener("click", function () { irPara(atual + 1); }); }
+    if (revisarBtn) { revisarBtn.addEventListener("click", abrirRevisao); }
+    if (voltarBtn) { voltarBtn.addEventListener("click", function () { irPara(atual); }); }
+
+    if (indiceBtn) {
+      indiceBtn.addEventListener("click", function () {
+        var abrir = indice.hidden;
+        indice.hidden = !abrir;
+        indiceBtn.setAttribute("aria-expanded", abrir ? "true" : "false");
+      });
+    }
+
+    // O handler generico de "Enviando…" roda antes deste (foi registrado
+    // antes) e ja marcou o botao como enviando, agendando o disabled. Quando
+    // barramos o envio aqui, e preciso desfazer isso, senao o aluno fica com
+    // um botao morto escrito "Enviando…". O setTimeout garante a ordem: entra
+    // na fila depois do deles.
+    var botoesEnvio = $$("[data-quiz-btn]", form);
+    botoesEnvio.forEach(function (b) { b.setAttribute("data-rotulo-original", b.innerHTML); });
+
+    function liberarBotoesEnvio() {
+      botoesEnvio.forEach(function (b) {
+        setTimeout(function () {
+          b.removeAttribute("data-submitting");
+          b.removeAttribute("disabled");
+          var original = b.getAttribute("data-rotulo-original");
+          if (original) { b.innerHTML = original; }
+        }, 0);
+      });
+    }
+
+    // A discursiva em branco faz o servidor recusar o envio; avisar aqui evita
+    // que o aluno descubra isso so depois de clicar em enviar.
+    form.addEventListener("submit", function (evento) {
+      var c = contar();
+      if (c.faltaDiscursiva) {
+        evento.preventDefault();
+        liberarBotoesEnvio();
+        abrirRevisao();
+        return;
+      }
+      if (c.pendentes > 0 && !window.confirm("Você tem " + c.pendentes + " questão(ões) sem resposta. Enviar mesmo assim?")) {
+        evento.preventDefault();
+        liberarBotoesEnvio();
+      }
+    });
+
+    montarIndice();
+
+    // Abre na primeira pendente: quem volta de uma sessao interrompida
+    // reencontra a prova onde parou, e nao no comeco.
+    for (var i = 0; i < steps.length; i++) {
+      if (!respondida(steps[i])) { atual = i; break; }
+    }
+
+    nav.hidden = false;
+    if (prevBtn) { prevBtn.hidden = false; }
+    if (nextBtn) { nextBtn.hidden = false; }
+    if (revisarBtn) { revisarBtn.hidden = false; }
     render();
   }
 

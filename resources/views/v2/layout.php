@@ -5,6 +5,14 @@ use App\Support\V2Nav;
 $pageTitle = isset($pageTitle) && trim((string) $pageTitle) !== '' ? (string) $pageTitle : 'Desbloqueia Cursos';
 $pageDescription = isset($pageDescription) ? (string) $pageDescription : '';
 
+// Cache busting pelo mtime, mesmo padrão de resources/views/layout.php. Sem
+// isso o aluno que já visitou a V2 continua com o CSS/JS antigos em cache, e
+// mudanças de comportamento (como a navegação do simulado) não chegam nele.
+$v2CssPath = BASE_PATH . '/v2/assets/css/v2-main.css';
+$v2JsPath  = BASE_PATH . '/v2/assets/js/v2-main.js';
+$v2CssVersion = is_file($v2CssPath) ? filemtime($v2CssPath) : null;
+$v2JsVersion  = is_file($v2JsPath) ? filemtime($v2JsPath) : null;
+
 // Fase 2.13 — navegação V2 centralizada (V2Nav). Sobrescreve quaisquer hrefs
 // herdados que apontariam ao V1 (ex.: catalogo/categorias/login). `areaHref`
 // (papel-dependente) e `homeHref` são preservados quando já informados.
@@ -56,7 +64,7 @@ $certNavClass = strpos($currentPath, 'certificados/validar') !== false ? ' is-ac
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-  <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
+  <link rel="stylesheet" href="/v2/assets/css/v2-main.css<?php echo $v2CssVersion ? "?v=" . (int) $v2CssVersion : ""; ?>">
   <link rel="stylesheet" href="/assets/css/conteudo-html-embed.css?v=20260717">
   <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
 </head>
@@ -72,7 +80,7 @@ $certNavClass = strpos($currentPath, 'certificados/validar') !== false ? ' is-ac
   <?php if ($disableV2AutoRenderHome): ?>
   <script>window.V2_DISABLE_AUTORENDER_HOME = true;</script>
   <?php endif; ?>
-  <script src="/v2/assets/js/v2-main.js" defer></script>
+  <script src="/v2/assets/js/v2-main.js<?php echo $v2JsVersion ? "?v=" . (int) $v2JsVersion : ""; ?>" defer></script>
   <script src="/assets/js/conteudo-html-embed.js?v=20260717" defer></script>
 </body>
 </html>

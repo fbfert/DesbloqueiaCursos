@@ -203,7 +203,20 @@ $hidden = ''
             Suas respostas são salvas automaticamente conforme você responde.
           </p>
 
-          <?php if (count($quiz['perguntas'] ?? array()) > 1): ?>
+          <?php
+          // Prova longa por blocos: navegação de uma questão por vez, com
+          // índice, marcação para revisão e tela de conferência antes do envio.
+          // Precisa ser calculado antes do primeiro uso, logo abaixo.
+          $modoProva = false;
+          foreach (($quiz['perguntas'] ?? array()) as $p) {
+              if ((string) ($p['tipo'] ?? '') === 'discursiva' || (string) ($p['bloco_codigo'] ?? '') !== '') {
+                  $modoProva = true;
+                  break;
+              }
+          }
+          ?>
+
+          <?php if (count($quiz['perguntas'] ?? array()) > 1 && !$modoProva): ?>
             <div id="v2-quiz-progress" class="v2-quiz-progress" hidden>
               <div class="v2-quiz-progress__bar"><div class="v2-quiz-progress__fill" id="v2-quiz-progress-fill"></div></div>
               <div class="v2-quiz-progress__row">
@@ -213,17 +226,24 @@ $hidden = ''
             </div>
           <?php endif; ?>
 
-          <?php
-          // Prova longa por blocos: a navegação é por rolagem, não pelo
-          // assistente de uma questão por vez.
-          $modoProva = false;
-          foreach (($quiz['perguntas'] ?? array()) as $p) {
-              if ((string) ($p['tipo'] ?? '') === 'discursiva' || (string) ($p['bloco_codigo'] ?? '') !== '') {
-                  $modoProva = true;
-                  break;
-              }
-          }
-          ?>
+          <?php if ($modoProva): ?>
+            <?php // Sem JS este bloco fica oculto e a prova continua rolável e enviável. ?>
+            <div id="v2-quiz-prova-nav" class="v2-quiz-prova-nav" hidden>
+              <div class="v2-quiz-prova-nav__topo">
+                <strong id="v2-quiz-prova-bloco" class="v2-quiz-prova-nav__bloco"></strong>
+                <span id="v2-quiz-prova-pos" class="v2-muted v2-sm"></span>
+              </div>
+              <div class="v2-quiz-progress__bar"><div class="v2-quiz-progress__fill" id="v2-quiz-prova-fill"></div></div>
+              <div class="v2-quiz-prova-nav__rodape">
+                <span id="v2-quiz-prova-resumo" class="v2-muted v2-sm" role="status" aria-live="polite"></span>
+                <button type="button" class="v2-btn v2-btn-ghost v2-btn-sm" id="v2-quiz-prova-indice-btn"
+                        aria-expanded="false" aria-controls="v2-quiz-prova-indice">
+                  <i class="ti ti-layout-grid"></i> Índice de questões
+                </button>
+              </div>
+              <div id="v2-quiz-prova-indice" class="v2-quiz-prova-indice" hidden></div>
+            </div>
+          <?php endif; ?>
           <div id="v2-quiz-perguntas"<?php echo $modoProva ? ' data-modo-prova="1"' : ''; ?>>
             <?php $blocoAtual = null; ?>
             <?php foreach (($quiz['perguntas'] ?? array()) as $idxP => $pergunta): ?>
@@ -242,12 +262,22 @@ $hidden = ''
               <?php endif; ?>
 
               <fieldset class="v2-quiz-pergunta" data-pergunta-id="<?php echo $pid; ?>"
-                        data-tipo="<?php echo $ehDiscursiva ? 'discursiva' : 'objetiva'; ?>">
+                        data-tipo="<?php echo $ehDiscursiva ? 'discursiva' : 'objetiva'; ?>"
+                        data-bloco="<?php echo Helpers::e($codigoBloco); ?>"
+                        data-bloco-titulo="<?php echo Helpers::e((string) ($pergunta['bloco_titulo'] ?? '')); ?>"
+                        data-revisao="<?php echo !empty($pergunta['marcada_para_revisao']) ? '1' : '0'; ?>">
                 <legend class="v2-quiz-enunciado">
                   <span class="v2-quiz-num"><?php echo (int) $idxP + 1; ?></span>
                   <?php echo nl2br(Helpers::e((string) ($pergunta['enunciado'] ?? ''))); ?>
                   <?php if (!empty($pergunta['obrigatoria'])): ?><span class="v2-quiz-obrig" title="Questão obrigatória" aria-label="obrigatória">*</span><?php endif; ?>
                 </legend>
+
+                <?php if ($modoProva): ?>
+                  <button type="button" class="v2-quiz-flag" data-flag-pergunta="<?php echo $pid; ?>"
+                          aria-pressed="<?php echo !empty($pergunta['marcada_para_revisao']) ? 'true' : 'false'; ?>" hidden>
+                    <i class="ti ti-flag"></i> <span class="v2-quiz-flag__texto">Marcar para revisão</span>
+                  </button>
+                <?php endif; ?>
 
                 <?php if ($ehDiscursiva): ?>
                   <label class="v2-muted v2-sm" for="v2-discursiva-<?php echo $pid; ?>" style="display:block;margin-bottom:4px;">Sua resposta</label>
@@ -275,9 +305,41 @@ $hidden = ''
             <?php endforeach; ?>
           </div>
 
+          <?php if ($modoProva): ?>
+            <?php // Conferência antes do envio. Sem JS continua oculta e o envio direto segue valendo. ?>
+            <div id="v2-quiz-prova-revisao" class="v2-block" hidden
+                 style="border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:16px;margin-top:12px;">
+              <h2 class="v2-h3" style="margin:0 0 4px;">Revisão antes de enviar</h2>
+              <p class="v2-muted v2-sm" style="margin:0 0 12px;">
+                Confira o que ficou pendente. Você ainda pode voltar e responder.
+              </p>
+              <div id="v2-quiz-prova-revisao-resumo"></div>
+              <div id="v2-quiz-prova-revisao-listas"></div>
+              <div class="v2-quiz-actions" style="margin-top:14px;">
+                <button type="button" class="v2-btn v2-btn-ghost" id="v2-quiz-prova-voltar-btn">
+                  <i class="ti ti-arrow-left"></i> Voltar à prova
+                </button>
+                <button type="submit" class="v2-btn v2-btn-primary" id="v2-quiz-prova-enviar-btn"
+                        data-quiz-btn data-loading-label="Enviando…">
+                  <i class="ti ti-send"></i> Enviar prova
+                </button>
+              </div>
+            </div>
+          <?php endif; ?>
+
           <div class="v2-quiz-actions">
-            <button type="button" class="v2-btn v2-btn-ghost" id="v2-quiz-prev-btn" hidden><i class="ti ti-arrow-left"></i> Anterior</button>
-            <button type="button" class="v2-btn v2-btn-primary" id="v2-quiz-next-btn" hidden>Próxima <i class="ti ti-arrow-right"></i></button>
+            <?php if (!$modoProva): ?>
+              <?php // Assistente dos quizzes curtos. Em modo prova estes botões
+                    // não existem: `hidden` não os esconderia, porque .v2-btn
+                    // define display:inline-flex e vence o atributo. ?>
+              <button type="button" class="v2-btn v2-btn-ghost" id="v2-quiz-prev-btn" hidden><i class="ti ti-arrow-left"></i> Anterior</button>
+              <button type="button" class="v2-btn v2-btn-primary" id="v2-quiz-next-btn" hidden>Próxima <i class="ti ti-arrow-right"></i></button>
+            <?php endif; ?>
+            <?php if ($modoProva): ?>
+              <button type="button" class="v2-btn v2-btn-ghost" id="v2-quiz-prova-prev-btn" hidden><i class="ti ti-arrow-left"></i> Anterior</button>
+              <button type="button" class="v2-btn v2-btn-primary" id="v2-quiz-prova-next-btn" hidden>Próxima <i class="ti ti-arrow-right"></i></button>
+              <button type="button" class="v2-btn v2-btn-primary" id="v2-quiz-prova-revisar-btn" hidden><i class="ti ti-list-check"></i> Revisar e enviar</button>
+            <?php endif; ?>
             <button type="submit" class="v2-btn v2-btn-primary" id="v2-quiz-submit-btn" data-quiz-btn data-loading-label="Enviando…"><i class="ti ti-send"></i> Enviar respostas</button>
             <a class="v2-btn v2-btn-ghost v2-btn-sm" href="<?php echo Helpers::e($voltarAulaUrl); ?>">Voltar à aula</a>
           </div>
