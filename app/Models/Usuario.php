@@ -462,7 +462,22 @@ class Usuario
     public function incrementLoginAttempts($usuarioId, $currentAttempts, $lockMinutes, $maxAttempts = 5)
     {
         $nextAttempts = (int) $currentAttempts + 1;
-        $lockSql = $nextAttempts >= (int) $maxAttempts ? ', bloqueado_ate = DATE_ADD(NOW(), INTERVAL ' . (int) $lockMinutes . ' MINUTE)' : '';
+        $bloquear = $nextAttempts >= (int) $maxAttempts;
+
+        // O prazo e calculado pelo PHP, e nao por DATE_ADD(NOW(), ...), porque
+        // quem o le e AuthService::isBlocked(), que compara com time(). Neste
+        // servidor o PHP roda em UTC e o MySQL em horario local: gravado por
+        // NOW(), o bloqueado_ate nascia tres horas no passado em relacao ao
+        // relogio do PHP, e um bloqueio de 15 minutos nunca chegava a valer.
+        $params = array(
+            'tentativas' => $nextAttempts,
+            'id' => $usuarioId,
+        );
+        $lockSql = '';
+        if ($bloquear) {
+            $lockSql = ', bloqueado_ate = :bloqueado_ate';
+            $params['bloqueado_ate'] = date('Y-m-d H:i:s', time() + (max(1, (int) $lockMinutes) * 60));
+        }
 
         $stmt = Database::connection()->prepare(
             'UPDATE usuarios
@@ -471,10 +486,7 @@ class Usuario
              WHERE id = :id'
         );
 
-        $stmt->execute(array(
-            'tentativas' => $nextAttempts,
-            'id' => $usuarioId,
-        ));
+        $stmt->execute($params);
 
         return $nextAttempts;
     }
