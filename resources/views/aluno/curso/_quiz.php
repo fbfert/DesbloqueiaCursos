@@ -167,7 +167,7 @@ $formatarDuracao = function ($minutos) {
                             </div>
                         <?php endforeach; ?>
                         <?php if (!empty($qDados['exibir_comentarios_apos_envio']) && !empty($pergunta['explicacao'])): ?>
-                            <p class="muted" style="font-size:0.85em; margin:6px 0 0; font-style:italic;"><?php echo Helpers::e((string) $pergunta['explicacao']); ?></p>
+                            <p class="muted" style="font-size:0.85em; margin:6px 0 0; font-style:italic;"><?php echo nl2br(Helpers::e((string) $pergunta['explicacao'])); ?></p>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>

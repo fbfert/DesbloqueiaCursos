@@ -147,6 +147,53 @@ if (count($quebradas) === 0) {
     }
 }
 
+// HTML no texto exibido ao aluno. As views do quiz imprimem enunciado,
+// alternativa, explicacao e rubrica com Helpers::e(), ou seja, escapados:
+// qualquer tag apareceria literal na tela.
+$stmt = $pdo->prepare(
+    'SELECT p.id, LEFT(p.enunciado, 60) AS enunciado
+     FROM conteudo_quiz_perguntas p
+     WHERE p.quiz_id = :q AND p.deleted_at IS NULL
+       AND (p.enunciado REGEXP \'<[a-z/][a-z0-9]*[[:space:]>/]\'
+            OR p.explicacao REGEXP \'<[a-z/][a-z0-9]*[[:space:]>/]\'
+            OR p.rubrica REGEXP \'<[a-z/][a-z0-9]*[[:space:]>/]\')'
+);
+$stmt->execute(array('q' => $quizId));
+$comHtml = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+if (count($comHtml) === 0) {
+    linha('OK ', 'nenhum texto de questao contem HTML (seria exibido literal)');
+} else {
+    $problemas += count($comHtml);
+    linha('!! ', count($comHtml) . ' questao(oes) com HTML no texto, que apareceria literal para o aluno:');
+    foreach (array_slice($comHtml, 0, 10) as $q) {
+        echo "       #{$q['id']} :: {$q['enunciado']}\n";
+    }
+}
+
+// Tabela de dados sem aviso de que os dados sao ficticios. E aviso, nao erro:
+// tabela que lista tarefas ou atividades pedagogicas nao carrega estatistica e
+// nao precisa da marcacao. Em Geografia, Historia e afins um numero sem essa
+// marca e lido pelo aluno como dado real.
+$stmt = $pdo->prepare(
+    'SELECT p.id, LEFT(p.enunciado, 60) AS enunciado
+     FROM conteudo_quiz_perguntas p
+     WHERE p.quiz_id = :q AND p.deleted_at IS NULL
+       AND p.enunciado LIKE \'% | %\'
+       AND p.enunciado REGEXP \'[0-9]{1,3}[.][0-9]{3}|[0-9]+ ?(%|por cento)\'
+       AND p.enunciado NOT REGEXP \'hipot|fict\''
+);
+$stmt->execute(array('q' => $quizId));
+$semAviso = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+if (count($semAviso) === 0) {
+    linha('OK ', 'toda tabela com numeros avisa que os dados sao ficticios');
+} else {
+    $avisos += count($semAviso);
+    linha('.. ', count($semAviso) . ' questao(oes) com tabela numerica sem avisar que o dado e ficticio:');
+    foreach (array_slice($semAviso, 0, 10) as $q) {
+        echo "       #{$q['id']} :: {$q['enunciado']}\n";
+    }
+}
+
 // Dificuldade invalida
 $stmt = $pdo->prepare(
     'SELECT id, dificuldade FROM conteudo_quiz_perguntas

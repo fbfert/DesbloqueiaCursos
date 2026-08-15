@@ -394,7 +394,7 @@ $hidden = ''
                 <?php endforeach; ?>
               </div>
               <?php if (!empty($r['mostrar_comentarios']) && trim((string) ($pergunta['explicacao'] ?? '')) !== ''): ?>
-                <p class="v2-quiz-explica"><i class="ti ti-info-circle"></i> <?php echo Helpers::e((string) $pergunta['explicacao']); ?></p>
+                <p class="v2-quiz-explica"><i class="ti ti-info-circle"></i> <?php echo nl2br(Helpers::e((string) $pergunta['explicacao'])); ?></p>
               <?php endif; ?>
             </fieldset>
           <?php endforeach; ?>
