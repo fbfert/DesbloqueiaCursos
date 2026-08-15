@@ -105,3 +105,9 @@ strong{color:var(--texto);}
 .quadro th{background:var(--roxo);color:#fff;text-align:left;padding:10px 12px;font-size:.8rem;font-weight:700;}
 .quadro td{padding:10px 12px;border-top:1px solid var(--border);vertical-align:top;}
 .quadro tr:nth-child(even) td{background:var(--bg);}
+
+/* Barra do radical. O Unicode tem o simbolo &radic; mas nao o vinculo que
+   delimita o radicando: em &radic;(9 + 16) fica ambiguo onde a raiz termina.
+   Uso: &radic;<span class="radical">9 + 16</span> — sem os parenteses, que a
+   barra substitui. Custa zero byte de JS; KaTeX aqui seria 361 KB por pagina. */
+.radical{border-top:1px solid currentColor;padding:0 .15em 0 .1em;margin-left:-.02em;}
