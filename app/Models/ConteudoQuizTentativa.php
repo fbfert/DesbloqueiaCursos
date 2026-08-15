@@ -182,6 +182,12 @@ class ConteudoQuizTentativa
 
     /**
      * Tentativas em andamento cujo prazo ja venceu.
+     *
+     * O corte usa o relogio do PHP, e nao NOW(), porque `expira_em` foi
+     * gravado pelo PHP: neste servidor o PHP roda em UTC e o MySQL em horario
+     * local, tres horas atras. Comparar com NOW() fazia o cron so enxergar a
+     * tentativa vencida tres horas depois do prazo real, atrasando na mesma
+     * medida o envio automatico de quem fechou o navegador.
      */
     public function listExpiradas($limite = 50)
     {
@@ -189,12 +195,12 @@ class ConteudoQuizTentativa
             'SELECT * FROM conteudo_quiz_tentativas
              WHERE status = \'em_andamento\'
                AND expira_em IS NOT NULL
-               AND expira_em <= NOW()
+               AND expira_em <= :agora
                AND deleted_at IS NULL
              ORDER BY expira_em ASC
              LIMIT ' . max(1, (int) $limite)
         );
-        $stmt->execute();
+        $stmt->execute(array('agora' => date('Y-m-d H:i:s')));
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
