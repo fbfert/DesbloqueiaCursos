@@ -194,6 +194,53 @@ if (count($semAviso) === 0) {
     }
 }
 
+// Gabarito identificavel pelo COMPRIMENTO. A correta tende a ser mais longa
+// porque precisa ser precisa e completa, enquanto o distrator sai como negacao
+// curta. Nos cinco primeiros simulados isso chegou a 91% das questoes, com a
+// correta excedendo as outras em ate 155 caracteres: dava para acertar quase
+// tudo marcando sempre a mais comprida. O embaralhamento nao protege, porque
+// embaralha a ordem e o comprimento viaja junto com o texto.
+// O corte e a margem PERCEPTIVEL (mais de 15 caracteres), e nao "ser a mais
+// longa": diferenca de poucos caracteres entre alternativas longas ninguem ve.
+$stmt = $pdo->prepare(
+    'SELECT p.id, b.codigo, LEFT(p.enunciado, 55) AS enunciado,
+            CHAR_LENGTH(ac.texto) AS correta,
+            (SELECT MAX(CHAR_LENGTH(ad.texto)) FROM conteudo_quiz_alternativas ad
+             WHERE ad.pergunta_id = p.id AND ad.correta = 0 AND ad.deleted_at IS NULL) AS maior_distrator
+     FROM conteudo_quiz_perguntas p
+     JOIN conteudo_quiz_blocos b ON b.id = p.bloco_id
+     JOIN conteudo_quiz_alternativas ac ON ac.pergunta_id = p.id AND ac.correta = 1 AND ac.deleted_at IS NULL
+     WHERE p.quiz_id = :q AND p.tipo = \'multipla_escolha\' AND p.deleted_at IS NULL
+     HAVING maior_distrator IS NOT NULL AND correta - maior_distrator > 15'
+);
+$stmt->execute(array('q' => $quizId));
+$longas = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+$stmt = $pdo->prepare(
+    'SELECT COUNT(*) FROM conteudo_quiz_perguntas
+     WHERE quiz_id = :q AND tipo = \'multipla_escolha\' AND deleted_at IS NULL'
+);
+$stmt->execute(array('q' => $quizId));
+$totalObjetivas = (int) $stmt->fetchColumn();
+
+if ($totalObjetivas > 0) {
+    $pct = 100 * count($longas) / $totalObjetivas;
+    if (count($longas) === 0) {
+        linha('OK ', 'o gabarito nao se destaca pelo comprimento');
+    } elseif ($pct <= 25) {
+        $avisos += count($longas);
+        linha('.. ', count($longas) . ' de ' . $totalObjetivas . ' questoes (' . round($pct) . '%) com a correta mais longa por >15 caracteres');
+    } else {
+        $problemas += count($longas);
+        linha('!! ', count($longas) . ' de ' . $totalObjetivas . ' questoes (' . round($pct) . '%) entregam o gabarito pelo comprimento:');
+        foreach (array_slice($longas, 0, 8) as $l) {
+            echo "       #{$l['id']} [{$l['codigo']}] correta {$l['correta']} vs maior distrator {$l['maior_distrator']} :: {$l['enunciado']}\n";
+        }
+        echo "       Corrija reescrevendo os DISTRATORES, nunca a correta.\n";
+        echo "       Ver docs/2026-08-16-vies-comprimento-alternativas.md\n";
+    }
+}
+
 // Dificuldade invalida
 $stmt = $pdo->prepare(
     'SELECT id, dificuldade FROM conteudo_quiz_perguntas
