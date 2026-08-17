@@ -241,6 +241,36 @@ if ($totalObjetivas > 0) {
     }
 }
 
+// Disciplina carimbada no bloco de Formacao Geral Docente. O FGD e o tronco
+// comum: as MESMAS questoes aparecem em todos os simulados da PND. Uma cena de
+// "erro em matematica" ali faz o professor de Historia abrir a prova dele e
+// encontrar matematica na questao 1.
+// A regra e a mesma que vale para as AULAS de Formacao Geral: a teoria e geral
+// e deve continuar geral; o exemplo e que nao pode vir carimbado.
+// Nao acusa mencao a outra area em si - interdisciplinaridade e BNCC sao
+// legitimas. Procura CENA de aula: "aula de X", "professor de X", "em X".
+$stmt = $pdo->prepare(
+    'SELECT p.id, p.tema, LEFT(p.enunciado, 60) AS enunciado
+     FROM conteudo_quiz_perguntas p
+     JOIN conteudo_quiz_blocos b ON b.id = p.bloco_id
+     WHERE p.quiz_id = :q AND b.codigo = \'FGD\' AND p.deleted_at IS NULL
+       AND (p.enunciado REGEXP \'aula de (Matem|Portug|Ci[êe]ncias|Hist[óo]ria|Geografia|Biolog|F[íi]sica|Qu[íi]mica)\'
+            OR p.enunciado REGEXP \'professora? de (Matem|Portug|Ci[êe]ncias|Hist[óo]ria|Geografia|Biolog)\'
+            OR p.enunciado REGEXP \'em (matem[áa]tica|hist[óo]ria|geografia|l[íi]ngua portuguesa)\')'
+);
+$stmt->execute(array('q' => $quizId));
+$carimbadas = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+if (count($carimbadas) === 0) {
+    linha('OK ', 'nenhuma questao de Formacao Geral presa a uma disciplina');
+} else {
+    $problemas += count($carimbadas);
+    linha('!! ', count($carimbadas) . ' questao(oes) de Formacao Geral com cena de disciplina especifica:');
+    foreach (array_slice($carimbadas, 0, 8) as $c) {
+        echo "       #{$c['id']} [{$c['tema']}] :: {$c['enunciado']}\n";
+    }
+    echo "       O FGD e identico em todos os simulados da PND: neutralize o exemplo.\n";
+}
+
 // Dificuldade invalida
 $stmt = $pdo->prepare(
     'SELECT id, dificuldade FROM conteudo_quiz_perguntas
