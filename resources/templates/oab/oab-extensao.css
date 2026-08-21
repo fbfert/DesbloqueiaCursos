@@ -1,0 +1,77 @@
+
+/* ------------------------------------------------------------------
+   EXTENSAO OAB - componentes que a colecao PND nao precisava.
+   O bloco acima e a fonte de verdade compartilhada e nao foi alterado.
+   Este bloco vem depois e so acrescenta. Tres necessidades novas:
+   (1) citar dispositivo legal de forma visualmente distinta do texto
+       do autor - numa prova que cobra letra de lei, o aluno precisa
+       enxergar onde termina a explicacao e comeca a norma;
+   (2) graficos de peso e de meta, porque a estrategia da 1a fase e
+       aritmetica antes de ser juridica;
+   (3) animacao de entrada. A animacao SO roda se o JS do fim da
+       pagina marcar o body com .anim-on; sem JS, tudo aparece no
+       estado final. Nada depende de script para ser legivel.
+   ------------------------------------------------------------------ */
+
+/* Citacao de dispositivo legal / de edital */
+.lei{position:relative;margin:18px 0;padding:14px 16px 14px 46px;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--roxo);border-radius:12px;font-size:.92rem;}
+.lei::before{content:'§';position:absolute;left:14px;top:12px;font-size:1.3rem;font-weight:800;color:var(--roxo);opacity:.5;line-height:1;}
+.lei p{margin:0 0 8px;font-style:italic;color:var(--texto);}
+.lei p:last-child{margin-bottom:0;}
+.lei cite{display:block;margin-top:8px;font-style:normal;font-size:.8rem;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.03em;}
+
+/* Numero grande com legenda - estatistica de destaque */
+.numeros{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:18px 0;}
+.numero{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;}
+.numero b{display:block;font-size:1.9rem;font-weight:800;color:var(--roxo);line-height:1.1;}
+.numero span{display:block;margin-top:4px;font-size:.82rem;color:var(--texto2);}
+.numero.meta b{color:#0f766e;}
+.numero.risco b{color:#be123c;}
+
+/* Barras horizontais - peso das disciplinas na prova */
+.barras{margin:18px 0;}
+.barra{display:grid;grid-template-columns:minmax(96px,150px) 1fr 34px;align-items:center;gap:10px;margin-bottom:7px;font-size:.84rem;}
+.barra-rotulo{color:var(--texto2);text-align:right;line-height:1.25;}
+.barra-trilho{background:var(--border);border-radius:999px;height:16px;overflow:hidden;}
+.barra-preenche{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--roxo),var(--roxo2));width:var(--w);transform-origin:left center;}
+.barra-preenche.alta{background:linear-gradient(90deg,#c2410c,var(--laranja));}
+.barra-preenche.media{background:linear-gradient(90deg,var(--roxo),var(--roxo2));}
+.barra-preenche.baixa{background:linear-gradient(90deg,#0f766e,var(--teal));}
+.barra-valor{font-weight:800;color:var(--texto);text-align:left;}
+
+/* Medidor da aprovacao - 40 de 80 */
+.medidor{margin:20px 0;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:16px;}
+.medidor-trilho{position:relative;height:34px;border-radius:999px;background:var(--border);overflow:hidden;}
+.medidor-preenche{height:100%;width:var(--w);background:linear-gradient(90deg,var(--roxo),var(--roxo2));border-radius:999px;transform-origin:left center;}
+.medidor-corte{position:absolute;top:-6px;bottom:-6px;left:50%;width:3px;background:#be123c;border-radius:2px;}
+.medidor-legenda{display:flex;justify-content:space-between;margin-top:10px;font-size:.8rem;color:var(--texto2);}
+.medidor-legenda b{color:#be123c;}
+
+/* Item de prova no formato FGV - enunciado + quatro opcoes A a D */
+.item-prova{margin:18px 0;padding:16px 18px;background:var(--surface);border:1px solid var(--border);border-radius:14px;}
+.item-prova .enunciado{font-size:.94rem;}
+.item-prova ol.alternativas{list-style:none;margin:12px 0 0;padding:0;counter-reset:alt;}
+.item-prova ol.alternativas li{position:relative;counter-increment:alt;padding:9px 12px 9px 40px;margin-bottom:6px;border:1px solid var(--border);border-radius:10px;font-size:.9rem;background:var(--bg);}
+.item-prova ol.alternativas li::before{content:counter(alt,upper-alpha) ')';position:absolute;left:13px;top:9px;font-weight:800;color:var(--roxo);font-size:.86rem;}
+.item-prova ol.alternativas li.correta{background:rgba(0,201,167,.1);border-color:rgba(0,201,167,.35);}
+.item-prova ol.alternativas li.correta::before{color:#0f766e;}
+.item-prova .fonte{margin:10px 0 0;font-size:.78rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.03em;}
+
+/* Rotulo de secao (usado nos comentarios de questao) */
+.selo{display:inline-block;padding:3px 10px;border-radius:999px;background:rgba(75,0,142,.1);color:var(--roxo);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.selo.verde{background:rgba(0,201,167,.14);color:#0f766e;}
+.selo.vermelho{background:rgba(255,77,109,.12);color:#be123c;}
+
+/* Animacao de entrada. Estado final e o padrao; a animacao so existe
+   quando o script marca o body, e some quando o sistema pede menos
+   movimento. Nenhum conteudo depende dela para ser lido. */
+.anim-on .anima{opacity:0;transform:translateY(14px);}
+.anim-on .anima.visivel{animation:sobe .55s ease-out forwards;}
+.anim-on .barra-preenche,.anim-on .medidor-preenche{transform:scaleX(0);}
+.anim-on .visivel .barra-preenche,.anim-on .medidor-preenche.visivel{animation:estica 1s cubic-bezier(.22,1,.36,1) forwards;}
+@keyframes sobe{to{opacity:1;transform:translateY(0);}}
+@keyframes estica{to{transform:scaleX(1);}}
+@media (prefers-reduced-motion:reduce){
+  .anim-on .anima,.anim-on .anima.visivel{opacity:1;transform:none;animation:none;}
+  .anim-on .barra-preenche,.anim-on .medidor-preenche,.anim-on .visivel .barra-preenche,.anim-on .medidor-preenche.visivel{transform:none;animation:none;}
+}

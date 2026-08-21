@@ -1,0 +1,120 @@
+/* Sistema de design para paginas de conteudo tipo=html (LMS).
+   Cole este bloco inteiro dentro de <style> em CADA pagina gerada -
+   o iframe sandboxed nao herda nenhum CSS do site, entao cada pagina
+   precisa ser 100% autocontida. Nao edite este arquivo por curso; ele
+   e a fonte de verdade compartilhada entre todos os cursos convertidos
+   por essa skill. Se precisar mudar o visual, mude aqui E regrave os
+   cursos ja convertidos (o CSS fica embutido em cada pagina, nao e
+   carregado de um arquivo externo). */
+
+:root{
+  --roxo:#4B008E; --roxo2:#7c3aed; --laranja:#FF6A00; --teal:#00C9A7;
+  --texto:#1f2937; --texto2:#6b7280; --bg:#faf7ff; --surface:#ffffff; --border:#ede8f5;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--texto);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
+  line-height:1.7; padding:26px 20px 48px;
+}
+.licao{max-width:760px;margin:0 auto;}
+.licao-cabecalho{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+.licao-icone{flex:0 0 auto;width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--roxo),var(--roxo2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(75,0,142,.25);}
+.licao-icone svg{width:26px;height:26px;color:#fff;}
+.licao-titulo{margin:0;font-size:1.32rem;font-weight:800;color:var(--texto);line-height:1.3;}
+
+h3{font-size:1.05rem;font-weight:700;color:var(--roxo);margin:24px 0 8px;display:flex;align-items:center;gap:8px;}
+h3 .h-icone{display:inline-flex;}
+h3 .h-icone svg{width:19px;height:19px;flex:0 0 auto;color:var(--roxo);}
+p{margin:0 0 12px;}
+ul{margin:0 0 12px;padding-left:22px;}
+li{margin-bottom:6px;}
+strong{color:var(--texto);}
+
+/* Cards de destaque - card-resumo e obrigatorio ao final de toda licao */
+.card-pratica,.card-resumo,.card-dica,.alerta-educacional{margin:18px 0;padding:16px 18px;border-radius:14px;border:1px solid transparent;}
+.card-pratica h3,.card-resumo h3,.card-dica h3,.alerta-educacional strong:first-child{margin-top:0;}
+.card-pratica>*:last-child,.card-resumo>*:last-child,.card-dica>*:last-child,.alerta-educacional>*:last-child{margin-bottom:0;}
+.card-pratica{background:rgba(75,0,142,.06);border-color:rgba(75,0,142,.18);}
+.card-pratica h3{color:var(--roxo);}
+.card-resumo{background:rgba(0,201,167,.08);border-color:rgba(0,201,167,.22);}
+.card-resumo h3{color:#0f766e;}
+.card-resumo h3 .h-icone svg{color:#0f766e;}
+.card-dica{background:rgba(255,106,0,.07);border-color:rgba(255,106,0,.2);}
+.card-dica h3{color:#c2410c;}
+.card-dica h3 .h-icone svg{color:#c2410c;}
+.alerta-educacional{background:rgba(255,106,0,.08);border-color:rgba(255,106,0,.24);color:#7c2d12;font-size:.92rem;}
+
+/* Grade de cards pequenos - exemplos, opcoes, erros (classe extra "erro" deixa vermelho) */
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:18px 0;}
+.grade-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;}
+.grade-item strong{display:block;color:var(--roxo);font-size:.92rem;margin-bottom:4px;}
+.grade-item.erro{background:rgba(255,77,109,.06);border-color:rgba(255,77,109,.22);}
+.grade-item.erro strong{color:#be123c;}
+.grade-item p{margin:0;font-size:.9rem;color:var(--texto2);}
+
+/* Esquema/fluxo de etapas numeradas, com seta entre passos */
+.fluxo{display:flex;flex-wrap:wrap;margin:20px 0 8px;}
+.fluxo-passo{position:relative;flex:1 1 140px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 26px 18px 0;}
+.fluxo-passo:last-child{margin-right:0;}
+.fluxo-passo:not(:last-child)::after{content:'';position:absolute;right:-20px;top:50%;transform:translateY(-50%);border-style:solid;border-width:6px 0 6px 8px;border-color:transparent transparent transparent var(--roxo);}
+.fluxo-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--roxo);color:#fff;font-size:.76rem;font-weight:800;margin-bottom:6px;}
+.fluxo-passo strong{display:block;font-size:.9rem;margin-bottom:2px;}
+.fluxo-passo span{display:block;font-size:.82rem;color:var(--texto2);}
+
+/* Mapa mental - no central + 3 a 5 ramos conectados (arvore/organograma em CSS puro) */
+.mapa-mental{margin:22px 0;padding:26px 14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;text-align:center;}
+.mapa-central{display:inline-block;max-width:260px;margin:0 auto;padding:12px 18px;background:linear-gradient(135deg,var(--roxo),var(--roxo2));color:#fff;font-weight:800;font-size:.95rem;border-radius:14px;box-shadow:0 8px 20px rgba(75,0,142,.3);}
+.mapa-central::after{content:'';display:block;width:2px;height:22px;background:var(--border);margin:0 auto;}
+.mapa-ramos{display:flex;flex-wrap:wrap;justify-content:center;position:relative;padding-top:22px;margin-top:-22px;}
+.mapa-ramos::before{content:'';position:absolute;top:0;left:14%;right:14%;height:2px;background:var(--border);}
+.mapa-ramo{position:relative;flex:1 1 130px;max-width:170px;margin:0 8px 14px;}
+.mapa-ramo::before{content:'';position:absolute;top:-22px;left:50%;width:2px;height:22px;background:var(--border);transform:translateX(-50%);}
+.mapa-ramo-caixa{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+.mapa-ramo-caixa strong{display:block;color:var(--roxo);font-size:.86rem;margin-bottom:2px;}
+.mapa-ramo-caixa span{display:block;font-size:.8rem;color:var(--texto2);}
+
+/* Linha do tempo - sequencias de datas/prazos */
+.linha-tempo{margin:20px 0;padding-left:6px;border-left:2px solid var(--border);}
+.linha-tempo-item{position:relative;padding:2px 0 16px 20px;}
+.linha-tempo-item::before{content:'';position:absolute;left:-27px;top:4px;width:11px;height:11px;border-radius:50%;background:var(--roxo);border:2px solid var(--surface);box-shadow:0 0 0 2px var(--border);}
+.linha-tempo-item strong{display:block;color:var(--roxo);font-size:.86rem;}
+.linha-tempo-item span{display:block;font-size:.88rem;color:var(--texto2);}
+
+/* Comparacao antes/depois (ruim/bom) ou duas opcoes lado a lado (bom/bom) */
+.comparacao{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+@media (max-width:480px){.comparacao{grid-template-columns:1fr;}}
+.comparacao-lado{border-radius:12px;padding:12px 14px;border:1px solid var(--border);}
+.comparacao-lado.ruim{background:rgba(255,77,109,.06);border-color:rgba(255,77,109,.2);}
+.comparacao-lado.bom{background:rgba(0,201,167,.07);border-color:rgba(0,201,167,.22);}
+.comparacao-lado strong{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.comparacao-lado.ruim strong{color:#be123c;}
+.comparacao-lado.bom strong{color:#0f766e;}
+.comparacao-lado p{margin:0;font-size:.9rem;}
+
+/* Checklist visual (quadradinho decorativo, nao interativo) */
+.checklist{list-style:none;margin:16px 0;padding:0;}
+.checklist li{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px dashed var(--border);font-size:.94rem;}
+.checklist li:last-child{border-bottom:0;}
+.checklist li::before{content:'';flex:0 0 auto;width:18px;height:18px;margin-top:2px;border-radius:6px;border:2px solid var(--roxo);}
+
+/* Quadro (tabela) - comparar categorias, listar opcoes/definicoes lado a lado */
+.quadro{margin:18px 0;overflow-x:auto;border:1px solid var(--border);border-radius:12px;}
+.quadro table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:420px;}
+.quadro th{background:var(--roxo);color:#fff;text-align:left;padding:10px 12px;font-size:.8rem;font-weight:700;}
+.quadro td{padding:10px 12px;border-top:1px solid var(--border);vertical-align:top;}
+.quadro tr:nth-child(even) td{background:var(--bg);}
+
+/* Barra do radical. O Unicode tem o simbolo da raiz mas nao o vinculo que
+   delimita o radicando: sem a barra, em raiz de (9 + 16) fica ambiguo onde a
+   raiz termina. Uso: o simbolo da raiz seguido de um span desta classe
+   envolvendo o radicando, sem os parenteses, que a barra substitui.
+   Custa zero byte de JS; KaTeX aqui seria 361 KB por pagina.
+   NAO escrever TAG DE FECHAMENTO neste arquivo, nem dentro de comentario. Este
+   CSS e embutido na propria pagina, dentro da tag de estilo, e o parser HTML4
+   do libxml enxerga o fechamento mesmo ali: uma unica ocorrencia faz a
+   validacao por DOMDocument acusar "Unexpected end tag" em TODAS as aulas do
+   curso, e nao no arquivo que a causou - o que manda procurar no lugar errado.
+   Tag de abertura solta, como a da linha 2, e inofensiva. */
+.radical{border-top:1px solid currentColor;padding:0 .15em 0 .1em;margin-left:-.02em;}
