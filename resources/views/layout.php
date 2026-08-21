@@ -37,6 +37,7 @@ $v4ClaudeJsVersion = is_file($v4ClaudeJsPath) ? filemtime($v4ClaudeJsPath) : nul
 $brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : (!empty($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos');
 $isAdmin = strpos($requestPath, '/admin') === 0;
 $isProfessor = strpos($requestPath, '/professor') === 0;
+$isRevisor = strpos($requestPath, '/revisor') === 0;
 $isAluno = in_array($requestPath, array('/meus-cursos', '/area-curso', '/area-curso/modulo', '/area-curso/material'), true)
     || strpos($requestPath, '/aluno/curso') === 0
     || strpos($requestPath, '/aluno/cursos') === 0;
@@ -70,7 +71,7 @@ $shouldLoadConteudoAudio = strpos($requestPath, '/aluno/cursos/conteudo/item') =
     || (strpos($requestPath, '/area-curso') === 0 && !empty($_GET['aula_id']));
 $hidePublicChrome = !empty($hide_public_chrome) || !empty($hidePublicChrome);
 $hidePreFooterMenu = !empty($hide_pre_footer_menu) || !empty($hidePreFooterMenu);
-$scopeClass = $isAdmin ? 'app-admin' : ($isProfessor ? 'app-professor' : ($isAluno ? 'app-aluno' : 'app-public'));
+$scopeClass = $isAdmin ? 'app-admin' : ($isRevisor ? 'app-admin app-revisor' : ($isProfessor ? 'app-professor' : ($isAluno ? 'app-aluno' : 'app-public')));
 $publicMenu = array(
     array('label' => 'Início', 'href' => '/', 'active' => $requestPath === '/'),
     array('label' => 'Cursos', 'href' => '/cursos', 'active' => strpos($requestPath, '/cursos') === 0 || $requestPath === '/inscricao'),
@@ -207,8 +208,12 @@ if (!$isAdmin) {
         <link rel="stylesheet" href="/assets/css/conteudo-html-embed.css?v=20260717">
     <?php endif; ?>
     <?php endif; ?>
-    <?php if ($isAdmin): ?>
+    <?php if ($isAdmin || $isRevisor): ?>
         <link rel="stylesheet" href="/assets/css/admin.css">
+    <?php endif; ?>
+    <?php if ($isRevisor): ?>
+        <link rel="stylesheet" href="/assets/css/conteudo-html-embed.css?v=20260717">
+        <script src="/assets/js/conteudo-html-embed.js?v=20260717" defer></script>
     <?php endif; ?>
     <?php if ($isAdmin || $isProfessor): ?>
         <link rel="stylesheet" href="/assets/css/conteudo-editor.css?v=20260529">
@@ -245,6 +250,8 @@ if (!$isAdmin) {
 <body class="<?php echo Helpers::e($scopeClass); ?><?php echo $useFrontendTheme ? ' frontend-theme frontend-template-' . Helpers::e($frontendTemplateVersion) : ''; ?> theme-<?php echo Helpers::e($frontendTemplateVersion); ?><?php echo $isV4Theme ? ' theme-v4-claude dc-v4' : ''; ?>">
     <?php if ($isAdmin): ?>
         <?php require BASE_PATH . '/resources/views/admin/_shell.php'; ?>
+    <?php elseif ($isRevisor): ?>
+        <?php require BASE_PATH . '/resources/views/revisor/_shell.php'; ?>
     <?php else: ?>
         <div class="site-shell">
             <?php if ($isV4Theme): ?>

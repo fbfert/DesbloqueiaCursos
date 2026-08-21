@@ -62,6 +62,8 @@ use App\Controllers\CertificadosController;
 use App\Controllers\Admin\AreaCursoController as AdminAreaCursoController;
 use App\Controllers\Admin\QuizController as AdminQuizController;
 use App\Controllers\Professor\AreaCursoController as ProfessorAreaCursoController;
+use App\Controllers\Revisor\DashboardController as RevisorDashboardController;
+use App\Controllers\Revisor\RevisaoController as RevisorRevisaoController;
 use App\Controllers\Professor\AcademicoController as ProfessorAcademicoController;
 use App\Controllers\Professor\FinanceiroController as ProfessorFinanceiroController;
 use App\Controllers\AvisosController;
@@ -507,6 +509,21 @@ $app->post('/certificados/validar', array(CertificadosController::class, 'valida
 $app->get('/certificados/show', array(CertificadosController::class, 'show'));
 $app->get('/certificados/versao-online', array(CertificadosController::class, 'versaoOnline'));
 $app->get('/certificados/pdf', array(CertificadosController::class, 'pdf'));
+// ---------------------------------------------------------------------
+// Area de revisao (spec 0002-perfil-revisor)
+//
+// Leitura exige area_curso.revisor.ver; gravacao exige
+// area_curso.revisor.comentar. Nenhuma rota daqui recebe permissao de gestao
+// de conteudo — e essa ausencia que sustenta a premissa do perfil.
+// ---------------------------------------------------------------------
+$app->get('/revisor', array(RevisorDashboardController::class, 'index'), array('auth', 'permission:area_curso.revisor.ver'));
+$app->get('/revisor/curso', array(RevisorRevisaoController::class, 'curso'), array('auth', 'permission:area_curso.revisor.ver'));
+$app->get('/revisor/conteudo', array(RevisorRevisaoController::class, 'conteudo'), array('auth', 'permission:area_curso.revisor.ver'));
+$app->get('/revisor/questoes', array(RevisorRevisaoController::class, 'questoes'), array('auth', 'permission:area_curso.revisor.ver'));
+$app->post('/revisor/comentario', array(RevisorRevisaoController::class, 'comentar'), array('auth', 'permission:area_curso.revisor.comentar'));
+$app->post('/revisor/comentario/editar', array(RevisorRevisaoController::class, 'editarComentario'), array('auth', 'permission:area_curso.revisor.comentar'));
+$app->post('/revisor/comentario/excluir', array(RevisorRevisaoController::class, 'excluirComentario'), array('auth', 'permission:area_curso.revisor.comentar'));
+
 $app->get('/professor', array(ProfessorDashboardController::class, 'index'), array('auth'));
 $app->get('/professor/dashboard', array(ProfessorDashboardController::class, 'index'), array('auth'));
 $app->get('/professor/catalogo', array(ProfessorCatalogoController::class, 'index'), array('auth', 'permission:catalogo.professor.ver'));
