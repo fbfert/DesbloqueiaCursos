@@ -6,6 +6,36 @@ RedirectMatch 404 /\.git
     Require all denied
 </FilesMatch>
 
+# ---------------------------------------------------------------------------
+# Blindagem da raiz da aplicação (2026-08-22)
+#
+# Neste deploy BASE_PATH == PUBLIC_PATH == raiz web (ver index.php), portanto
+# app/, config/, sql/, storage/ e backups/ ficam FISICAMENTE dentro do docroot
+# e o Apache os servia como arquivos estáticos. Isso expunha comprovantes PIX,
+# certificados, logs, migrations e dumps completos do banco.
+#
+# Nenhum destes diretórios é referenciado como URL web pelo código: todos os
+# acessos são por caminho de sistema de arquivos (BASE_PATH . '/storage/...'),
+# servidos por rotas controladas. Bloquear por HTTP não altera o app.
+#
+# Permanecem públicos, por design: assets/, uploads/, icon/ e v2/.
+# ---------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule ^(app|backups|config|docs|resources|routes|scripts|specs|sql|storage|tests)(/|$) - [F,L]
+</IfModule>
+
+# Rede de segurança para o caso de mod_rewrite estar indisponível.
+<IfModule !mod_rewrite.c>
+    RedirectMatch 403 ^/(app|backups|config|docs|resources|routes|scripts|specs|sql|storage|tests)(/|$)
+</IfModule>
+
+# Extensões que nunca devem ser baixadas de qualquer lugar da árvore.
+<FilesMatch "\.(sql|sql\.gz|gz|tgz|tar|log|bak|ini|sh|ps1|md|example|dist|lock|yml|yaml)$">
+    Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
