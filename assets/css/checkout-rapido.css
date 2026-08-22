@@ -1,0 +1,339 @@
+/**
+ * Checkout rapido — folha propria, isolada do resto do portal.
+ *
+ * A pagina nao carrega o layout do site: sem menu, sem rodape, sem link de
+ * saida. Tudo aqui existe para reduzir o caminho ate o Pix.
+ */
+
+:root {
+  --cr-fundo: #f4f6f8;
+  --cr-superficie: #ffffff;
+  --cr-tinta: #16202b;
+  --cr-tinta-fraca: #5c6b7a;
+  --cr-borda: #d7dee4;
+  --cr-acento: #0e6f79;
+  --cr-acento-escuro: #0a545c;
+  --cr-sucesso: #1f6f4a;
+  --cr-sucesso-fundo: #e4f2ea;
+  --cr-erro: #a62b22;
+  --cr-erro-fundo: #fbe9e7;
+  --cr-raio: 10px;
+  --cr-sombra: 0 1px 2px rgba(22, 32, 43, .06), 0 10px 28px rgba(22, 32, 43, .07);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--cr-fundo);
+  color: var(--cr-tinta);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.cr {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 24px 18px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- produto ---------- */
+
+.cr-produto {
+  background: var(--cr-superficie);
+  border: 1px solid var(--cr-borda);
+  border-radius: var(--cr-raio);
+  padding: 18px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  box-shadow: var(--cr-sombra);
+}
+
+.cr-thumb {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.cr-produto-texto { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+.cr-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--cr-acento);
+}
+
+.cr-curso-nome {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.cr-beneficios {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 14px;
+  color: var(--cr-tinta-fraca);
+}
+
+.cr-beneficios li::before {
+  content: "✓";
+  color: var(--cr-sucesso);
+  font-weight: 700;
+  margin-right: 7px;
+}
+
+.cr-preco { margin: 4px 0 0; display: flex; align-items: baseline; gap: 9px; }
+.cr-preco strong { font-size: 25px; font-weight: 700; letter-spacing: -.02em; }
+.cr-preco-de { font-size: 15px; color: var(--cr-tinta-fraca); text-decoration: line-through; }
+
+/* ---------- etapas ---------- */
+
+.cr-etapa {
+  background: var(--cr-superficie);
+  border: 1px solid var(--cr-borda);
+  border-radius: var(--cr-raio);
+  padding: 22px 20px;
+  box-shadow: var(--cr-sombra);
+}
+
+.cr-h2 {
+  margin: 0 0 18px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* ---------- formulario ---------- */
+
+form { display: flex; flex-direction: column; gap: 16px; }
+
+.cr-campo { display: flex; flex-direction: column; gap: 6px; }
+
+.cr-campo label { font-size: 14px; font-weight: 600; }
+
+.cr-campo input {
+  font: inherit;
+  font-size: 17px; /* 16px+ evita o zoom automatico do iOS */
+  padding: 13px 14px;
+  border: 1.5px solid var(--cr-borda);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--cr-tinta);
+  width: 100%;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.cr-campo input:focus {
+  outline: none;
+  border-color: var(--cr-acento);
+  box-shadow: 0 0 0 3px rgba(14, 111, 121, .16);
+}
+
+.cr-campo input.cr-invalido { border-color: var(--cr-erro); }
+.cr-campo input.cr-invalido:focus { box-shadow: 0 0 0 3px rgba(166, 43, 34, .14); }
+
+.cr-ajuda { margin: 0; font-size: 12.5px; color: var(--cr-tinta-fraca); }
+.cr-erro { margin: 0; font-size: 13px; font-weight: 600; color: var(--cr-erro); }
+
+.cr-alerta {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.cr-alerta-erro { background: var(--cr-erro-fundo); color: var(--cr-erro); }
+
+/* ---------- botao ---------- */
+
+.cr-botao {
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--cr-acento);
+  border: 0;
+  border-radius: 8px;
+  padding: 16px 18px;
+  width: 100%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none;
+  transition: background .15s ease, transform .06s ease;
+}
+
+.cr-botao:hover { background: var(--cr-acento-escuro); }
+.cr-botao:active { transform: translateY(1px); }
+.cr-botao:focus-visible { outline: 3px solid rgba(14, 111, 121, .4); outline-offset: 2px; }
+.cr-botao[disabled] { opacity: .65; cursor: progress; }
+
+.cr-botao-secundario {
+  background: transparent;
+  color: var(--cr-acento);
+  border: 1.5px solid var(--cr-acento);
+}
+.cr-botao-secundario:hover { background: rgba(14, 111, 121, .07); }
+
+.cr-spinner {
+  width: 17px;
+  height: 17px;
+  border: 2.5px solid rgba(255, 255, 255, .45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cr-girar .7s linear infinite;
+}
+
+@keyframes cr-girar { to { transform: rotate(360deg); } }
+
+/* ---------- LGPD ---------- */
+
+.cr-lgpd { margin: 0; font-size: 12.5px; color: var(--cr-tinta-fraca); line-height: 1.5; }
+.cr-lgpd-links a { color: var(--cr-acento); }
+
+/* ---------- Pix ---------- */
+
+.cr-pix-valor {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--cr-borda);
+  font-size: 14px;
+  color: var(--cr-tinta-fraca);
+}
+.cr-pix-valor strong { font-size: 22px; color: var(--cr-tinta); }
+
+.cr-qr-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  background: #fff;
+  border: 1px dashed var(--cr-borda);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+
+.cr-qr { width: 100%; max-width: 220px; height: auto; image-rendering: pixelated; }
+.cr-qr-placeholder { margin: 0; font-size: 14px; color: var(--cr-tinta-fraca); text-align: center; }
+
+.cr-copiacola-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+
+.cr-copiacola { display: flex; gap: 8px; }
+
+.cr-copiacola input {
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1.5px solid var(--cr-borda);
+  border-radius: 8px;
+  background: #f8fafb;
+  color: var(--cr-tinta-fraca);
+}
+
+.cr-copiar {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--cr-acento);
+  border: 0;
+  border-radius: 8px;
+  padding: 0 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.cr-copiar:hover { background: var(--cr-acento-escuro); }
+
+.cr-copiado { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: var(--cr-sucesso); }
+
+.cr-validade { margin: 16px 0 0; font-size: 14px; color: var(--cr-tinta-fraca); }
+.cr-validade strong { color: var(--cr-tinta); font-variant-numeric: tabular-nums; }
+
+.cr-aguardando {
+  margin-top: 18px;
+  padding: 13px 15px;
+  background: #f0f5f6;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--cr-tinta-fraca);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.cr-pulso {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cr-acento);
+  flex-shrink: 0;
+  animation: cr-pulsar 1.5s ease-in-out infinite;
+}
+
+@keyframes cr-pulsar {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .35; transform: scale(.8); }
+}
+
+.cr-expirado {
+  margin-top: 18px;
+  padding: 16px;
+  background: var(--cr-erro-fundo);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cr-expirado p { margin: 0; font-size: 14px; font-weight: 600; color: var(--cr-erro); }
+
+/* ---------- sucesso ---------- */
+
+.cr-sucesso { text-align: center; }
+.cr-sucesso p { color: var(--cr-tinta-fraca); font-size: 15px; }
+
+.cr-check {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: var(--cr-sucesso-fundo);
+  color: var(--cr-sucesso);
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- movimento reduzido ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-spinner, .cr-pulso { animation: none; }
+  * { scroll-behavior: auto !important; }
+}

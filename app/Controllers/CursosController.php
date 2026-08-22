@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Helpers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -56,7 +57,12 @@ class CursosController extends Controller
             $filters['busca'] = $busca;
         }
 
-        $contexto = $this->cursoService->listPublic($filters);
+        $paginaAtual = (int) $request->query('pagina', 1);
+        if ($paginaAtual < 1) {
+            $paginaAtual = 1;
+        }
+
+        $contexto = $this->cursoService->listPublic($filters, $paginaAtual);
         if ($usuarioId > 0 && !empty($contexto['cursos']) && is_array($contexto['cursos'])) {
             $contexto['cursos'] = $this->anexarAcessosDoAlunoAoCatalogo($contexto['cursos'], $usuarioId);
         }
@@ -154,7 +160,11 @@ class CursosController extends Controller
         if ($statusFluxo === 'matriculado') {
             return array(
                 'label' => 'Acessar curso',
-                'href' => '/minha-pagina',
+                'href' => Helpers::urlAcessoCursoAluno(array(
+                    'inscricao_id' => isset($situacao['inscricao_id']) ? (int) $situacao['inscricao_id'] : 0,
+                    'curso_id' => (int) $cursoId,
+                    'turma_id' => !empty($situacao['turma_id']) ? (int) $situacao['turma_id'] : (int) $turmaId,
+                )),
                 'classe' => 'button-link',
             );
         }
@@ -222,6 +232,10 @@ class CursosController extends Controller
 
     private function montarUrlAcessoAluno($inscricaoId, $cursoId, $turmaId = 0)
     {
-        return '/aluno/curso/' . (int) $inscricaoId . '/' . (int) $cursoId . '/' . (int) $turmaId;
+        return Helpers::urlAcessoCursoAluno(array(
+            'inscricao_id' => (int) $inscricaoId,
+            'curso_id' => (int) $cursoId,
+            'turma_id' => (int) $turmaId,
+        ));
     }
 }

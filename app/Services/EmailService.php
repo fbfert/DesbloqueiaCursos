@@ -632,6 +632,133 @@ class EmailService
         return array_values(array_unique($emails));
     }
 
+    /**
+     * Avisa o(s) e-mail(s) do avaliador pedagógico (Configurações Globais >
+     * Institucional > "E-mail avaliador pedagógico (trabalhos)") sempre que
+     * uma nova avaliação textual é enviada por um aluno, ficando pendente de
+     * correção. Aceita múltiplos e-mails separados por vírgula, mesmo padrão
+     * de `financeiroDestinatarios()`. Retorna 'skipped' (sem erro) quando o
+     * campo não está configurado - a notificação ao professor do curso
+     * continua acontecendo normalmente de qualquer forma.
+     */
+    public function avaliacaoTextualPendente(array $contexto, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $destinatarios = $this->avaliadorPedagogicoDestinatarios();
+        if (empty($destinatarios)) {
+            Logger::info('avaliacao_textual_pendente.avaliador_pedagogico.sem_destinatario', array(
+                'entrega_id' => isset($contexto['entrega_id']) ? $contexto['entrega_id'] : null,
+            ));
+            return array('ok' => true, 'skipped' => true, 'message' => 'E-mail do avaliador pedagógico não configurado.');
+        }
+
+        $resultados = array();
+        foreach ($destinatarios as $destinatarioEmail) {
+            $resultados[] = $this->sendTemplate(
+                'email.avaliacao_textual_pendente',
+                'avaliacao_textual_pendente',
+                $destinatarioEmail,
+                'Avaliador pedagógico',
+                'Nova avaliação textual pendente de correção',
+                array('avaliacao' => $contexto),
+                'conteudo_avaliacao_entrega',
+                isset($contexto['entrega_id']) ? $contexto['entrega_id'] : null,
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+        }
+
+        return array('ok' => true, 'results' => $resultados);
+    }
+
+    private function avaliadorPedagogicoDestinatarios()
+    {
+        $institucional = $this->globalConfigService->institucional();
+        $raw = isset($institucional['email_avaliador_pedagogico']) ? trim((string) $institucional['email_avaliador_pedagogico']) : '';
+        if ($raw === '') {
+            return array();
+        }
+
+        $emails = array();
+        foreach (preg_split('/\\s*,\\s*/', $raw) as $email) {
+            $email = trim((string) $email);
+            if ($email === '') {
+                continue;
+            }
+
+            if (!Validator::email($email)) {
+                continue;
+            }
+
+            $emails[] = strtolower($email);
+        }
+
+        return array_values(array_unique($emails));
+    }
+
+    /**
+     * Avisa o(s) e-mail(s) de certificados (Configurações Globais >
+     * Institucional > "E-mail certificados") sempre que uma inscrição se
+     * torna apta para emissão de certificado (transição 0 -> 1). Aceita
+     * múltiplos e-mails separados por vírgula, mesmo padrão de
+     * `financeiroDestinatarios()`. Retorna 'skipped' (sem erro) quando o
+     * campo não está configurado.
+     */
+    public function certificadoAptoParaEmissao(array $contexto, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $destinatarios = $this->certificadosDestinatarios();
+        if (empty($destinatarios)) {
+            Logger::info('certificado_apto_emissao.certificados.sem_destinatario', array(
+                'inscricao_id' => isset($contexto['inscricao_id']) ? $contexto['inscricao_id'] : null,
+            ));
+            return array('ok' => true, 'skipped' => true, 'message' => 'E-mail de certificados não configurado.');
+        }
+
+        $resultados = array();
+        foreach ($destinatarios as $destinatarioEmail) {
+            $resultados[] = $this->sendTemplate(
+                'email.certificado_apto_emissao',
+                'certificado_apto_emissao',
+                $destinatarioEmail,
+                'Certificados',
+                'Novo certificado apto para emissão - ' . (isset($contexto['curso_nome']) ? $contexto['curso_nome'] : ''),
+                array('certificado' => $contexto),
+                'inscricao',
+                isset($contexto['inscricao_id']) ? $contexto['inscricao_id'] : null,
+                $actorUserId,
+                $ipAddress,
+                $userAgent
+            );
+        }
+
+        return array('ok' => true, 'results' => $resultados);
+    }
+
+    private function certificadosDestinatarios()
+    {
+        $institucional = $this->globalConfigService->institucional();
+        $raw = isset($institucional['email_certificados']) ? trim((string) $institucional['email_certificados']) : '';
+        if ($raw === '') {
+            return array();
+        }
+
+        $emails = array();
+        foreach (preg_split('/\\s*,\\s*/', $raw) as $email) {
+            $email = trim((string) $email);
+            if ($email === '') {
+                continue;
+            }
+
+            if (!Validator::email($email)) {
+                continue;
+            }
+
+            $emails[] = strtolower($email);
+        }
+
+        return array_values(array_unique($emails));
+    }
+
     public function sendTemplate(
         $evento,
         $template,
@@ -1301,7 +1428,7 @@ class EmailService
             isset($fallbacks['from_email']) ? $fallbacks['from_email'] : null,
             isset($fallbacks['reply_to']) ? $fallbacks['reply_to'] : null,
             isset($fallbacks['username']) ? $fallbacks['username'] : null,
-            'no-reply@polorainbow.com.br',
+            'no-reply@desbloqueiacursos.com.br',
         );
 
         foreach ($candidatos as $candidate) {
@@ -1321,7 +1448,7 @@ class EmailService
             return $candidate;
         }
 
-        return 'no-reply@polorainbow.com.br';
+        return 'no-reply@desbloqueiacursos.com.br';
     }
 
     private function smtpCommand($socket, $command, array $expectedCodes)
@@ -1411,9 +1538,9 @@ class EmailService
 
         if (empty($anexosValidos)) {
             $message[] = 'Content-Type: text/html; charset=UTF-8';
-            $message[] = 'Content-Transfer-Encoding: 8bit';
+            $message[] = 'Content-Transfer-Encoding: quoted-printable';
             $message[] = '';
-            $message[] = $email['html'];
+            $message[] = $this->encodeQuotedPrintable($email['html']);
             return implode("\r\n", $message);
         }
 
@@ -1422,9 +1549,9 @@ class EmailService
         $message[] = '';
         $message[] = '--' . $boundaryMixed;
         $message[] = 'Content-Type: text/html; charset=UTF-8';
-        $message[] = 'Content-Transfer-Encoding: 8bit';
+        $message[] = 'Content-Transfer-Encoding: quoted-printable';
         $message[] = '';
-        $message[] = $email['html'];
+        $message[] = $this->encodeQuotedPrintable($email['html']);
 
         foreach ($anexosValidos as $attachment) {
             $boundaryAlt = 'att_' . md5(uniqid((string) microtime(true), true));
@@ -1440,6 +1567,16 @@ class EmailService
         $message[] = '--' . $boundaryMixed . '--';
 
         return implode("\r\n", $message);
+    }
+
+    /**
+     * Corpo em quoted-printable (7-bit seguro) em vez de 8bit cru: alguns
+     * relês SMTP intermediários não são 8BITMIME-clean e corrompem
+     * acentuação/caracteres especiais quando o corpo é enviado como 8bit.
+     */
+    private function encodeQuotedPrintable($html)
+    {
+        return quoted_printable_encode((string) $html);
     }
 
     private function sanitizeFilenameHeader($filename)

@@ -183,6 +183,11 @@ class DashboardService
                 'subvalue' => 'emissao manual',
             ),
             array(
+                'label' => 'Certificados aptos para emissão',
+                'value' => $this->countCertificadosAptosParaEmissao(),
+                'subvalue' => 'aguardando emissao manual',
+            ),
+            array(
                 'label' => 'Total a pagar a professores',
                 'value' => $this->formatCurrency($this->sumRepassesByStatus(array('pendente', 'aguardando_documento', 'documento_recebido', 'aprovado'))),
                 'subvalue' => 'repasse liquido',
@@ -565,6 +570,25 @@ class DashboardService
                AND p.deleted_at IS NULL
                AND COALESCE(p.is_presente, 0) = 0
                AND c.status = "emitido"'
+        );
+    }
+
+    /**
+     * Inscrições que já cumpriram os critérios de aptidão (ver
+     * `AptidaoCertificadoService`, coluna `inscricoes.apto_certificado`) mas
+     * ainda não têm certificado emitido - mesmo criterio de
+     * `Certificado::listEligible()`/`searchManualCandidates()`, aqui só como
+     * contagem para o card do dashboard.
+     */
+    private function countCertificadosAptosParaEmissao()
+    {
+        return (int) $this->queryValue(
+            'SELECT COUNT(*) AS total
+             FROM inscricoes i
+             LEFT JOIN certificados c ON c.inscricao_id = i.id AND c.deleted_at IS NULL AND c.status = "emitido"
+             WHERE i.deleted_at IS NULL
+               AND i.apto_certificado = 1
+               AND c.id IS NULL'
         );
     }
 

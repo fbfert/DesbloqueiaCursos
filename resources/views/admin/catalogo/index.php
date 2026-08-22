@@ -63,7 +63,7 @@
                         <td><?php echo htmlspecialchars($curso['slug'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars((string) $curso['categoria_nome'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars($curso['tipo'], ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td><?php echo htmlspecialchars($curso['modalidade'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars(\App\Core\Helpers::modalidadeCurso($curso['modalidade']), ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
                             <?php
                             $temPromo = !empty($curso['em_promocao'])

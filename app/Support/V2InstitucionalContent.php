@@ -31,9 +31,11 @@ class V2InstitucionalContent
         $source = self::extractVisibleHtml($raw);
 
         // O título canônico da página vem da coluna `titulo` e é exibido pela
-        // view como um único <h1>. Se o editor repetir esse título no conteúdo,
-        // removemos apenas a primeira ocorrência para não duplicar a manchete.
-        $html = self::stripFirstH1(Helpers::renderSafeHtml($source, 'full'));
+        // view como um único <h1>. Se o conteúdo cadastrado também trouxer um
+        // <h1> (repetindo o título ou como subtítulo próprio), rebaixamos para
+        // <h2> em vez de remover, evitando duas manchetes de mesmo nível sem
+        // descartar texto legítimo do editor.
+        $html = self::demoteFirstH1(Helpers::renderSafeHtml($source, 'full'));
 
         $mapEmbedUrl = self::extractMapEmbed($source);
 
@@ -94,9 +96,13 @@ class V2InstitucionalContent
         return trim($html) !== '' ? $html : $raw;
     }
 
-    private static function stripFirstH1($html)
+    private static function demoteFirstH1($html)
     {
-        return preg_replace('#\s*<h1\b[^>]*>.*?</h1>#is', '', (string) $html, 1);
+        $html = (string) $html;
+        $html = preg_replace('#<h1\b#i', '<h2', $html, 1);
+        $html = preg_replace('#</h1>#i', '</h2>', $html, 1);
+
+        return $html;
     }
 
     /**

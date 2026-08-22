@@ -41,7 +41,7 @@ class CertificadosController extends Controller
         $cursoId = isset($filtros['curso_evento_id']) ? (int) $filtros['curso_evento_id'] : 0;
 
         return $this->view('admin/certificados/emissao_manual', array(
-            'title' => 'EmissÃ£o Manual de Certificados',
+            'title' => 'Emissão Manual de Certificados',
             'cursos' => $this->certificadoService->listarCursosEmissaoManual(),
             'turmas' => $this->certificadoService->listarTurmasEmissaoManual($cursoId > 0 ? $cursoId : null),
             'templates' => $this->certificadoService->listarTemplates(),
@@ -78,7 +78,7 @@ class CertificadosController extends Controller
         ));
 
         if (empty($inscricaoIds)) {
-            Session::flash('errors', array('Selecione ao menos uma inscriÃ§Ã£o para emitir.'));
+            Session::flash('errors', array('Selecione ao menos uma inscrição para emitir.'));
             return $this->redirect($this->urlEmissaoManual($filtros));
         }
 
@@ -106,7 +106,7 @@ class CertificadosController extends Controller
 
             $resumo = isset($result['resumo']) && is_array($result['resumo']) ? $result['resumo'] : array();
             if ((int) ($resumo['emitidos'] ?? 0) > 0 || (int) ($resumo['emitidos_excecao'] ?? 0) > 0) {
-                Session::flash('success', 'Processamento da emissÃ£o manual concluÃ­do.');
+                Session::flash('success', 'Processamento da emissão manual concluído.');
             } else {
                 $mensagens = array();
                 if (!empty($result['resultados']) && is_array($result['resultados'])) {
@@ -132,7 +132,7 @@ class CertificadosController extends Controller
                 'permitir_excecao' => $permitirExcecao ? 1 : 0,
             ));
 
-            Session::flash('errors', array('Falha na emissÃ£o manual: ' . $e->getMessage()));
+            Session::flash('errors', array('Falha na emissão manual: ' . $e->getMessage()));
         }
 
         return $this->redirect($this->urlEmissaoManual($filtros));
@@ -314,7 +314,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'NÃ£o foi possivel emitir o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel emitir o certificado.'));
             return $this->redirect('/admin/certificados/emitir?inscricao_id=' . (int) $request->input('inscricao_id', 0));
         }
 
@@ -333,7 +333,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'NÃ£o foi possivel reemitir o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel reemitir o certificado.'));
             return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $request->input('certificado_id', 0));
         }
 
@@ -352,7 +352,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'NÃ£o foi possivel cancelar o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel cancelar o certificado.'));
             return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $request->input('certificado_id', 0));
         }
 
@@ -371,7 +371,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'NÃ£o foi possivel revogar o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel revogar o certificado.'));
             return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $request->input('certificado_id', 0));
         }
 
@@ -384,7 +384,7 @@ class CertificadosController extends Controller
         $codigo = strtoupper(trim((string) $request->query('codigo', '')));
         $config = $this->configCertificados();
         if (empty($config['certificados_permitir_download'])) {
-            return new Response('O download do certificado nÃ£o estÃ¡ disponÃ­vel no momento.', 403, array('Content-Type' => 'text/plain; charset=UTF-8'));
+            return new Response('O download do certificado não está disponível no momento.', 403, array('Content-Type' => 'text/plain; charset=UTF-8'));
         }
         try {
             $pdf = $this->certificadoService->pdfBytesByCodigo($codigo);

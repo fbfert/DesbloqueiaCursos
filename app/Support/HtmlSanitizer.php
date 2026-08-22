@@ -6,15 +6,19 @@ class HtmlSanitizer
 {
     private const DISALLOWED_CONTENT_TAGS = array('script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'svg', 'math', 'canvas', 'head', 'title', 'meta', 'link', 'base', 'noscript');
 
+    // Divs de destaque do padrao editorial de conteudo (ver docs/padrao-editorial-ptbr.md):
+    // unica excecao ao "class sempre removido" - lista fechada, sem estilos livres.
+    private const DIV_CLASSES_PERMITIDAS = array('card-pratica', 'card-resumo', 'alerta-educacional');
+
     private const PROFILES = array(
         'minimal' => array(
             'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a'),
         ),
         'basic' => array(
-            'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a', 'blockquote', 'h2', 'h3', 'h4', 'table', 'thead', 'tbody', 'tr', 'th', 'td'),
+            'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a', 'blockquote', 'h2', 'h3', 'h4', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div'),
         ),
         'full' => array(
-            'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td'),
+            'tags' => array('p', 'br', 'b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'a', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div'),
         ),
     );
 
@@ -124,6 +128,9 @@ class HtmlSanitizer
 
             if ($name === 'class') {
                 $alignment = self::extractAlignmentFromClass((string) $attr->nodeValue);
+                if ($tag === 'div' && in_array(trim((string) $attr->nodeValue), self::DIV_CLASSES_PERMITIDAS, true)) {
+                    continue;
+                }
                 $toRemove[] = $name;
                 continue;
             }
@@ -337,6 +344,9 @@ class HtmlSanitizer
 
                 if ($name === 'class') {
                     $alignment = self::extractAlignmentFromClass($value);
+                    if ($tag === 'div' && in_array(trim($value), self::DIV_CLASSES_PERMITIDAS, true)) {
+                        $attrs['class'] = trim($value);
+                    }
                     continue;
                 }
 

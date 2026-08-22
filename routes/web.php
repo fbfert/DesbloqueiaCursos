@@ -53,6 +53,8 @@ use App\Controllers\Professor\DashboardController as ProfessorDashboardControlle
 use App\Controllers\CategoriasController as PublicCategoriasController;
 use App\Controllers\CursosController as PublicCursosController;
 use App\Controllers\CheckoutController;
+use App\Controllers\CheckoutRapidoController;
+use App\Controllers\Admin\CheckoutRapidoController as AdminCheckoutRapidoController;
 use App\Controllers\Webhooks\AbacatePayController;
 use App\Controllers\AreaCursoController;
 use App\Controllers\QuizController;
@@ -155,6 +157,21 @@ $app->get('/categorias', array(PublicCategoriasController::class, 'index'));
 $app->get('/categorias/{slug}/cursos', array(PublicCategoriasController::class, 'cursos'));
 $app->get('/cursos', array(PublicCursosController::class, 'index'));
 $app->get('/cursos/detalhe', array(PublicCursosController::class, 'show'));
+
+// ---------------------------------------------------------------------
+// Checkout rapido (tela unica, sem senha). ISOLADO do checkout antigo.
+//
+// Protegido por feature flag: com a flag desligada, todas estas rotas
+// respondem 404 e o unico caminho de compra continua sendo /inscricao.
+// Ligar/desligar em `configuracoes_checkout_rapido.ativo` (ou, sem a
+// tabela, CHECKOUT_RAPIDO_ATIVO no .env).
+//
+// /comprar/pix e /comprar/status sao JSON, consumidos pela propria tela.
+// O status le SEMPRE o nosso banco: o cliente nunca decide se pagou.
+// ---------------------------------------------------------------------
+$app->get('/comprar', array(CheckoutRapidoController::class, 'mostrar'));
+$app->post('/comprar/pix', array(CheckoutRapidoController::class, 'gerarPix'));
+$app->get('/comprar/status', array(CheckoutRapidoController::class, 'status'));
 $app->get('/cupom', array(CheckoutController::class, 'cupomPromocional'));
 $app->get('/como-funciona', array(PagesController::class, 'comoFunciona'));
 $app->get('/sobre', array(PagesController::class, 'sobre'));
@@ -392,6 +409,12 @@ $app->post('/admin/financeiro/documento', array(AdminFinanceiroController::class
 $app->post('/admin/financeiro/pagamento', array(AdminFinanceiroController::class, 'registrarPagamento'), array('auth', 'permission:financeiro.gerenciar'));
 $app->get('/admin/configuracoes-globais', array(ConfiguracoesGlobaisController::class, 'index'), array('auth', 'permission:configuracoes_globais.ver'));
 $app->post('/admin/configuracoes-globais', array(ConfiguracoesGlobaisController::class, 'salvarInstitucional'), array('auth', 'permission:configuracoes_globais.gerenciar'));
+
+// Painel do checkout rapido: liga/desliga a chave e mostra o funil.
+// Mesma permissao das demais configuracoes sensiveis.
+$app->get('/admin/checkout-rapido', array(AdminCheckoutRapidoController::class, 'index'), array('auth', 'permission:configuracoes_globais.gerenciar'));
+$app->post('/admin/checkout-rapido/salvar', array(AdminCheckoutRapidoController::class, 'salvar'), array('auth', 'permission:configuracoes_globais.gerenciar'));
+$app->post('/admin/checkout-rapido/alternar', array(AdminCheckoutRapidoController::class, 'alternar'), array('auth', 'permission:configuracoes_globais.gerenciar'));
 $app->get('/admin/configuracoes-pagamento', array(ConfiguracoesPagamentoController::class, 'index'), array('auth', 'permission:configuracoes_globais.gerenciar'));
 $app->post('/admin/configuracoes-pagamento/salvar', array(ConfiguracoesPagamentoController::class, 'salvar'), array('auth', 'permission:configuracoes_globais.gerenciar'));
 $app->post('/admin/configuracoes-pagamento/testar-abacatepay', array(ConfiguracoesPagamentoController::class, 'testarAbacatePay'), array('auth', 'permission:configuracoes_globais.gerenciar'));

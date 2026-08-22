@@ -9,7 +9,7 @@
     <div style="max-width:640px;margin:0 auto;padding:24px;">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;">
             <h1 style="margin:0 0 16px;">Teste de e-mail enviado com sucesso</h1>
-            <p>Este é um e-mail de teste do Portal de Cursos e Eventos Polo Rainbow.</p>
+            <p>Este é um e-mail de teste do Desbloqueia Cursos.</p>
             <p>Destinatário informado: <strong><?php echo htmlspecialchars((string) ($destinatario_email ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong></p>
             <p>Data do teste: <strong><?php echo htmlspecialchars((string) ($data_teste ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong></p>
             <p>Se esta mensagem chegou corretamente, a configuração SMTP está funcionando para envios básicos.</p>

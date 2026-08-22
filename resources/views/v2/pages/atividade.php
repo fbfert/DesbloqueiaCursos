@@ -110,6 +110,15 @@ $hidden = ''
             <?php if (trim((string) ($ultima['resposta'] ?? '')) !== ''): ?>
               <div class="v2-atv-resposta"><?php echo nl2br(Helpers::e((string) $ultima['resposta'])); ?></div>
             <?php endif; ?>
+            <?php if (!empty($ultima['imagens'])): ?>
+              <div class="v2-atv-imagens">
+                <?php foreach ($ultima['imagens'] as $img): ?>
+                  <a href="/aluno/cursos/conteudo/avaliacao/imagem?id=<?php echo (int) $img['id']; ?>" target="_blank" rel="noopener noreferrer" class="v2-atv-imagem-item">
+                    <img src="/aluno/cursos/conteudo/avaliacao/imagem?id=<?php echo (int) $img['id']; ?>" alt="<?php echo Helpers::e((string) ($img['nome_original'] ?? 'Imagem enviada')); ?>" loading="lazy">
+                  </a>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
             <?php if (trim((string) ($ultima['nota'] ?? '')) !== ''): ?>
               <p class="v2-atv-nota"><strong>Nota:</strong> <?php echo Helpers::e((string) $ultima['nota']); ?></p>
             <?php endif; ?>
@@ -123,7 +132,7 @@ $hidden = ''
         <?php endif; ?>
 
         <?php if (!empty($atividade['pode_enviar'])): ?>
-          <form method="post" action="<?php echo Helpers::e($enviarAction); ?>" data-native-submit class="v2-atv-form" id="v2-atividade-form">
+          <form method="post" action="<?php echo Helpers::e($enviarAction); ?>" enctype="multipart/form-data" data-native-submit class="v2-atv-form" id="v2-atividade-form">
             <?php echo $hidden; ?>
             <div class="v2-field">
               <label for="v2-atv-resposta"><?php echo $ultima ? 'Nova resposta' : 'Sua resposta'; ?></label>
@@ -132,6 +141,12 @@ $hidden = ''
                         aria-describedby="v2-atv-enunciado v2-atv-contador"
                         placeholder="Digite sua resposta aqui" data-char-counter></textarea>
               <p class="v2-muted v2-sm" id="v2-atv-contador" aria-hidden="true"><span data-char-count>0</span>/50000 caracteres</p>
+            </div>
+            <div class="v2-field">
+              <label for="v2-atv-imagens">Imagens (opcional)</label>
+              <input class="v2-input" type="file" id="v2-atv-imagens" name="imagens[]" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple aria-describedby="v2-atv-imagens-ajuda">
+              <span id="v2-atv-imagens-ajuda" class="v2-muted v2-sm">Até 5 imagens (JPG, PNG ou WEBP), no máximo 1,5 MB cada.</span>
+              <p class="v2-muted v2-sm" id="v2-atv-imagens-erro" data-imagens-erro hidden></p>
             </div>
             <div class="v2-quiz-actions">
               <button type="submit" class="v2-btn v2-btn-primary" data-atv-btn data-loading-label="Enviando…"><i class="ti ti-send"></i> <?php echo $ultima ? 'Reenviar resposta' : 'Enviar resposta'; ?></button>

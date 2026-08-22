@@ -262,7 +262,7 @@ $podeEmitir = $temAlunoSelecionado && $emailValidoAluno && $temInscricoes;
                                 $statusClass = $certEmitido ? 'emissao-rapida-status--emitido' : ($selecionavel ? 'emissao-rapida-status--apto' : 'emissao-rapida-status--bloqueado');
                                 $cursoNome = !empty($inscricao['curso_nome']) ? (string) $inscricao['curso_nome'] : '-';
                                 $turmaNome = !empty($inscricao['turma_nome']) ? (string) $inscricao['turma_nome'] : '-';
-                                $modalidade = !empty($inscricao['curso_modalidade']) ? (string) $inscricao['curso_modalidade'] : '-';
+                                $modalidade = !empty($inscricao['curso_modalidade']) ? Helpers::modalidadeCurso($inscricao['curso_modalidade']) : '-';
                                 $periodo = !empty($inscricao['turma_periodo']) ? (string) $inscricao['turma_periodo'] : '-';
                                 $progresso = isset($inscricao['percentual_progresso']) && $inscricao['percentual_progresso'] !== null
                                     ? number_format((float) $inscricao['percentual_progresso'], 2, ',', '.') . '%'

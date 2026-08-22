@@ -55,7 +55,12 @@ class CategoriasController extends Controller
             return new Response(View::render('errors/404', array('title' => 'Categoria não encontrada')), 404);
         }
 
-        $contexto = $this->cursoService->listPublicByCategoria((int) $categoria['id']);
+        $paginaAtual = (int) $request->query('pagina', 1);
+        if ($paginaAtual < 1) {
+            $paginaAtual = 1;
+        }
+
+        $contexto = $this->cursoService->listPublicByCategoria((int) $categoria['id'], $paginaAtual);
         $usuarioId = (int) Session::get('usuario_id', 0);
         if ($usuarioId > 0 && !empty($contexto['cursos']) && is_array($contexto['cursos'])) {
             $contexto['cursos'] = $this->anexarAcessosDoAlunoAoCatalogo($contexto['cursos'], $usuarioId);

@@ -29,7 +29,7 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
         <dt>Slug</dt><dd><?php echo Helpers::e($curso['slug']); ?></dd>
         <dt>Categoria</dt><dd><?php echo Helpers::e($curso['categoria_nome'] ?? ''); ?></dd>
         <dt>Tipo</dt><dd><?php echo Helpers::e($curso['tipo']); ?></dd>
-        <dt>Modalidade</dt><dd><?php echo Helpers::e($curso['modalidade']); ?></dd>
+        <dt>Modalidade</dt><dd><?php echo Helpers::e(Helpers::modalidadeCurso($curso['modalidade'])); ?></dd>
         <dt>Professores responsáveis</dt><dd><?php echo Helpers::e(!empty($professoresResponsaveisNomes) ? implode(', ', $professoresResponsaveisNomes) : '-'); ?></dd>
         <dt>Valor</dt><dd>R$ <?php echo number_format((float) $curso['valor'], 2, ',', '.'); ?></dd>
         <?php

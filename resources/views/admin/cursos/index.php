@@ -80,7 +80,7 @@ $statusOptions = array(
 );
 $modalidadeOptions = array('' => 'Todas');
 foreach ($modalidades as $modalidade) {
-    $modalidadeOptions[$modalidade] = ucfirst(str_replace('_', ' ', (string) $modalidade));
+    $modalidadeOptions[$modalidade] = Helpers::modalidadeCurso($modalidade);
 }
 ?>
 
@@ -182,7 +182,7 @@ foreach ($modalidades as $modalidade) {
                         <td><?php echo Helpers::e($curso['categoria_nome'] ?? ''); ?></td>
                         <td><?php echo Helpers::e(curso_professores_texto($curso)); ?></td>
                         <td><?php echo Helpers::e($curso['tipo']); ?></td>
-                        <td><?php echo Helpers::e($curso['modalidade']); ?></td>
+                        <td><?php echo Helpers::e(Helpers::modalidadeCurso($curso['modalidade'])); ?></td>
                         <td>
                             <?php
                             $temPromo = !empty($curso['em_promocao'])
@@ -248,7 +248,7 @@ foreach ($modalidades as $modalidade) {
                         <td><?php echo Helpers::e($curso['categoria_nome'] ?? ''); ?></td>
                         <td><?php echo Helpers::e(curso_professores_texto($curso)); ?></td>
                         <td><?php echo Helpers::e($curso['tipo']); ?></td>
-                        <td><?php echo Helpers::e($curso['modalidade']); ?></td>
+                        <td><?php echo Helpers::e(Helpers::modalidadeCurso($curso['modalidade'])); ?></td>
                         <td>
                             <?php
                             $temPromo = !empty($curso['em_promocao'])
@@ -313,7 +313,7 @@ foreach ($modalidades as $modalidade) {
                             <td><?php echo Helpers::e($curso['categoria_nome'] ?? ''); ?></td>
                             <td><?php echo Helpers::e(curso_professores_texto($curso)); ?></td>
                             <td><?php echo Helpers::e($curso['tipo']); ?></td>
-                            <td><?php echo Helpers::e($curso['modalidade']); ?></td>
+                            <td><?php echo Helpers::e(Helpers::modalidadeCurso($curso['modalidade'])); ?></td>
                             <td>
                                 <?php
                                 $temPromo = !empty($curso['em_promocao'])

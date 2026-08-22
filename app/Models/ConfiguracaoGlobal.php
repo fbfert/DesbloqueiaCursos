@@ -40,6 +40,7 @@ class ConfiguracaoGlobal
             'email_financeiro' => isset($data['email_financeiro']) ? trim((string) $data['email_financeiro']) : null,
             'email_suporte' => isset($data['email_suporte']) ? trim((string) $data['email_suporte']) : null,
             'email_certificados' => isset($data['email_certificados']) ? trim((string) $data['email_certificados']) : null,
+            'email_avaliador_pedagogico' => isset($data['email_avaliador_pedagogico']) ? trim((string) $data['email_avaliador_pedagogico']) : null,
             'telefone' => isset($data['telefone']) ? trim((string) $data['telefone']) : null,
             'logo_caminho' => isset($data['logo_caminho']) ? trim((string) $data['logo_caminho']) : null,
             'favicon_caminho' => isset($data['favicon_caminho']) ? trim((string) $data['favicon_caminho']) : null,
@@ -57,6 +58,7 @@ class ConfiguracaoGlobal
                      email_financeiro = :email_financeiro,
                      email_suporte = :email_suporte,
                      email_certificados = :email_certificados,
+                     email_avaliador_pedagogico = :email_avaliador_pedagogico,
                      telefone = :telefone,
                      logo_caminho = :logo_caminho,
                      favicon_caminho = :favicon_caminho,
@@ -71,9 +73,9 @@ class ConfiguracaoGlobal
 
         $stmt = Database::connection()->prepare(
             'INSERT INTO configuracoes_globais
-             (nome_fantasia, razao_social, cnpj, cidade, uf, email_institucional, email_financeiro, email_suporte, email_certificados, telefone, logo_caminho, favicon_caminho, created_at, updated_at, deleted_at)
+             (nome_fantasia, razao_social, cnpj, cidade, uf, email_institucional, email_financeiro, email_suporte, email_certificados, email_avaliador_pedagogico, telefone, logo_caminho, favicon_caminho, created_at, updated_at, deleted_at)
              VALUES
-             (:nome_fantasia, :razao_social, :cnpj, :cidade, :uf, :email_institucional, :email_financeiro, :email_suporte, :email_certificados, :telefone, :logo_caminho, :favicon_caminho, NOW(), NOW(), NULL)'
+             (:nome_fantasia, :razao_social, :cnpj, :cidade, :uf, :email_institucional, :email_financeiro, :email_suporte, :email_certificados, :email_avaliador_pedagogico, :telefone, :logo_caminho, :favicon_caminho, NOW(), NOW(), NULL)'
         );
 
         $stmt->execute($payload);

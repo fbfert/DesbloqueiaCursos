@@ -380,13 +380,7 @@ class AlunoController extends Controller
 
     private function modalidadeLabel($modalidade)
     {
-        $map = array(
-            'presencial' => 'Presencial',
-            'online_ao_vivo' => 'Online ao vivo',
-            'hibrido' => 'Híbrido',
-            'sob_demanda' => 'Sob demanda',
-        );
-        return isset($map[$modalidade]) ? $map[$modalidade] : ($modalidade !== '' ? ucfirst(str_replace('_', ' ', $modalidade)) : '');
+        return $modalidade !== '' ? \App\Core\Helpers::modalidadeCurso($modalidade) : '';
     }
 
     private function statusInscricaoLabel($status)

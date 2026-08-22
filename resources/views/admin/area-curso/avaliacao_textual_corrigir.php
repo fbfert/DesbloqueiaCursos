@@ -16,6 +16,17 @@
     <p><strong>Orientações:</strong> <?php echo $entrega['orientacoes'] ?? ''; ?></p>
     <p><strong>Resposta:</strong><br><?php echo nl2br(Helpers::e((string) ($entrega['resposta'] ?? ''))); ?></p>
 
+    <?php if (!empty($entrega['imagens'])): ?>
+        <p><strong>Imagens anexadas:</strong></p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <?php foreach ($entrega['imagens'] as $img): ?>
+                <a href="/admin/area-curso/conteudo/avaliacao/imagem?id=<?php echo (int) $img['id']; ?>" target="_blank" rel="noopener noreferrer" style="display:block;width:110px;height:110px;border-radius:10px;overflow:hidden;border:1px solid #d8dde6;">
+                    <img src="/admin/area-curso/conteudo/avaliacao/imagem?id=<?php echo (int) $img['id']; ?>" alt="<?php echo Helpers::e((string) ($img['nome_original'] ?? 'Imagem enviada')); ?>" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+                </a>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
     <form method="post" action="/admin/area-curso/conteudo/avaliacao/corrigir" class="form-grid">
         <?php echo $csrfField; ?>
         <input type="hidden" name="entrega_id" value="<?php echo (int) ($entrega['id'] ?? 0); ?>">

@@ -31,7 +31,7 @@ if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resourc
             <strong class="checkout-status-alert__title">Você já está matriculado neste curso.</strong>
             <p class="checkout-status-alert__text">Seu acesso já foi liberado. Acompanhe o conteúdo na área do aluno.</p>
             <div class="cta-group">
-                <a class="button-link" href="/minha-pagina">Acessar curso</a>
+                <a class="button-link" href="<?php echo Helpers::e(Helpers::urlAcessoCursoAluno($situacaoInscricao)); ?>">Acessar curso</a>
             </div>
         </section>
     <?php elseif ($statusFluxo === 'pendente_pagamento'): ?>

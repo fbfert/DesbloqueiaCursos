@@ -121,6 +121,32 @@ class ConteudoAvaliacaoEntrega
         return $resultado;
     }
 
+    public function listUltimasPorInscricao($alunoId, $inscricaoId)
+    {
+        $alunoId = (int) $alunoId;
+        $inscricaoId = (int) $inscricaoId;
+        if ($alunoId <= 0 || $inscricaoId <= 0) {
+            return array();
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT e1.*
+             FROM conteudo_avaliacoes_entregas e1
+             INNER JOIN (
+                 SELECT MAX(id) AS id
+                 FROM conteudo_avaliacoes_entregas
+                 WHERE deleted_at IS NULL
+                   AND status <> "cancelada"
+                   AND aluno_id = :aluno_id
+                   AND inscricao_id = :inscricao_id
+                 GROUP BY avaliacao_id
+             ) ult ON ult.id = e1.id
+             WHERE e1.deleted_at IS NULL'
+        );
+        $stmt->execute(array('aluno_id' => $alunoId, 'inscricao_id' => $inscricaoId));
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(

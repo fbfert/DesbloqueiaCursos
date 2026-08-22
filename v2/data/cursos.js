@@ -177,7 +177,7 @@
       ],
       instrutor: { nome: "Prof. Ricardo Alves", iniciais: "RA", area: "Projetos de Extensão", bio: "Orienta projetos de extensão e atividades práticas com a comunidade. Perfil fictício — conteúdo de demonstração da V2." },
       turmas: [
-        { id: "presencial-lages", nome: "Turma presencial — Polo Rainbow", modalidade: "Presencial", inicio: "Datas a definir", vagas: 18, local: "Polo Rainbow — Lages/SC", preco: 100.0, formato: "Encontros presenciais" }
+        { id: "presencial-lages", nome: "Turma presencial — Desbloqueia Cursos", modalidade: "Presencial", inicio: "Datas a definir", vagas: 18, local: "Desbloqueia Cursos — Lages/SC", preco: 100.0, formato: "Encontros presenciais" }
       ],
       pagina: "curso-direito-consumidor.html",
       progresso: 0
@@ -583,7 +583,7 @@
       id: "evento-oficinas-ace", tipo: "evento", cursoBase: "oficinas-ace",
       titulo: "Oficinas de ACE — Encontro presencial", categoria: "Gestão", categoriaId: "negocios",
       modalidade: "Presencial", preco: 100.0,
-      dataInicioDemo: "12/07/2026", dataFimDemo: "13/07/2026", localDemo: "Polo Rainbow — Lages/SC",
+      dataInicioDemo: "12/07/2026", dataFimDemo: "13/07/2026", localDemo: "Desbloqueia Cursos — Lages/SC",
       vagasDemo: 18, statusDemo: "abertas", periodoDemo: "proximos", destaqueEvento: true,
       resumo: "Dois dias de oficina prática para desenvolver e apresentar seu projeto de extensão, com mentoria ao vivo.",
       descricao: "Encontro presencial demonstrativo das Oficinas de ACE."

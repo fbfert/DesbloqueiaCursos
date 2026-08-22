@@ -38,11 +38,16 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
     <?php if (!empty($loggedIn) && is_array($situacaoSelecionada)): ?>
         <?php $statusFluxoSelecionado = isset($situacaoSelecionada['status_fluxo']) ? (string) $situacaoSelecionada['status_fluxo'] : 'nao_inscrito'; ?>
         <?php if ($statusFluxoSelecionado === 'matriculado'): ?>
+            <?php
+            $acessoCursoHref = !empty($curso['turma_selecionada']['acao_inscricao']['href'])
+                ? (string) $curso['turma_selecionada']['acao_inscricao']['href']
+                : '/aluno/meus-cursos';
+            ?>
             <section class="notice notice--success front-card front-section">
                 <strong>Você já está matriculado neste curso.</strong>
-                <p>Seu acesso já está liberado. Entre na sua área do aluno para continuar os estudos.</p>
+                <p>Seu acesso já está liberado. Continue os estudos direto no conteúdo do curso.</p>
                 <div class="cta-group">
-                    <a class="button-link" href="/minha-pagina">Acessar curso</a>
+                    <a class="button-link" href="<?php echo Helpers::e($acessoCursoHref); ?>">Acessar curso</a>
                 </div>
             </section>
         <?php elseif ($statusFluxoSelecionado === 'pendente_pagamento'): ?>
@@ -87,7 +92,7 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
             <dt>Tipo</dt>
             <dd><?php echo Helpers::e($curso['tipo']); ?></dd>
             <dt>Modalidade</dt>
-            <dd><?php echo Helpers::e($curso['modalidade']); ?></dd>
+            <dd><?php echo Helpers::e(Helpers::modalidadeCurso($curso['modalidade'])); ?></dd>
             <dt>Valor</dt>
             <dd>
                 <?php if (!empty($curso['desconto_promocional'])): ?>

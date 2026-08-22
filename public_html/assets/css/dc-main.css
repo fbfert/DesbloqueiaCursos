@@ -1339,6 +1339,42 @@ a:hover { text-decoration: underline; }
 .dc-study-embed iframe { width: 100%; aspect-ratio: 16/9; border: 0; border-radius: var(--dc-radius); display: block; }
 .dc-study-note { font-size: 0.85rem; color: var(--dc-text-2); line-height: 1.6; }
 
+.dc-study-rich .card-pratica,
+.dc-study-rich .card-resumo,
+.dc-study-rich .alerta-educacional {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border-radius: var(--dc-radius-lg);
+  border: 1px solid transparent;
+}
+.dc-study-rich .card-pratica h3,
+.dc-study-rich .card-resumo h3,
+.dc-study-rich .alerta-educacional strong:first-child {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.dc-study-rich .card-pratica > *:last-child,
+.dc-study-rich .card-resumo > *:last-child {
+  margin-bottom: 0;
+}
+.dc-study-rich .card-pratica {
+  background: rgba(75, 0, 142, 0.06);
+  border-color: rgba(75, 0, 142, 0.20);
+}
+.dc-study-rich .card-pratica h3 { color: var(--dc-roxo); }
+.dc-study-rich .card-resumo {
+  background: rgba(0, 201, 167, 0.08);
+  border-color: rgba(0, 201, 167, 0.24);
+}
+.dc-study-rich .card-resumo h3 { color: #0f766e; }
+.dc-study-rich .alerta-educacional {
+  background: rgba(255, 106, 0, 0.08);
+  border-color: rgba(255, 106, 0, 0.24);
+  color: #7c2d12;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
 /* Quiz */
 .dc-quiz-pergunta {
   margin: 14px 0; padding: 14px;

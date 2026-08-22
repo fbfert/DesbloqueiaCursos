@@ -336,18 +336,11 @@ class CatalogoController extends Controller
 
     private function montarModalidades($modalidadeAtual)
     {
-        $labels = array(
-            'presencial' => 'Presencial',
-            'online_ao_vivo' => 'Online ao vivo',
-            'hibrido' => 'Híbrido',
-            'sob_demanda' => 'Sob demanda',
-        );
-
         $itens = array();
         foreach ($this->modalidadesPermitidas as $codigo) {
             $itens[] = array(
                 'codigo' => $codigo,
-                'label' => isset($labels[$codigo]) ? $labels[$codigo] : ucfirst(str_replace('_', ' ', $codigo)),
+                'label' => \App\Core\Helpers::modalidadeCurso($codigo),
                 'ativo' => $codigo === $modalidadeAtual,
             );
         }
@@ -501,14 +494,7 @@ class CatalogoController extends Controller
 
     private function modalidadeLabel($modalidade)
     {
-        $map = array(
-            'presencial' => 'Presencial',
-            'online_ao_vivo' => 'Online ao vivo',
-            'hibrido' => 'Híbrido',
-            'sob_demanda' => 'Sob demanda',
-        );
-
-        return isset($map[$modalidade]) ? $map[$modalidade] : ($modalidade !== '' ? ucfirst(str_replace('_', ' ', (string) $modalidade)) : '');
+        return $modalidade !== '' ? \App\Core\Helpers::modalidadeCurso($modalidade) : '';
     }
 
     private function primeiroNome($nome)

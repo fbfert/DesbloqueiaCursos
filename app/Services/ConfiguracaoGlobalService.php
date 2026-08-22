@@ -60,6 +60,7 @@ class ConfiguracaoGlobalService
             'email_financeiro' => null,
             'email_suporte' => null,
             'email_certificados' => null,
+            'email_avaliador_pedagogico' => null,
             'telefone' => null,
             'logo_caminho' => null,
             'favicon_caminho' => null,
@@ -325,6 +326,7 @@ class ConfiguracaoGlobalService
             'email_financeiro' => isset($data['email_financeiro']) ? trim((string) $data['email_financeiro']) : null,
             'email_suporte' => isset($data['email_suporte']) ? trim((string) $data['email_suporte']) : null,
             'email_certificados' => isset($data['email_certificados']) ? trim((string) $data['email_certificados']) : null,
+            'email_avaliador_pedagogico' => isset($data['email_avaliador_pedagogico']) ? trim((string) $data['email_avaliador_pedagogico']) : null,
             'telefone' => isset($data['telefone']) ? trim((string) $data['telefone']) : null,
             'logo_caminho' => $this->normalizarLogoCaminho(isset($data['logo_caminho']) ? $data['logo_caminho'] : null),
             'favicon_caminho' => $this->normalizarFaviconCaminho(isset($data['favicon_caminho']) ? $data['favicon_caminho'] : null, $faviconAtual),
@@ -977,6 +979,10 @@ class ConfiguracaoGlobalService
 
         if (!empty($payload['email_certificados']) && !Validator::email($payload['email_certificados'])) {
             $errors['email_certificados'] = 'Informe um e-mail de certificados valido.';
+        }
+
+        if (!empty($payload['email_avaliador_pedagogico']) && !Validator::email($payload['email_avaliador_pedagogico'])) {
+            $errors['email_avaliador_pedagogico'] = 'Informe um e-mail de avaliador pedagogico valido.';
         }
 
         return $errors;

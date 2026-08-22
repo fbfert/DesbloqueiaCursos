@@ -786,6 +786,72 @@ HTML,
                 'ativo' => 1,
                 'editavel' => 1,
             ),
+            'email.avaliacao_textual_pendente' => array(
+                'evento' => 'email.avaliacao_textual_pendente',
+                'template' => 'avaliacao_textual_pendente',
+                'nome' => 'Avaliações textuais pendentes',
+                'assunto' => 'Nova avaliação textual pendente de correção - {avaliacao.curso_nome}',
+                'corpo_html' => <<<'HTML'
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliação textual pendente</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <div style="max-width:640px;margin:0 auto;padding:24px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;">
+            <h1 style="margin:0 0 16px;">Nova avaliação textual pendente</h1>
+            <p>Um aluno enviou uma avaliação textual que está aguardando correção.</p>
+            <p><strong>Curso:</strong> {avaliacao.curso_nome}<br>
+               <strong>Turma:</strong> {avaliacao.turma_nome}<br>
+               <strong>Aluno:</strong> {avaliacao.aluno_nome}<br>
+               <strong>Avaliação:</strong> {avaliacao.item_titulo}<br>
+               <strong>Enviado em:</strong> {avaliacao.enviado_em}</p>
+            <p><a href="{avaliacao.link_correcao}" style="display:inline-block;background:#4B008E;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;">Corrigir agora</a></p>
+        </div>
+    </div>
+</body>
+</html>
+HTML,
+                'gatilho_descricao' => 'Enviado ao e-mail do avaliador pedagógico (Configurações Globais) sempre que um aluno envia uma nova avaliação textual, ficando pendente de correção.',
+                'variaveis_json' => json_encode(array('{avaliacao.curso_nome}', '{avaliacao.turma_nome}', '{avaliacao.aluno_nome}', '{avaliacao.item_titulo}', '{avaliacao.enviado_em}', '{avaliacao.link_correcao}'), JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
+            'email.certificado_apto_emissao' => array(
+                'evento' => 'email.certificado_apto_emissao',
+                'template' => 'certificado_apto_emissao',
+                'nome' => 'Certificados aptos para emissão',
+                'assunto' => 'Novo certificado apto para emissão - {certificado.curso_nome}',
+                'corpo_html' => <<<'HTML'
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado apto para emissão</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <div style="max-width:640px;margin:0 auto;padding:24px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;">
+            <h1 style="margin:0 0 16px;">Novo certificado apto para emissão</h1>
+            <p>Uma inscrição atingiu todos os requisitos (progresso, presença e nota) e está apta para emissão de certificado.</p>
+            <p><strong>Curso:</strong> {certificado.curso_nome}<br>
+               <strong>Turma:</strong> {certificado.turma_nome}<br>
+               <strong>Aluno:</strong> {certificado.aluno_nome}</p>
+            <p><a href="{certificado.link_emissao}" style="display:inline-block;background:#4B008E;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;">Emitir certificado</a></p>
+        </div>
+    </div>
+</body>
+</html>
+HTML,
+                'gatilho_descricao' => 'Enviado ao e-mail de certificados (Configurações Globais) sempre que uma inscrição se torna apta para emissão de certificado.',
+                'variaveis_json' => json_encode(array('{certificado.curso_nome}', '{certificado.turma_nome}', '{certificado.aluno_nome}', '{certificado.link_emissao}'), JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
         );
     }
 
@@ -955,12 +1021,12 @@ HTML,
         }
 
         $acentos = array(
-            'Ã¡' => 'a', 'Ã ' => 'a', 'Ã£' => 'a', 'Ã¢' => 'a', 'Ã¤' => 'a',
-            'Ã©' => 'e', 'Ã¨' => 'e', 'Ãª' => 'e', 'Ã«' => 'e',
-            'Ã­' => 'i', 'Ã¬' => 'i', 'Ã®' => 'i', 'Ã¯' => 'i',
-            'Ã³' => 'o', 'Ã²' => 'o', 'Ãµ' => 'o', 'Ã´' => 'o', 'Ã¶' => 'o',
-            'Ãº' => 'u', 'Ã¹' => 'u', 'Ã»' => 'u', 'Ã¼' => 'u',
-            'Ã§' => 'c', 'Ã±' => 'n',
+            'á' => 'a', 'à' => 'a', 'ã' => 'a', 'â' => 'a', 'ä' => 'a',
+            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'í' => 'i', 'ì' => 'i', 'î' => 'i', 'ï' => 'i',
+            'ó' => 'o', 'ò' => 'o', 'õ' => 'o', 'ô' => 'o', 'ö' => 'o',
+            'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+            'ç' => 'c', 'ñ' => 'n',
         );
 
         return strtr($valor, $acentos);

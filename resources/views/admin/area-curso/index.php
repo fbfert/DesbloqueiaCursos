@@ -156,7 +156,7 @@ if (!function_exists('areaCursoQueryString')) {
     );
     $cursosModalidadeOptions = array('' => 'Todas');
     foreach ($modalidades as $modalidade) {
-        $cursosModalidadeOptions[$modalidade] = ucfirst(str_replace('_', ' ', (string) $modalidade));
+        $cursosModalidadeOptions[$modalidade] = Helpers::modalidadeCurso($modalidade);
     }
     ?>
     <section class="status-card" style="margin-bottom:12px;">
@@ -298,7 +298,7 @@ if (!function_exists('areaCursoQueryString')) {
                                 <td><span class="muted">#<?php echo (int) $item['id']; ?></span></td>
                                 <td><a href="/admin/area-curso?curso_id=<?php echo (int) $item['id']; ?>"><?php echo Helpers::e($item['nome']); ?></a></td>
                                 <td><span class="badge"><?php echo Helpers::e($item['tipo']); ?></span></td>
-                                <td><span class="badge"><?php echo Helpers::e($item['modalidade']); ?></span></td>
+                                <td><span class="badge"><?php echo Helpers::e(Helpers::modalidadeCurso($item['modalidade'])); ?></span></td>
                                 <td><span class="badge badge--success">Ativo</span></td>
                             </tr>
                         <?php endforeach; ?>
@@ -331,7 +331,7 @@ if (!function_exists('areaCursoQueryString')) {
                                     <td><span class="muted">#<?php echo (int) $item['id']; ?></span></td>
                                     <td><a href="/admin/area-curso?curso_id=<?php echo (int) $item['id']; ?>"><?php echo Helpers::e($item['nome']); ?></a></td>
                                     <td><span class="badge"><?php echo Helpers::e($item['tipo']); ?></span></td>
-                                    <td><span class="badge"><?php echo Helpers::e($item['modalidade']); ?></span></td>
+                                    <td><span class="badge"><?php echo Helpers::e(Helpers::modalidadeCurso($item['modalidade'])); ?></span></td>
                                     <td><span class="badge badge--warn">Rascunho</span></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -367,7 +367,7 @@ if (!function_exists('areaCursoQueryString')) {
                                     <td><span class="muted">#<?php echo (int) $item['id']; ?></span></td>
                                     <td><a href="/admin/area-curso?curso_id=<?php echo (int) $item['id']; ?>"><?php echo Helpers::e($item['nome']); ?></a></td>
                                     <td><span class="badge"><?php echo Helpers::e($item['tipo']); ?></span></td>
-                                    <td><span class="badge"><?php echo Helpers::e($item['modalidade']); ?></span></td>
+                                    <td><span class="badge"><?php echo Helpers::e(Helpers::modalidadeCurso($item['modalidade'])); ?></span></td>
                                     <td><span class="badge badge--warn"><?php echo Helpers::e(ucfirst(str_replace('_', ' ', $item['status'] ?? 'rascunho'))); ?></span></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -388,7 +388,7 @@ if (!function_exists('areaCursoQueryString')) {
                     <span class="badge">#<?php echo (int) $curso['id']; ?></span>
                     <span class="badge badge--success"><?php echo Helpers::e(ucfirst((string) ($curso['status'] ?? ''))); ?></span>
                     <span class="badge"><?php echo Helpers::e((string) ($curso['tipo'] ?? '')); ?></span>
-                    <span class="badge"><?php echo Helpers::e((string) ($curso['modalidade'] ?? '')); ?></span>
+                    <span class="badge"><?php echo Helpers::e(Helpers::modalidadeCurso($curso['modalidade'] ?? '')); ?></span>
                     <?php if (!empty($curso['categoria_nome'])): ?><span class="badge"><?php echo Helpers::e($curso['categoria_nome']); ?></span><?php endif; ?>
                     <?php if (!empty($curso['professor_responsavel']['nome'])): ?><span class="badge"><?php echo Helpers::e($curso['professor_responsavel']['nome']); ?></span><?php endif; ?>
                 </div>

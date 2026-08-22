@@ -25,7 +25,7 @@
                         <td><?php echo (int) $curso['id']; ?></td>
                         <td><?php echo htmlspecialchars($curso['nome'], ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars($curso['tipo'], ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td><?php echo htmlspecialchars($curso['modalidade'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars(\App\Core\Helpers::modalidadeCurso($curso['modalidade']), ENT_QUOTES, 'UTF-8'); ?></td>
                         <td><?php echo htmlspecialchars($curso['status'], ENT_QUOTES, 'UTF-8'); ?></td>
                     </tr>
                 <?php endforeach; ?>

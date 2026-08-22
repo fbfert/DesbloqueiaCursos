@@ -18,11 +18,7 @@ $precoDe = function ($valor) {
     $v = (float) $valor;
     return $v <= 0 ? 'Grátis' : 'R$ ' . number_format($v, 2, ',', '.');
 };
-$dcModalidade = function ($valor): string {
-    $mapa = array('presencial' => 'Presencial', 'online' => 'Online', 'ead' => 'EAD', 'hibrido' => 'Híbrido', 'híbrido' => 'Híbrido', 'ao_vivo' => 'Ao vivo');
-    $chave = strtolower(trim((string) $valor));
-    return $mapa[$chave] ?? ucfirst($chave);
-};
+$dcModalidade = fn ($valor): string => Helpers::modalidadeCurso($valor);
 
 // Professores responsáveis (nome)
 $professores = isset($curso['professores_responsaveis']) && is_array($curso['professores_responsaveis']) ? $curso['professores_responsaveis'] : array();
@@ -42,6 +38,9 @@ $statusFluxo = isset($situacao['status_fluxo']) ? (string) $situacao['status_flu
 $jaInscrito = $statusFluxo === 'matriculado';
 $aguardando = $statusFluxo === 'pendente_pagamento';
 $checkoutUrl = !empty($situacao['checkout_url']) ? (string) $situacao['checkout_url'] : '/checkout/resumo';
+$acessoCursoUrl = !empty($curso['turma_selecionada']['acao_inscricao']['href'])
+    ? (string) $curso['turma_selecionada']['acao_inscricao']['href']
+    : '/aluno/meus-cursos';
 
 // Descrição: HTML do editor sanitizado; fallback para descrição curta
 $descricaoHtml = '';
@@ -174,7 +173,7 @@ $urlInscricaoCurso = '/inscricao?curso_id=' . $cursoId . ($primeiraTurmaId ? '&t
       <div class="dc-curso-cta-preco"><?php echo Helpers::e($precoCurso); ?></div>
 
       <?php if ($jaInscrito): ?>
-        <a href="/meus-cursos" class="dc-btn dc-btn-primary dc-btn-block"><i class="ti ti-book"></i> Continuar curso</a>
+        <a href="<?php echo Helpers::e($acessoCursoUrl); ?>" class="dc-btn dc-btn-primary dc-btn-block"><i class="ti ti-book"></i> Continuar curso</a>
       <?php elseif ($aguardando): ?>
         <a href="<?php echo Helpers::e($checkoutUrl); ?>" class="dc-btn dc-btn-primary dc-btn-block"><i class="ti ti-clock"></i> Continuar pagamento</a>
       <?php else: ?>

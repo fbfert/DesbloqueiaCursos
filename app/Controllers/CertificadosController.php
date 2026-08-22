@@ -29,7 +29,7 @@ class CertificadosController extends Controller
         if (empty($config['certificados_habilitado']) || empty($config['certificados_validacao_publica_habilitada'])) {
             return $this->view('certificados/validar', array(
                 'title' => 'Validar certificado',
-                'resultado' => array('ok' => false, 'message' => 'A validaÃ§Ã£o pÃºblica estÃ¡ temporariamente indisponÃ­vel.'),
+                'resultado' => array('ok' => false, 'message' => 'A validação pública está temporariamente indisponível.'),
                 'codigo' => '',
                 'cpf' => '',
                 'errors' => Session::pullFlash('errors', array()),
@@ -68,7 +68,7 @@ class CertificadosController extends Controller
                 'title' => 'Certificado',
                 'certificado' => null,
                 'canSeePdf' => false,
-                'blockedMessage' => 'A validaÃ§Ã£o pÃºblica estÃ¡ temporariamente indisponÃ­vel.',
+                'blockedMessage' => 'A validação pública está temporariamente indisponível.',
             ));
         }
 

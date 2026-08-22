@@ -87,7 +87,7 @@ class ConteudoCursoService
     {
         $cursoEventoId = (int) $cursoEventoId;
         if ($cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'Curso invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Curso inválido.');
         }
 
         $modulosAtivos = $this->moduloModel->listAtivosForCurso($cursoEventoId);
@@ -158,7 +158,7 @@ class ConteudoCursoService
         $turmaId = $turmaId !== null ? (int) $turmaId : null;
 
         if ($cursoEventoId <= 0 || $alunoId <= 0 || $inscricaoId <= 0) {
-            return array('ok' => false, 'message' => 'ParÃ¢metros invÃ¡lidos para listar conteÃºdo.');
+            return array('ok' => false, 'message' => 'Parâmetros inválidos para listar conteúdo.');
         }
 
         $modulos = $this->moduloModel->listForCurso($cursoEventoId, 'publicado');
@@ -272,7 +272,7 @@ class ConteudoCursoService
         $turmaId = $turmaId !== null ? (int) $turmaId : null;
 
         if ($itemId <= 0 || $alunoId <= 0 || $inscricaoId <= 0 || $cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'ParÃ¢metros invÃ¡lidos.');
+            return array('ok' => false, 'message' => 'Parâmetros inválidos.');
         }
 
         $item = $this->itemModel->findById($itemId);
@@ -308,7 +308,7 @@ class ConteudoCursoService
         $inscricaoId = (int) $inscricaoId;
         $turmaId = $turmaId !== null ? (int) $turmaId : null;
         if ($cursoEventoId <= 0 || $alunoId <= 0 || $inscricaoId <= 0) {
-            return array('ok' => false, 'message' => 'ParÃ¢metros invÃ¡lidos para resumo.');
+            return array('ok' => false, 'message' => 'Parâmetros inválidos para resumo.');
         }
 
         $modulos = $this->moduloModel->listForCurso($cursoEventoId, 'publicado');
@@ -420,7 +420,7 @@ class ConteudoCursoService
         $itemId = isset($contexto['item_id']) ? (int) $contexto['item_id'] : 0;
         $cursoEventoId = isset($contexto['curso_evento_id']) ? (int) $contexto['curso_evento_id'] : 0;
         if ($itemId <= 0 || $cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'ParÃ¢metros invÃ¡lidos para conclusÃ£o.');
+            return array('ok' => false, 'message' => 'Parâmetros inválidos para conclusão.');
         }
 
         $item = $this->itemModel->findById($itemId);
@@ -556,7 +556,7 @@ class ConteudoCursoService
     {
         $id = (int) $id;
         if ($id <= 0) {
-            return array('ok' => false, 'message' => 'MÃ³dulo invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Módulo inválido.');
         }
 
         $origem = $this->moduloModel->findById($id);
@@ -574,7 +574,7 @@ class ConteudoCursoService
         try {
             $novoModuloId = $this->moduloModel->create(array(
                 'curso_evento_id' => (int) $origem['curso_evento_id'],
-                'titulo' => 'CÃ³pia - ' . (string) $origem['titulo'],
+                'titulo' => 'Cópia - ' . (string) $origem['titulo'],
                 'descricao' => $origem['descricao'],
                 'ordem' => $this->moduloModel->nextActiveOrderForCurso((int) $origem['curso_evento_id']),
                 'status' => 'rascunho',
@@ -626,12 +626,12 @@ class ConteudoCursoService
     {
         $id = (int) $id;
         if ($id <= 0) {
-            return array('ok' => false, 'message' => 'Item invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Item inválido.');
         }
 
         $existente = $this->itemModel->findById($id);
         if (!$existente) {
-            return array('ok' => false, 'message' => 'Item nÃ£o encontrado.');
+            return array('ok' => false, 'message' => 'Item não encontrado.');
         }
 
         $payload = $this->normalizarItemPayload(array_merge($existente, (array) $dados));
@@ -647,7 +647,7 @@ class ConteudoCursoService
     {
         $id = (int) $id;
         if ($id <= 0) {
-            return array('ok' => false, 'message' => 'Item invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Item inválido.');
         }
 
         $item = $this->itemModel->findById($id);
@@ -668,7 +668,7 @@ class ConteudoCursoService
         $itemId = (int) $itemId;
         $novoModuloId = (int) $novoModuloId;
         if ($itemId <= 0 || $novoModuloId <= 0) {
-            return array('ok' => false, 'message' => 'ParÃ¢metros invÃ¡lidos.');
+            return array('ok' => false, 'message' => 'Parâmetros inválidos.');
         }
 
         $item = $this->itemModel->findById($itemId);
@@ -682,7 +682,7 @@ class ConteudoCursoService
         }
 
         if ((int) $item['curso_evento_id'] !== (int) $modulo['curso_evento_id']) {
-            return array('ok' => false, 'message' => 'O item nÃ£o pertence ao mesmo curso do mÃ³dulo.');
+            return array('ok' => false, 'message' => 'O item não pertence ao mesmo curso do módulo.');
         }
 
         $ok = $this->itemModel->moverParaModulo($itemId, $novoModuloId, $usuarioId ? (int) $usuarioId : null);
@@ -693,7 +693,7 @@ class ConteudoCursoService
     {
         $moduloId = (int) $moduloId;
         if ($moduloId <= 0) {
-            return array('ok' => false, 'message' => 'MÃ³dulo invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Módulo inválido.');
         }
 
         $pdo = Database::connection();
@@ -741,12 +741,12 @@ class ConteudoCursoService
     {
         $id = (int) $id;
         if ($id <= 0) {
-            return array('ok' => false, 'message' => 'Item invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Item inválido.');
         }
 
         $origem = $this->itemModel->findById($id);
         if (!$origem) {
-            return array('ok' => false, 'message' => 'Item nÃ£o encontrado.');
+            return array('ok' => false, 'message' => 'Item não encontrado.');
         }
 
         if ((string) ($origem['status'] ?? '') === 'arquivado') {
@@ -761,7 +761,7 @@ class ConteudoCursoService
                 'curso_evento_id' => (int) $origem['curso_evento_id'],
                 'modulo_id' => (int) $origem['modulo_id'],
                 'tipo' => (string) $origem['tipo'],
-                'titulo' => 'CÃ³pia - ' . (string) $origem['titulo'],
+                'titulo' => 'Cópia - ' . (string) $origem['titulo'],
                 'descricao_curta' => $origem['descricao_curta'],
                 'obrigatorio' => (int) $origem['obrigatorio'],
                 'ordem' => $this->itemModel->nextActiveOrderForModulo((int) $origem['modulo_id']),
@@ -994,33 +994,33 @@ class ConteudoCursoService
 
         $item = $this->itemModel->findById($itemId);
         if (!$item) {
-            return array('ok' => false, 'message' => 'Item nÃ£o encontrado.');
+            return array('ok' => false, 'message' => 'Item não encontrado.');
         }
 
         if ((string) $item['tipo'] === 'avaliacao_textual' && !empty($item['obrigatorio'])) {
             $avaliacao = $this->avaliacaoTextualModel->findByItemId($itemId);
             if (!$avaliacao) {
-                return array('ok' => false, 'message' => 'AvaliaÃ§Ã£o textual nÃ£o configurada para este item.');
+                return array('ok' => false, 'message' => 'Avaliação textual não configurada para este item.');
             }
 
             $entrega = $this->avaliacaoEntregaModel->findLatestByContext((int) $avaliacao['id'], $alunoId, $inscricaoId);
             if (!$entrega) {
-                return array('ok' => false, 'message' => 'VocÃª precisa enviar a avaliaÃ§Ã£o antes de concluir este item.');
+                return array('ok' => false, 'message' => 'Você precisa enviar a avaliação antes de concluir este item.');
             }
 
             $statusEntrega = isset($entrega['status']) ? (string) $entrega['status'] : '';
             if (in_array($statusEntrega, array('enviada', 'reenviada', 'devolvida'), true)) {
-                return array('ok' => false, 'message' => 'A avaliaÃ§Ã£o ainda estÃ¡ pendente de correÃ§Ã£o.');
+                return array('ok' => false, 'message' => 'A avaliação ainda está pendente de correção.');
             }
 
             $notaMinima = array_key_exists('nota_minima', $avaliacao) ? $avaliacao['nota_minima'] : null;
             if ($notaMinima !== null && $notaMinima !== '') {
                 if (!array_key_exists('nota', $entrega) || $entrega['nota'] === null || $entrega['nota'] === '') {
-                    return array('ok' => false, 'message' => 'A avaliaÃ§Ã£o ainda nÃ£o possui nota registrada para conclusÃ£o.');
+                    return array('ok' => false, 'message' => 'A avaliação ainda não possui nota registrada para conclusão.');
                 }
 
                 if ((float) $entrega['nota'] < (float) $notaMinima) {
-                    return array('ok' => false, 'message' => 'A avaliaÃ§Ã£o foi corrigida, mas nÃ£o atingiu a nota mÃ­nima para conclusÃ£o.');
+                    return array('ok' => false, 'message' => 'A avaliação foi corrigida, mas não atingiu a nota mínima para conclusão.');
                 }
             }
         }
@@ -1095,18 +1095,18 @@ class ConteudoCursoService
     {
         $inscricaoId = (int) $inscricaoId;
         if ($inscricaoId <= 0) {
-            return array('ok' => false, 'message' => 'InscriÃ§Ã£o invÃ¡lida.');
+            return array('ok' => false, 'message' => 'Inscrição inválida.');
         }
 
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'InscriÃ§Ã£o nÃ£o encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição não encontrada.');
         }
 
         $cursoEventoId = (int) $inscricao['curso_evento_id'];
         $alunoId = !empty($inscricao['usuario_id']) ? (int) $inscricao['usuario_id'] : 0;
         if ($alunoId <= 0) {
-            return array('ok' => false, 'message' => 'Aluno invÃ¡lido na inscriÃ§Ã£o.');
+            return array('ok' => false, 'message' => 'Aluno inválido na inscrição.');
         }
 
         $itensObrigatorios = $this->itemModel->listObrigatoriosPublicadosForCurso($cursoEventoId);
@@ -1150,12 +1150,12 @@ class ConteudoCursoService
     {
         $cursoEventoId = isset($dados['curso_evento_id']) ? (int) $dados['curso_evento_id'] : 0;
         if ($cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'Informe o curso do mÃ³dulo.');
+            return array('ok' => false, 'message' => 'Informe o curso do módulo.');
         }
 
         $titulo = isset($dados['titulo']) ? trim((string) $dados['titulo']) : '';
         if ($titulo === '') {
-            return array('ok' => false, 'message' => 'Informe o tÃ­tulo do mÃ³dulo.');
+            return array('ok' => false, 'message' => 'Informe o título do módulo.');
         }
 
         $status = isset($dados['status']) ? trim((string) $dados['status']) : 'publicado';
@@ -1163,7 +1163,7 @@ class ConteudoCursoService
             $status = 'publicado';
         }
         if (!in_array($status, self::STATUS_MODULO_VALIDOS, true)) {
-            return array('ok' => false, 'message' => 'Status do mÃ³dulo invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Status do módulo inválido.');
         }
 
         return array(
@@ -1189,17 +1189,17 @@ class ConteudoCursoService
 
         $moduloId = isset($dados['modulo_id']) ? (int) $dados['modulo_id'] : 0;
         if ($moduloId <= 0) {
-            return array('ok' => false, 'message' => 'Informe o mÃ³dulo do item.');
+            return array('ok' => false, 'message' => 'Informe o módulo do item.');
         }
 
         $modulo = $this->moduloModel->findById($moduloId);
         if (!$modulo || (int) $modulo['curso_evento_id'] !== $cursoEventoId) {
-            return array('ok' => false, 'message' => 'O mÃ³dulo informado nÃ£o pertence ao curso.');
+            return array('ok' => false, 'message' => 'O módulo informado não pertence ao curso.');
         }
 
         $tipo = isset($dados['tipo']) ? (string) $dados['tipo'] : '';
         if (!in_array($tipo, self::TIPOS_ITEM_VALIDOS, true)) {
-            return array('ok' => false, 'message' => 'Tipo de item invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Tipo de item inválido.');
         }
 
         if ($tipo === 'arquivo') {
@@ -1211,7 +1211,7 @@ class ConteudoCursoService
 
         $titulo = isset($dados['titulo']) ? trim((string) $dados['titulo']) : '';
         if ($titulo === '') {
-            return array('ok' => false, 'message' => 'Informe o tÃ­tulo do item.');
+            return array('ok' => false, 'message' => 'Informe o título do item.');
         }
 
         $status = isset($dados['status']) ? trim((string) $dados['status']) : 'publicado';
@@ -1219,7 +1219,7 @@ class ConteudoCursoService
             $status = 'publicado';
         }
         if (!in_array($status, self::STATUS_ITEM_VALIDOS, true)) {
-            return array('ok' => false, 'message' => 'Status do item invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Status do item inválido.');
         }
 
         $abreEm = isset($dados['abre_em']) && $dados['abre_em'] !== '' ? (string) $dados['abre_em'] : null;
@@ -1256,17 +1256,17 @@ class ConteudoCursoService
     {
         $cursoEventoId = isset($dados['curso_evento_id']) ? (int) $dados['curso_evento_id'] : 0;
         if ($cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'Curso invÃ¡lido para log.');
+            return array('ok' => false, 'message' => 'Curso inválido para log.');
         }
 
         $alunoId = isset($dados['aluno_id']) ? (int) $dados['aluno_id'] : 0;
         if ($alunoId <= 0) {
-            return array('ok' => false, 'message' => 'Aluno invÃ¡lido para log.');
+            return array('ok' => false, 'message' => 'Aluno inválido para log.');
         }
 
         $acao = isset($dados['acao']) ? trim((string) $dados['acao']) : '';
         if ($acao === '') {
-            return array('ok' => false, 'message' => 'AÃ§Ã£o invÃ¡lida para log.');
+            return array('ok' => false, 'message' => 'Ação inválida para log.');
         }
 
         $json = null;
@@ -1295,28 +1295,28 @@ class ConteudoCursoService
     {
         $cursoEventoId = isset($dados['curso_evento_id']) ? (int) $dados['curso_evento_id'] : 0;
         if ($cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'Curso invÃ¡lido para progresso.');
+            return array('ok' => false, 'message' => 'Curso inválido para progresso.');
         }
 
         $inscricaoId = isset($dados['inscricao_id']) ? (int) $dados['inscricao_id'] : 0;
         if ($inscricaoId <= 0) {
-            return array('ok' => false, 'message' => 'InscriÃ§Ã£o invÃ¡lida para progresso.');
+            return array('ok' => false, 'message' => 'Inscrição inválida para progresso.');
         }
 
         $alunoId = isset($dados['aluno_id']) ? (int) $dados['aluno_id'] : 0;
         if ($alunoId <= 0) {
-            return array('ok' => false, 'message' => 'Aluno invÃ¡lido para progresso.');
+            return array('ok' => false, 'message' => 'Aluno inválido para progresso.');
         }
 
         $moduloId = isset($dados['modulo_id']) ? (int) $dados['modulo_id'] : 0;
         $itemId = isset($dados['item_id']) ? (int) $dados['item_id'] : 0;
         if ($moduloId <= 0 || $itemId <= 0) {
-            return array('ok' => false, 'message' => 'MÃ³dulo/item invÃ¡lido para progresso.');
+            return array('ok' => false, 'message' => 'Módulo/item inválido para progresso.');
         }
 
         $status = isset($dados['status']) ? (string) $dados['status'] : 'nao_iniciado';
         if (!in_array($status, self::STATUS_PROGRESO_VALIDOS, true)) {
-            return array('ok' => false, 'message' => 'Status de progresso invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Status de progresso inválido.');
         }
 
         $percentual = isset($dados['percentual']) ? (float) $dados['percentual'] : 0.00;
@@ -1431,7 +1431,7 @@ class ConteudoCursoService
         if ($tipo === 'arquivo') {
             // Conservador:
             // - duplica o item como rascunho (feito no caller)
-            // - NÃƒO referencia arquivo fÃ­sico nem versÃµes
+            // - NÃƒO referencia arquivo físico nem versões
             // - se existir metadado, cria registro "vazio" para exigir novo upload
             $arquivo = $this->arquivoModel->findByItemId($itemIdOrigem);
             if ($arquivo) {
@@ -1466,7 +1466,7 @@ class ConteudoCursoService
     {
         $extensao = isset($dados['extensao']) ? strtolower(trim((string) $dados['extensao'])) : '';
         if ($extensao !== '' && !in_array($extensao, self::EXTENSOES_ARQUIVO_VALIDAS, true)) {
-            return array('ok' => false, 'message' => 'ExtensÃ£o de arquivo nÃ£o permitida.');
+            return array('ok' => false, 'message' => 'Extensão de arquivo não permitida.');
         }
 
         if (isset($dados['tamanho_bytes']) && $dados['tamanho_bytes'] !== null && $dados['tamanho_bytes'] !== '') {
@@ -1513,7 +1513,7 @@ class ConteudoCursoService
             $item = $this->itemModel->findById($itemId);
             if (!$item) {
                 $pdo->rollBack();
-                return array('ok' => false, 'message' => 'Item nÃƒÂ£o encontrado apÃƒÂ³s salvar.');
+                return array('ok' => false, 'message' => 'Item nÃƒ£o encontrado apÃƒ³s salvar.');
             }
 
             $detalhes = $this->salvarDetalhesPorTipo($itemId, (string) $item['tipo'], $dados, $arquivoUpload, $usuarioId);
@@ -1564,12 +1564,12 @@ class ConteudoCursoService
         $id = (int) $id;
         $cursoEventoId = (int) $cursoEventoId;
         if ($id <= 0 || $cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'ParÃƒÂ¢metros invÃƒÂ¡lidos.');
+            return array('ok' => false, 'message' => 'ParÃƒ¢metros invÃƒ¡lidos.');
         }
 
         $modulo = $this->moduloModel->findById($id);
         if (!$modulo || (int) $modulo['curso_evento_id'] !== $cursoEventoId) {
-            return array('ok' => false, 'message' => 'MÃƒÂ³dulo nÃƒÂ£o encontrado.');
+            return array('ok' => false, 'message' => 'MÃƒ³dulo nÃƒ£o encontrado.');
         }
 
         return array('ok' => true, 'modulo' => $modulo);
@@ -1580,12 +1580,12 @@ class ConteudoCursoService
         $id = (int) $id;
         $cursoEventoId = (int) $cursoEventoId;
         if ($id <= 0 || $cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'ParÃƒÂ¢metros invÃƒÂ¡lidos.');
+            return array('ok' => false, 'message' => 'ParÃƒ¢metros invÃƒ¡lidos.');
         }
 
         $item = $this->itemModel->findById($id);
         if (!$item || (int) $item['curso_evento_id'] !== $cursoEventoId) {
-            return array('ok' => false, 'message' => 'Item nÃƒÂ£o encontrado.');
+            return array('ok' => false, 'message' => 'Item nÃƒ£o encontrado.');
         }
 
         $detalhe = $this->carregarDetalhePorTipo((string) $item['tipo'], (int) $item['id']);
@@ -1982,7 +1982,7 @@ class ConteudoCursoService
         if ($tipo === 'link') {
             $url = isset($dados['link_url']) ? trim((string) $dados['link_url']) : '';
             if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
-                return array('ok' => false, 'message' => 'Informe uma URL vÃƒÂ¡lida para o link.');
+                return array('ok' => false, 'message' => 'Informe uma URL vÃƒ¡lida para o link.');
             }
 
             $modo = isset($dados['link_modo_abertura']) ? (string) $dados['link_modo_abertura'] : 'nova_aba';
@@ -2003,7 +2003,7 @@ class ConteudoCursoService
         if ($tipo === 'video') {
             $url = isset($dados['video_url']) ? trim((string) $dados['video_url']) : '';
             if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
-                return array('ok' => false, 'message' => 'Informe uma URL vÃƒÂ¡lida para o vÃƒÂ­deo.');
+                return array('ok' => false, 'message' => 'Informe uma URL vÃƒ¡lida para o vÃƒ­deo.');
             }
 
             $provedor = $this->detectarProvedorUrl($url);
@@ -2019,7 +2019,7 @@ class ConteudoCursoService
         if ($tipo === 'avaliacao_textual') {
             $enunciado = isset($dados['avaliacao_enunciado']) ? HtmlSanitizer::clean((string) $dados['avaliacao_enunciado'], 'full') : '';
             if (trim(strip_tags($enunciado)) === '') {
-                return array('ok' => false, 'message' => 'Informe o enunciado da avaliaÃƒÂ§ÃƒÂ£o textual.');
+                return array('ok' => false, 'message' => 'Informe o enunciado da avaliaÃƒ§Ãƒ£o textual.');
             }
 
             $orientacoes = isset($dados['avaliacao_orientacoes']) ? HtmlSanitizer::clean((string) $dados['avaliacao_orientacoes'], 'basic') : null;
@@ -2036,7 +2036,7 @@ class ConteudoCursoService
             $notaMinima = $notaMinimaNormalizada['value'];
 
             if ($notaMaxima !== null && $notaMinima !== null && $notaMinima > $notaMaxima) {
-                return array('ok' => false, 'message' => 'A nota mÃƒÂ­nima nÃƒÂ£o pode ser maior que a nota mÃƒÂ¡xima.');
+                return array('ok' => false, 'message' => 'A nota mÃƒ­nima nÃƒ£o pode ser maior que a nota mÃƒ¡xima.');
             }
 
             $pesoNormalizado = $this->normalizarDecimalInput($dados['avaliacao_peso'] ?? 1, 'peso', false);
@@ -2045,7 +2045,7 @@ class ConteudoCursoService
             }
             $peso = $pesoNormalizado['value'];
             if ($peso <= 0) {
-                return array('ok' => false, 'message' => 'O peso da avaliaÃƒÂ§ÃƒÂ£o deve ser maior que zero.');
+                return array('ok' => false, 'message' => 'O peso da avaliaÃƒ§Ãƒ£o deve ser maior que zero.');
             }
 
             $prazo = isset($dados['avaliacao_prazo']) ? trim((string) $dados['avaliacao_prazo']) : '';
@@ -2053,7 +2053,7 @@ class ConteudoCursoService
             if ($prazo === '') {
                 $prazo = null;
             } elseif (!$this->dataHoraValida($prazo)) {
-                return array('ok' => false, 'message' => 'Informe um prazo vÃƒÂ¡lido (data e hora) para a avaliaÃƒÂ§ÃƒÂ£o.');
+                return array('ok' => false, 'message' => 'Informe um prazo vÃƒ¡lido (data e hora) para a avaliaÃƒ§Ãƒ£o.');
             }
 
             $permiteReenvio = !empty($dados['avaliacao_permite_reenvio']) ? 1 : 0;
@@ -2242,20 +2242,20 @@ class ConteudoCursoService
         if ($texto === '') {
             return $permitirNulo
                 ? array('ok' => true, 'value' => null)
-                : array('ok' => false, 'message' => 'Informe um valor vÃ¡lido para ' . $campo . '.');
+                : array('ok' => false, 'message' => 'Informe um valor válido para ' . $campo . '.');
         }
 
         if (strpos($texto, ',') !== false && strpos($texto, '.') !== false) {
-            return array('ok' => false, 'message' => 'Formato invÃ¡lido para ' . $campo . '. Use apenas vÃ­rgula ou ponto decimal.');
+            return array('ok' => false, 'message' => 'Formato inválido para ' . $campo . '. Use apenas vírgula ou ponto decimal.');
         }
 
         if (!preg_match('/^\d+(?:[\.,]\d+)?$/', $texto)) {
-            return array('ok' => false, 'message' => 'Formato invÃ¡lido para ' . $campo . '.');
+            return array('ok' => false, 'message' => 'Formato inválido para ' . $campo . '.');
         }
 
         $normalizado = str_replace(',', '.', $texto);
         if (!is_numeric($normalizado)) {
-            return array('ok' => false, 'message' => 'Formato invÃ¡lido para ' . $campo . '.');
+            return array('ok' => false, 'message' => 'Formato inválido para ' . $campo . '.');
         }
 
         return array('ok' => true, 'value' => (float) $normalizado);
@@ -2267,7 +2267,7 @@ class ConteudoCursoService
         $extension = strtolower((string) pathinfo($originalName, PATHINFO_EXTENSION));
 
         if ($extension === '' || !in_array($extension, self::EXTENSOES_ARQUIVO_VALIDAS, true)) {
-            throw new \InvalidArgumentException('ExtensÃƒÂ£o de arquivo nÃƒÂ£o permitida.');
+            throw new \InvalidArgumentException('ExtensÃƒ£o de arquivo nÃƒ£o permitida.');
         }
 
         if (!empty($arquivoUpload['size']) && (int) $arquivoUpload['size'] > self::LIMITE_ARQUIVO_BYTES) {

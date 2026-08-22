@@ -283,6 +283,92 @@ class Usuario
         return (int) Database::connection()->lastInsertId();
     }
 
+    /**
+     * Cria um usuario iniciado pelo checkout rapido: sem nome e sem senha.
+     * Exige a migracao 071 (nome/senha_hash opcionais + colunas de cadastro).
+     *
+     * Nasce com cadastro_status = 'pendente', o que o mantem separavel para
+     * exclusao a pedido (LGPD) e sinaliza que falta nome/senha.
+     */
+    public function createPendente(array $data)
+    {
+        $stmt = Database::connection()->prepare(
+            'INSERT INTO usuarios
+             (nome, email, cpf, senha_hash, telefone, whatsapp, status, cadastro_status, cadastro_origem,
+              tentativas_login, bloqueado_ate, token_recuperacao, token_recuperacao_expira_em,
+              ultimo_login_em, created_at, updated_at, deleted_at)
+             VALUES
+             (NULL, :email, :cpf, NULL, :telefone, :whatsapp, \'ativo\', \'pendente\', :cadastro_origem,
+              0, NULL, NULL, NULL, NULL, NOW(), NOW(), NULL)'
+        );
+
+        $whatsapp = isset($data['whatsapp']) ? trim((string) $data['whatsapp']) : null;
+
+        $stmt->execute(array(
+            'email' => strtolower(trim((string) $data['email'])),
+            'cpf' => preg_replace('/\D+/', '', (string) $data['cpf']),
+            'telefone' => $whatsapp !== null && $whatsapp !== '' ? preg_replace('/\D+/', '', $whatsapp) : null,
+            'whatsapp' => $whatsapp !== '' ? $whatsapp : null,
+            'cadastro_origem' => isset($data['cadastro_origem']) ? $data['cadastro_origem'] : 'checkout_rapido',
+        ));
+
+        return (int) Database::connection()->lastInsertId();
+    }
+
+    /**
+     * Preenche o WhatsApp de um usuario que ja existe, sem tocar em mais nada.
+     * Nao sobrescreve valor ja preenchido.
+     */
+    public function preencherWhatsappSeVazio($usuarioId, $whatsapp)
+    {
+        $whatsapp = trim((string) $whatsapp);
+        if ($whatsapp === '') {
+            return false;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'UPDATE usuarios
+                SET whatsapp = :whatsapp,
+                    telefone = COALESCE(NULLIF(telefone, \'\'), :telefone),
+                    updated_at = NOW()
+              WHERE id = :id
+                AND deleted_at IS NULL
+                AND (whatsapp IS NULL OR whatsapp = \'\')'
+        );
+
+        $stmt->execute(array(
+            'whatsapp' => $whatsapp,
+            'telefone' => preg_replace('/\D+/', '', $whatsapp),
+            'id' => (int) $usuarioId,
+        ));
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Preenche o CPF de um usuario que ainda nao tem. Usado quando o e-mail
+     * ja existe mas o cadastro veio de antes de o CPF ser exigido.
+     */
+    public function preencherCpfSeVazio($usuarioId, $cpf)
+    {
+        $cpf = preg_replace('/\D+/', '', (string) $cpf);
+        if ($cpf === '') {
+            return false;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'UPDATE usuarios
+                SET cpf = :cpf, updated_at = NOW()
+              WHERE id = :id
+                AND deleted_at IS NULL
+                AND (cpf IS NULL OR cpf = \'\')'
+        );
+
+        $stmt->execute(array('cpf' => $cpf, 'id' => (int) $usuarioId));
+
+        return $stmt->rowCount() > 0;
+    }
+
     public function updatePassword($usuarioId, $senhaHash)
     {
         $stmt = Database::connection()->prepare(

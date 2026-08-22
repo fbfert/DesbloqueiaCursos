@@ -58,6 +58,11 @@
             <input type="email" name="email_certificados" value="<?php echo htmlspecialchars((string) (isset($configuracoes['institucional']['email_certificados']) ? $configuracoes['institucional']['email_certificados'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
         <label>
+            E-mail avaliador pedagógico (trabalhos)
+            <input type="email" name="email_avaliador_pedagogico" value="<?php echo htmlspecialchars((string) (isset($configuracoes['institucional']['email_avaliador_pedagogico']) ? $configuracoes['institucional']['email_avaliador_pedagogico'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
+            <span class="field-hint">Recebe um aviso sempre que um aluno enviar uma nova avaliação textual pendente de correção.</span>
+        </label>
+        <label>
             Telefone
             <input type="text" name="telefone" value="<?php echo htmlspecialchars((string) (isset($configuracoes['institucional']['telefone']) ? $configuracoes['institucional']['telefone'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>

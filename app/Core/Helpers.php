@@ -155,6 +155,46 @@ class Helpers
         return $tipo !== '' ? ucwords($tipo) : '-';
     }
 
+    /**
+     * URL de acesso direto ao conteúdo do curso na área do aluno, montada a
+     * partir da situação devolvida por InscricaoService::situacaoAlunoNoCurso().
+     * Sem inscrição/curso identificados, cai na listagem de cursos do aluno.
+     */
+    public static function urlAcessoCursoAluno(array $situacao)
+    {
+        $inscricaoId = isset($situacao['inscricao_id']) ? (int) $situacao['inscricao_id'] : 0;
+        $cursoId = isset($situacao['curso_id']) ? (int) $situacao['curso_id'] : 0;
+        $turmaId = isset($situacao['turma_id']) ? (int) $situacao['turma_id'] : 0;
+
+        if ($inscricaoId <= 0 || $cursoId <= 0) {
+            return '/aluno/meus-cursos';
+        }
+
+        return '/aluno/curso/' . $inscricaoId . '/' . $cursoId . '/' . $turmaId;
+    }
+
+    public static function modalidadeCurso($modalidade)
+    {
+        $modalidade = (string) $modalidade;
+        $mapa = array(
+            'presencial' => 'Presencial',
+            'online_ao_vivo' => 'On-line ao vivo',
+            'sob_demanda' => 'Sob demanda',
+            'hibrido' => 'Híbrido',
+            'híbrido' => 'Híbrido',
+            'ead' => 'EaD',
+        );
+
+        $chave = function_exists('mb_strtolower') ? mb_strtolower($modalidade, 'UTF-8') : strtolower($modalidade);
+
+        if (isset($mapa[$chave])) {
+            return $mapa[$chave];
+        }
+
+        $chave = str_replace('_', ' ', $chave);
+        return $chave !== '' ? ucwords($chave) : '-';
+    }
+
     public static function iconeArquivo($extensao)
     {
         $extensao = strtolower(trim((string) $extensao, '. '));
@@ -171,6 +211,38 @@ class Helpers
         );
 
         return isset($mapa[$extensao]) ? $mapa[$extensao] : '📎';
+    }
+
+    /**
+     * Reorganiza um bloco de $_FILES['campo'][...] de um <input type="file"
+     * name="campo[]" multiple> (formato nativo do PHP: um array por
+     * propriedade - name[], tmp_name[], error[] etc.) em uma lista de
+     * arquivos individuais no formato ['name'=>..,'tmp_name'=>..,...],
+     * pronta para FileStorageService::storeUploadedFile(). Ignora slots
+     * vazios (nenhum arquivo selecionado naquela posição).
+     */
+    public static function normalizarUploadMultiplo($filesBlock)
+    {
+        if (!is_array($filesBlock) || !isset($filesBlock['name']) || !is_array($filesBlock['name'])) {
+            return array();
+        }
+
+        $arquivos = array();
+        foreach ($filesBlock['name'] as $indice => $nome) {
+            $erro = isset($filesBlock['error'][$indice]) ? (int) $filesBlock['error'][$indice] : UPLOAD_ERR_NO_FILE;
+            if ($erro === UPLOAD_ERR_NO_FILE || trim((string) $nome) === '') {
+                continue;
+            }
+            $arquivos[] = array(
+                'name' => $nome,
+                'type' => isset($filesBlock['type'][$indice]) ? $filesBlock['type'][$indice] : null,
+                'tmp_name' => isset($filesBlock['tmp_name'][$indice]) ? $filesBlock['tmp_name'][$indice] : null,
+                'error' => $erro,
+                'size' => isset($filesBlock['size'][$indice]) ? $filesBlock['size'][$indice] : null,
+            );
+        }
+
+        return $arquivos;
     }
 
     public static function formatarTamanhoArquivo($bytes)

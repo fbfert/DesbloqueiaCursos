@@ -178,7 +178,7 @@ function acaoPedidoPendente(array $pedido)
                     $statusPedido = isset($inscricao['pedido_status']) ? (string) $inscricao['pedido_status'] : '';
                     $statusComprovante = isset($inscricao['comprovante_status']) ? (string) $inscricao['comprovante_status'] : '';
                     $progressoValor = isset($inscricao['percentual_progresso']) ? (float) $inscricao['percentual_progresso'] : null;
-                    $cursoModalidade = !empty($inscricao['curso_modalidade']) ? (string) $inscricao['curso_modalidade'] : '';
+                    $cursoModalidade = !empty($inscricao['curso_modalidade']) ? Helpers::modalidadeCurso($inscricao['curso_modalidade']) : '';
 
                     $statusPrincipal = $statusInscricao !== '' ? $statusInscricao : $statusPedido;
                     if (in_array($statusPedido, array('aprovado', 'pago'), true)) {
@@ -220,7 +220,7 @@ function acaoPedidoPendente(array $pedido)
                             <p class="dashboard-course-card__text"><?php echo Helpers::e($inscricao['participante_nome']); ?> - <?php echo Helpers::e($inscricao['participante_cpf']); ?></p>
                             <div class="course-card__meta">
                                 <span>Pedido <?php echo Helpers::e($inscricao['pedido_codigo']); ?></span>
-                                <span><?php echo Helpers::e($cursoModalidade !== '' ? ucfirst($cursoModalidade) : 'Curso'); ?></span>
+                                <span><?php echo Helpers::e($cursoModalidade !== '' ? $cursoModalidade : 'Curso'); ?></span>
                             </div>
                             <?php if ($podeAcessarAreaInterna): ?>
                                 <div class="pill-row" style="margin-top:12px;">

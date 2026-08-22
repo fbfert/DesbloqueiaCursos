@@ -3,13 +3,6 @@
 use App\Core\Helpers;
 
 $cursos = isset($cursos) && is_array($cursos) ? $cursos : array();
-
-$dbcModalidadeLabels = array(
-    'presencial' => 'Presencial',
-    'online_ao_vivo' => 'Online',
-    'hibrido' => 'Híbrido',
-    'sob_demanda' => 'Sob demanda',
-);
 ?>
 <?php if (!empty($cursos)): ?>
 <section class="dbc-section dbc-destaques">
@@ -22,7 +15,7 @@ $dbcModalidadeLabels = array(
                 $cursoNome = isset($curso['nome']) ? (string) $curso['nome'] : '';
                 $categoriaNome = !empty($curso['categoria_nome']) ? (string) $curso['categoria_nome'] : 'Sem categoria';
                 $modalidade = isset($curso['modalidade']) ? (string) $curso['modalidade'] : '';
-                $modalidadeLabel = isset($dbcModalidadeLabels[$modalidade]) ? $dbcModalidadeLabels[$modalidade] : $modalidade;
+                $modalidadeLabel = $modalidade !== '' ? Helpers::modalidadeCurso($modalidade) : '';
                 $cargaHoraria = isset($curso['carga_horaria']) ? (int) $curso['carga_horaria'] : 0;
                 $valorEfetivo = isset($curso['valor_efetivo']) ? (float) $curso['valor_efetivo'] : (float) (isset($curso['valor']) ? $curso['valor'] : 0);
                 $emPromocao = !empty($curso['desconto_promocional']);

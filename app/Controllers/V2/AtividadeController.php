@@ -13,25 +13,26 @@ use App\Services\ConteudoAvaliacaoTextualService;
 
 /**
  * LMS V2 (Fase 2.10) — Atividades avaliativas discursivas reais (resposta
- * textual digitada, SEM upload de arquivos).
+ * textual digitada + até 5 imagens anexadas).
  *
  * Reaproveita INTEGRALMENTE as regras já existentes do sistema:
  * - posse: `AreaCursoService::carregarAluno(...)`;
  * - item publicado/avaliação: `ConteudoCursoService::buscarItemPublicadoParaAluno(...)`;
  * - entregas do próprio aluno: `ConteudoAvaliacaoTextualService::listarEntregasAluno(...)`;
  * - permissão de envio/reenvio: `ConteudoAvaliacaoTextualService::podeReenviar(...)`;
- * - envio (validação mínima, status, reenvio, log, progresso, notificação):
- *   `ConteudoAvaliacaoTextualService::enviarResposta(...)`.
+ * - envio (validação mínima, status, reenvio, log, progresso, notificação,
+ *   validação/gravação das imagens): `ConteudoAvaliacaoTextualService::enviarResposta(...)`.
  *
  * O endpoint oficial (`/aluno/cursos/conteudo/avaliacao/enviar`) redireciona ao
  * LMS antigo; por isso esta fase cria uma rota POST V2 dedicada que delega ao
  * MESMO service real e devolve (POST → Redirect → GET) para a própria V2.
  *
  * NADA de correção, nota, aprovação, devolução ou progresso é calculado aqui.
- * Não há upload/anexo: o `avaliacao_textual` é puramente textual no sistema.
  * IDs de URL/formulário são meros localizadores; a autorização é sempre refeita
  * no servidor com o usuário da sessão. Não se expõe resposta/nota/feedback de
- * outro aluno (consulta sempre pela inscrição do usuário autenticado).
+ * outro aluno (consulta sempre pela inscrição do usuário autenticado). O
+ * download das imagens usa a mesma rota autenticada do LMS antigo
+ * (`/aluno/cursos/conteudo/avaliacao/imagem`), que valida posse da entrega.
  */
 class AtividadeController extends Controller
 {
@@ -156,6 +157,7 @@ class AtividadeController extends Controller
                 'nota' => (isset($ultima['nota']) && $ultima['nota'] !== null && $ultima['nota'] !== '')
                     ? number_format((float) $ultima['nota'], 2, ',', '.') : '',
                 'feedback' => (string) ($ultima['feedback'] ?? ''),
+                'imagens' => $this->avaliacaoService->imagensEntrega((int) ($ultima['id'] ?? 0)),
             ) : null,
         );
 
@@ -241,6 +243,7 @@ class AtividadeController extends Controller
             'inscricao_id' => (int) $inscricao['id'],
             'aluno_id' => $usuarioId,
             'resposta' => (string) $request->input('resposta', ''),
+            'imagens' => \App\Core\Helpers::normalizarUploadMultiplo(isset($_FILES['imagens']) ? $_FILES['imagens'] : null),
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ));

@@ -36,10 +36,12 @@ foreach ($highlightGroups as $groupLabels) {
 $pendingOrdersCard = $findCardByLabels(array('Pedidos pendentes'));
 $pixInAnalysisCard = $findCardByLabels(array('Comprovantes em análise', 'Comprovantes em analise'));
 $pendingRepassesCard = $findCardByLabels(array('Total a pagar a professores'));
+$certificadosAptosCard = $findCardByLabels(array('Certificados aptos para emissão', 'Certificados aptos para emissao'));
 
 $pendingOrdersValue = isset($pendingOrdersCard['value']) ? $pendingOrdersCard['value'] : '0';
 $pixInAnalysisValue = isset($pixInAnalysisCard['value']) ? $pixInAnalysisCard['value'] : '0';
 $pendingRepassesValue = isset($pendingRepassesCard['value']) ? $pendingRepassesCard['value'] : 'R$ 0,00';
+$certificadosAptosValue = isset($certificadosAptosCard['value']) ? $certificadosAptosCard['value'] : '0';
 ?>
 
 <div class="admin-page">
@@ -82,6 +84,10 @@ $pendingRepassesValue = isset($pendingRepassesCard['value']) ? $pendingRepassesC
             <a class="card-link admin-shortcut admin-shortcut--alert" href="/admin/area-curso/conteudo/avaliacoes/pendentes">
                 <span>Avaliações textuais pendentes</span>
                 <small><span class="badge badge--status badge--status-pendente"><?php echo (int) ($conteudo_avaliacoes_pendentes ?? 0); ?></span> aguardando correção</small>
+            </a>
+            <a class="card-link admin-shortcut admin-shortcut--alert" href="/admin/certificados/emissao-manual?aptidao=aptos&certificado=sem_certificado">
+                <span>Certificados aptos para emissão</span>
+                <small><span class="badge badge--status badge--status-pendente"><?php echo Helpers::e((string) $certificadosAptosValue); ?></span> aguardando emissão</small>
             </a>
             <?php if (!empty($is_superadmin)): ?>
                 <?php $superadminPreview = isset($superadmin_turmas_preview) && is_array($superadmin_turmas_preview) ? $superadmin_turmas_preview : array(); ?>

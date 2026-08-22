@@ -926,6 +926,32 @@ class AreaCursoController extends Controller
         return $this->redirect('/admin/area-curso/conteudo/avaliacao/corrigir?id=' . $entregaId);
     }
 
+    /**
+     * GET /admin/area-curso/conteudo/avaliacao/imagem — serve uma imagem
+     * anexada pelo aluno em uma entrega de avaliação textual, para o admin
+     * conferir durante a correção.
+     */
+    public function entregaAvaliacaoImagem(Request $request)
+    {
+        $imagemId = (int) $request->query('id', 0);
+        $imagem = (new \App\Models\ConteudoAvaliacaoEntregaImagem())->findById($imagemId);
+        if (!$imagem) {
+            return new Response(View::render('errors/404', array('title' => 'Imagem não encontrada')), 404);
+        }
+
+        $storage = new \App\Services\FileStorageService();
+        $absolutePath = $storage->privatePath((string) $imagem['caminho']);
+        if (!is_file($absolutePath)) {
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
+        }
+
+        $content = file_get_contents($absolutePath);
+        return new Response($content, 200, array(
+            'Content-Type' => (string) ($imagem['mime_type'] ?: 'application/octet-stream'),
+            'Content-Disposition' => 'inline; filename="' . basename((string) $imagem['nome_original']) . '"',
+        ));
+    }
+
     public function exportarAvaliacoesConteudoCsv(Request $request)
     {
         $cursoId = (int) $request->query('curso_id', 0);

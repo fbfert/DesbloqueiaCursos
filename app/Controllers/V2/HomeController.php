@@ -222,14 +222,7 @@ class HomeController extends Controller
 
     private function modalidadeLabel($modalidade)
     {
-        $map = array(
-            'presencial' => 'Presencial',
-            'online_ao_vivo' => 'Online ao vivo',
-            'hibrido' => 'Híbrido',
-            'sob_demanda' => 'Sob demanda',
-        );
-
-        return isset($map[$modalidade]) ? $map[$modalidade] : ucfirst(str_replace('_', ' ', (string) $modalidade));
+        return \App\Core\Helpers::modalidadeCurso($modalidade);
     }
 
     private function valorEfetivo(array $curso)

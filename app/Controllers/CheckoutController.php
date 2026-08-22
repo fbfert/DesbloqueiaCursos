@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Helpers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -780,7 +781,7 @@ class CheckoutController extends Controller
 
         if ((string) $situacaoInscricao['status_fluxo'] === 'matriculado') {
             Session::flash('success', 'Você já está matriculado neste curso.');
-            return $this->redirect('/minha-pagina');
+            return $this->redirect(Helpers::urlAcessoCursoAluno($situacaoInscricao));
         }
 
         if ((string) $situacaoInscricao['status_fluxo'] === 'pendente_pagamento') {

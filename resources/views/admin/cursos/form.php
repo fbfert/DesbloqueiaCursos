@@ -112,7 +112,7 @@ if (empty($modulosExistentes)) {
             <select name="modalidade">
                 <?php foreach (isset($formData['modalidades']) && is_array($formData['modalidades']) ? $formData['modalidades'] : array() as $modalidade): ?>
                     <option value="<?php echo Helpers::e($modalidade); ?>" <?php echo ($value('modalidade', 'presencial') === $modalidade) ? 'selected' : ''; ?>>
-                        <?php echo Helpers::e($modalidade); ?>
+                        <?php echo Helpers::e(Helpers::modalidadeCurso($modalidade)); ?>
                     </option>
                 <?php endforeach; ?>
             </select>

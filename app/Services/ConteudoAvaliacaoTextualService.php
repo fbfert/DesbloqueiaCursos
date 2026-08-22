@@ -3,14 +3,17 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\Helpers;
 use App\Core\Logger;
 use App\Models\ConteudoAvaliacaoEntrega;
+use App\Models\ConteudoAvaliacaoEntregaImagem;
 use App\Models\ConteudoAvaliacaoTextual;
 use App\Models\ConteudoItem;
 use App\Models\ConteudoLogAluno;
 use App\Models\ConteudoProgressoAluno;
 use App\Models\CursoEvento;
 use App\Models\Inscricao;
+use App\Services\FileStorageService;
 use Exception;
 use PDO;
 
@@ -18,23 +21,38 @@ class ConteudoAvaliacaoTextualService
 {
     private const STATUS_VALIDOS = array('enviada', 'reenviada', 'corrigida', 'devolvida', 'aprovada', 'reprovada', 'cancelada');
 
+    // Anexos de imagem na resposta do aluno. Limite de tamanho por imagem
+    // deliberadamente conservador: o php.ini efetivo do servidor hoje tem
+    // upload_max_filesize=2M e post_max_size=8M (conferido em
+    // /home/desbloqueiacursos/etc/php.ini) - 5 imagens no limite maximo
+    // ultrapassariam post_max_size e o PHP descartaria o POST inteiro
+    // silenciosamente (sem chegar a rodar validacao nenhuma em PHP).
+    private const MAX_IMAGENS_POR_ENTREGA = 5;
+    private const LIMITE_IMAGEM_BYTES = 1572864; // 1,5 MB por imagem (5 x 1,5MB = 7,5MB, dentro do post_max_size=8M atual)
+    private const EXTENSOES_IMAGEM_VALIDAS = array('jpg', 'jpeg', 'png', 'webp');
+    private const MIME_IMAGEM_VALIDOS = array('image/jpeg', 'image/png', 'image/webp');
+
     private $avaliacaoModel;
     private $entregaModel;
+    private $imagemModel;
     private $itemModel;
     private $logModel;
     private $cursoModel;
     private $progressoModel;
     private $inscricaoModel;
+    private $fileStorageService;
 
     public function __construct()
     {
         $this->avaliacaoModel = new ConteudoAvaliacaoTextual();
         $this->entregaModel = new ConteudoAvaliacaoEntrega();
+        $this->imagemModel = new ConteudoAvaliacaoEntregaImagem();
         $this->itemModel = new ConteudoItem();
         $this->logModel = new ConteudoLogAluno();
         $this->cursoModel = new CursoEvento();
         $this->progressoModel = new ConteudoProgressoAluno();
         $this->inscricaoModel = new Inscricao();
+        $this->fileStorageService = new FileStorageService();
     }
 
     public function enviarResposta($dados)
@@ -49,7 +67,7 @@ class ConteudoAvaliacaoTextualService
         $resposta = trim((string) ($dados['resposta'] ?? ''));
 
         if ($itemId <= 0 || $cursoEventoId <= 0 || $alunoId <= 0 || $inscricaoId <= 0) {
-            return array('ok' => false, 'message' => 'Dados invÃ¡lidos para envio da avaliaÃ§Ã£o textual.');
+            return array('ok' => false, 'message' => 'Dados inválidos para envio da avaliação textual.');
         }
         $respostaTamanho = function_exists('mb_strlen') ? mb_strlen($resposta) : strlen($resposta);
         if ($resposta === '' || $respostaTamanho < 3) {
@@ -59,14 +77,20 @@ class ConteudoAvaliacaoTextualService
             return array('ok' => false, 'message' => 'A resposta ultrapassou o limite de 50.000 caracteres.');
         }
 
+        $imagens = isset($dados['imagens']) && is_array($dados['imagens']) ? $dados['imagens'] : array();
+        $validacaoImagens = $this->validarImagensEnvio($imagens);
+        if (empty($validacaoImagens['ok'])) {
+            return $validacaoImagens;
+        }
+
         $item = $this->itemModel->findById($itemId);
         if (!$item || (int) $item['curso_evento_id'] !== $cursoEventoId || (string) $item['tipo'] !== 'avaliacao_textual') {
-            return array('ok' => false, 'message' => 'Item de avaliaÃ§Ã£o textual nÃ£o encontrado.');
+            return array('ok' => false, 'message' => 'Item de avaliação textual não encontrado.');
         }
 
         $avaliacao = $avaliacaoId > 0 ? $this->avaliacaoModel->findById($avaliacaoId) : $this->avaliacaoModel->findByItemId($itemId);
         if (!$avaliacao) {
-            return array('ok' => false, 'message' => 'AvaliaÃ§Ã£o textual nÃ£o encontrada para este item.');
+            return array('ok' => false, 'message' => 'Avaliação textual não encontrada para este item.');
         }
 
         $validacao = $this->validarConfiguracaoAvaliacao($avaliacao);
@@ -75,7 +99,7 @@ class ConteudoAvaliacaoTextualService
         }
 
         if (!$this->podeReenviar((int) $avaliacao['id'], $alunoId, $inscricaoId)) {
-            return array('ok' => false, 'message' => 'Reenvio nÃ£o permitido no momento. Aguarde liberaÃ§Ã£o de prazo.');
+            return array('ok' => false, 'message' => 'Reenvio não permitido no momento. Aguarde liberação de prazo.');
         }
 
         $pdo = Database::connection();
@@ -97,6 +121,8 @@ class ConteudoAvaliacaoTextualService
                 'enviado_em' => date('Y-m-d H:i:s'),
                 'tentativa' => $tentativa,
             ));
+
+            $this->armazenarImagensEntrega($entregaId, $imagens);
 
             $acaoLog = $statusEntrega === 'reenviada' ? 'reenviou_avaliacao' : 'enviou_avaliacao';
             $this->logModel->create(array(
@@ -121,6 +147,14 @@ class ConteudoAvaliacaoTextualService
                 'item_id' => $itemId,
                 'item_titulo' => (string) $item['titulo'],
                 'status_entrega' => $statusEntrega,
+            ));
+            $this->notificarAvaliadorPedagogico($entregaId, array(
+                'curso_evento_id' => $cursoEventoId,
+                'turma_id' => $turmaId,
+                'inscricao_id' => $inscricaoId,
+                'aluno_id' => $alunoId,
+                'item_id' => $itemId,
+                'item_titulo' => (string) $item['titulo'],
             ));
 
             $pdo->commit();
@@ -174,12 +208,12 @@ class ConteudoAvaliacaoTextualService
     {
         $entregaId = (int) $entregaId;
         if ($entregaId <= 0) {
-            return array('ok' => false, 'message' => 'Entrega invÃ¡lida.');
+            return array('ok' => false, 'message' => 'Entrega inválida.');
         }
 
         $entrega = $this->entregaModel->findById($entregaId);
         if (!$entrega) {
-            return array('ok' => false, 'message' => 'Entrega nÃ£o encontrada.');
+            return array('ok' => false, 'message' => 'Entrega não encontrada.');
         }
 
         $dados = (array) $dados;
@@ -194,14 +228,14 @@ class ConteudoAvaliacaoTextualService
 
         $avaliacao = $this->avaliacaoModel->findById((int) $entrega['avaliacao_id']);
         if (!$avaliacao) {
-            return array('ok' => false, 'message' => 'ConfiguraÃ§Ã£o da avaliaÃ§Ã£o nÃ£o encontrada.');
+            return array('ok' => false, 'message' => 'Configuração da avaliação não encontrada.');
         }
 
-        $notaMaximaAvaliacao = $this->normalizarDecimalInput($avaliacao['nota_maxima'] ?? null, 'nota mÃ¡xima', true);
+        $notaMaximaAvaliacao = $this->normalizarDecimalInput($avaliacao['nota_maxima'] ?? null, 'nota máxima', true);
         if (empty($notaMaximaAvaliacao['ok'])) {
             return $notaMaximaAvaliacao;
         }
-        $notaMinimaAvaliacao = $this->normalizarDecimalInput($avaliacao['nota_minima'] ?? null, 'nota mÃ­nima', true);
+        $notaMinimaAvaliacao = $this->normalizarDecimalInput($avaliacao['nota_minima'] ?? null, 'nota mínima', true);
         if (empty($notaMinimaAvaliacao['ok'])) {
             return $notaMinimaAvaliacao;
         }
@@ -209,16 +243,16 @@ class ConteudoAvaliacaoTextualService
         $notaMinimaValor = $notaMinimaAvaliacao['value'];
 
         if ($nota !== null && $nota < 0) {
-            return array('ok' => false, 'message' => 'A nota nÃ£o pode ser negativa.');
+            return array('ok' => false, 'message' => 'A nota não pode ser negativa.');
         }
         if ($nota !== null && $notaMaximaValor !== null && $nota > $notaMaximaValor) {
-            return array('ok' => false, 'message' => 'A nota nÃ£o pode ser maior que a nota mÃ¡xima.');
+            return array('ok' => false, 'message' => 'A nota não pode ser maior que a nota máxima.');
         }
         if ($nota === null && !in_array($statusInformado, array('devolvida', 'cancelada'), true) && $notaMaximaValor !== null) {
-            return array('ok' => false, 'message' => 'Informe a nota da correÃ§Ã£o.');
+            return array('ok' => false, 'message' => 'Informe a nota da correção.');
         }
         if ($statusInformado !== '' && !in_array($statusInformado, self::STATUS_VALIDOS, true)) {
-            return array('ok' => false, 'message' => 'Status invÃ¡lido.');
+            return array('ok' => false, 'message' => 'Status inválido.');
         }
 
         $status = $statusInformado;
@@ -245,7 +279,7 @@ class ConteudoAvaliacaoTextualService
         ), $entregaId);
 
         if (!$ok) {
-            return array('ok' => false, 'message' => 'NÃ£o foi possÃ­vel salvar a correÃ§Ã£o.');
+            return array('ok' => false, 'message' => 'Não foi possível salvar a correção.');
         }
 
         $item = $this->itemModel->findById((int) $entrega['item_id']);
@@ -286,16 +320,16 @@ class ConteudoAvaliacaoTextualService
     {
         $entregaId = (int) $entregaId;
         if ($entregaId <= 0) {
-            return array('ok' => false, 'message' => 'Entrega invÃ¡lida.');
+            return array('ok' => false, 'message' => 'Entrega inválida.');
         }
         $entrega = $this->entregaModel->findById($entregaId);
         if (!$entrega) {
-            return array('ok' => false, 'message' => 'Entrega nÃ£o encontrada.');
+            return array('ok' => false, 'message' => 'Entrega não encontrada.');
         }
 
         $novoPrazo = trim((string) $novoPrazo);
         if ($novoPrazo === '' || strtotime($novoPrazo) === false) {
-            return array('ok' => false, 'message' => 'Informe um novo prazo vÃ¡lido.');
+            return array('ok' => false, 'message' => 'Informe um novo prazo válido.');
         }
 
         $ok = $this->entregaModel->update(array(
@@ -410,7 +444,30 @@ class ConteudoAvaliacaoTextualService
         );
         $stmt->execute(array('id' => $entregaId));
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        if (!$row) {
+            return null;
+        }
+        $row['imagens'] = $this->imagensEntrega($entregaId);
+        return $row;
+    }
+
+    /**
+     * Lista as imagens de uma entrega (sem expor o caminho fisico de
+     * armazenamento - o download real acontece por rota controlada que
+     * valida posse antes de ler o arquivo).
+     */
+    public function imagensEntrega($entregaId)
+    {
+        $entregaId = (int) $entregaId;
+        if ($entregaId <= 0) {
+            return array();
+        }
+        $imagens = $this->imagemModel->listByEntregaId($entregaId);
+        foreach ($imagens as &$imagem) {
+            unset($imagem['caminho']);
+        }
+        unset($imagem);
+        return $imagens;
     }
 
     public function listarEntregasAluno($avaliacaoId, $alunoId, $inscricaoId)
@@ -601,6 +658,63 @@ class ConteudoAvaliacaoTextualService
         );
     }
 
+    /**
+     * Normaliza e valida os arquivos de imagem recebidos ($_FILES['imagens']
+     * ja reorganizado pelo controller em uma lista de arquivos individuais,
+     * ver Helpers::normalizarUploadMultiplo). Nao move nenhum arquivo aqui -
+     * so valida quantidade/extensao/tamanho antes de abrir a transacao.
+     */
+    private function validarImagensEnvio(array $imagens)
+    {
+        if (count($imagens) > self::MAX_IMAGENS_POR_ENTREGA) {
+            return array('ok' => false, 'message' => 'Envie no máximo ' . self::MAX_IMAGENS_POR_ENTREGA . ' imagens.');
+        }
+
+        foreach ($imagens as $imagem) {
+            if (empty($imagem['tmp_name']) || !is_uploaded_file($imagem['tmp_name'])) {
+                return array('ok' => false, 'message' => 'Um dos arquivos enviados é inválido.');
+            }
+            if (!empty($imagem['error']) && (int) $imagem['error'] !== UPLOAD_ERR_OK) {
+                return array('ok' => false, 'message' => 'Falha ao enviar uma das imagens. Tente novamente.');
+            }
+            if (!empty($imagem['size']) && (int) $imagem['size'] > self::LIMITE_IMAGEM_BYTES) {
+                return array('ok' => false, 'message' => 'Cada imagem deve ter no máximo ' . round(self::LIMITE_IMAGEM_BYTES / 1024 / 1024, 1) . ' MB.');
+            }
+            $originalName = isset($imagem['name']) ? basename((string) $imagem['name']) : '';
+            $extensao = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            if (!in_array($extensao, self::EXTENSOES_IMAGEM_VALIDAS, true)) {
+                return array('ok' => false, 'message' => 'Formato de imagem não permitido. Use JPG, PNG ou WEBP.');
+            }
+        }
+
+        return array('ok' => true);
+    }
+
+    private function armazenarImagensEntrega($entregaId, array $imagens)
+    {
+        $ordem = 1;
+        foreach ($imagens as $imagem) {
+            $diretorio = 'avaliacoes-textuais/entregas/' . (int) $entregaId;
+            $upload = $this->fileStorageService->storeUploadedFile($imagem, $diretorio, 'entrega-imagem', array(
+                'max_size_bytes' => self::LIMITE_IMAGEM_BYTES,
+                'allowed_extensions' => self::EXTENSOES_IMAGEM_VALIDAS,
+                'allowed_mime_types' => self::MIME_IMAGEM_VALIDOS,
+            ));
+
+            $this->imagemModel->create(array(
+                'entrega_id' => $entregaId,
+                'nome_original' => $upload['original_name'],
+                'nome_arquivo' => basename($upload['absolute_path']),
+                'caminho' => $upload['relative_path'],
+                'mime_type' => $upload['mime_type'],
+                'extensao' => strtolower(pathinfo($upload['original_name'], PATHINFO_EXTENSION)),
+                'tamanho_bytes' => $upload['size'],
+                'ordem' => $ordem,
+            ));
+            $ordem++;
+        }
+    }
+
     private function cursoIdsAcessiveisProfessor($professorId)
     {
         $professorId = (int) $professorId;
@@ -623,20 +737,20 @@ class ConteudoAvaliacaoTextualService
         }
         $peso = $pesoNormalizado['value'];
         if ($peso <= 0) {
-            return array('ok' => false, 'message' => 'O peso da avaliaÃ§Ã£o deve ser maior que zero.');
+            return array('ok' => false, 'message' => 'O peso da avaliação deve ser maior que zero.');
         }
-        $notaMaximaNormalizada = $this->normalizarDecimalInput($avaliacao['nota_maxima'] ?? null, 'nota mÃ¡xima', true);
+        $notaMaximaNormalizada = $this->normalizarDecimalInput($avaliacao['nota_maxima'] ?? null, 'nota máxima', true);
         if (empty($notaMaximaNormalizada['ok'])) {
             return $notaMaximaNormalizada;
         }
-        $notaMinimaNormalizada = $this->normalizarDecimalInput($avaliacao['nota_minima'] ?? null, 'nota mÃ­nima', true);
+        $notaMinimaNormalizada = $this->normalizarDecimalInput($avaliacao['nota_minima'] ?? null, 'nota mínima', true);
         if (empty($notaMinimaNormalizada['ok'])) {
             return $notaMinimaNormalizada;
         }
         $notaMaxima = $notaMaximaNormalizada['value'];
         $notaMinima = $notaMinimaNormalizada['value'];
         if ($notaMaxima !== null && $notaMinima !== null && $notaMinima > $notaMaxima) {
-            return array('ok' => false, 'message' => 'A nota mÃ­nima nÃ£o pode ser maior que a nota mÃ¡xima.');
+            return array('ok' => false, 'message' => 'A nota mínima não pode ser maior que a nota máxima.');
         }
         return array('ok' => true);
     }
@@ -651,20 +765,20 @@ class ConteudoAvaliacaoTextualService
         if ($texto === '') {
             return $permitirNulo
                 ? array('ok' => true, 'value' => null)
-                : array('ok' => false, 'message' => 'Informe um valor vÃ¡lido para ' . $campo . '.');
+                : array('ok' => false, 'message' => 'Informe um valor válido para ' . $campo . '.');
         }
 
         if (strpos($texto, ',') !== false && strpos($texto, '.') !== false) {
-            return array('ok' => false, 'message' => 'Formato invÃ¡lido para ' . $campo . '. Use apenas vÃ­rgula ou ponto decimal.');
+            return array('ok' => false, 'message' => 'Formato inválido para ' . $campo . '. Use apenas vírgula ou ponto decimal.');
         }
 
         if (!preg_match('/^\\d+(?:[\\.,]\\d+)?$/', $texto)) {
-            return array('ok' => false, 'message' => 'Formato invÃ¡lido para ' . $campo . '.');
+            return array('ok' => false, 'message' => 'Formato inválido para ' . $campo . '.');
         }
 
         $normalizado = str_replace(',', '.', $texto);
         if (!is_numeric($normalizado)) {
-            return array('ok' => false, 'message' => 'Formato invÃ¡lido para ' . $campo . '.');
+            return array('ok' => false, 'message' => 'Formato inválido para ' . $campo . '.');
         }
 
         return array('ok' => true, 'value' => (float) $normalizado);
@@ -740,9 +854,10 @@ class ConteudoAvaliacaoTextualService
         }
 
         $curso = $this->cursoModel->findById($cursoEventoId);
-        $inscricao = $this->inscricaoModel->findById((int) ($contexto['inscricao_id'] ?? 0));
-        $alunoNome = $inscricao && !empty($inscricao['participante_nome']) ? $inscricao['participante_nome'] : ('Aluno #' . (int) ($contexto['aluno_id'] ?? 0));
-        $turmaNome = !empty($inscricao['turma_nome']) ? $inscricao['turma_nome'] : ((int) ($contexto['turma_id'] ?? 0) > 0 ? ('Turma #' . (int) $contexto['turma_id']) : 'Sem turma');
+        $inscricaoId = (int) ($contexto['inscricao_id'] ?? 0);
+        $nomes = $this->resolverNomesInscricao($inscricaoId, (int) ($contexto['aluno_id'] ?? 0), (int) ($contexto['turma_id'] ?? 0));
+        $alunoNome = $nomes['aluno_nome'];
+        $turmaNome = $nomes['turma_nome'];
         $link = '/professor/area-curso/conteudo/avaliacao/corrigir?id=' . (int) $entregaId . '&curso_id=' . $cursoEventoId . ((int) ($contexto['turma_id'] ?? 0) > 0 ? '&turma_id=' . (int) $contexto['turma_id'] : '');
 
         $emailService = new EmailService();
@@ -752,8 +867,8 @@ class ConteudoAvaliacaoTextualService
                 'pendencia',
                 (string) $professor['email'],
                 (string) $professor['nome'],
-                'Nova avaliaÃ§Ã£o textual enviada - ' . (!empty($curso['nome']) ? $curso['nome'] : 'Curso'),
-                '<p>Nova entrega de avaliaÃ§Ã£o textual.</p><p>Curso: ' . htmlspecialchars((string) (!empty($curso['nome']) ? $curso['nome'] : '')) . '</p><p>Turma: ' . htmlspecialchars((string) $turmaNome) . '</p><p>Aluno: ' . htmlspecialchars((string) $alunoNome) . '</p><p>AvaliaÃ§Ã£o: ' . htmlspecialchars((string) ($contexto['item_titulo'] ?? '')) . '</p><p>Data de envio: ' . date('d/m/Y H:i') . '</p><p>Acesse para corrigir: ' . htmlspecialchars((string) $link) . '</p>',
+                'Nova avaliação textual enviada - ' . (!empty($curso['nome']) ? $curso['nome'] : 'Curso'),
+                '<p>Nova entrega de avaliação textual.</p><p>Curso: ' . htmlspecialchars((string) (!empty($curso['nome']) ? $curso['nome'] : '')) . '</p><p>Turma: ' . htmlspecialchars((string) $turmaNome) . '</p><p>Aluno: ' . htmlspecialchars((string) $alunoNome) . '</p><p>Avaliação: ' . htmlspecialchars((string) ($contexto['item_titulo'] ?? '')) . '</p><p>Data de envio: ' . date('d/m/Y H:i') . '</p><p>Acesse para corrigir: ' . htmlspecialchars((string) $link) . '</p>',
                 array(
                     'curso' => !empty($curso['nome']) ? $curso['nome'] : '',
                     'turma' => $turmaNome,
@@ -763,6 +878,70 @@ class ConteudoAvaliacaoTextualService
                 )
             );
         }
+    }
+
+    /**
+     * Avisa o e-mail do avaliador pedagógico configurado em Configurações
+     * Globais (independente de haver ou não professor vinculado ao curso -
+     * ver `notificarProfessorNovaEntrega`, que é quem cobre o professor).
+     * Se o e-mail não estiver configurado, `EmailService::avaliacaoTextualPendente()`
+     * apenas registra e não bloqueia o envio da entrega.
+     */
+    private function notificarAvaliadorPedagogico($entregaId, array $contexto)
+    {
+        $cursoEventoId = (int) ($contexto['curso_evento_id'] ?? 0);
+        if ($cursoEventoId <= 0) {
+            return;
+        }
+
+        $curso = $this->cursoModel->findById($cursoEventoId);
+        $inscricaoId = (int) ($contexto['inscricao_id'] ?? 0);
+        $nomes = $this->resolverNomesInscricao($inscricaoId, (int) ($contexto['aluno_id'] ?? 0), (int) ($contexto['turma_id'] ?? 0));
+        $link = '/admin/area-curso/conteudo/avaliacao/corrigir?id=' . (int) $entregaId;
+
+        (new EmailService())->avaliacaoTextualPendente(array(
+            'entrega_id' => $entregaId,
+            'curso_nome' => !empty($curso['nome']) ? $curso['nome'] : '',
+            'turma_nome' => $nomes['turma_nome'],
+            'aluno_nome' => $nomes['aluno_nome'],
+            'item_titulo' => (string) ($contexto['item_titulo'] ?? ''),
+            'enviado_em' => date('d/m/Y H:i'),
+            'link_correcao' => Helpers::url($link),
+        ));
+    }
+
+    /**
+     * `inscricoes` não tem colunas próprias de nome de aluno/turma - resolve
+     * via join com `participantes_pedido`/`usuarios` (aluno) e `turmas`
+     * (mesmo padrão usado em `Certificado::listEligible()`), com fallback
+     * para os IDs somente se a inscrição não existir mais.
+     */
+    private function resolverNomesInscricao($inscricaoId, $alunoId = 0, $turmaId = 0)
+    {
+        $alunoNome = $alunoId > 0 ? ('Aluno #' . $alunoId) : 'Aluno(a)';
+        $turmaNome = $turmaId > 0 ? ('Turma #' . $turmaId) : 'Sem turma';
+
+        if ($inscricaoId <= 0) {
+            return array('aluno_nome' => $alunoNome, 'turma_nome' => $turmaNome);
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT COALESCE(u.nome, pp.nome) AS aluno_nome, t.nome AS turma_nome
+             FROM inscricoes i
+             LEFT JOIN participantes_pedido pp ON pp.id = i.participante_pedido_id
+             LEFT JOIN usuarios u ON u.id = i.usuario_id
+             LEFT JOIN turmas t ON t.id = i.turma_id
+             WHERE i.id = :id
+             LIMIT 1'
+        );
+        $stmt->bindValue(':id', $inscricaoId, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return array(
+            'aluno_nome' => $row && !empty($row['aluno_nome']) ? $row['aluno_nome'] : $alunoNome,
+            'turma_nome' => $row && !empty($row['turma_nome']) ? $row['turma_nome'] : $turmaNome,
+        );
     }
 }
 

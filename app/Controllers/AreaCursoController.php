@@ -387,6 +387,44 @@ class AreaCursoController extends Controller
         ));
     }
 
+    /**
+     * GET /aluno/cursos/conteudo/avaliacao/imagem — serve uma imagem anexada
+     * pelo PRÓPRIO aluno em uma entrega de avaliação textual. Valida posse
+     * (a entrega precisa pertencer ao aluno da sessão) antes de ler o
+     * arquivo; nunca expõe o caminho de armazenamento diretamente.
+     */
+    public function entregaAvaliacaoImagem(Request $request)
+    {
+        $imagemId = (int) $request->query('id', 0);
+        $imagem = (new \App\Models\ConteudoAvaliacaoEntregaImagem())->findById($imagemId);
+        if (!$imagem) {
+            return new Response(View::render('errors/404', array('title' => 'Imagem não encontrada')), 404);
+        }
+
+        $entrega = $this->conteudoAvaliacaoTextualService->buscarEntregaParaCorrecao((int) $imagem['entrega_id']);
+        if (!$entrega || (int) $entrega['aluno_id'] !== (int) Session::get('usuario_id')) {
+            Logger::info('conteudo.avaliacao.imagem.bloqueio_acesso', array('contexto' => 'aluno', 'imagem_id' => $imagemId, 'usuario_id' => Session::get('usuario_id')));
+            return new Response(View::render('errors/404', array('title' => 'Imagem não encontrada')), 404);
+        }
+
+        return $this->responderImagemEntrega($imagem);
+    }
+
+    private function responderImagemEntrega(array $imagem)
+    {
+        $storage = new FileStorageService();
+        $absolutePath = $storage->privatePath((string) $imagem['caminho']);
+        if (!is_file($absolutePath)) {
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
+        }
+
+        $content = file_get_contents($absolutePath);
+        return new Response($content, 200, array(
+            'Content-Type' => (string) ($imagem['mime_type'] ?: 'application/octet-stream'),
+            'Content-Disposition' => 'inline; filename="' . basename((string) $imagem['nome_original']) . '"',
+        ));
+    }
+
     public function conteudoItem(Request $request)
     {
         $parametros = $this->parametrosConteudoAluno($request);
@@ -557,6 +595,10 @@ class AreaCursoController extends Controller
         if ((string) ($item['tipo'] ?? '') === 'avaliacao_textual') {
             $entregasAvaliacao = $this->conteudoAvaliacaoTextualService->listarEntregasAluno((int) ($detalhe['detalhe']['id'] ?? 0), (int) Session::get('usuario_id'), (int) $inscricao['id']);
             $ultimaEntrega = !empty($entregasAvaliacao) ? $entregasAvaliacao[0] : null;
+            if ($ultimaEntrega) {
+                $ultimaEntrega['imagens'] = $this->conteudoAvaliacaoTextualService->imagensEntrega((int) $ultimaEntrega['id']);
+                $entregasAvaliacao[0] = $ultimaEntrega;
+            }
             $avaliacaoPodeEnviar = $this->conteudoAvaliacaoTextualService->podeReenviar((int) ($detalhe['detalhe']['id'] ?? 0), (int) Session::get('usuario_id'), (int) $inscricao['id']);
             if (!empty($ultimaEntrega['status']) && in_array((string) $ultimaEntrega['status'], array('corrigida', 'aprovada', 'reprovada'), true)) {
                 $this->conteudoService->registrarLogAluno(array(
@@ -640,6 +682,7 @@ class AreaCursoController extends Controller
             'inscricao_id' => (int) $inscricao['id'],
             'aluno_id' => (int) Session::get('usuario_id'),
             'resposta' => (string) $request->input('resposta', ''),
+            'imagens' => \App\Core\Helpers::normalizarUploadMultiplo(isset($_FILES['imagens']) ? $_FILES['imagens'] : null),
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ));

@@ -18,8 +18,56 @@ class CursoEvento
                 )';
     }
 
-    public function allPublic(array $filters = array())
+    private function montarFiltrosPublicos(array $filters)
     {
+        $where = ' WHERE ce.deleted_at IS NULL
+                     AND ce.status = "ativo"
+                     AND ' . $this->existsTurmaAbertaSql();
+        $params = array();
+
+        if (!empty($filters['categoria_id'])) {
+            $where .= ' AND ce.categoria_id = :categoria_id';
+            $params['categoria_id'] = (int) $filters['categoria_id'];
+        }
+
+        if (array_key_exists('destaque', $filters) && $filters['destaque'] !== '') {
+            $where .= ' AND ce.destaque = :destaque';
+            $params['destaque'] = (int) $filters['destaque'];
+        }
+
+        if (!empty($filters['busca'])) {
+            $where .= ' AND (
+                ce.nome LIKE :busca
+                OR ce.descricao_curta LIKE :busca
+                OR ce.descricao_completa LIKE :busca
+                OR c.nome LIKE :busca
+            )';
+            $params['busca'] = '%' . $this->normalizarBuscaPublica($filters['busca']) . '%';
+        }
+
+        return array($where, $params);
+    }
+
+    public function countPublic(array $filters = array())
+    {
+        list($where, $params) = $this->montarFiltrosPublicos($filters);
+
+        $sql = 'SELECT COUNT(*) AS total
+                FROM cursos_eventos ce
+                LEFT JOIN categorias c ON c.id = ce.categoria_id'
+                . $where;
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? (int) $row['total'] : 0;
+    }
+
+    public function allPublic(array $filters = array(), $limit = null, $offset = 0)
+    {
+        list($where, $params) = $this->montarFiltrosPublicos($filters);
+
         $sql = 'SELECT ce.*,
                        c.nome AS categoria_nome,
                        COALESCE(t_total.total_turmas, 0) AS total_turmas
@@ -30,33 +78,15 @@ class CursoEvento
                     FROM turmas
                     WHERE deleted_at IS NULL
                     GROUP BY curso_evento_id
-                ) t_total ON t_total.curso_evento_id = ce.id
-                WHERE ce.deleted_at IS NULL
-                  AND ce.status = "ativo"
-                  AND ' . $this->existsTurmaAbertaSql();
-        $params = array();
+                ) t_total ON t_total.curso_evento_id = ce.id'
+                . $where
+                . ' ORDER BY ce.destaque DESC, ce.ordem ASC, ce.nome ASC';
 
-        if (!empty($filters['categoria_id'])) {
-            $sql .= ' AND ce.categoria_id = :categoria_id';
-            $params['categoria_id'] = (int) $filters['categoria_id'];
+        if ($limit !== null) {
+            $limit = max(1, (int) $limit);
+            $offset = max(0, (int) $offset);
+            $sql .= ' LIMIT ' . $limit . ' OFFSET ' . $offset;
         }
-
-        if (array_key_exists('destaque', $filters) && $filters['destaque'] !== '') {
-            $sql .= ' AND ce.destaque = :destaque';
-            $params['destaque'] = (int) $filters['destaque'];
-        }
-
-        if (!empty($filters['busca'])) {
-            $sql .= ' AND (
-                ce.nome LIKE :busca
-                OR ce.descricao_curta LIKE :busca
-                OR ce.descricao_completa LIKE :busca
-                OR c.nome LIKE :busca
-            )';
-            $params['busca'] = '%' . $this->normalizarBuscaPublica($filters['busca']) . '%';
-        }
-
-        $sql .= ' ORDER BY ce.destaque DESC, ce.ordem ASC, ce.nome ASC';
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);

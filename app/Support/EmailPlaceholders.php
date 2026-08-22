@@ -66,6 +66,16 @@ class EmailPlaceholders
             array('token' => '{{link_descadastro_recuperacao}}', 'key' => 'link_descadastro_recuperacao', 'nome' => 'URL de descadastro de lembretes', 'origem' => 'token de descadastro de recuperação', 'eventos' => array('pedido_recuperacao_*'), 'fallback' => '', 'formato' => 'URL absoluta', 'aliases' => array()),
             array('token' => '{{aluno_nome}}', 'key' => 'aluno_nome', 'nome' => 'Nome do aluno/participante', 'origem' => 'aluno ou participante', 'eventos' => array('*'), 'fallback' => 'Aluno(a)', 'formato' => 'texto', 'aliases' => array('{usuario.nome}')),
             array('token' => '{{aluno_email}}', 'key' => 'aluno_email', 'nome' => 'E-mail do aluno/participante', 'origem' => 'aluno ou participante', 'eventos' => array('*'), 'fallback' => '', 'formato' => 'e-mail', 'aliases' => array('{usuario.email}')),
+            array('token' => '{avaliacao.curso_nome}', 'key' => 'avaliacao.curso_nome', 'nome' => 'Curso da avaliação', 'origem' => 'curso vinculado à avaliação textual enviada', 'eventos' => array('email.avaliacao_textual_pendente'), 'fallback' => '', 'formato' => 'texto', 'aliases' => array()),
+            array('token' => '{avaliacao.turma_nome}', 'key' => 'avaliacao.turma_nome', 'nome' => 'Turma da avaliação', 'origem' => 'turma vinculada à avaliação textual enviada', 'eventos' => array('email.avaliacao_textual_pendente'), 'fallback' => 'Sem turma', 'formato' => 'texto', 'aliases' => array()),
+            array('token' => '{avaliacao.aluno_nome}', 'key' => 'avaliacao.aluno_nome', 'nome' => 'Aluno que enviou a avaliação', 'origem' => 'aluno autor da entrega', 'eventos' => array('email.avaliacao_textual_pendente'), 'fallback' => '', 'formato' => 'texto', 'aliases' => array()),
+            array('token' => '{avaliacao.item_titulo}', 'key' => 'avaliacao.item_titulo', 'nome' => 'Título da avaliação', 'origem' => 'título do item de avaliação textual', 'eventos' => array('email.avaliacao_textual_pendente'), 'fallback' => '', 'formato' => 'texto', 'aliases' => array()),
+            array('token' => '{avaliacao.enviado_em}', 'key' => 'avaliacao.enviado_em', 'nome' => 'Data de envio', 'origem' => 'data/hora do envio da entrega', 'eventos' => array('email.avaliacao_textual_pendente'), 'fallback' => '', 'formato' => 'data e hora (dd/mm/aaaa hh:mm)', 'aliases' => array()),
+            array('token' => '{avaliacao.link_correcao}', 'key' => 'avaliacao.link_correcao', 'nome' => 'Link de correção', 'origem' => 'rota de correção da entrega no admin', 'eventos' => array('email.avaliacao_textual_pendente'), 'fallback' => '', 'formato' => 'URL absoluta', 'aliases' => array()),
+            array('token' => '{certificado.curso_nome}', 'key' => 'certificado.curso_nome', 'nome' => 'Curso do certificado apto', 'origem' => 'curso vinculado à inscrição apta para certificado', 'eventos' => array('email.certificado_apto_emissao'), 'fallback' => '', 'formato' => 'texto', 'aliases' => array()),
+            array('token' => '{certificado.turma_nome}', 'key' => 'certificado.turma_nome', 'nome' => 'Turma do certificado apto', 'origem' => 'turma vinculada à inscrição apta para certificado', 'eventos' => array('email.certificado_apto_emissao'), 'fallback' => 'Sem turma', 'formato' => 'texto', 'aliases' => array()),
+            array('token' => '{certificado.aluno_nome}', 'key' => 'certificado.aluno_nome', 'nome' => 'Aluno apto para certificado', 'origem' => 'aluno/participante da inscrição', 'eventos' => array('email.certificado_apto_emissao'), 'fallback' => '', 'formato' => 'texto', 'aliases' => array()),
+            array('token' => '{certificado.link_emissao}', 'key' => 'certificado.link_emissao', 'nome' => 'Link de emissão manual', 'origem' => 'rota de emissão manual de certificados no admin', 'eventos' => array('email.certificado_apto_emissao'), 'fallback' => '', 'formato' => 'URL absoluta', 'aliases' => array()),
         );
     }
 
@@ -88,6 +98,14 @@ class EmailPlaceholders
             return array('certificado_url_download');
         }
 
+        if ($evento === 'email.avaliacao_textual_pendente') {
+            return array('avaliacao.link_correcao');
+        }
+
+        if ($evento === 'email.certificado_apto_emissao') {
+            return array('certificado.link_emissao');
+        }
+
         return array();
     }
 
@@ -105,7 +123,7 @@ class EmailPlaceholders
     /** Namespaces cujas subchaves são consideradas conhecidas (não "desconhecidas"). */
     public static function knownNamespaces()
     {
-        return array('usuario', 'sistema', 'pedido', 'inscricao', 'cursos', 'certificado');
+        return array('usuario', 'sistema', 'pedido', 'inscricao', 'cursos', 'certificado', 'avaliacao');
     }
 
     /**

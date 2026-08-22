@@ -116,7 +116,7 @@
         </div>
         <div class="turma-summary-item">
             <span class="turma-summary-label">Modalidade</span>
-            <strong class="turma-summary-value"><?php echo Helpers::e($turma['curso_modalidade']); ?></strong>
+            <strong class="turma-summary-value"><?php echo Helpers::e(Helpers::modalidadeCurso($turma['curso_modalidade'])); ?></strong>
         </div>
         <div class="turma-summary-item">
             <span class="turma-summary-label">Data de início</span>

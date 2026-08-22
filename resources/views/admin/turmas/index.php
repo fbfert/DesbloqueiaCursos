@@ -129,7 +129,7 @@ $renderAcoes = function (array $turma, $canManage) {
                                 <td><?php echo Helpers::e($turma['codigo']); ?></td>
                                 <td><?php echo Helpers::e($turma['curso_nome']); ?></td>
                                 <td><?php echo Helpers::e($turma['professor_responsavel_nome'] ?? '-'); ?></td>
-                                <td><?php echo Helpers::e($turma['curso_modalidade']); ?></td>
+                                <td><?php echo Helpers::e(Helpers::modalidadeCurso($turma['curso_modalidade'])); ?></td>
                                 <td><?php echo Helpers::e((string) $turma['data_inicio']); ?></td>
                                 <td><?php echo Helpers::e((string) $turma['data_fim']); ?></td>
                                 <td><?php echo Helpers::e($formatStatus($turma['status'])); ?></td>
@@ -173,7 +173,7 @@ $renderAcoes = function (array $turma, $canManage) {
                                         <td><?php echo Helpers::e($turma['codigo']); ?></td>
                                         <td><?php echo Helpers::e($turma['curso_nome']); ?></td>
                                         <td><?php echo Helpers::e($turma['professor_responsavel_nome'] ?? '-'); ?></td>
-                                        <td><?php echo Helpers::e($turma['curso_modalidade']); ?></td>
+                                        <td><?php echo Helpers::e(Helpers::modalidadeCurso($turma['curso_modalidade'])); ?></td>
                                         <td><?php echo Helpers::e((string) $turma['data_inicio']); ?></td>
                                         <td><?php echo Helpers::e((string) $turma['data_fim']); ?></td>
                                         <td><?php echo Helpers::e($formatStatus($turma['status'])); ?></td>
@@ -217,7 +217,7 @@ $renderAcoes = function (array $turma, $canManage) {
                                         <td><?php echo Helpers::e($turma['codigo']); ?></td>
                                         <td><?php echo Helpers::e($turma['curso_nome']); ?></td>
                                         <td><?php echo Helpers::e($turma['professor_responsavel_nome'] ?? '-'); ?></td>
-                                        <td><?php echo Helpers::e($turma['curso_modalidade']); ?></td>
+                                        <td><?php echo Helpers::e(Helpers::modalidadeCurso($turma['curso_modalidade'])); ?></td>
                                         <td><?php echo Helpers::e((string) $turma['data_inicio']); ?></td>
                                         <td><?php echo Helpers::e((string) $turma['data_fim']); ?></td>
                             <td><?php echo Helpers::e($formatStatus('excluida')); ?></td>

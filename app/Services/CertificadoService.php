@@ -626,7 +626,7 @@ class CertificadoService
     public function emitir($inscricaoId, array $opcoes = array(), $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         if (!$this->certificadosHabilitados() || !$this->emissaoCertificadosHabilitada()) {
-            return array('ok' => false, 'message' => 'A emissÃ£o de certificados estÃ¡ desativada nas configuraÃ§Ãµes globais.');
+            return array('ok' => false, 'message' => 'A emissão de certificados está desativada nas configurações globais.');
         }
 
         $contexto = array(
@@ -655,7 +655,7 @@ class CertificadoService
         if (!$this->certificadosHabilitados() || !$this->emissaoCertificadosHabilitada()) {
             return array(
                 'ok' => false,
-                'message' => 'A emissÃ£o de certificados estÃ¡ desativada nas configuraÃ§Ãµes globais.',
+                'message' => 'A emissão de certificados está desativada nas configurações globais.',
                 'resumo' => array(
                     'selecionados' => 0,
                     'emitidos' => 0,
@@ -690,7 +690,7 @@ class CertificadoService
                         'inscricao_id' => $inscricaoId,
                         'ok' => false,
                         'status' => 'erro',
-                        'message' => 'InscriÃ§Ã£o nÃ£o encontrada.',
+                        'message' => 'Inscrição não encontrada.',
                     );
                     continue;
                 }
@@ -707,7 +707,7 @@ class CertificadoService
                         'inscricao_id' => $inscricaoId,
                         'ok' => false,
                         'status' => 'ja_emitido',
-                        'message' => 'Esta inscriÃ§Ã£o jÃ¡ possui certificado emitido.',
+                        'message' => 'Esta inscrição já possui certificado emitido.',
                         'certificado_id' => (int) $existente['id'],
                     );
                     continue;
@@ -749,8 +749,8 @@ class CertificadoService
                     continue;
                 }
 
-                $mensagem = isset($resultado['message']) ? $resultado['message'] : 'NÃ£o foi possÃ­vel emitir o certificado com exceÃ§Ã£o.';
-                if (strpos((string) $mensagem, 'jÃ¡ possui certificado emitido') !== false) {
+                $mensagem = isset($resultado['message']) ? $resultado['message'] : 'Não foi possível emitir o certificado com exceção.';
+                if (strpos((string) $mensagem, 'já possui certificado emitido') !== false) {
                     $resumo['ja_emitidos']++;
                     $resultados[] = array(
                         'inscricao_id' => $inscricaoId,
@@ -821,32 +821,32 @@ class CertificadoService
 
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'InscriÃ§Ã£o nÃ£o encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição não encontrada.');
         }
 
         $config = $this->globalConfigService->certificados();
         $statusInscricao = (string) $inscricao['status'];
         if ($emissaoExcepcional) {
             if (empty($config['certificados_permitir_emissao_com_pendencias_admin'])) {
-                return array('ok' => false, 'message' => 'EmissÃ£o com pendÃªncias estÃ¡ desabilitada nas configuraÃ§Ãµes globais de certificados.');
+                return array('ok' => false, 'message' => 'Emissão com pendências está desabilitada nas configurações globais de certificados.');
             }
 
             $justificativaLength = function_exists('mb_strlen') ? mb_strlen($justificativa) : strlen($justificativa);
             if ($justificativaLength < 30 || $justificativaLength > 2000) {
-                return array('ok' => false, 'message' => 'Informe uma justificativa administrativa com pelo menos 30 caracteres para emitir certificado com pendÃªncias.');
+                return array('ok' => false, 'message' => 'Informe uma justificativa administrativa com pelo menos 30 caracteres para emitir certificado com pendências.');
             }
 
             if ($this->statusInscricaoBloqueadaExcecao($statusInscricao)) {
-                return array('ok' => false, 'message' => 'Esta inscriÃ§Ã£o nÃ£o pode receber emissÃ£o excepcional.');
+                return array('ok' => false, 'message' => 'Esta inscrição não pode receber emissão excepcional.');
             }
 
             $permitidos = $this->statusInscricaoPermitidosDoConfig($config);
             if (!empty($permitidos) && !in_array($statusInscricao, $permitidos, true)) {
-                return array('ok' => false, 'message' => 'O status atual da inscriÃ§Ã£o nÃ£o permite emissÃ£o excepcional.');
+                return array('ok' => false, 'message' => 'O status atual da inscrição não permite emissão excepcional.');
             }
 
             if (!$actorUserId) {
-                return array('ok' => false, 'message' => 'NÃ£o foi possÃ­vel identificar o usuÃ¡rio responsÃ¡vel pela emissÃ£o com pendÃªncias.');
+                return array('ok' => false, 'message' => 'Não foi possível identificar o usuário responsável pela emissão com pendências.');
             }
         }
 
@@ -857,20 +857,20 @@ class CertificadoService
         $motivos = isset($elegibilidade['motivos']) && is_array($elegibilidade['motivos']) ? $elegibilidade['motivos'] : array();
 
         if (!in_array($situacao, array('apto', 'certificado_emitido'), true) && !$emissaoManual && !$permitirPendencias) {
-            $mensagemConteudo = 'O aluno ainda possui itens obrigatÃ³rios pendentes no ConteÃºdo do curso.';
+            $mensagemConteudo = 'O aluno ainda possui itens obrigatórios pendentes no Conteúdo do curso.';
             foreach ($motivos as $motivo) {
-                if (strpos((string) $motivo, 'conteÃºdo_unificado_obrigatorio') !== false || strpos((string) $motivo, 'ConteÃºdo') !== false || strpos((string) $motivo, 'conteudo_') !== false) {
+                if (strpos((string) $motivo, 'conteúdo_unificado_obrigatorio') !== false || strpos((string) $motivo, 'Conteúdo') !== false || strpos((string) $motivo, 'conteudo_') !== false) {
                     return array('ok' => false, 'message' => $mensagemConteudo, 'motivos' => $motivos, 'situacao_elegibilidade' => $situacao);
                 }
             }
 
-            return array('ok' => false, 'message' => 'A inscriÃ§Ã£o ainda nÃ£o estÃ¡ apta para certificado.', 'motivos' => $motivos, 'situacao_elegibilidade' => $situacao);
+            return array('ok' => false, 'message' => 'A inscrição ainda não está apta para certificado.', 'motivos' => $motivos, 'situacao_elegibilidade' => $situacao);
         }
 
         if ($emissaoExcepcional) {
             $justificativaLength = function_exists('mb_strlen') ? mb_strlen($justificativa) : strlen($justificativa);
             if ($justificativaLength < 30) {
-                return array('ok' => false, 'message' => 'Informe uma justificativa administrativa para emitir certificado com pendÃªncias.');
+                return array('ok' => false, 'message' => 'Informe uma justificativa administrativa para emitir certificado com pendências.');
             }
         }
 
@@ -881,7 +881,7 @@ class CertificadoService
         );
         $existente = $this->certificadoModel->findByInscricao($inscricaoId);
         if ($naoDuplicar && $existente && isset($existente['status']) && (string) $existente['status'] === 'emitido') {
-            return array('ok' => false, 'message' => 'Esta inscriÃ§Ã£o jÃ¡ possui certificado emitido.', 'certificado_id' => (int) $existente['id']);
+            return array('ok' => false, 'message' => 'Esta inscrição já possui certificado emitido.', 'certificado_id' => (int) $existente['id']);
         }
 
         $manterCodigo = !empty($opcoes['manter_codigo']);
@@ -956,7 +956,7 @@ class CertificadoService
                     $this->certificadoModel->updateStatus($existente['id'], 'substituido', array(
                         'substituido_por_certificado_id' => null,
                     ));
-                    $this->certificadoModel->createHistory($existente['id'], $existente['status'], 'substituido', 'Certificado substituÃ­do em nova emissÃ£o', $actorUserId);
+                    $this->certificadoModel->createHistory($existente['id'], $existente['status'], 'substituido', 'Certificado substituído em nova emissão', $actorUserId);
                 }
 
                 $certificadoId = $this->certificadoModel->create($payload);
@@ -967,9 +967,9 @@ class CertificadoService
                 }
             }
 
-            $observacaoHistorico = 'EmissÃ£o manual do certificado';
+            $observacaoHistorico = 'Emissão manual do certificado';
             if ($emissaoExcepcional) {
-                $observacaoHistorico = 'EmissÃ£o excepcional administrativa com pendÃªncias. Justificativa: ' . $this->resumirJustificativa($justificativa);
+                $observacaoHistorico = 'Emissão excepcional administrativa com pendências. Justificativa: ' . $this->resumirJustificativa($justificativa);
             }
 
             $this->certificadoModel->createHistory($certificadoId, $existente ? $existente['status'] : null, 'emitido', $observacaoHistorico, $actorUserId);
@@ -1034,7 +1034,7 @@ class CertificadoService
             $resultadoStatus = $this->inscricaoService->alterarStatus(
                 (int) $inscricao['id'],
                 'certificado_emitido',
-                $emissaoExcepcional ? 'Certificado emitido por exceÃ§Ã£o administrativa' : 'Certificado emitido manualmente',
+                $emissaoExcepcional ? 'Certificado emitido por exceção administrativa' : 'Certificado emitido manualmente',
                 $actorUserId,
                 $ipAddress,
                 $userAgent
@@ -1106,11 +1106,11 @@ class CertificadoService
         }
 
         if (!$this->segundaViaPermitida() && !$manterCodigo) {
-            return array('ok' => false, 'message' => 'A segunda via de certificados estÃ¡ desativada nas configuraÃ§Ãµes globais.');
+            return array('ok' => false, 'message' => 'A segunda via de certificados está desativada nas configurações globais.');
         }
 
         if ($manterCodigo && !$this->regenerarPdfMesmoCodigo()) {
-            // MantÃ©m o fluxo legado: quando a regeneraÃ§Ã£o com o mesmo cÃ³digo estÃ¡ desativada, gera nova via.
+            // Mantém o fluxo legado: quando a regeneração com o mesmo código está desativada, gera nova via.
             $manterCodigo = false;
         }
 
@@ -1134,7 +1134,7 @@ class CertificadoService
         }
 
         if (!$this->cancelamentoPermitido()) {
-            return array('ok' => false, 'message' => 'O cancelamento de certificados estÃ¡ desativado nas configuraÃ§Ãµes globais.');
+            return array('ok' => false, 'message' => 'O cancelamento de certificados está desativado nas configurações globais.');
         }
 
         if ($this->motivoCancelamentoObrigatorio() && trim((string) $observacao) === '') {
@@ -1155,7 +1155,7 @@ class CertificadoService
         }
 
         if (!$this->cancelamentoPermitido()) {
-            return array('ok' => false, 'message' => 'O cancelamento de certificados estÃ¡ desativado nas configuraÃ§Ãµes globais.');
+            return array('ok' => false, 'message' => 'O cancelamento de certificados está desativado nas configurações globais.');
         }
 
         if ($this->motivoCancelamentoObrigatorio() && trim((string) $observacao) === '') {
@@ -1171,7 +1171,7 @@ class CertificadoService
     public function validarPublicamente($codigo, $cpfInformado = null, $ipAddress = null, $userAgent = null)
     {
         if (!$this->certificadosHabilitados() || !$this->validacaoPublicaHabilitada()) {
-            return array('ok' => false, 'message' => 'A validaÃ§Ã£o pÃºblica estÃ¡ temporariamente indisponÃ­vel.');
+            return array('ok' => false, 'message' => 'A validação pública está temporariamente indisponível.');
         }
 
         $codigo = strtoupper(trim((string) $codigo));
@@ -1556,7 +1556,7 @@ class CertificadoService
             }
         }
 
-        throw new Exception('NÃ£o foi possÃ­vel gerar um cÃ³digo de certificado Ãºnico.');
+        throw new Exception('Não foi possível gerar um código de certificado único.');
     }
 
     private function montarCodigoCertificado($prefixo, $formato, $tamanhoMinimo, $tentativa = 0)
@@ -1746,12 +1746,12 @@ class CertificadoService
         }
 
         $contextoSegundaPagina = $contexto;
-        $contextoSegundaPagina['curso']['carga_horaria'] = trim((string) ($contextoSegundaPagina['curso']['carga_horaria'] ?? '')) !== '' ? $contextoSegundaPagina['curso']['carga_horaria'] : 'NÃ£o informado';
-        $contextoSegundaPagina['curso']['ementa'] = trim((string) ($contextoSegundaPagina['curso']['ementa'] ?? '')) !== '' ? $contextoSegundaPagina['curso']['ementa'] : 'NÃ£o informado';
-        $contextoSegundaPagina['curso']['objetivo_geral'] = trim((string) ($contextoSegundaPagina['curso']['objetivo_geral'] ?? '')) !== '' ? $contextoSegundaPagina['curso']['objetivo_geral'] : 'NÃ£o informado';
-        $contextoSegundaPagina['curso']['professor_responsavel'] = trim((string) ($contextoSegundaPagina['curso']['professor_responsavel'] ?? '')) !== '' ? $contextoSegundaPagina['curso']['professor_responsavel'] : 'NÃ£o informado';
-        $contextoSegundaPagina['turma']['nome'] = trim((string) ($contextoSegundaPagina['turma']['nome'] ?? '')) !== '' ? $contextoSegundaPagina['turma']['nome'] : 'NÃ£o informado';
-        $contextoSegundaPagina['turma']['periodo'] = trim((string) ($contextoSegundaPagina['turma']['periodo'] ?? '')) !== '' ? $contextoSegundaPagina['turma']['periodo'] : 'NÃ£o informado';
+        $contextoSegundaPagina['curso']['carga_horaria'] = trim((string) ($contextoSegundaPagina['curso']['carga_horaria'] ?? '')) !== '' ? $contextoSegundaPagina['curso']['carga_horaria'] : 'Não informado';
+        $contextoSegundaPagina['curso']['ementa'] = trim((string) ($contextoSegundaPagina['curso']['ementa'] ?? '')) !== '' ? $contextoSegundaPagina['curso']['ementa'] : 'Não informado';
+        $contextoSegundaPagina['curso']['objetivo_geral'] = trim((string) ($contextoSegundaPagina['curso']['objetivo_geral'] ?? '')) !== '' ? $contextoSegundaPagina['curso']['objetivo_geral'] : 'Não informado';
+        $contextoSegundaPagina['curso']['professor_responsavel'] = trim((string) ($contextoSegundaPagina['curso']['professor_responsavel'] ?? '')) !== '' ? $contextoSegundaPagina['curso']['professor_responsavel'] : 'Não informado';
+        $contextoSegundaPagina['turma']['nome'] = trim((string) ($contextoSegundaPagina['turma']['nome'] ?? '')) !== '' ? $contextoSegundaPagina['turma']['nome'] : 'Não informado';
+        $contextoSegundaPagina['turma']['periodo'] = trim((string) ($contextoSegundaPagina['turma']['periodo'] ?? '')) !== '' ? $contextoSegundaPagina['turma']['periodo'] : 'Não informado';
         if (trim((string) ($contextoSegundaPagina['logo_url'] ?? '')) === '') {
             $contextoSegundaPagina['logo_url'] = $this->logoTransparenteDataUri();
         }
@@ -2888,23 +2888,23 @@ class CertificadoService
         $texto = (string) $texto;
         $texto = str_replace(
             array(
-                'NÃ£o',
-                'MÃ³dulo',
-                'MÃ³dulos',
-                'ConteÃºdo',
-                'ConteÃºdos',
-                'emissÃ£o',
-                'validaÃ§Ã£o',
-                'perÃ­odo',
-                'responsÃ¡vel',
-                'informaÃ§Ãµes',
-                'prÃ©',
-                'pÃºblica',
-                'pÃ¡gina',
-                'avaliaÃ§Ã£o',
-                'conclusÃ£o',
-                'horÃ¡ria',
-                'correÃ§Ã£o',
+                'Não',
+                'Módulo',
+                'Módulos',
+                'Conteúdo',
+                'Conteúdos',
+                'emissão',
+                'validação',
+                'período',
+                'responsável',
+                'informações',
+                'pré',
+                'pública',
+                'página',
+                'avaliação',
+                'conclusão',
+                'horária',
+                'correção',
             ),
             array(
                 'Não',

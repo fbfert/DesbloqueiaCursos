@@ -4487,3 +4487,191 @@
     background: #fff;
     overflow-x: auto;
 }
+
+/* =====================================================================
+   Checkout rápido — painel de controle e funil (/admin/checkout-rapido)
+   ===================================================================== */
+
+.admin-alerta {
+    margin: 12px 0 0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.admin-alerta--atencao {
+    background: #fef6e7;
+    border: 1px solid #f0d9a8;
+    color: #7a4f00;
+}
+.admin-alerta a { color: #7a4f00; }
+
+/* --- funil --- */
+
+.cr-funil {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.cr-etapa-card {
+    flex: 1 1 150px;
+    min-width: 140px;
+    background: #f8fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.cr-etapa-card--fim { background: #eef7f1; border-color: #cbe5d6; }
+
+.cr-etapa-rotulo { font-size: 13px; color: #5c6b7a; }
+.cr-etapa-numero { font-size: 30px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.cr-etapa-nota { font-size: 11px; color: #93a3b2; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.cr-seta {
+    flex: 0 1 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-align: center;
+}
+.cr-queda { font-size: 17px; font-weight: 700; color: #a15c00; font-variant-numeric: tabular-nums; }
+.cr-queda--alta { color: #a62b22; }
+.cr-seta-nota { font-size: 11.5px; color: #93a3b2; }
+
+.cr-conversao { margin: 14px 0 0; font-size: 14px; color: #5c6b7a; }
+.cr-conversao strong { font-size: 17px; color: #16202b; }
+
+/* --- gráfico --- */
+
+.cr-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    align-items: center;
+    font-size: 12.5px;
+    color: #5c6b7a;
+    margin: 6px 0 12px;
+}
+.cr-ponto {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: baseline;
+}
+.cr-ponto--iniciado { background: #94a3b8; }
+.cr-ponto--gerado { background: #0e6f79; }
+.cr-ponto--pago { background: #1f6f4a; }
+
+.cr-grafico-wrap { overflow-x: auto; }
+.cr-grafico {
+    width: 100%;
+    min-width: 480px;
+    height: 200px;
+    display: block;
+}
+.cr-eixo { stroke: #e5e7eb; stroke-width: 1; }
+.cr-linha { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.cr-linha--iniciado { stroke: #94a3b8; }
+.cr-linha--gerado { stroke: #0e6f79; }
+.cr-linha--pago { stroke: #1f6f4a; stroke-width: 2.5; }
+
+.cr-grafico-datas {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: #93a3b2;
+    min-width: 480px;
+}
+
+/* --- tags e status --- */
+
+.cr-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: #eef1f4;
+    color: #5c6b7a;
+    margin-left: 6px;
+}
+.cr-tag--ads { background: #e3f0f2; color: #0a545c; }
+
+.cr-status {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+.cr-status--pago { background: #ddeee4; color: #1f6f4a; }
+.cr-status--aguardando { background: #f5e7d2; color: #8a5000; }
+
+.cr-contato, .cr-origem { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.cr-origem .muted, .cr-contato .muted { font-size: 12px; }
+
+/* --- formulário --- */
+
+.cr-switch {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 13px 15px;
+    background: #f8fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.45;
+}
+.cr-switch input { margin-top: 3px; width: 17px; height: 17px; flex-shrink: 0; cursor: pointer; }
+
+.cr-campo-admin { display: flex; flex-direction: column; gap: 5px; }
+.cr-campo-admin label { font-size: 13.5px; font-weight: 600; }
+.cr-campo-admin input,
+.cr-campo-admin textarea {
+    font: inherit;
+    font-size: 14px;
+    padding: 9px 11px;
+    border: 1px solid #d7dee4;
+    border-radius: 6px;
+    width: 100%;
+}
+.cr-campo-admin .muted { font-size: 12.5px; }
+
+.cr-grade {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+}
+
+.cr-subtitulo {
+    margin: 8px 0 0;
+    font-size: 15px;
+    font-weight: 700;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.cr-detalhe { margin-top: 12px; }
+.cr-detalhe summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: #0e6f79; }
+.cr-detalhe[open] summary { margin-bottom: 10px; }
+
+.button-link.is-active { background: #16202b; color: #fff; border-color: #16202b; }
+
+@media (max-width: 720px) {
+    .cr-seta { flex-basis: 100%; flex-direction: row; gap: 8px; padding: 2px 0; }
+    .cr-etapa-numero { font-size: 25px; }
+}

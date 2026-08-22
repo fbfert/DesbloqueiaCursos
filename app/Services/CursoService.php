@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\Helpers;
 use App\Core\Logger;
 use App\Models\Categoria;
 use App\Models\CursoEvento;
@@ -539,17 +540,43 @@ class CursoService
         }
     }
 
-    public function listPublic(array $filters = array())
+    const CATALOGO_PUBLICO_POR_PAGINA = 12;
+
+    public function listPublic(array $filters = array(), $page = null, $perPage = null)
     {
-        $cursos = $this->cursoModel->allPublic($filters);
+        if ($page === null) {
+            $cursos = $this->cursoModel->allPublic($filters);
+            $cursos = $this->hidratarCursosPublicos($cursos);
+
+            return array('cursos' => $cursos);
+        }
+
+        $perPage = $perPage ? max(1, (int) $perPage) : self::CATALOGO_PUBLICO_POR_PAGINA;
+        $total = $this->cursoModel->countPublic($filters);
+        $totalPaginas = max(1, (int) ceil($total / $perPage));
+        $page = max(1, (int) $page);
+        if ($page > $totalPaginas) {
+            $page = $totalPaginas;
+        }
+        $offset = ($page - 1) * $perPage;
+
+        $cursos = $this->cursoModel->allPublic($filters, $perPage, $offset);
         $cursos = $this->hidratarCursosPublicos($cursos);
 
-        return array('cursos' => $cursos);
+        return array(
+            'cursos' => $cursos,
+            'paginacao' => array(
+                'total' => $total,
+                'pagina' => $page,
+                'por_pagina' => $perPage,
+                'total_paginas' => $totalPaginas,
+            ),
+        );
     }
 
-    public function listPublicByCategoria($categoriaId)
+    public function listPublicByCategoria($categoriaId, $page = null, $perPage = null)
     {
-        return $this->listPublic(array('categoria_id' => (int) $categoriaId));
+        return $this->listPublic(array('categoria_id' => (int) $categoriaId), $page, $perPage);
     }
 
     public function listPublicHome($limit = 6)
@@ -828,14 +855,7 @@ class CursoService
 
     public function modalidadeLabel($modalidade)
     {
-        $map = array(
-            'presencial' => 'Presencial',
-            'online_ao_vivo' => 'Online ao vivo',
-            'hibrido' => 'Hibrido',
-            'sob_demanda' => 'Sob demanda',
-        );
-
-        return isset($map[$modalidade]) ? $map[$modalidade] : (string) $modalidade;
+        return Helpers::modalidadeCurso($modalidade);
     }
 
     public function normalizarLinhasTexto($texto)

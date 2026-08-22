@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\Helpers;
 use App\Core\Logger;
 use App\Models\Avaliacao;
+use App\Models\ConteudoAvaliacaoEntrega;
 use App\Models\CursoEvento;
 use App\Models\Inscricao;
 use App\Models\NotaAvaliacao;
@@ -24,9 +26,11 @@ class AptidaoCertificadoService
     private $presencaModel;
     private $avaliacaoModel;
     private $notaModel;
+    private $entregaAvaliacaoTextualModel;
     private $auditService;
     private $scopeService;
     private $lmsElegibilidadeService;
+    private $emailService;
 
     public function __construct(array $dependencies = array())
     {
@@ -38,6 +42,7 @@ class AptidaoCertificadoService
         $this->presencaModel = isset($dependencies['presencaModel']) ? $dependencies['presencaModel'] : new Presenca();
         $this->avaliacaoModel = isset($dependencies['avaliacaoModel']) ? $dependencies['avaliacaoModel'] : new Avaliacao();
         $this->notaModel = isset($dependencies['notaModel']) ? $dependencies['notaModel'] : new NotaAvaliacao();
+        $this->entregaAvaliacaoTextualModel = isset($dependencies['entregaAvaliacaoTextualModel']) ? $dependencies['entregaAvaliacaoTextualModel'] : new ConteudoAvaliacaoEntrega();
         $this->auditService = isset($dependencies['auditService']) ? $dependencies['auditService'] : new AuditService();
         $this->scopeService = isset($dependencies['scopeService']) ? $dependencies['scopeService'] : new ProfessorAcademicScopeService(array(
             'cursoModel' => $this->cursoModel,
@@ -46,6 +51,11 @@ class AptidaoCertificadoService
             'avaliacaoModel' => $this->avaliacaoModel,
         ));
         $this->lmsElegibilidadeService = isset($dependencies['lmsElegibilidadeService']) ? $dependencies['lmsElegibilidadeService'] : new LmsElegibilidadeService();
+        // EmailService constrói CertificadoService, que por sua vez constrói
+        // AptidaoCertificadoService - instanciar EmailService aqui no
+        // construtor causaria recursão infinita. Só é criado sob demanda em
+        // notificarCertificadoApto(), quando realmente precisa enviar.
+        $this->emailService = isset($dependencies['emailService']) ? $dependencies['emailService'] : null;
     }
 
     public function contexto($cursoId, $turmaId = null)
@@ -163,6 +173,8 @@ class AptidaoCertificadoService
             return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
         }
 
+        $aptoAntes = !empty($inscricao['apto_certificado']) ? 1 : 0;
+
         $curso = $this->cursoModel->findById((int) $inscricao['curso_evento_id']);
         $turma = !empty($inscricao['turma_id']) ? $this->turmaModel->findById((int) $inscricao['turma_id']) : null;
         $config = $this->resolverConfiguracao($curso, $turma);
@@ -214,6 +226,14 @@ class AptidaoCertificadoService
             'apto_certificado' => $apto,
         ));
 
+        // Notifica só na TRANSIÇÃO 0 -> 1 (a inscrição acabou de se tornar
+        // apta agora), não a cada recálculo em que ela já era/continua apta -
+        // senão o e-mail dispararia de novo a cada presença/avaliação
+        // registrada depois disso.
+        if ($aptoAntes === 0 && $apto === 1 && $inscricaoAtualizada) {
+            $this->notificarCertificadoApto($inscricaoAtualizada, $curso, $turma);
+        }
+
         return array(
             'ok' => true,
             'percentual_progresso' => $percentualProgresso,
@@ -222,6 +242,39 @@ class AptidaoCertificadoService
             'apto_certificado' => $apto,
             'concluida_em' => $concluidaEm,
         );
+    }
+
+    /**
+     * Avisa o e-mail de certificados (Configurações Globais) quando uma
+     * inscrição acaba de se tornar apta (transição 0 -> 1). `inscricoes` não
+     * tem colunas de nome/e-mail próprias, então resolve o nome do
+     * aluno/participante via join com `participantes_pedido`/`usuarios`,
+     * mesmo padrão usado em `Certificado::listEligible()`.
+     */
+    private function notificarCertificadoApto(array $inscricao, ?array $curso, ?array $turma)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COALESCE(u.nome, pp.nome) AS aluno_nome
+             FROM inscricoes i
+             LEFT JOIN participantes_pedido pp ON pp.id = i.participante_pedido_id
+             LEFT JOIN usuarios u ON u.id = i.usuario_id
+             WHERE i.id = :id
+             LIMIT 1'
+        );
+        $stmt->bindValue(':id', (int) $inscricao['id'], \PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch();
+
+        $contexto = array(
+            'inscricao_id' => (int) $inscricao['id'],
+            'curso_nome' => $curso && !empty($curso['nome']) ? $curso['nome'] : '',
+            'turma_nome' => $turma && !empty($turma['nome']) ? $turma['nome'] : '',
+            'aluno_nome' => $row && !empty($row['aluno_nome']) ? $row['aluno_nome'] : 'Aluno(a)',
+            'link_emissao' => Helpers::url('/admin/certificados/emitir?inscricao_id=' . (int) $inscricao['id']),
+        );
+
+        $emailService = $this->emailService ?: new EmailService();
+        $emailService->certificadoAptoParaEmissao($contexto);
     }
 
     private function resolverConfiguracao(?array $curso = null, ?array $turma = null)
@@ -273,8 +326,13 @@ class AptidaoCertificadoService
     private function calcularNotaFinal(array $inscricao)
     {
         $notas = $this->notaModel->listForInscricao((int) $inscricao['id']);
+
         if (empty($notas)) {
-            return null;
+            // Curso sem avaliações no sistema legado (tabela `avaliacoes`):
+            // usa as avaliações textuais do Conteúdo Unificado como
+            // alternativa, para o critério "exigir avaliação" não ficar
+            // permanentemente bloqueado em cursos montados só nele.
+            return $this->calcularNotaFinalConteudoUnificado($inscricao);
         }
 
         $soma = 0;
@@ -284,6 +342,39 @@ class AptidaoCertificadoService
                 continue;
             }
             $soma += (float) $nota['nota'];
+            $quantidade++;
+        }
+
+        if ($quantidade === 0) {
+            return null;
+        }
+
+        return round($soma / $quantidade, 2);
+    }
+
+    private function calcularNotaFinalConteudoUnificado(array $inscricao)
+    {
+        $alunoId = !empty($inscricao['usuario_id']) ? (int) $inscricao['usuario_id'] : 0;
+        $inscricaoId = (int) ($inscricao['id'] ?? 0);
+        if ($alunoId <= 0 || $inscricaoId <= 0) {
+            return null;
+        }
+
+        $entregas = $this->entregaAvaliacaoTextualModel->listUltimasPorInscricao($alunoId, $inscricaoId);
+        if (empty($entregas)) {
+            return null;
+        }
+
+        $soma = 0;
+        $quantidade = 0;
+        foreach ($entregas as $entrega) {
+            if ($entrega['nota'] === null) {
+                continue;
+            }
+            if ((string) $entrega['status'] === 'reprovada' && (float) $entrega['nota'] <= 0) {
+                continue;
+            }
+            $soma += (float) $entrega['nota'];
             $quantidade++;
         }
 

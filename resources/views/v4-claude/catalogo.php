@@ -19,12 +19,11 @@ $dcPreco = function (array $curso): string {
     $v = isset($curso['valor_efetivo']) ? (float) $curso['valor_efetivo'] : (float) ($curso['valor'] ?? 0);
     return $v <= 0 ? 'Grátis' : 'R$ ' . number_format($v, 2, ',', '.');
 };
-$dcModalidade = function ($valor): string {
-    $mapa = array('presencial' => 'Presencial', 'online' => 'Online', 'ead' => 'EAD', 'hibrido' => 'Híbrido', 'híbrido' => 'Híbrido', 'ao_vivo' => 'Ao vivo');
-    $chave = strtolower(trim((string) $valor));
-    return $mapa[$chave] ?? ucfirst($chave);
-};
-$totalCursos = count($cursos);
+$dcModalidade = fn ($valor): string => Helpers::modalidadeCurso($valor);
+$paginacao = isset($paginacao) && is_array($paginacao) ? $paginacao : array('total' => count($cursos), 'pagina' => 1, 'total_paginas' => 1);
+$totalCursos = (int) $paginacao['total'];
+$dcPaginaAtual = (int) $paginacao['pagina'];
+$dcTotalPaginas = (int) $paginacao['total_paginas'];
 ?>
 
 <?php if (!empty($success)): ?>
@@ -123,6 +122,32 @@ $totalCursos = count($cursos);
         </a>
         <?php endforeach; ?>
       </div>
+
+      <?php if ($dcTotalPaginas > 1): ?>
+      <nav class="dc-pagination" aria-label="Navegação entre páginas de cursos">
+        <?php if ($dcPaginaAtual > 1): ?>
+          <a class="dc-btn dc-btn-ghost dc-btn-sm" href="<?php echo Helpers::e(catalogoPaginaUrl($dcPaginaAtual - 1, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>">‹ Anterior</a>
+        <?php endif; ?>
+        <?php
+          $dcPagIni = max(1, $dcPaginaAtual - 2);
+          $dcPagFim = min($dcTotalPaginas, $dcPaginaAtual + 2);
+        ?>
+        <?php if ($dcPagIni > 1): ?>
+          <a class="dc-btn dc-btn-ghost dc-btn-sm" href="<?php echo Helpers::e(catalogoPaginaUrl(1, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>">1</a>
+          <?php if ($dcPagIni > 2): ?><span class="dc-text-sm dc-text-muted">…</span><?php endif; ?>
+        <?php endif; ?>
+        <?php for ($dcPagLoop = $dcPagIni; $dcPagLoop <= $dcPagFim; $dcPagLoop++): ?>
+          <a class="dc-btn dc-btn-sm <?php echo $dcPagLoop === $dcPaginaAtual ? 'dc-btn-primary' : 'dc-btn-ghost'; ?>" href="<?php echo Helpers::e(catalogoPaginaUrl($dcPagLoop, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>"><?php echo $dcPagLoop; ?></a>
+        <?php endfor; ?>
+        <?php if ($dcPagFim < $dcTotalPaginas): ?>
+          <?php if ($dcPagFim < $dcTotalPaginas - 1): ?><span class="dc-text-sm dc-text-muted">…</span><?php endif; ?>
+          <a class="dc-btn dc-btn-ghost dc-btn-sm" href="<?php echo Helpers::e(catalogoPaginaUrl($dcTotalPaginas, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>"><?php echo $dcTotalPaginas; ?></a>
+        <?php endif; ?>
+        <?php if ($dcPaginaAtual < $dcTotalPaginas): ?>
+          <a class="dc-btn dc-btn-ghost dc-btn-sm" href="<?php echo Helpers::e(catalogoPaginaUrl($dcPaginaAtual + 1, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>">Próxima ›</a>
+        <?php endif; ?>
+      </nav>
+      <?php endif; ?>
     <?php endif; ?>
   </div>
 </section>

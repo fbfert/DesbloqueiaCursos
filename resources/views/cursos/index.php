@@ -12,6 +12,32 @@ if (!function_exists('curso_preco_publico_texto')) {
 <?php
 $frontendTemplateRaw = isset($frontend_template) ? (string) $frontend_template : 'v1';
 $frontendTemplate = in_array($frontendTemplateRaw, array('v2', 'v4-claude'), true) ? $frontendTemplateRaw : 'v1';
+
+// Dados de paginação (compartilhados entre o template v1 e o v4-claude).
+$paginacao = isset($paginacao) && is_array($paginacao) ? $paginacao : array('total' => 0, 'pagina' => 1, 'por_pagina' => 12, 'total_paginas' => 1);
+$catalogoPaginaAtual = (int) $paginacao['pagina'];
+$catalogoTotalPaginas = (int) $paginacao['total_paginas'];
+$catalogoTotalResultados = (int) $paginacao['total'];
+$catalogoCategoriaSlug = isset($categoriaSelecionada['slug']) ? (string) $categoriaSelecionada['slug'] : (isset($categoriaSlugAtual) ? (string) $categoriaSlugAtual : '');
+$catalogoBuscaAtual = isset($buscaAtual) ? trim((string) $buscaAtual) : '';
+
+if (!function_exists('catalogoPaginaUrl')) {
+    function catalogoPaginaUrl($pagina, $categoriaSlug, $busca)
+    {
+        $params = array();
+        if ($categoriaSlug !== '') {
+            $params['categoria'] = $categoriaSlug;
+        }
+        if ($busca !== '') {
+            $params['busca'] = $busca;
+        }
+        if ($pagina > 1) {
+            $params['pagina'] = $pagina;
+        }
+
+        return '/cursos' . ($params ? '?' . http_build_query($params) : '');
+    }
+}
 ?>
 <?php if ($frontendTemplate === 'v4-claude'): ?>
     <?php require BASE_PATH . '/resources/views/v4-claude/catalogo.php'; ?>
@@ -161,7 +187,7 @@ if ($filtroAtivo) {
                     <div class="course-card__body">
                         <div class="pill-row">
                             <span class="pill"><?php echo Helpers::e($curso['tipo']); ?></span>
-                            <span class="pill"><?php echo Helpers::e($curso['modalidade']); ?></span>
+                            <span class="pill"><?php echo Helpers::e(Helpers::modalidadeCurso($curso['modalidade'])); ?></span>
                             <?php if (!empty($curso['em_promocao'])): ?>
                                 <span class="pill pill--alert">Promoção</span>
                             <?php endif; ?>
@@ -195,6 +221,37 @@ if ($filtroAtivo) {
             <?php endforeach; ?>
         <?php endif; ?>
     </section>
+
+    <?php if ($catalogoTotalPaginas > 1): ?>
+    <section class="courses-pagination front-section" aria-label="Navegação entre páginas de cursos">
+        <div class="cta-group" style="justify-content:space-between;align-items:center;flex-wrap:wrap;">
+            <small><?php echo $catalogoTotalResultados; ?> curso<?php echo $catalogoTotalResultados === 1 ? '' : 's'; ?> no total — página <?php echo $catalogoPaginaAtual; ?> de <?php echo $catalogoTotalPaginas; ?>.</small>
+            <div class="cta-group">
+                <?php if ($catalogoPaginaAtual > 1): ?>
+                    <a class="button-link button-link--ghost" href="<?php echo Helpers::e(catalogoPaginaUrl($catalogoPaginaAtual - 1, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>">Anterior</a>
+                <?php endif; ?>
+                <?php
+                    $catalogoPaginaInicio = max(1, $catalogoPaginaAtual - 2);
+                    $catalogoPaginaFim = min($catalogoTotalPaginas, $catalogoPaginaAtual + 2);
+                ?>
+                <?php if ($catalogoPaginaInicio > 1): ?>
+                    <a class="button-link button-link--ghost" href="<?php echo Helpers::e(catalogoPaginaUrl(1, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>">1</a>
+                    <?php if ($catalogoPaginaInicio > 2): ?><span class="muted">…</span><?php endif; ?>
+                <?php endif; ?>
+                <?php for ($catalogoPaginaLoop = $catalogoPaginaInicio; $catalogoPaginaLoop <= $catalogoPaginaFim; $catalogoPaginaLoop++): ?>
+                    <a class="button-link<?php echo $catalogoPaginaLoop === $catalogoPaginaAtual ? ' button-link--primary' : ' button-link--ghost'; ?>" href="<?php echo Helpers::e(catalogoPaginaUrl($catalogoPaginaLoop, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>"><?php echo $catalogoPaginaLoop; ?></a>
+                <?php endfor; ?>
+                <?php if ($catalogoPaginaFim < $catalogoTotalPaginas): ?>
+                    <?php if ($catalogoPaginaFim < $catalogoTotalPaginas - 1): ?><span class="muted">…</span><?php endif; ?>
+                    <a class="button-link button-link--ghost" href="<?php echo Helpers::e(catalogoPaginaUrl($catalogoTotalPaginas, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>"><?php echo $catalogoTotalPaginas; ?></a>
+                <?php endif; ?>
+                <?php if ($catalogoPaginaAtual < $catalogoTotalPaginas): ?>
+                    <a class="button-link button-link--ghost" href="<?php echo Helpers::e(catalogoPaginaUrl($catalogoPaginaAtual + 1, $catalogoCategoriaSlug, $catalogoBuscaAtual)); ?>">Próxima</a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <?php if ($frontendTemplate === 'v2'): ?>
     <section class="dbc-v2-final-cta front-section">

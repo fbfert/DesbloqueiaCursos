@@ -825,6 +825,73 @@ class Pedido
         $stmt->execute(array('id' => $pedidoId));
     }
 
+    /**
+     * Grava a origem de trafego no pedido. UPDATE isolado, escrito depois da
+     * criacao: nao altera createPedido(), que e compartilhado com o checkout
+     * antigo. Exige a migracao 071.
+     */
+    public function gravarOrigemTrafego($pedidoId, array $origem)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE pedidos
+                SET utm_source = :utm_source,
+                    utm_medium = :utm_medium,
+                    utm_campaign = :utm_campaign,
+                    utm_term = :utm_term,
+                    utm_content = :utm_content,
+                    gclid = :gclid,
+                    origem_capturada_em = :origem_capturada_em,
+                    updated_at = NOW()
+              WHERE id = :id'
+        );
+
+        return $stmt->execute(array(
+            'utm_source' => isset($origem['utm_source']) ? $origem['utm_source'] : null,
+            'utm_medium' => isset($origem['utm_medium']) ? $origem['utm_medium'] : null,
+            'utm_campaign' => isset($origem['utm_campaign']) ? $origem['utm_campaign'] : null,
+            'utm_term' => isset($origem['utm_term']) ? $origem['utm_term'] : null,
+            'utm_content' => isset($origem['utm_content']) ? $origem['utm_content'] : null,
+            'gclid' => isset($origem['gclid']) ? $origem['gclid'] : null,
+            'origem_capturada_em' => isset($origem['origem_capturada_em']) ? $origem['origem_capturada_em'] : null,
+            'id' => (int) $pedidoId,
+        ));
+    }
+
+    /**
+     * Pedido aguardando pagamento que o mesmo aluno ja tenha para este curso.
+     * Evita criar um pedido novo a cada recarga da tela de checkout.
+     */
+    public function findAguardandoPagamentoDoUsuarioCurso($usuarioId, $cursoId, $turmaId = null)
+    {
+        $sql = 'SELECT p.*
+                  FROM pedidos p
+                 INNER JOIN pedido_itens pi ON pi.pedido_id = p.id AND pi.deleted_at IS NULL
+                 WHERE p.deleted_at IS NULL
+                   AND p.status = "aguardando_pagamento"
+                   AND (p.comprador_usuario_id = :usuario_id OR p.pagador_usuario_id = :usuario_id2)
+                   AND pi.curso_evento_id = :curso_id';
+
+        $params = array(
+            'usuario_id' => (int) $usuarioId,
+            'usuario_id2' => (int) $usuarioId,
+            'curso_id' => (int) $cursoId,
+        );
+
+        if ((int) $turmaId > 0) {
+            $sql .= ' AND pi.turma_id = :turma_id';
+            $params['turma_id'] = (int) $turmaId;
+        }
+
+        $sql .= ' ORDER BY p.id DESC LIMIT 1';
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+
+        $registro = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $registro ?: null;
+    }
+
     public function markAwaitingPayment($pedidoId)
     {
         $stmt = Database::connection()->prepare(

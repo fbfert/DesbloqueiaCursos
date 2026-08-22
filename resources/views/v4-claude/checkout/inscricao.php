@@ -28,7 +28,7 @@ $statusFluxo = isset($situacaoInscricao['status_fluxo']) ? (string) $situacaoIns
     <div class="dc-section-card">
       <div class="dc-section-card-title">Você já está matriculado neste curso.</div>
       <p class="dc-text-sm dc-text-muted" style="margin-bottom:12px;">Seu acesso já foi liberado. Acompanhe o conteúdo na área do aluno.</p>
-      <a href="/minha-pagina" class="dc-btn dc-btn-primary dc-btn-block">Acessar curso</a>
+      <a href="<?php echo Helpers::e(Helpers::urlAcessoCursoAluno($situacaoInscricao)); ?>" class="dc-btn dc-btn-primary dc-btn-block">Acessar curso</a>
     </div>
   <?php elseif ($statusFluxo === 'pendente_pagamento'): ?>
     <div class="dc-section-card">
