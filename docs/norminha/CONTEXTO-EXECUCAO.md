@@ -254,10 +254,27 @@ com o CSS/JS antigos em cache depois do deploy.
 `tests/Smoke/` **confirmado ausente** — a Etapa 0.5 continua obrigatória.
 `CLAUDE.md` cita `php tests/Unit/professor_academic_scope.php`, arquivo que também não existe.
 
-### C10 — Estado do repositório
+### C10 — Estado do repositório — RESOLVIDO em 22/08/2026
 
-Working tree de produção com **64 arquivos modificados não commitados** e 33 não rastreados.
-Último commit: `f7ff3ce` (22/08/2026). O plano cita `03a14ec`.
+Situação encontrada: working tree de produção com 64 arquivos modificados não commitados e 33 não
+rastreados, incluindo **quatro migrations aplicadas no banco e ausentes do git** (067, 068, 069,
+071). Um clone não reproduzia o schema.
 
-Antes do Prompt 1, resolva isso: não há como provar o que está em produção nem fazer rollback
-confiável partindo daqui.
+Resolvido antes do Prompt 1:
+
+- tag `pre-norminha-20260822` marca o estado anterior (idêntico a `origin/frontend-v4`);
+- backup completo em `/home/desbloqueiacursos/backups/pre-norminha-20260822-202256/`
+  (banco 11 MB / 121 tabelas + arquivos 184 MB / 2.158 arquivos, ambos verificados);
+- cinco commits registram o estado real da produção, separando o que já estava no ar do que foi
+  feito nas Etapas 0 e 0.5;
+- working tree limpo;
+- ambiente de desenvolvimento em `/home/desbloqueiacursos/norminha-dev` (worktree na branch
+  `feat/norminha-v1`, banco `desbloqueiacursos_dev`) — ver `docs/norminha/AMBIENTE-DEV.md`.
+
+**A partir daqui, nunca trabalhe dentro de `public_html`.** Aquele diretório é servido ao vivo.
+
+### C11 — O usuário do banco é superusuário
+
+`desbloqueia_user` tem `GRANT ALL PRIVILEGES ON *.*`. Qualquer injeção de SQL em qualquer ponto do
+sistema alcança o servidor MySQL inteiro, não só o banco da aplicação. Não foi alterado (mexer em
+grants de produção sem janela é arriscado), mas deve entrar no hardening da Etapa 15.
