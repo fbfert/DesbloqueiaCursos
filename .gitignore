@@ -38,3 +38,19 @@ node_modules/
 # ===== Diversos do SO =====
 .DS_Store
 Thumbs.db
+
+# ===== Artefatos de edição direta no servidor (22/08/2026) =====
+# Este deploy é editado direto na produção. Estes padrões evitam que backups
+# manuais e sobras de edição virem commit por engano.
+*.tmp
+*.bak
+*.bak-*
+
+# ===== Mobília do cPanel/awstats, não é código da aplicação =====
+icon/
+awstats-icon
+awstatsicons
+
+# ===== Sobras de redirecionamento de shell =====
+defaults()
+certificado-validacao.pdf
