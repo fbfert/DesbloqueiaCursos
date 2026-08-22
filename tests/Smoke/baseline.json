@@ -1,0 +1,143 @@
+{
+    "base": "https://desbloqueiacursos.com.br",
+    "modo": "anonimo",
+    "gerado_em": "2026-08-22T23:17:11+00:00",
+    "rotas": {
+        "anonimo /": {
+            "status": 200,
+            "tempo_ms": 28
+        },
+        "anonimo /v2": {
+            "status": 200,
+            "tempo_ms": 37
+        },
+        "anonimo /v2/catalogo": {
+            "status": 200,
+            "tempo_ms": 40
+        },
+        "anonimo /v2/categorias": {
+            "status": 200,
+            "tempo_ms": 33
+        },
+        "anonimo /v2/curso": {
+            "status": 200,
+            "tempo_ms": 22
+        },
+        "anonimo /v2/login": {
+            "status": 200,
+            "tempo_ms": 20
+        },
+        "anonimo /v2/cadastro": {
+            "status": 200,
+            "tempo_ms": 20
+        },
+        "anonimo /v2/recuperar-senha": {
+            "status": 200,
+            "tempo_ms": 21
+        },
+        "anonimo /v2/certificados/validar": {
+            "status": 200,
+            "tempo_ms": 45
+        },
+        "anonimo /v2/quem-somos": {
+            "status": 200,
+            "tempo_ms": 45
+        },
+        "anonimo /v2/termos-de-uso": {
+            "status": 200,
+            "tempo_ms": 30
+        },
+        "anonimo /v2/politica-de-privacidade": {
+            "status": 200,
+            "tempo_ms": 27
+        },
+        "anonimo /v2/onde-estamos": {
+            "status": 200,
+            "tempo_ms": 29
+        },
+        "anonimo /v2/como-funciona-a-sala-virtual": {
+            "status": 404,
+            "tempo_ms": 18
+        },
+        "anonimo /categorias": {
+            "status": 200,
+            "tempo_ms": 19
+        },
+        "anonimo /cursos": {
+            "status": 200,
+            "tempo_ms": 22
+        },
+        "anonimo /como-funciona": {
+            "status": 200,
+            "tempo_ms": 23
+        },
+        "anonimo /sobre": {
+            "status": 200,
+            "tempo_ms": 17
+        },
+        "anonimo /contato": {
+            "status": 200,
+            "tempo_ms": 18
+        },
+        "anonimo /login": {
+            "status": 200,
+            "tempo_ms": 17
+        },
+        "anonimo /cadastro": {
+            "status": 200,
+            "tempo_ms": 19
+        },
+        "anonimo /certificados/validar": {
+            "status": 200,
+            "tempo_ms": 24
+        },
+        "anonimo /sitemap.xml": {
+            "status": 200,
+            "tempo_ms": 28
+        },
+        "anonimo /robots.txt": {
+            "status": 200,
+            "tempo_ms": 10
+        },
+        "protegida /v2/aluno": {
+            "status": 200,
+            "tempo_ms": 114
+        },
+        "protegida /v2/aula": {
+            "status": 200,
+            "tempo_ms": 48
+        },
+        "protegida /v2/quiz": {
+            "status": 200,
+            "tempo_ms": 49
+        },
+        "protegida /v2/atividade": {
+            "status": 200,
+            "tempo_ms": 61
+        },
+        "protegida /v2/minha-conta": {
+            "status": 200,
+            "tempo_ms": 31
+        },
+        "protegida /v2/pos-login": {
+            "status": 200,
+            "tempo_ms": 44
+        },
+        "protegida /area-curso": {
+            "status": 200,
+            "tempo_ms": 40
+        },
+        "protegida /meus-cursos": {
+            "status": 200,
+            "tempo_ms": 39
+        },
+        "protegida /minha-conta": {
+            "status": 200,
+            "tempo_ms": 39
+        },
+        "protegida /pedidos": {
+            "status": 200,
+            "tempo_ms": 36
+        }
+    }
+}

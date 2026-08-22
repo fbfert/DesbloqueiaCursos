@@ -13,8 +13,10 @@ Não há `composer.json` nem `package.json` na raiz — o backend não usa geren
 Servidor local:
 ```bash
 cp .env.example .env
-php -S 127.0.0.1:8000 -t public_html
+php -S 127.0.0.1:8000 -t . tests/Smoke/router.php
 ```
+O router script reproduz o front controller do `.htaccess` (o `php -S` não lê `.htaccess`) e
+bloqueia os diretórios não públicos, como em produção.
 
 Validação de sintaxe PHP/JS (rodar nos arquivos alterados antes de finalizar):
 ```bash
@@ -24,14 +26,26 @@ node --check public_html/assets/js/algum-arquivo.js
 
 Smoke test (rotas críticas, requer URL acessível):
 ```bash
-php tests/Smoke/smoke.php https://polorainbow.com.br
+# modo anônimo: rotas públicas + rotas protegidas sem sessão
+php tests/Smoke/smoke.php https://desbloqueiacursos.com.br
+
+# inclui a área do aluno autenticada (usuário de teste dedicado, nunca um aluno real)
+SMOKE_USER=... SMOKE_PASS=... php tests/Smoke/smoke.php <url> --modo=todos
 ```
 Retorna `0` se todas as rotas responderam como esperado, `1` se alguma falhou.
 
+Além de status e marcador de layout, a suíte aplica a **guarda de layout global**: o componente da
+Norminha e seus assets podem aparecer no máximo uma vez por página, e nenhuma rota pode vazar erro
+de PHP no corpo. Rotas protegidas precisam terminar no login correto — um 200 ali é falha de
+segurança, não de disponibilidade. Ver `tests/Smoke/README.md` para opções, baseline e como
+adicionar rota.
+
 Teste unitário (executar diretamente com PHP, sem framework de testes):
 ```bash
-php tests/Unit/professor_academic_scope.php
+php tests/Unit/quiz_system.php
+php tests/Unit/revisor_permissoes.php
 ```
+Os arquivos disponíveis estão em `tests/Unit/` — não há runner que execute todos de uma vez.
 
 Migrations: arquivos SQL simples e numerados em `sql/` (ex.: `054_pedido_recuperacao_v1.sql`), compatíveis com MySQL 5.7. Não há runner automático — aplique manualmente em ordem numérica.
 
