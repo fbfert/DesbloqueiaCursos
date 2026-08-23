@@ -312,7 +312,7 @@ uploads da Norminha e as rotas protegidas continuam com o comportamento anterior
 
 | # | Pendência | Situação |
 |---|---|---|
-| 1 | Rotacionar `DB_PASSWORD`, `ABACATEPAY_API_KEY`, `ABACATEPAY_WEBHOOK_SECRET` | **pendente** — decisão do responsável |
+| 1 | Rotacionar `DB_PASSWORD`, `ABACATEPAY_API_KEY`, `ABACATEPAY_WEBHOOK_SECRET` | **resolvida em 23/08/2026** — ver abaixo. AbacatePay era ambiente de teste (informado pelo responsável) |
 | 2 | Mover `backups/` para fora do docroot | **resolvida** |
 | 3 | Revogar `DEEPSEEK_API_KEY` | **removida do `.env`**; revogação no painel do provedor é do responsável |
 | 4 | Verificar nos logs do Apache se houve download | **resolvida — sem evidência de acesso externo** |
@@ -384,3 +384,79 @@ faixa `2xx`/`3xx`. `perm=644 owner=root:root inode=978641` idênticos antes e de
 do Apache — 2.841 ocorrências em 19/07, 1.243 em 26/07, 565 em 02/08, 110 em 09/08, 295 em 16/08 e
 473 em 22/08. É um laço de redirecionamento interno **pré-existente**, sem relação com este projeto.
 Merece investigação própria.
+
+---
+
+## Rotação da credencial de banco — 23/08/2026
+
+Feita a pedido do responsável. Ao levantar o terreno antes de agir, dois fatos
+mudaram o tamanho do problema e o plano.
+
+### O que a credencial vazada realmente valia
+
+`desbloqueia_user@%` tinha **`GRANT ALL PRIVILEGES ON *.* ... WITH GRANT
+OPTION`**. Não era acesso ao banco do Desbloqueia: era controle total do
+servidor MySQL, com as **15 contas** hospedadas nele, alcançável de qualquer
+host da internet (`bind-address=0.0.0.0`, porta 3306 liberada no firewall).
+
+Essa senha estava em dois `.env` dentro do tarball de 144 MB que ficou baixável
+por HTTP por cerca de 102 dias. Quem tivesse baixado o arquivo teria, até esta
+data, DBA do servidor inteiro.
+
+### Por que fechar a porta 3306 seria errado
+
+O pedido original era fechar a 3306. Duas descobertas desaconselham:
+
+1. **O app conectava ao próprio IP público.** `DB_HOST` era
+   `desbloqueiacursos.com.br`, que resolve para 129.121.33.89 — o próprio
+   servidor. O tráfego de banco saía e voltava pela internet. Fechar a porta
+   derrubaria o site.
+2. **O servidor é compartilhado.** Contas de terceiros (`fertc134` e família)
+   têm grants vindos de hosts externos (`srv222.prodns.com.br`,
+   `50.116.87.115`, entre outros). Uma regra de firewall é do servidor inteiro:
+   fechar a porta provavelmente derrubaria sites que não são deste projeto.
+
+O objetivo de segurança — tornar a credencial vazada inútil de fora — foi obtido
+sem tocar no firewall, prendendo a conta a `localhost`.
+
+### O que foi feito, em ordem, cada passo verificado
+
+1. `DB_HOST` → `127.0.0.1`. Site testado: 4 rotas 200. O tráfego de banco deixou
+   de sair para a rede.
+2. Criadas `desbloqueia_user@127.0.0.1` e `@localhost` com senha nova de 32
+   caracteres e privilégio **apenas** em `desbloqueiacursos.*` — sem `*.*`, sem
+   `GRANT OPTION`. O `.env` foi reescrito no mesmo inode, **sem `chmod`** (o modo
+   644 e o dono `root:root` foram preservados; foi um `chmod` desnecessário que
+   derrubou a produção em 22/08).
+3. Site testado em 5 rotas com rollback automático armado — se qualquer uma não
+   respondesse 200, o `.env` seria restaurado e as contas novas removidas.
+4. Ambiente de dev migrado antes do passo seguinte: ele usava a mesma conta pelo
+   hostname público e teria quebrado.
+5. **`desbloqueia_user@%` removida.** Confirmado que a senha antiga passou a ser
+   recusada local e remotamente, e que a senha nova **não** é aceita de fora.
+
+### Resultado
+
+| | Antes | Depois |
+|---|---|---|
+| Alcance da conta do app | qualquer host da internet | só `localhost`/`127.0.0.1` |
+| Privilégio | `*.*` com `GRANT OPTION` | só `desbloqueiacursos.*` e `desbloqueiacursos_dev.*` |
+| Senha | a que vazou | nova, 32 caracteres |
+| Inquilinos com privilégio global | 1 | **0** |
+
+O último número vale por si: nenhuma conta de inquilino tem mais privilégio
+global neste servidor. Isso melhorou a postura de todos os 15 sites, não só
+deste.
+
+Verificação: site em 9 rotas 200, zero erro PHP, smoke 34/34 em produção,
+suíte 331/331 no dev.
+
+### O que continua aberto
+
+- **Porta 3306 aberta para a internet.** Decisão que envolve terceiros. Hoje ela
+  não expõe mais nenhuma credencial conhecida deste projeto. Fechá-la exigiria
+  antes confirmar que nenhuma das outras 14 contas depende de MySQL remoto.
+- **`desbloqueiacursos@%`** alcança o mesmo banco de qualquer host. A senha dela
+  **nunca** apareceu em arquivo exposto — foi verificado nos dois `.env` do
+  tarball e no da quarentena, e ambos usavam `desbloqueia_user`. É conta criada
+  pelo painel; restringir o host pode afetar o Virtualmin/phpMyAdmin.
