@@ -287,8 +287,13 @@ class TutorNorminhaService
             // Limites do rate limit da Norminha (Etapa 5). Ficam aqui, e nao no
             // .env, porque quem precisa ajusta-los as pressas e o operador do
             // portal, no meio de um pico — nao quem tem acesso ao servidor.
+            // Camada de IA (Etapa 14). tutor_ia_ativo entra em 0: mesmo com a
+            // chave no .env, a Norminha so usa IA quando alguem liga aqui.
+            'tutor_ia_ativo' => 0,
             'tutor_ia_limite_5min' => 20,
             'tutor_ia_limite_diario' => 200,
+            'tutor_ia_max_output_tokens' => 1200,
+            'tutor_ia_prompt_complementar' => '',
             'tutor_texto_botao' => 'Ouvir orientação',
             'tutor_titulo_padrao' => 'Norminha',
             'tutor_avatar_idle' => '/assets/norminha/norminha-idle.webp',
@@ -335,7 +340,7 @@ class TutorNorminhaService
         foreach ($defaults as $chave => $valorPadrao) {
             $valor = array_key_exists($chave, $configuracoes) ? $configuracoes[$chave] : $valorPadrao;
 
-            if (in_array($chave, array('tutor_ativo', 'tutor_home', 'tutor_area_aluno', 'tutor_cursos', 'tutor_checkout', 'tutor_minimizado_padrao'), true)) {
+            if (in_array($chave, array('tutor_ativo', 'tutor_home', 'tutor_area_aluno', 'tutor_cursos', 'tutor_checkout', 'tutor_minimizado_padrao', 'tutor_ia_ativo'), true)) {
                 $normalizadas[$chave] = $this->normalizarBool($valor, $valorPadrao);
                 continue;
             }
@@ -352,6 +357,16 @@ class TutorNorminhaService
 
             if ($chave === 'tutor_ia_limite_diario') {
                 $normalizadas[$chave] = $this->normalizarLimite($valor, $valorPadrao, 10000);
+                continue;
+            }
+
+            if ($chave === 'tutor_ia_max_output_tokens') {
+                $normalizadas[$chave] = $this->normalizarLimite($valor, $valorPadrao, 4000);
+                continue;
+            }
+
+            if ($chave === 'tutor_ia_prompt_complementar') {
+                $normalizadas[$chave] = $this->normalizarPromptComplementar($valor);
                 continue;
             }
 
@@ -394,6 +409,9 @@ class TutorNorminhaService
         $payload['tutor_checkout'] = $this->normalizarBool(isset($input['tutor_checkout']) ? $input['tutor_checkout'] : $payload['tutor_checkout'], 0);
         $payload['tutor_minimizado_padrao'] = $this->normalizarBool(isset($input['tutor_minimizado_padrao']) ? $input['tutor_minimizado_padrao'] : $payload['tutor_minimizado_padrao'], 0);
         $payload['tutor_ttl_fechamento_horas'] = $this->normalizarTtlHoras(isset($input['tutor_ttl_fechamento_horas']) ? $input['tutor_ttl_fechamento_horas'] : $payload['tutor_ttl_fechamento_horas'], 24);
+        $payload['tutor_ia_ativo'] = $this->normalizarBool(isset($input['tutor_ia_ativo']) ? $input['tutor_ia_ativo'] : $payload['tutor_ia_ativo'], 0);
+        $payload['tutor_ia_max_output_tokens'] = $this->normalizarLimite(isset($input['tutor_ia_max_output_tokens']) ? $input['tutor_ia_max_output_tokens'] : $payload['tutor_ia_max_output_tokens'], 1200, 4000);
+        $payload['tutor_ia_prompt_complementar'] = $this->normalizarPromptComplementar(isset($input['tutor_ia_prompt_complementar']) ? $input['tutor_ia_prompt_complementar'] : $payload['tutor_ia_prompt_complementar']);
         $payload['tutor_ia_limite_5min'] = $this->normalizarLimite(isset($input['tutor_ia_limite_5min']) ? $input['tutor_ia_limite_5min'] : $payload['tutor_ia_limite_5min'], 20, 500);
         $payload['tutor_ia_limite_diario'] = $this->normalizarLimite(isset($input['tutor_ia_limite_diario']) ? $input['tutor_ia_limite_diario'] : $payload['tutor_ia_limite_diario'], 200, 10000);
         $payload['tutor_texto_botao'] = $this->normalizarTexto(isset($input['tutor_texto_botao']) ? $input['tutor_texto_botao'] : $payload['tutor_texto_botao'], 'Ouvir orientação', 80);
@@ -422,6 +440,29 @@ class TutorNorminhaService
         }
 
         return $payload;
+    }
+
+    /**
+     * Higieniza o complemento de prompt definido no admin.
+     *
+     * Tira tags e corta no teto. Nao tenta adivinhar intencao: o
+     * NorminhaPromptService ja o coloca em secao subordinada, depois das regras
+     * invariantes, e remove marcacoes que tentem forjar estrutura. Aqui so se
+     * garante que o campo e texto, e curto.
+     */
+    private function normalizarPromptComplementar($valor)
+    {
+        $texto = trim(strip_tags((string) $valor));
+        if ($texto === '') {
+            return '';
+        }
+
+        $texto = preg_replace('/\n{3,}/u', "\n\n", $texto);
+        if (mb_strlen($texto, 'UTF-8') > 1500) {
+            $texto = rtrim(mb_substr($texto, 0, 1499, 'UTF-8'));
+        }
+
+        return $texto;
     }
 
     /**

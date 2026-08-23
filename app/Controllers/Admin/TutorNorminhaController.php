@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Services\TutorNorminhaService;
 use App\Services\NorminhaTelemetriaService;
+use App\Services\OpenAIService;
 
 class TutorNorminhaController extends Controller
 {
@@ -122,14 +123,37 @@ class TutorNorminhaController extends Controller
         return $this->redirect('/admin/tutor-norminha');
     }
 
+    /**
+     * Diagnóstico da integração de IA, para a tela de configurações.
+     *
+     * Diz se a chave existe — NUNCA o valor, nem parcial. Um prefixo já é
+     * informação suficiente para quem tem acesso indevido à tela.
+     */
+    private function diagnosticoIa()
+    {
+        $openai = new OpenAIService();
+        $d = $openai->diagnostico();
+
+        return array(
+            'integracao_habilitada' => $d['habilitado'],
+            'chave_configurada' => $d['chave_configurada'],
+            'modelo' => $d['modelo'] !== null && $d['modelo'] !== '' ? $d['modelo'] : null,
+            'store' => $d['store'],
+            'pronta' => $d['habilitado'] && $d['chave_configurada'] && $d['modelo'] !== '',
+        );
+    }
+
     public function configuracoes(Request $request)
     {
+        $diagnosticoIa = $this->diagnosticoIa();
+
         return $this->view('admin/tutor-norminha/configuracoes', array(
             'title' => 'Configurações da Norminha',
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
             'oldInput' => Session::pullFlash('old_input', array()),
             'configuracoes' => $this->service->configuracoesFormData(),
+            'diagnosticoIa' => $diagnosticoIa,
         ));
     }
 

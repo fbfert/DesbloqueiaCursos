@@ -6,6 +6,7 @@ use App\Core\Database;
 use App\Core\Logger;
 use App\Models\NorminhaConversa;
 use App\Models\NorminhaMensagem;
+use App\Models\TutorConfiguracao;
 use App\Models\TutorFala;
 use PDO;
 
@@ -67,6 +68,8 @@ class NorminhaService
     /** Conversa em curso, para a janela de memória saber de onde ler. */
     private $conversaAtual = null;
 
+    private $configuracoesTutor = null;
+
     public function __construct(
         NorminhaContextService $contextService = null,
         NorminhaToolsService $toolsService = null,
@@ -87,8 +90,13 @@ class NorminhaService
         if ($geradorIA !== null) {
             $this->geradorIA = $geradorIA;
         } else {
+            // DUAS CHAVES, INDEPENDENTES E AMBAS OBRIGATORIAS:
+            //   OPENAI_ENABLED (.env)  — a integracao existe?  infraestrutura
+            //   tutor_ia_ativo (banco) — a Norminha usa?       produto
+            // Desligar qualquer uma devolve a Norminha ao comportamento da
+            // Onda 0, e a do banco e reversivel em um clique, sem deploy.
             $ia = new NorminhaIaService();
-            $this->geradorIA = $ia->disponivel() ? $ia : null;
+            $this->geradorIA = ($ia->disponivel() && $this->iaLigadaNoAdmin()) ? $ia : null;
         }
     }
 
@@ -272,7 +280,31 @@ class NorminhaService
     /** Complemento de prompt definido no admin (Etapa 14). */
     protected function promptComplementar()
     {
-        return null;
+        $cfg = $this->configuracoesTutor();
+
+        return isset($cfg['tutor_ia_prompt_complementar']) ? $cfg['tutor_ia_prompt_complementar'] : null;
+    }
+
+    /** A camada de IA está ligada na tela de configurações? */
+    protected function iaLigadaNoAdmin()
+    {
+        $cfg = $this->configuracoesTutor();
+
+        return !empty($cfg['tutor_ia_ativo']);
+    }
+
+    /** Configurações do tutor, lidas uma vez por instância. */
+    private function configuracoesTutor()
+    {
+        if ($this->configuracoesTutor === null) {
+            try {
+                $this->configuracoesTutor = (new TutorConfiguracao())->allIndexed();
+            } catch (\Throwable $e) {
+                $this->configuracoesTutor = array();
+            }
+        }
+
+        return $this->configuracoesTutor;
     }
 
     // =================================================================

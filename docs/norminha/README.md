@@ -36,7 +36,14 @@ da letra em alguns pontos produz defeito.
 | 8 — Telemetria e painel | **concluída** |
 | Deploy da Onda 0 | roteiro pronto — ver `17-deploy-onda-0.md` |
 | **CP0 — Checkpoint: piloto sem IA** | **próximo — decisão sua, com dados reais** |
-| Onda 1 (9 a 14) e Onda 2 (15 a 19) | pendentes |
+| 9 — `OpenAIService` | **concluída** (desligada) |
+| 10 — `NorminhaKnowledgeService` | **concluída** |
+| 11 — Prompt de sistema e guardrails | **concluída** |
+| 12 — Tool loop e integração híbrida | **concluída** |
+| 13 — Memória de conversa e resumo | **concluída** |
+| 14 — Admin e configurações de IA | **concluída** |
+| **CP1 — Checkpoint: piloto com IA** | bloqueado: falta hard cap e política de privacidade |
+| Onda 2 (15 a 19) — hardening e go-live | pendentes |
 
 ## As três correções que mais importam
 

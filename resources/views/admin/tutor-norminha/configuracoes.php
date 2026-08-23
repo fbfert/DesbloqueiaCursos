@@ -196,6 +196,59 @@ $debugAvatarSpeaking = $debugAvatar($previewAvatarSpeakingDiag);
                             <span>TTL de fechamento em horas</span>
                             <input type="number" name="tutor_ttl_fechamento_horas" min="1" max="168" step="1" value="<?php echo Helpers::e((string) $value('tutor_ttl_fechamento_horas', 24)); ?>">
                         </label>
+                        <?php
+                        $dia = isset($diagnosticoIa) && is_array($diagnosticoIa) ? $diagnosticoIa : array();
+                        $prontaIa = !empty($dia['pronta']);
+                        ?>
+                        <div class="status-card admin-form-grid__full" style="border-left:3px solid <?php echo $prontaIa ? '#00A388' : '#B45309'; ?>;">
+                            <strong>Integração de IA</strong>
+                            <ul style="margin:8px 0 0; padding-left:18px; font-size:.88rem; line-height:1.7;">
+                                <li>Integração habilitada no servidor:
+                                    <strong><?php echo !empty($dia['integracao_habilitada']) ? 'sim' : 'não'; ?></strong>
+                                    <small>(<code>OPENAI_ENABLED</code> no <code>.env</code>)</small></li>
+                                <li>Chave de API configurada:
+                                    <strong><?php echo !empty($dia['chave_configurada']) ? 'sim' : 'não'; ?></strong>
+                                    <small>— por segurança, a chave fica só no <code>.env</code> e nunca é exibida aqui</small></li>
+                                <li>Modelo em uso:
+                                    <strong><?php echo Helpers::e($dia['modelo'] !== null ? (string) $dia['modelo'] : 'não definido'); ?></strong></li>
+                                <li>Histórico no provedor:
+                                    <strong><?php echo !empty($dia['store']) ? 'ATIVO' : 'desativado'; ?></strong>
+                                    <small>— o esperado é desativado: a conversa fica no banco do Desbloqueia</small></li>
+                            </ul>
+                            <?php if (!$prontaIa): ?>
+                                <p style="margin:10px 0 0; font-size:.88rem;">
+                                    Enquanto algum item acima estiver pendente, ligar a tutoria com IA abaixo
+                                    <strong>não terá efeito</strong> — a Norminha continua respondendo só com dado do sistema.
+                                </p>
+                            <?php endif; ?>
+                        </div>
+                        <label class="admin-form-grid__full">
+                            <span>Tutoria com IA ativa</span>
+                            <input type="hidden" name="tutor_ia_ativo" value="0">
+                            <input type="checkbox" name="tutor_ia_ativo" value="1" <?php echo $checked('tutor_ia_ativo', 0) ? 'checked' : ''; ?>>
+                            <small>
+                                Desligada, a Norminha responde só com dado do sistema (progresso, retomada,
+                                próximo passo, certificado) e admite quando não sabe — sem custo por mensagem.
+                                Ligada, ela também explica o conteúdo da aula usando IA.
+                                <strong>Exige <code>OPENAI_ENABLED=true</code> e a chave no <code>.env</code>:</strong>
+                                sem isso, este campo não tem efeito.
+                            </small>
+                        </label>
+                        <label>
+                            <span>Tamanho máximo da resposta da IA (tokens)</span>
+                            <input type="number" name="tutor_ia_max_output_tokens" min="1" max="4000" step="1" value="<?php echo Helpers::e((string) $value('tutor_ia_max_output_tokens', 1200)); ?>">
+                            <small>Padrão 1200. Respostas mais longas custam mais e costumam ajudar menos.</small>
+                        </label>
+                        <label class="admin-form-grid__full">
+                            <span>Orientação complementar para a IA (opcional)</span>
+                            <textarea name="tutor_ia_prompt_complementar" rows="4" maxlength="1500"><?php echo Helpers::e((string) $value('tutor_ia_prompt_complementar', '')); ?></textarea>
+                            <small>
+                                Ajuste de tom ou ênfase — por exemplo, citar a legislação quando couber.
+                                <strong>Não substitui as regras de segurança:</strong> este texto entra depois delas,
+                                como orientação subordinada, e não consegue autorizar entrega de gabarito, acesso a
+                                dado de outro aluno ou revelação de instruções internas. Máximo 1500 caracteres.
+                            </small>
+                        </label>
                         <label>
                             <span>Limite de mensagens por 5 minutos</span>
                             <input type="number" name="tutor_ia_limite_5min" min="1" max="500" step="1" value="<?php echo Helpers::e((string) $value('tutor_ia_limite_5min', 20)); ?>">
