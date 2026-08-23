@@ -354,11 +354,14 @@ it('a 21ª mensagem na janela é bloqueada com Retry-After', function () use ($b
     preg_match('/name="_token"\s+value="([^"]+)"/i', $area['corpo'], $m);
     $token = $m[1];
 
+    // PERGUNTA LIVRE: limite de 20 por janela. Atalho deterministico tem
+    // politica 3x mais folgada (Etapa 15) e por isso NAO serve para medir o
+    // corte de 21 — foi assim que este teste pegou a mudanca de politica.
     $status = array();
     $bloqueio = null;
     for ($i = 1; $i <= 30; $i++) {
         $r = http_req($base, 'POST', '/api/norminha/chat', array(
-            '_token' => $token, 'action' => 'show_progress',
+            '_token' => $token, 'message' => 'pergunta livre numero ' . $i,
             'context' => array('inscricao_id' => $inscricaoId),
         ), $s['cookies']);
         $status[] = $r['status'];
@@ -376,13 +379,36 @@ it('a 21ª mensagem na janela é bloqueada com Retry-After', function () use ($b
     expect((int) $bloqueio['retry_after'])->toBeGreaterThan(0);
 });
 
+it('atalho determinístico tem política mais folgada que pergunta livre', function () use ($base, $usuarioA, $senha, $inscricaoId, $creds) {
+    // O atalho custa uma consulta ao banco, nao um token. Travar navegacao
+    // normal seria a pior protecao possivel.
+    $pdo = testes_conectar_banco();
+    $pdo->exec('DELETE FROM norminha_uso WHERE usuario_id = ' . (int) $creds['u1']);
+
+    $s = login($base, $usuarioA, $senha);
+    $area = http_req($base, 'GET', '/v2/aluno/', null, $s['cookies']);
+    preg_match('/name="_token"\s+value="([^"]+)"/i', $area['corpo'], $m);
+
+    // 25 atalhos: a pergunta livre ja teria sido cortada na 21a.
+    $bloqueou = false;
+    for ($i = 1; $i <= 25; $i++) {
+        $r = http_req($base, 'POST', '/api/norminha/chat', array(
+            '_token' => $m[1], 'action' => 'show_progress',
+            'context' => array('inscricao_id' => $inscricaoId),
+        ), $s['cookies']);
+        if ($r['status'] === 429) { $bloqueou = true; break; }
+    }
+    expect($bloqueou)->toBeFalse();
+    echo "      25 atalhos seguidos: nenhum bloqueio\n";
+});
+
 it('o bloqueio explica em PT-BR, sem jargão', function () use ($base, $usuarioA, $senha) {
     $s = login($base, $usuarioA, $senha);
     $area = http_req($base, 'GET', '/v2/aluno/', null, $s['cookies']);
     preg_match('/name="_token"\s+value="([^"]+)"/i', $area['corpo'], $m);
 
     $r = http_req($base, 'POST', '/api/norminha/chat', array(
-        '_token' => $m[1], 'action' => 'show_progress',
+        '_token' => $m[1], 'message' => 'mais uma pergunta livre',
     ), $s['cookies']);
 
     // A janela ja estourou no teste anterior: mesmo usuario, mesma janela.
