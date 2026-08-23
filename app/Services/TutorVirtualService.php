@@ -66,8 +66,27 @@ class TutorVirtualService
         }
 
         $fala = $this->falaModel->buscarAtiva($contexto);
+
+        // Sem fala cadastrada, o componente costumava simplesmente nao aparecer.
+        // Isso fazia sentido enquanto ele era so um aviso: nada a dizer, nada a
+        // mostrar. Como chat, a regra se inverte — a Norminha some exatamente
+        // onde o aluno mais precisa dela, e so volta se um administrador lembrar
+        // de cadastrar uma fala para cada contexto novo.
+        //
+        // Nas areas de estudo usamos uma saudacao padrao. Fora delas o
+        // comportamento antigo continua: sem fala, sem componente.
         if (!$fala) {
-            return null;
+            if (!in_array($contexto['contexto'], array('area_aluno', 'aula', 'avaliacao', 'curso'), true)) {
+                return null;
+            }
+
+            $fala = array(
+                'titulo' => null,
+                'texto' => 'Olá! Posso estudar com você. Me pergunte sobre o seu progresso, '
+                    . 'onde você parou ou o seu certificado.',
+                'audio_url' => null,
+                'estado_avatar' => 'speaking',
+            );
         }
 
         $audioUrl = isset($fala['audio_url']) ? trim((string) $fala['audio_url']) : '';
@@ -153,6 +172,36 @@ class TutorVirtualService
         }
 
         $contexto = 'publico';
+
+        // Rotas V2 primeiro: a area do aluno viva e a V2 (HOME_VERSION=v2), e
+        // ate 22/08/2026 nenhuma delas era reconhecida aqui — todas caiam em
+        // 'publico', contexto para o qual nao existe fala cadastrada. Na
+        // pratica, a Norminha nunca aparecia na area do aluno.
+        if ($rota === '/v2' || $rota === '/v2/') {
+            return $this->contextoResolvido('home', $rota, $query);
+        }
+        if (strpos($rota, '/v2/quiz') === 0 || strpos($rota, '/v2/atividade') === 0) {
+            return $this->contextoResolvido('avaliacao', $rota, $query);
+        }
+        if (strpos($rota, '/v2/aula') === 0) {
+            return $this->contextoResolvido('aula', $rota, $query);
+        }
+        if (strpos($rota, '/v2/aluno') === 0 || strpos($rota, '/v2/minha-conta') === 0) {
+            return $this->contextoResolvido('area_aluno', $rota, $query);
+        }
+        if (strpos($rota, '/v2/catalogo') === 0 || strpos($rota, '/v2/categorias') === 0) {
+            return $this->contextoResolvido('cursos', $rota, $query);
+        }
+        if (strpos($rota, '/v2/curso') === 0) {
+            return $this->contextoResolvido('curso', $rota, $query);
+        }
+        if (strpos($rota, '/v2/checkout') === 0) {
+            return $this->contextoResolvido('checkout', $rota, $query);
+        }
+        if (strpos($rota, '/v2/') === 0) {
+            return $this->contextoResolvido('institucional', $rota, $query);
+        }
+
         if ($rota === '/') {
             $contexto = 'home';
         } elseif ($rota === '/como-funciona' || $rota === '/sobre' || $rota === '/contato') {
@@ -173,6 +222,12 @@ class TutorVirtualService
             $contexto = 'area_aluno';
         }
 
+        return $this->contextoResolvido($contexto, $rota, $query);
+    }
+
+    /** Monta o contexto com os ids que a rota e a query permitem resolver. */
+    private function contextoResolvido($contexto, $rota, array $query)
+    {
         return array(
             'contexto' => $contexto,
             'rota' => $rota,

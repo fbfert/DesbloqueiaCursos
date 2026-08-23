@@ -312,3 +312,321 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
         height: 100%;
     }
 }
+
+/* ===================================================================
+   Chat (Etapa 6 — 22/08/2026)
+
+   Estende o painel existente em vez de substitui-lo: as variaveis de cor, o
+   launcher e a regra de minimizado continuam valendo. O que muda e o miolo do
+   painel, que deixa de ser um cartao de aviso e passa a ser conversa.
+
+   Mobile-first. Em telas pequenas o painel vira uma folha inferior que respeita
+   a bottom navigation da V2 e a area segura do aparelho.
+   =================================================================== */
+
+.norminha-tutor__panel {
+    display: flex;
+    flex-direction: column;
+    max-height: min(70vh, 560px);
+    overflow: hidden;
+}
+
+/* --- Cabecalho --- */
+
+.norminha-tutor__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--norminha-border);
+    background: linear-gradient(135deg, rgba(255, 79, 154, 0.08), rgba(255, 138, 61, 0.08));
+    flex: 0 0 auto;
+}
+
+.norminha-tutor__header-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
+}
+
+.norminha-tutor__header-texto {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.norminha-tutor__header .norminha-tutor__title {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.norminha-tutor__header .norminha-tutor__eyebrow {
+    margin: 2px 0 0;
+    font-size: 0.75rem;
+    opacity: 0.72;
+}
+
+/* --- Mensagens --- */
+
+.norminha-tutor__mensagens {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 120px;
+}
+
+.norminha-tutor__msg {
+    max-width: 88%;
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    /* Pergunta longa sem espaco nao pode alargar o painel. */
+    overflow-wrap: anywhere;
+}
+
+.norminha-tutor__msg .norminha-tutor__text {
+    margin: 0;
+}
+
+.norminha-tutor__msg--norminha {
+    align-self: flex-start;
+    background: rgba(123, 44, 191, 0.07);
+    border-bottom-left-radius: 4px;
+}
+
+.norminha-tutor__msg--aluno {
+    align-self: flex-end;
+    background: var(--norminha-purple);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.norminha-tutor__msg--erro {
+    align-self: flex-start;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    border-bottom-left-radius: 4px;
+}
+
+/* --- Acoes vindas do servidor --- */
+
+.norminha-tutor__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.norminha-tutor__acao {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: var(--norminha-surface);
+    border: 1px solid var(--norminha-border);
+    color: var(--norminha-purple);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    min-height: 34px;
+}
+
+.norminha-tutor__acao:hover,
+.norminha-tutor__acao:focus-visible {
+    background: rgba(123, 44, 191, 0.08);
+}
+
+/* --- Feedback --- */
+
+.norminha-tutor__feedback {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.norminha-tutor__feedback-botao {
+    border: 1px solid var(--norminha-border);
+    background: transparent;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: inherit;
+    min-height: 28px;
+}
+
+.norminha-tutor__feedback-botao:hover,
+.norminha-tutor__feedback-botao:focus-visible {
+    background: rgba(123, 44, 191, 0.08);
+}
+
+/* --- Acoes rapidas --- */
+
+.norminha-tutor__acoes-rapidas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 14px 10px;
+    flex: 0 0 auto;
+}
+
+.norminha-tutor__chip {
+    border: 1px solid var(--norminha-border);
+    background: var(--norminha-surface);
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--norminha-purple);
+    cursor: pointer;
+    min-height: 34px;
+}
+
+.norminha-tutor__chip:hover:not(:disabled),
+.norminha-tutor__chip:focus-visible {
+    background: rgba(123, 44, 191, 0.08);
+}
+
+.norminha-tutor__chip:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* --- "Pensando..." --- */
+
+.norminha-tutor__pensando {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 14px 10px;
+    font-size: 0.78rem;
+    opacity: 0.75;
+    flex: 0 0 auto;
+}
+
+.norminha-tutor__pensando[hidden] {
+    display: none;
+}
+
+.norminha-tutor__ponto {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--norminha-purple);
+    animation: norminha-pulsa 1.2s infinite ease-in-out;
+}
+
+.norminha-tutor__ponto:nth-child(2) { animation-delay: 0.15s; }
+.norminha-tutor__ponto:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes norminha-pulsa {
+    0%, 80%, 100% { opacity: 0.3; }
+    40% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .norminha-tutor__ponto { animation: none; opacity: 0.7; }
+}
+
+/* --- Campo de envio --- */
+
+.norminha-tutor__form {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--norminha-border);
+    flex: 0 0 auto;
+}
+
+.norminha-tutor__label-oculto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.norminha-tutor__input {
+    flex: 1 1 auto;
+    resize: none;
+    border: 1px solid var(--norminha-border);
+    border-radius: 14px;
+    padding: 9px 12px;
+    /* 16px evita o zoom automatico do iOS ao focar o campo. */
+    font-size: 16px;
+    line-height: 1.35;
+    font-family: inherit;
+    color: inherit;
+    background: var(--norminha-surface);
+    max-height: 120px;
+    min-width: 0;
+}
+
+.norminha-tutor__input:focus-visible {
+    outline: 2px solid var(--norminha-purple);
+    outline-offset: 1px;
+}
+
+.norminha-tutor__enviar {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: none;
+    background: var(--norminha-purple);
+    color: #fff;
+    font-size: 1.05rem;
+    cursor: pointer;
+}
+
+.norminha-tutor__enviar:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* --- Telas pequenas: folha inferior --- */
+
+@media (max-width: 640px) {
+    .norminha-tutor {
+        right: 8px;
+        left: 8px;
+        /* Sobe acima da bottom navigation da V2, sem cobri-la. */
+        bottom: calc(74px + env(safe-area-inset-bottom));
+        width: auto;
+    }
+
+    .norminha-tutor__panel {
+        max-height: 72vh;
+    }
+
+    .norminha-tutor__msg {
+        max-width: 92%;
+    }
+}
+
+/* 320px: nada pode transbordar na horizontal. */
+@media (max-width: 360px) {
+    .norminha-tutor__acoes-rapidas,
+    .norminha-tutor__mensagens,
+    .norminha-tutor__form {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .norminha-tutor__chip {
+        font-size: 0.74rem;
+        padding: 6px 10px;
+    }
+}

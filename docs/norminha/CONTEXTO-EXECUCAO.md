@@ -210,7 +210,7 @@ que a restrição é de política, não do servidor.
 Tipos de PK confirmados, todos `BIGINT(20) UNSIGNED`: `usuarios.id`, `inscricoes.id`,
 `cursos_eventos.id`, `turmas.id`. As FKs da migration 073 podem seguir o plano sem ajuste.
 
-### C5 — A Norminha está DESLIGADA em produção
+### C5 — A Norminha está DESLIGADA em produção — montagem V2 RESOLVIDA na Etapa 6
 
 `tutor_configuracoes.tutor_ativo = 0`. O widget não renderiza em nenhuma página hoje
 (verificado por HTTP em 9 rotas: zero ocorrências de `id="norminha-tutor"`).
@@ -224,7 +224,7 @@ Isso muda dois cálculos do plano:
   de `localStorage` (`layout.php:158-177`) — esse sim precisa da guarda de smoke.
 - **Não existe baseline de uso.** O Checkpoint 0 mede um recurso que será ligado do zero.
 
-### C6 — `TutorVirtualService::resolverContexto()` não conhece `/v2/`
+### C6 — `resolverContexto()` não conhecia `/v2/` — RESOLVIDO na Etapa 6
 
 `app/Services/TutorVirtualService.php:147-184` mapeia `/`, `/cursos`, `/area-curso`,
 `/aluno/curso/...`, etc. Nenhuma rota `/v2/*` é reconhecida: todas caem em `contexto = 'publico'`.
@@ -236,7 +236,7 @@ ENUM real: `'etiqueta','texto','arquivo','link','avaliacao_textual','video','qui
 O plano lista tudo menos `quiz`. **`quiz` é avaliação valendo nota** — o `assessment_context` e o
 filtro de gabarito do `NorminhaKnowledgeService` precisam cobrir `quiz` e `avaliacao_textual`.
 
-### C8 — Cache-busting da Norminha está quebrado
+### C8 — Cache-busting quebrado — RESOLVIDO na Etapa 6
 
 `layout.php:29-32` procura os arquivos em `BASE_PATH . '/public_html/assets/...'`, mas eles estão em
 `assets/`. `is_file()` falha, o parâmetro `&f=<filemtime>` nunca é adicionado, e a única chave de
@@ -272,6 +272,26 @@ Resolvido antes do Prompt 1:
   `feat/norminha-v1`, banco `desbloqueiacursos_dev`) — ver `docs/norminha/AMBIENTE-DEV.md`.
 
 **A partir daqui, nunca trabalhe dentro de `public_html`.** Aquele diretório é servido ao vivo.
+
+### C14 — O que a Etapa 6 mudou nos pontos acima
+
+- **C5:** o componente passou a ser montado em `resources/views/v2/layout.php`, que é agora o
+  **ponto único** da V2. Não replicar em view de página: a guarda do smoke reprova duplicação.
+- **C6:** `resolverContexto()` reconhece `/v2/aluno`, `/v2/aula`, `/v2/quiz`, `/v2/atividade`,
+  `/v2/catalogo`, `/v2/curso`, `/v2/checkout` e o restante de `/v2/` como institucional.
+- **C8:** as versões de asset passaram a ser resolvidas por uma função que tenta `assets/` **e**
+  `public_html/assets/`. Só `v4-claude.*` e `dc-main.*` moram na segunda; todo o resto falhava
+  calado. Um bloco duplicado que recalculava `v4-claude` com a lógica antiga foi removido.
+- O script inline de preferência de minimizado virou o parcial
+  `resources/views/components/tutor_norminha_head.php`, compartilhado pelos dois layouts.
+- CSS e JS da Norminha agora só são servidos quando o componente existe na página.
+
+**Saudação padrão nas áreas de estudo.** Todas as falas cadastradas têm `rota` preenchida, e o
+fallback `TutorFala::buscarPorContexto()` exige `rota IS NULL` — ou seja, nunca dispara. Como as
+falas apontam para rotas do V1 (`/aluno/cursos`, `/curso/*`), na V2 nenhuma casava, e o componente
+não aparecia. `componenteParaLayout()` passou a usar uma saudação padrão quando o contexto é
+`area_aluno`, `aula`, `avaliacao` ou `curso`. Fora dessas áreas o comportamento antigo vale: sem
+fala, sem componente.
 
 ### C12 — Para o certificado, use `calcularParaInscricao()`, não a versão de conteúdo
 

@@ -18,22 +18,36 @@ $frontend = $globalConfigService->frontend();
 $frontendTemplate = $globalConfigService->templateVisualPortal();
 $frontendCardGap = $globalConfigService->frontendCardGap();
 $frontendSectionGap = $globalConfigService->frontendSectionGap();
-$frontendCssPath = BASE_PATH . '/public_html/assets/css/frontend.css';
-$frontendCssVersion = is_file($frontendCssPath) ? filemtime($frontendCssPath) : null;
-$frontendV2CssPath = BASE_PATH . '/public_html/assets/css/frontend-v2.css';
-$frontendV2CssVersion = is_file($frontendV2CssPath) ? filemtime($frontendV2CssPath) : null;
-$homeV3CssPath = BASE_PATH . '/public_html/assets/css/home-v3.css';
-$homeV3CssVersion = is_file($homeV3CssPath) ? filemtime($homeV3CssPath) : null;
-$orientacaoUsuarioCssPath = BASE_PATH . '/public_html/assets/css/orientacao-usuario.css';
-$orientacaoUsuarioCssVersion = is_file($orientacaoUsuarioCssPath) ? filemtime($orientacaoUsuarioCssPath) : null;
-$tutorNorminhaCssPath = BASE_PATH . '/public_html/assets/css/tutor-norminha.css';
-$tutorNorminhaCssVersion = is_file($tutorNorminhaCssPath) ? filemtime($tutorNorminhaCssPath) : null;
-$tutorNorminhaJsPath = BASE_PATH . '/public_html/assets/js/tutor-norminha.js';
-$tutorNorminhaJsVersion = is_file($tutorNorminhaJsPath) ? filemtime($tutorNorminhaJsPath) : null;
-$v4ClaudeCssPath = BASE_PATH . '/public_html/assets/css/v4-claude.css';
-$v4ClaudeCssVersion = is_file($v4ClaudeCssPath) ? filemtime($v4ClaudeCssPath) : null;
-$v4ClaudeJsPath = BASE_PATH . '/public_html/assets/js/v4-claude.js';
-$v4ClaudeJsVersion = is_file($v4ClaudeJsPath) ? filemtime($v4ClaudeJsPath) : null;
+// Versao de asset por filemtime, para o navegador buscar o arquivo novo depois
+// de um deploy.
+//
+// Ate 22/08/2026 todos estes caminhos apontavam so para BASE_PATH/public_html/assets/.
+// Acontece que apenas v4-claude.css e dc-main.* moram la; frontend.css,
+// home-v3.css, orientacao-usuario.css e os arquivos da Norminha estao em
+// /assets. Para esses, is_file() falhava calado, o parametro &f= nunca era
+// emitido, e a unica chave de cache era a constante literal ?v=20260610-4 —
+// que so muda quando alguem lembra de edita-la a mao. Na pratica: CSS e JS
+// antigos servidos de cache depois do deploy.
+//
+// A funcao tenta os dois locais e devolve o filemtime do que existir.
+$assetVersion = function ($relativo) {
+    foreach (array(BASE_PATH . '/' . ltrim($relativo, '/'),
+                   BASE_PATH . '/public_html/' . ltrim($relativo, '/')) as $caminho) {
+        if (is_file($caminho)) {
+            return filemtime($caminho);
+        }
+    }
+    return null;
+};
+
+$frontendCssVersion = $assetVersion('assets/css/frontend.css');
+$frontendV2CssVersion = $assetVersion('assets/css/frontend-v2.css');
+$homeV3CssVersion = $assetVersion('assets/css/home-v3.css');
+$orientacaoUsuarioCssVersion = $assetVersion('assets/css/orientacao-usuario.css');
+$tutorNorminhaCssVersion = $assetVersion('assets/css/tutor-norminha.css');
+$tutorNorminhaJsVersion = $assetVersion('assets/js/tutor-norminha.js');
+$v4ClaudeCssVersion = $assetVersion('assets/css/v4-claude.css');
+$v4ClaudeJsVersion = $assetVersion('assets/js/v4-claude.js');
 $brandName = !empty($institucional['nome_fantasia']) ? $institucional['nome_fantasia'] : (!empty($appConfig['name']) ? $appConfig['name'] : 'Desbloqueia Cursos');
 $isAdmin = strpos($requestPath, '/admin') === 0;
 $isProfessor = strpos($requestPath, '/professor') === 0;
@@ -60,10 +74,8 @@ if ($frontendTemplateIsAllowed && $frontendTemplate === 'v4-claude') {
 } else {
     $frontendTemplateVersion = 'v1';
 }
-$v4ClaudeCssPath = BASE_PATH . '/public_html/assets/css/v4-claude.css';
-$v4ClaudeCssVersion = is_file($v4ClaudeCssPath) ? filemtime($v4ClaudeCssPath) : null;
-$v4ClaudeJsPath = BASE_PATH . '/public_html/assets/js/v4-claude.js';
-$v4ClaudeJsVersion = is_file($v4ClaudeJsPath) ? filemtime($v4ClaudeJsPath) : null;
+// (as versoes de v4-claude ja foram resolvidas por $assetVersion acima; este
+// bloco duplicado, que so olhava public_html/assets, foi removido em 22/08/2026)
 $shouldLoadConteudoAudio = strpos($requestPath, '/aluno/cursos/conteudo/item') === 0
     || strpos($requestPath, '/area-curso/conteudo/item') === 0
     || strpos($requestPath, '/aluno/curso/') === 0
@@ -153,45 +165,12 @@ if (!$isAdmin) {
         <link rel="shortcut icon" href="<?php echo Helpers::e($faviconPublico['href']); ?>">
     <?php endif; ?>
     <?php if ($useFrontendTheme): ?>
-        <script>
-        (function () {
-            var storageKey = 'norminha_tutor_minimized_v1';
-            var legacyKeys = ['norminha_tutor_closed_until', 'norminha_tutor_closed_v2', 'norminha_tutor_closed'];
-            var ttlHours = <?php echo (int) ($tutorNorminhaTtlHoras > 0 ? $tutorNorminhaTtlHoras : 24); ?>;
-            if (!ttlHours || ttlHours < 1 || ttlHours > 168) {
-                ttlHours = 24;
-            }
-            var isMinimized = false;
-
-            try {
-                if (window.localStorage) {
-                    isMinimized = window.localStorage.getItem(storageKey) === '1';
-                    for (var i = 0; i < legacyKeys.length; i += 1) {
-                        window.localStorage.removeItem(legacyKeys[i]);
-                    }
-                }
-
-                if (isMinimized) {
-                    document.documentElement.classList.add('norminha-tutor-minimized');
-                } else {
-                    document.documentElement.classList.remove('norminha-tutor-minimized');
-                }
-            } catch (error) {
-                // Falha de storage não impede o carregamento do site.
-            }
-        })();
-        </script>
-    <?php endif; ?>
-    <link rel="stylesheet" href="/assets/css/app.css">
-    <?php if ($useFrontendTheme): ?>
-        <link rel="stylesheet" href="/assets/css/frontend.css<?php echo $frontendCssVersion ? '?v=' . (int) $frontendCssVersion : ''; ?>">
-        <?php if ($frontendTemplateVersion === 'v2'): ?>
-            <link rel="stylesheet" href="/assets/css/frontend-v2.css<?php echo $frontendV2CssVersion ? '?v=' . (int) $frontendV2CssVersion : ''; ?>">
+        <?php /* CSS e script de preferencia so quando o componente vai existir:
+                 antes eles eram servidos em toda pagina de tema frontend,
+                 inclusive onde a Norminha nao aparece. */ ?>
+        <?php if (!empty($tutorNorminha)): ?>
+            <?php require BASE_PATH . '/resources/views/components/tutor_norminha_head.php'; ?>
         <?php endif; ?>
-        <?php if ($loadOrientationUiAssets): ?>
-        <link rel="stylesheet" href="/assets/css/orientacao-usuario.css<?php echo $orientacaoUsuarioCssVersion ? '?v=' . (int) $orientacaoUsuarioCssVersion : ''; ?>">
-        <?php endif; ?>
-        <link rel="stylesheet" href="/assets/css/tutor-norminha.css?v=20260610-4<?php echo $tutorNorminhaCssVersion ? '&amp;f=' . (int) $tutorNorminhaCssVersion : ''; ?>">
         <?php if ($isPublicHome && $frontendTemplate === 'v3'): ?>
             <link rel="stylesheet" href="/assets/css/home-v3.css<?php echo $homeV3CssVersion ? '?v=' . (int) $homeV3CssVersion : ''; ?>">
         <?php endif; ?>
@@ -228,8 +207,8 @@ if (!$isAdmin) {
         <script src="/assets/js/conteudo-audio.js?v=20260529" defer></script>
         <script src="/assets/js/conteudo-html-embed.js?v=20260717" defer></script>
     <?php endif; ?>
-    <?php if ($useFrontendTheme): ?>
-        <script src="/assets/js/tutor-norminha.js?v=20260610-4<?php echo $tutorNorminhaJsVersion ? '&amp;f=' . (int) $tutorNorminhaJsVersion : ''; ?>" defer></script>
+    <?php if ($useFrontendTheme && !empty($tutorNorminha)): ?>
+        <script src="/assets/js/tutor-norminha.js<?php echo $tutorNorminhaJsVersion ? '?v=' . (int) $tutorNorminhaJsVersion : ''; ?>" defer></script>
     <?php endif; ?>
     <?php if ($isV4Theme): ?>
         <script src="/public_html/assets/js/v4-claude.js<?php echo $v4ClaudeJsVersion ? '?v=' . (int) $v4ClaudeJsVersion : ''; ?>" defer></script>

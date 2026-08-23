@@ -1,7 +1,32 @@
 (function () {
+    'use strict';
+
+    /**
+     * Norminha — cliente de chat.
+     *
+     * Preserva o comportamento legado: launcher, minimizar/reabrir, a chave
+     * localStorage 'norminha_tutor_minimized_v1', a limpeza das chaves antigas,
+     * a troca de avatar idle/speaking e o áudio contextual.
+     *
+     * Regras que valem a pena não esquecer:
+     *
+     * - NADA de innerHTML com texto do servidor. Toda mensagem entra por
+     *   textContent. Se um dia a IA devolver "<img onerror=...>", ele aparece
+     *   como texto na tela, que é exatamente o que deve acontecer.
+     * - Links só vêm do payload do servidor E são revalidados aqui: precisam
+     *   ser caminho interno começando por "/". O servidor já valida; esta é a
+     *   segunda barreira, do lado de quem renderiza.
+     * - O token CSRF viaja DENTRO do JSON, no campo _token. App\Core\Request
+     *   decodifica application/json antes do CsrfMiddleware validar, então não
+     *   é preciso cabeçalho customizado.
+     * - usuario_id nunca é enviado. A identidade é a sessão.
+     */
+
     var STORAGE_KEY = 'norminha_tutor_minimized_v1';
     var LEGACY_KEYS = ['norminha_tutor_closed_until', 'norminha_tutor_closed_v2', 'norminha_tutor_closed'];
-    var DEFAULT_TTL_HOURS = 24;
+    var ENDPOINT = '/api/norminha/chat';
+    var TIMEOUT_MS = 20000;
+    var LIMITE_MENSAGEM = 2000;
 
     function canUseStorage() {
         try {
@@ -11,47 +36,8 @@
         }
     }
 
-    function getTtlHours(container) {
-        if (!container) {
-            return DEFAULT_TTL_HOURS;
-        }
-
-        var raw = container.getAttribute('data-ttl-hours');
-        var ttlHours = parseInt(raw, 10);
-        if (!ttlHours || ttlHours < 1 || ttlHours > 168) {
-            return DEFAULT_TTL_HOURS;
-        }
-
-        return ttlHours;
-    }
-
-    function getButtonBaseLabel(container) {
-        if (!container) {
-            return 'Ouvir orientação';
-        }
-
-        var label = (container.getAttribute('data-texto-botao') || '').trim();
-        return label || 'Ouvir orientação';
-    }
-
-    function clearLegacyState() {
-        if (!canUseStorage()) {
-            return;
-        }
-
-        try {
-            for (var i = 0; i < LEGACY_KEYS.length; i += 1) {
-                window.localStorage.removeItem(LEGACY_KEYS[i]);
-            }
-        } catch (error) {
-        }
-    }
-
-    function readMinimizedState() {
-        if (!canUseStorage()) {
-            return false;
-        }
-
+    function readMinimized() {
+        if (!canUseStorage()) { return false; }
         try {
             return window.localStorage.getItem(STORAGE_KEY) === '1';
         } catch (error) {
@@ -59,232 +45,439 @@
         }
     }
 
-    function writeMinimizedState() {
-        if (!canUseStorage()) {
-            return;
-        }
-
+    function writeMinimized(valor) {
+        if (!canUseStorage()) { return; }
         try {
-            window.localStorage.setItem(STORAGE_KEY, '1');
+            if (valor) {
+                window.localStorage.setItem(STORAGE_KEY, '1');
+            } else {
+                window.localStorage.removeItem(STORAGE_KEY);
+            }
         } catch (error) {
-            // Ignora falhas de storage sem quebrar a página.
+            // Preferência é conveniência: falhar aqui não pode quebrar o chat.
         }
     }
 
-    function clearMinimizedState() {
-        if (!canUseStorage()) {
-            return;
-        }
-
+    function clearLegacyState() {
+        if (!canUseStorage()) { return; }
         try {
-            window.localStorage.removeItem(STORAGE_KEY);
+            for (var i = 0; i < LEGACY_KEYS.length; i += 1) {
+                window.localStorage.removeItem(LEGACY_KEYS[i]);
+            }
         } catch (error) {
+            // idem
         }
     }
 
-    function setAvatarState(img, container, state) {
-        if (!img || !container) {
-            return;
-        }
-
-        var idleSrc = container.getAttribute('data-avatar-idle') || '/assets/norminha/norminha-idle.webp';
-        var speakingSrc = container.getAttribute('data-avatar-speaking') || '/assets/norminha/norminha-speaking.webp';
-        img.src = state === 'speaking' ? speakingSrc : idleSrc;
-    }
-
-    function updateButtonState(button, audio, buttonBaseLabel) {
-        if (!button || !audio) {
-            return;
-        }
-
-        if (audio.paused) {
-            if (audio.currentTime > 0 && !audio.ended) {
-                button.textContent = 'Continuar';
-                return;
-            }
-
-            if (audio.ended) {
-                button.textContent = 'Ouvir novamente';
-                return;
-            }
-
-            button.textContent = buttonBaseLabel;
-            return;
-        }
-
-        button.textContent = 'Pausar';
+    /** Caminho interno, sem esquema e sem "//" — segunda barreira de link. */
+    function urlInternaSegura(url) {
+        if (typeof url !== 'string' || url.length === 0) { return false; }
+        if (url.charAt(0) !== '/') { return false; }
+        if (url.indexOf('//') === 0) { return false; }
+        if (/^[a-z][a-z0-9+.-]*:/i.test(url)) { return false; }
+        return true;
     }
 
     function initTutor() {
         var container = document.getElementById('norminha-tutor');
-        if (!container) {
-            return;
-        }
+        if (!container) { return; }
 
-        clearLegacyState();
-
+        var painel = container.querySelector('[data-norminha-card]');
         var closeButton = container.querySelector('[data-norminha-close]');
         var launcherButton = container.querySelector('[data-norminha-launcher]');
         var audioButton = container.querySelector('[data-norminha-audio-button]');
         var audio = container.querySelector('[data-norminha-audio]');
         var avatar = container.querySelector('[data-avatar-image]');
-        var avatarWrap = container.querySelector('.norminha-tutor__avatar-wrap');
         var launcherAvatar = container.querySelector('[data-norminha-launcher-avatar]');
         var launcherFallback = container.querySelector('[data-norminha-launcher-fallback]');
-        var buttonBaseLabel = getButtonBaseLabel(container);
-        var minimized = readMinimizedState();
+        var listaMensagens = container.querySelector('[data-norminha-mensagens]');
+        var form = container.querySelector('[data-norminha-form]');
+        var input = container.querySelector('[data-norminha-input]');
+        var botaoEnviar = container.querySelector('[data-norminha-enviar]');
+        var pensando = container.querySelector('[data-norminha-pensando]');
+        var quick = container.querySelector('[data-norminha-quick]');
+
+        var avatarIdle = container.getAttribute('data-avatar-idle') || '';
+        var avatarSpeaking = container.getAttribute('data-avatar-speaking') || '';
+        var csrf = container.getAttribute('data-csrf') || '';
+
+        var conversationId = null;
+        var enviando = false;
+
+        clearLegacyState();
+
+        // ---------------------------------------------------------------
+        // Avatar (comportamento legado preservado)
+        // ---------------------------------------------------------------
 
         if (avatar) {
             avatar.addEventListener('error', function () {
                 avatar.style.display = 'none';
-                if (avatarWrap) {
-                    avatarWrap.classList.add('is-fallback');
-                }
             });
         }
-
-        if (launcherAvatar) {
+        if (launcherAvatar && launcherFallback) {
             launcherAvatar.addEventListener('error', function () {
                 launcherAvatar.style.display = 'none';
-                if (launcherButton) {
-                    launcherButton.classList.add('is-fallback');
-                }
+                launcherFallback.style.display = '';
             });
-        } else if (launcherFallback && launcherButton) {
-            launcherButton.classList.add('is-fallback');
+            launcherFallback.style.display = 'none';
         }
 
-        if (!audio || !audio.getAttribute('src')) {
-            if (audioButton && audioButton.parentNode) {
-                audioButton.parentNode.removeChild(audioButton);
+        function setAvatarState(estado) {
+            if (!avatar) { return; }
+            var alvo = estado === 'idle' ? avatarIdle : avatarSpeaking;
+            if (alvo && avatar.getAttribute('src') !== alvo) {
+                avatar.setAttribute('src', alvo);
             }
+            container.setAttribute('data-estado-avatar', estado);
         }
 
-        function syncVisibility() {
-            var isMinimized = container.classList.contains('is-minimized');
-            container.classList.toggle('is-minimized', isMinimized);
-            document.documentElement.classList.toggle('norminha-tutor-minimized', isMinimized);
+        // ---------------------------------------------------------------
+        // Minimizar / reabrir
+        // ---------------------------------------------------------------
+
+        function sincronizarVisibilidade(minimizado) {
+            if (minimizado) {
+                document.documentElement.classList.add('norminha-tutor-minimized');
+            } else {
+                document.documentElement.classList.remove('norminha-tutor-minimized');
+            }
             if (launcherButton) {
-                launcherButton.setAttribute('aria-hidden', isMinimized ? 'false' : 'true');
-                launcherButton.tabIndex = isMinimized ? 0 : -1;
+                launcherButton.setAttribute('aria-expanded', minimizado ? 'false' : 'true');
+                launcherButton.setAttribute('aria-label', minimizado ? 'Abrir a Norminha' : 'Minimizar a Norminha');
             }
-            if (launcherButton && launcherAvatar && launcherFallback) {
-                if (launcherAvatar.style.display === 'none') {
-                    launcherButton.classList.add('is-fallback');
-                } else if (!launcherAvatar.getAttribute('src')) {
-                    launcherButton.classList.add('is-fallback');
+        }
+
+        function minimizar() {
+            writeMinimized(true);
+            sincronizarVisibilidade(true);
+            if (audio && !audio.paused) { audio.pause(); }
+            if (launcherButton) { launcherButton.focus(); }
+        }
+
+        function restaurar() {
+            writeMinimized(false);
+            sincronizarVisibilidade(false);
+            if (input) { input.focus(); }
+        }
+
+        sincronizarVisibilidade(readMinimized());
+
+        if (closeButton) {
+            closeButton.addEventListener('click', minimizar);
+        }
+        if (launcherButton) {
+            launcherButton.addEventListener('click', function () {
+                if (document.documentElement.classList.contains('norminha-tutor-minimized')) {
+                    restaurar();
+                } else {
+                    minimizar();
                 }
+            });
+        }
+
+        container.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Escape' && !document.documentElement.classList.contains('norminha-tutor-minimized')) {
+                minimizar();
             }
-        }
+        });
 
-        function minimizeTutor() {
-            writeMinimizedState();
-            container.classList.add('is-minimized');
-            document.documentElement.classList.add('norminha-tutor-minimized');
-            if (audio && !audio.paused) {
-                audio.pause();
-            }
-            syncVisibility();
-        }
-
-        function restoreTutor() {
-            clearMinimizedState();
-            container.classList.remove('is-minimized');
-            document.documentElement.classList.remove('norminha-tutor-minimized');
-            syncVisibility();
-        }
-
-        if (minimized) {
-            container.classList.add('is-minimized');
-            document.documentElement.classList.add('norminha-tutor-minimized');
-        } else {
-            container.classList.remove('is-minimized');
-            document.documentElement.classList.remove('norminha-tutor-minimized');
-        }
-
-        syncVisibility();
-
-        function speakMode() {
-            container.classList.add('is-speaking');
-            setAvatarState(avatar, container, 'speaking');
-        }
-
-        function idleMode() {
-            container.classList.remove('is-speaking');
-            setAvatarState(avatar, container, 'idle');
-        }
-
-        if (audio) {
-            audio.addEventListener('play', function () {
-                speakMode();
-                updateButtonState(audioButton, audio, buttonBaseLabel);
-            });
-
-            audio.addEventListener('pause', function () {
-                if (!audio.ended) {
-                    idleMode();
-                }
-                updateButtonState(audioButton, audio, buttonBaseLabel);
-            });
-
-            audio.addEventListener('ended', function () {
-                idleMode();
-                updateButtonState(audioButton, audio, buttonBaseLabel);
-            });
-
-            audio.addEventListener('loadedmetadata', function () {
-                updateButtonState(audioButton, audio, buttonBaseLabel);
-            });
-
-            audio.addEventListener('seeked', function () {
-                updateButtonState(audioButton, audio, buttonBaseLabel);
-            });
-        }
+        // ---------------------------------------------------------------
+        // Áudio (comportamento legado preservado)
+        // ---------------------------------------------------------------
 
         if (audioButton && audio) {
-            updateButtonState(audioButton, audio, buttonBaseLabel);
-
+            var rotuloBase = container.getAttribute('data-texto-botao') || 'Ouvir orientação';
             audioButton.addEventListener('click', function () {
-                if (!audio.getAttribute('src')) {
+                if (audio.paused) {
+                    audio.play().then(function () {
+                        audioButton.textContent = 'Pausar';
+                        setAvatarState('speaking');
+                    }).catch(function () {
+                        audioButton.textContent = rotuloBase;
+                    });
+                } else {
+                    audio.pause();
+                    audioButton.textContent = rotuloBase;
+                    setAvatarState('idle');
+                }
+            });
+            audio.addEventListener('ended', function () {
+                audioButton.textContent = rotuloBase;
+                setAvatarState('idle');
+            });
+        }
+
+        // ---------------------------------------------------------------
+        // Render das mensagens — textContent, nunca innerHTML
+        // ---------------------------------------------------------------
+
+        function criarBolha(classe) {
+            var div = document.createElement('div');
+            div.className = 'norminha-tutor__msg ' + classe;
+            return div;
+        }
+
+        function adicionarTexto(bolha, texto) {
+            // Quebras de linha viram <br> por criação de nó, não por markup.
+            var partes = String(texto).split('\n');
+            var p = document.createElement('p');
+            p.className = 'norminha-tutor__text';
+            for (var i = 0; i < partes.length; i += 1) {
+                if (i > 0) { p.appendChild(document.createElement('br')); }
+                p.appendChild(document.createTextNode(partes[i]));
+            }
+            bolha.appendChild(p);
+        }
+
+        function adicionarAcoes(bolha, acoes) {
+            if (!acoes || !acoes.length) { return; }
+            var caixa = document.createElement('div');
+            caixa.className = 'norminha-tutor__acoes';
+            var incluidas = 0;
+
+            for (var i = 0; i < acoes.length; i += 1) {
+                var acao = acoes[i];
+                if (!acao || !urlInternaSegura(acao.url) || !acao.label) { continue; }
+                var link = document.createElement('a');
+                link.className = 'norminha-tutor__acao';
+                link.setAttribute('href', acao.url);
+                link.textContent = String(acao.label);
+                caixa.appendChild(link);
+                incluidas += 1;
+            }
+
+            if (incluidas > 0) { bolha.appendChild(caixa); }
+        }
+
+        function adicionarFeedback(bolha, messageId) {
+            if (!messageId) { return; }
+            var caixa = document.createElement('div');
+            caixa.className = 'norminha-tutor__feedback';
+
+            var pergunta = document.createElement('span');
+            pergunta.className = 'norminha-tutor__feedback-label';
+            pergunta.textContent = 'Isso ajudou?';
+            caixa.appendChild(pergunta);
+
+            ['sim', 'nao'].forEach(function (valor) {
+                var botao = document.createElement('button');
+                botao.type = 'button';
+                botao.className = 'norminha-tutor__feedback-botao';
+                botao.textContent = valor === 'sim' ? 'Sim' : 'Não';
+                botao.setAttribute('aria-label', valor === 'sim' ? 'Resposta útil' : 'Resposta não útil');
+                botao.addEventListener('click', function () {
+                    enviarFeedback(messageId, valor === 'sim');
+                    caixa.textContent = 'Obrigada pelo retorno.';
+                });
+                caixa.appendChild(botao);
+            });
+
+            bolha.appendChild(caixa);
+        }
+
+        function rolarParaFim() {
+            if (!listaMensagens) { return; }
+            // Rola só a lista; a página do aluno não pode pular.
+            listaMensagens.scrollTop = listaMensagens.scrollHeight;
+        }
+
+        function mostrarMensagemAluno(texto) {
+            var bolha = criarBolha('norminha-tutor__msg--aluno');
+            adicionarTexto(bolha, texto);
+            listaMensagens.appendChild(bolha);
+            rolarParaFim();
+        }
+
+        function mostrarResposta(dados) {
+            var bolha = criarBolha('norminha-tutor__msg--norminha');
+            adicionarTexto(bolha, dados.message || '');
+            adicionarAcoes(bolha, dados.actions);
+            adicionarFeedback(bolha, dados.message_id);
+            listaMensagens.appendChild(bolha);
+            if (dados.avatar_state) { setAvatarState(dados.avatar_state === 'idle' ? 'idle' : 'speaking'); }
+            rolarParaFim();
+        }
+
+        function mostrarErro(texto, permitirRepetir, repetir) {
+            var bolha = criarBolha('norminha-tutor__msg--erro');
+            adicionarTexto(bolha, texto);
+            if (permitirRepetir && typeof repetir === 'function') {
+                var botao = document.createElement('button');
+                botao.type = 'button';
+                botao.className = 'norminha-tutor__acao';
+                botao.textContent = 'Tentar novamente';
+                botao.addEventListener('click', function () {
+                    bolha.parentNode && bolha.parentNode.removeChild(bolha);
+                    repetir();
+                });
+                bolha.appendChild(botao);
+            }
+            listaMensagens.appendChild(bolha);
+            rolarParaFim();
+        }
+
+        // ---------------------------------------------------------------
+        // Envio
+        // ---------------------------------------------------------------
+
+        function hints() {
+            var mapa = {
+                route: container.getAttribute('data-rota') || '',
+                inscricao_id: container.getAttribute('data-inscricao-id') || '',
+                curso_id: container.getAttribute('data-curso-id') || '',
+                turma_id: container.getAttribute('data-turma-id') || '',
+                modulo_id: container.getAttribute('data-modulo-id') || '',
+                item_id: container.getAttribute('data-item-id') || ''
+            };
+            var contexto = {};
+            Object.keys(mapa).forEach(function (chave) {
+                if (mapa[chave] !== '') {
+                    contexto[chave] = chave === 'route' ? mapa[chave] : parseInt(mapa[chave], 10);
+                }
+            });
+            return contexto;
+        }
+
+        function travar(travado) {
+            enviando = travado;
+            if (botaoEnviar) { botaoEnviar.disabled = travado; }
+            if (input) { input.disabled = travado; }
+            if (quick) {
+                var chips = quick.querySelectorAll('button');
+                for (var i = 0; i < chips.length; i += 1) { chips[i].disabled = travado; }
+            }
+            if (pensando) {
+                pensando.hidden = !travado;
+                pensando.setAttribute('aria-hidden', travado ? 'false' : 'true');
+            }
+        }
+
+        function enviar(payload, ecoDoAluno) {
+            if (enviando) { return; }
+            travar(true);
+
+            if (ecoDoAluno) { mostrarMensagemAluno(ecoDoAluno); }
+
+            var corpo = {
+                _token: csrf,
+                context: hints()
+            };
+            if (payload.action) { corpo.action = payload.action; }
+            if (payload.message) { corpo.message = payload.message; }
+            if (conversationId) { corpo.conversation_id = conversationId; }
+
+            // Uma tentativa só, com timeout. Repetir automaticamente poderia
+            // gravar a mesma pergunta duas vezes; quem repete é o aluno.
+            var controlador = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            var expirou = window.setTimeout(function () {
+                if (controlador) { controlador.abort(); }
+            }, TIMEOUT_MS);
+
+            var opcoes = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(corpo)
+            };
+            if (controlador) { opcoes.signal = controlador.signal; }
+
+            fetch(ENDPOINT, opcoes).then(function (resposta) {
+                window.clearTimeout(expirou);
+                return resposta.json().then(function (dados) {
+                    return { status: resposta.status, dados: dados };
+                }).catch(function () {
+                    return { status: resposta.status, dados: null };
+                });
+            }).then(function (resultado) {
+                travar(false);
+
+                if (!resultado.dados) {
+                    mostrarErro('Não consegui falar com o servidor agora.', true, function () {
+                        enviar(payload, null);
+                    });
                     return;
                 }
 
-                if (audio.ended) {
-                    audio.currentTime = 0;
+                if (resultado.status === 401) {
+                    mostrarErro('Sua sessão expirou. Recarregue a página e entre de novo.', false);
+                    return;
+                }
+                if (resultado.status === 429) {
+                    mostrarErro(resultado.dados.mensagem || 'Muitas mensagens seguidas. Aguarde um pouco.', false);
+                    return;
+                }
+                if (!resultado.dados.ok) {
+                    mostrarErro(resultado.dados.mensagem || 'Não consegui responder agora.', resultado.status >= 500, function () {
+                        enviar(payload, null);
+                    });
+                    return;
                 }
 
-                if (audio.paused) {
-                    try {
-                        audio.load();
-                    } catch (error) {
-                        // Continua sem quebrar a página.
-                    }
-                    var promise = audio.play();
-                    if (promise && typeof promise.catch === 'function') {
-                        promise.catch(function () {
-                            idleMode();
-                            updateButtonState(audioButton, audio, buttonBaseLabel);
-                        });
-                    }
-                } else {
-                    audio.pause();
+                if (resultado.dados.conversation_id) {
+                    conversationId = resultado.dados.conversation_id;
+                }
+                mostrarResposta(resultado.dados);
+            }).catch(function () {
+                window.clearTimeout(expirou);
+                travar(false);
+                mostrarErro('A conexão demorou demais.', true, function () {
+                    enviar(payload, null);
+                });
+            });
+        }
+
+        function enviarFeedback(messageId, util) {
+            fetch('/api/norminha/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ _token: csrf, message_id: messageId, useful: util })
+            }).catch(function () {
+                // Feedback é opcional: falhar aqui não merece alarme na tela.
+            });
+        }
+
+        // ---------------------------------------------------------------
+        // Eventos de entrada
+        // ---------------------------------------------------------------
+
+        if (form && input) {
+            form.addEventListener('submit', function (evento) {
+                evento.preventDefault();
+                var texto = String(input.value || '').trim();
+                if (texto === '' || texto.length > LIMITE_MENSAGEM) { return; }
+                input.value = '';
+                ajustarAltura();
+                enviar({ message: texto }, texto);
+            });
+
+            input.addEventListener('keydown', function (evento) {
+                // Enter envia; Shift+Enter quebra linha. Em tela pequena o
+                // teclado virtual costuma mandar o próprio "enviar", então não
+                // se rouba o Enter de quem está digitando em telefone.
+                if (evento.key === 'Enter' && !evento.shiftKey && window.innerWidth > 640) {
+                    evento.preventDefault();
+                    form.dispatchEvent(new Event('submit', { cancelable: true }));
                 }
             });
+
+            function ajustarAltura() {
+                input.style.height = 'auto';
+                input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+            }
+            input.addEventListener('input', ajustarAltura);
         }
 
-        if (closeButton) {
-            closeButton.addEventListener('click', function () {
-                minimizeTutor();
+        if (quick) {
+            quick.addEventListener('click', function (evento) {
+                var alvo = evento.target;
+                if (!alvo || !alvo.getAttribute) { return; }
+                var acao = alvo.getAttribute('data-norminha-acao');
+                if (!acao) { return; }
+                enviar({ action: acao }, alvo.textContent);
             });
         }
-
-        if (launcherButton) {
-            launcherButton.addEventListener('click', function () {
-                restoreTutor();
-            });
-        }
-
-        setAvatarState(avatar, container, container.getAttribute('data-estado-avatar') || 'speaking');
     }
 
     if (document.readyState === 'loading') {

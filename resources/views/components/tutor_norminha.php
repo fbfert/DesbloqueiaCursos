@@ -1,5 +1,25 @@
 <?php
+use App\Core\Csrf;
 use App\Core\Helpers;
+
+/**
+ * Norminha — casca visual do chat.
+ *
+ * O QUE FOI PRESERVADO da versão anterior, deliberadamente:
+ *   - a raiz #norminha-tutor (a guarda de layout do smoke conta por ela);
+ *   - o launcher, o minimizar e a chave localStorage norminha_tutor_minimized_v1;
+ *   - avatar idle/speaking com fallback e a VALIDAÇÃO DE CAMINHO de avatar e
+ *     áudio, que continua tão restrita quanto era: só /assets/norminha/ e
+ *     /uploads/tutor-norminha/, sem '..', sem esquema, com o arquivo existindo
+ *     em disco. Afrouxar isso transformaria uma configuração de admin em vetor
+ *     de conteúdo arbitrário;
+ *   - o áudio contextual opcional;
+ *   - a fala do admin, que agora é a mensagem de abertura do chat.
+ *
+ * O QUE NÃO SE FAZ AQUI: nenhum texto vindo do servidor é renderizado como HTML.
+ * A mensagem de abertura passa por Helpers::e() e nl2br; as mensagens do chat
+ * são inseridas pelo JavaScript via textContent, nunca innerHTML.
+ */
 
 $tutorNorminha = isset($tutorNorminha) && is_array($tutorNorminha) ? $tutorNorminha : array();
 $titulo = isset($tutorNorminha['titulo']) ? trim((string) $tutorNorminha['titulo']) : '';
@@ -11,19 +31,22 @@ $estadoAvatar = isset($tutorNorminha['estado_avatar']) ? (string) $tutorNorminha
 $textoBotao = isset($tutorNorminha['texto_botao']) ? trim((string) $tutorNorminha['texto_botao']) : 'Ouvir orientação';
 $ttlHoras = isset($tutorNorminha['ttl_fechamento_horas']) ? (int) $tutorNorminha['ttl_fechamento_horas'] : 24;
 $ttlHoras = $ttlHoras >= 1 && $ttlHoras <= 168 ? $ttlHoras : 24;
+$contextoNorminha = isset($tutorNorminha['contexto']) ? (string) $tutorNorminha['contexto'] : 'area_aluno';
+
 $mostrarAudio = $audioExiste && $audioUrl !== '' && strpos($audioUrl, '/uploads/tutor-norminha/audio/') === 0;
 $mostrarAudio = $mostrarAudio && strpos($audioUrl, '..') === false && strpos($audioUrl, '?') === false && strpos($audioUrl, '#') === false;
+
 $publicPathRoot = defined('PUBLIC_PATH') && is_string(PUBLIC_PATH) && trim(PUBLIC_PATH) !== ''
     ? rtrim((string) PUBLIC_PATH, "/\\")
     : (defined('BASE_PATH') && is_string(BASE_PATH) && trim(BASE_PATH) !== ''
         ? (preg_match('#(?:^|[\\\\/])public_html$#i', rtrim((string) BASE_PATH, "/\\")) ? rtrim((string) BASE_PATH, "/\\") : rtrim((string) BASE_PATH, "/\\") . DIRECTORY_SEPARATOR . 'public_html')
         : rtrim((string) getcwd(), "/\\") . DIRECTORY_SEPARATOR . 'public_html');
+
 $publicPathFor = function ($publicUrl) use ($publicPathRoot) {
     $publicUrl = trim((string) $publicUrl);
     if ($publicUrl === '' || $publicUrl[0] !== '/') {
         return null;
     }
-
     $publicUrl = preg_split('/[?#]/', $publicUrl, 2)[0];
     if (!is_string($publicUrl) || $publicUrl === '' || strpos($publicUrl, '..') !== false) {
         return null;
@@ -31,6 +54,7 @@ $publicPathFor = function ($publicUrl) use ($publicPathRoot) {
 
     return $publicPathRoot . $publicUrl;
 };
+
 $audioFisico = $publicPathFor($audioUrl);
 $mostrarAudio = $mostrarAudio && $audioFisico !== null && is_file($audioFisico) && is_readable($audioFisico) && (int) @filesize($audioFisico) > 0;
 $audioCacheBuster = '';
@@ -40,6 +64,7 @@ if ($mostrarAudio) {
         $audioCacheBuster = '?v=' . $mtime;
     }
 }
+
 $tituloRender = $titulo !== '' ? $titulo : $tituloPadrao;
 
 $validarAvatar = function ($valor) use ($publicPathFor) {
@@ -47,24 +72,19 @@ $validarAvatar = function ($valor) use ($publicPathFor) {
     if ($valor === '') {
         return null;
     }
-
     if (preg_match('#^(https?:)?//#i', $valor) || stripos($valor, 'javascript:') === 0 || stripos($valor, 'data:') === 0) {
         return null;
     }
-
     $path = parse_url($valor, PHP_URL_PATH);
     if (!is_string($path) || $path === '') {
         return null;
     }
-
     if (strpos($path, '/assets/norminha/') !== 0 && strpos($path, '/uploads/tutor-norminha/avatar/') !== 0) {
         return null;
     }
-
     if (strpos($path, '..') !== false || strpos($path, 'public_html') !== false) {
         return null;
     }
-
     $query = parse_url($valor, PHP_URL_QUERY);
     if ($query !== null && $query !== '') {
         parse_str($query, $params);
@@ -72,13 +92,7 @@ $validarAvatar = function ($valor) use ($publicPathFor) {
             return null;
         }
     }
-
     $caminho = $publicPathFor($path);
-
-    if (strpos($path, '/uploads/tutor-norminha/avatar/') === 0) {
-        $caminho = $publicPathFor($path);
-    }
-
     if ($caminho === null || !is_file($caminho) || !is_readable($caminho) || (int) @filesize($caminho) <= 0) {
         return null;
     }
@@ -93,9 +107,25 @@ if ($avatarInicial === null) {
     $avatarInicial = $avatarIdle !== null ? $avatarIdle : $avatarSpeaking;
 }
 $avatarLauncher = $avatarIdle !== null ? $avatarIdle : $avatarSpeaking;
+
+// Pistas de contexto. São SUGESTÕES: o backend revalida cada uma contra a
+// sessão (NorminhaContextService). Nada de dado pessoal entra no HTML.
+$hintInscricao = isset($_GET['inscricao_id']) && ctype_digit((string) $_GET['inscricao_id']) ? (int) $_GET['inscricao_id'] : 0;
+$hintCurso = isset($_GET['curso_id']) && ctype_digit((string) $_GET['curso_id']) ? (int) $_GET['curso_id'] : 0;
+$hintTurma = isset($_GET['turma_id']) && ctype_digit((string) $_GET['turma_id']) ? (int) $_GET['turma_id'] : 0;
+$hintModulo = isset($_GET['modulo_id']) && ctype_digit((string) $_GET['modulo_id']) ? (int) $_GET['modulo_id'] : 0;
+$hintItem = 0;
+foreach (array('conteudo_id', 'item_id', 'aula_id') as $chaveItem) {
+    if (isset($_GET[$chaveItem]) && ctype_digit((string) $_GET[$chaveItem])) {
+        $hintItem = (int) $_GET[$chaveItem];
+        break;
+    }
+}
+$rotaAtual = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$emAula = $hintItem > 0;
 ?>
 
-<!-- Norminha renderizada: ativa, fala encontrada, áudio opcional -->
+<!-- Norminha: chat acadêmico. Montado uma única vez, pelo layout. -->
 <div
     id="norminha-tutor"
     class="norminha-tutor"
@@ -104,65 +134,86 @@ $avatarLauncher = $avatarIdle !== null ? $avatarIdle : $avatarSpeaking;
     data-avatar-speaking="<?php echo Helpers::e($avatarSpeaking !== null ? $avatarSpeaking : ''); ?>"
     data-texto-botao="<?php echo Helpers::e($textoBotao !== '' ? $textoBotao : 'Ouvir orientação'); ?>"
     data-ttl-hours="<?php echo (int) $ttlHoras; ?>"
+    data-csrf="<?php echo Helpers::e(Csrf::token()); ?>"
+    data-rota="<?php echo Helpers::e(substr($rotaAtual, 0, 255)); ?>"
+    data-contexto="<?php echo Helpers::e($contextoNorminha); ?>"
+    data-inscricao-id="<?php echo $hintInscricao ?: ''; ?>"
+    data-curso-id="<?php echo $hintCurso ?: ''; ?>"
+    data-turma-id="<?php echo $hintTurma ?: ''; ?>"
+    data-modulo-id="<?php echo $hintModulo ?: ''; ?>"
+    data-item-id="<?php echo $hintItem ?: ''; ?>"
 >
-    <div class="norminha-tutor__panel" data-norminha-card>
-        <button type="button" class="norminha-tutor__close" data-norminha-close aria-label="Minimizar tutor virtual">
-            <span aria-hidden="true">&times;</span>
-        </button>
+    <div class="norminha-tutor__panel" data-norminha-card role="dialog" aria-labelledby="norminha-tutor-titulo" aria-modal="false">
 
-        <div class="norminha-tutor__shell">
+        <header class="norminha-tutor__header">
             <?php if ($avatarInicial !== null): ?>
-                <figure class="norminha-tutor__avatar-wrap" aria-hidden="true">
-                    <img
-                        class="norminha-tutor__avatar"
-                        src="<?php echo Helpers::e($avatarInicial); ?>"
-                        data-avatar-image
-                        alt="Norminha"
-                        loading="lazy"
-                        decoding="async"
-                    >
-                </figure>
+                <img class="norminha-tutor__header-avatar" src="<?php echo Helpers::e($avatarInicial); ?>"
+                     data-avatar-image alt="" aria-hidden="true" loading="lazy" decoding="async">
             <?php endif; ?>
+            <div class="norminha-tutor__header-texto">
+                <h2 class="norminha-tutor__title" id="norminha-tutor-titulo"><?php echo Helpers::e($tituloRender); ?></h2>
+                <p class="norminha-tutor__eyebrow">Sua tutora no Desbloqueia</p>
+            </div>
+            <button type="button" class="norminha-tutor__close" data-norminha-close aria-label="Minimizar a Norminha">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </header>
 
-            <section class="norminha-tutor__card" aria-label="Orientação da Norminha">
-                <p class="norminha-tutor__eyebrow">Tutor Virtual Norminha</p>
-
-                <?php if ($tituloRender !== ''): ?>
-                    <h2 class="norminha-tutor__title"><?php echo Helpers::e($tituloRender); ?></h2>
-                <?php endif; ?>
-
+        <div class="norminha-tutor__mensagens" data-norminha-mensagens role="log" aria-live="polite" aria-relevant="additions" tabindex="0">
+            <div class="norminha-tutor__msg norminha-tutor__msg--norminha">
                 <?php if ($texto !== ''): ?>
                     <p class="norminha-tutor__text"><?php echo nl2br(Helpers::e($texto)); ?></p>
+                <?php else: ?>
+                    <p class="norminha-tutor__text">Olá! Posso estudar com você.</p>
                 <?php endif; ?>
 
                 <?php if ($mostrarAudio): ?>
                     <button type="button" class="norminha-tutor__audio-button" data-norminha-audio-button>
                         <?php echo Helpers::e($textoBotao !== '' ? $textoBotao : 'Ouvir orientação'); ?>
                     </button>
+                    <audio class="norminha-tutor__audio" data-norminha-audio preload="metadata"
+                           src="<?php echo Helpers::e($audioUrl . $audioCacheBuster); ?>"></audio>
                 <?php endif; ?>
-                <?php if ($mostrarAudio): ?>
-                    <audio
-                        class="norminha-tutor__audio"
-                        data-norminha-audio
-                        preload="metadata"
-                        src="<?php echo Helpers::e($audioUrl . $audioCacheBuster); ?>"
-                    ></audio>
-                <?php endif; ?>
-            </section>
+            </div>
         </div>
+
+        <div class="norminha-tutor__acoes-rapidas" data-norminha-quick>
+            <button type="button" class="norminha-tutor__chip" data-norminha-acao="resume_course">Continuar de onde parei</button>
+            <button type="button" class="norminha-tutor__chip" data-norminha-acao="show_progress">Ver meu progresso</button>
+            <button type="button" class="norminha-tutor__chip" data-norminha-acao="certificate_status">Meu certificado</button>
+            <?php if ($emAula): ?>
+                <button type="button" class="norminha-tutor__chip" data-norminha-acao="explain_current_lesson">Tirar dúvida desta aula</button>
+            <?php endif; ?>
+        </div>
+
+        <div class="norminha-tutor__pensando" data-norminha-pensando hidden aria-hidden="true">
+            <span class="norminha-tutor__ponto"></span>
+            <span class="norminha-tutor__ponto"></span>
+            <span class="norminha-tutor__ponto"></span>
+            <span class="norminha-tutor__pensando-texto">Norminha está pensando...</span>
+        </div>
+
+        <form class="norminha-tutor__form" data-norminha-form>
+            <label class="norminha-tutor__label-oculto" for="norminha-tutor-input">Escreva sua dúvida</label>
+            <textarea
+                id="norminha-tutor-input"
+                class="norminha-tutor__input"
+                data-norminha-input
+                rows="1"
+                maxlength="2000"
+                placeholder="Digite sua pergunta..."
+                autocomplete="off"
+            ></textarea>
+            <button type="submit" class="norminha-tutor__enviar" data-norminha-enviar aria-label="Enviar pergunta">
+                <span aria-hidden="true">&#10148;</span>
+            </button>
+        </form>
     </div>
 
-    <button type="button" class="norminha-tutor__launcher" data-norminha-launcher aria-label="Reabrir a Norminha">
+    <button type="button" class="norminha-tutor__launcher" data-norminha-launcher aria-label="Abrir a Norminha" aria-expanded="true">
         <?php if ($avatarLauncher !== null): ?>
-            <img
-                class="norminha-tutor__launcher-avatar"
-                src="<?php echo Helpers::e($avatarLauncher); ?>"
-                alt=""
-                aria-hidden="true"
-                loading="lazy"
-                decoding="async"
-                data-norminha-launcher-avatar
-            >
+            <img class="norminha-tutor__launcher-avatar" src="<?php echo Helpers::e($avatarLauncher); ?>"
+                 alt="" aria-hidden="true" loading="lazy" decoding="async" data-norminha-launcher-avatar>
             <span class="norminha-tutor__launcher-fallback" data-norminha-launcher-fallback aria-hidden="true">N</span>
         <?php else: ?>
             <span class="norminha-tutor__launcher-fallback" data-norminha-launcher-fallback aria-hidden="true">N</span>
