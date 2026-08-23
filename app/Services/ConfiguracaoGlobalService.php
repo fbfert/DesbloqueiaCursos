@@ -444,6 +444,7 @@ class ConfiguracaoGlobalService
         $url = $caminho;
         if (strpos($url, 'data:') !== 0 && !preg_match('#^https?://#i', $url) && strpos($url, '//') !== 0) {
             $url = '/' . ltrim($url, '/');
+            $url = $this->urlQueRealmenteServe($url, $fallback);
         }
 
         $mime = $this->mimeTypeFromPath($url);
@@ -457,6 +458,60 @@ class ConfiguracaoGlobalService
             'mime' => $mime,
             'version' => $version,
         );
+    }
+
+    /**
+     * Devolve a URL sob a qual o arquivo de fato e servido.
+     *
+     * O projeto tem DOIS raizes de asset: BASE_PATH/assets e
+     * BASE_PATH/public_html/assets. O upload de favicon grava no segundo
+     * (uploadFaviconPublico usa BASE_PATH . '/public_html/assets/uploads/favicons'),
+     * mas gravava-se no banco a URL '/assets/uploads/...', que o servidor
+     * resolve no PRIMEIRO. Resultado: o arquivo existia e a URL dava 500 --
+     * duas vezes por carregamento de qualquer pagina do layout legado,
+     * incluindo /login, que e pagina de visitante.
+     *
+     * Nao e arquivo apagado, e endereco errado. Por isso a correcao e resolver
+     * o endereco, e nao esconder o link: esconder deixaria o upload continuar
+     * gravando num lugar que ninguem serve.
+     *
+     * Se o arquivo nao estiver em raiz nenhuma, cai no padrao; se nem ele
+     * existir, devolve vazio e o layout nao emite link algum.
+     */
+    private function urlQueRealmenteServe($url, $fallback)
+    {
+        $caminhoRelativo = ltrim((string) parse_url($url, PHP_URL_PATH) ?: $url, '/');
+
+        // Ja veio com o prefixo do segundo raiz: nada a fazer.
+        if (strpos($caminhoRelativo, 'public_html/') === 0) {
+            return is_file(BASE_PATH . '/' . $caminhoRelativo) ? $url : $this->urlDoFallback($fallback);
+        }
+
+        if (is_file(BASE_PATH . '/' . $caminhoRelativo)) {
+            return $url;
+        }
+
+        if (is_file(BASE_PATH . '/public_html/' . $caminhoRelativo)) {
+            return '/public_html/' . $caminhoRelativo;
+        }
+
+        return $this->urlDoFallback($fallback);
+    }
+
+    /** O padrao, se ele existir; string vazia se nem ele existe. */
+    private function urlDoFallback($fallback)
+    {
+        $fallback = '/' . ltrim(trim((string) $fallback), '/');
+        $relativo = ltrim($fallback, '/');
+
+        if (is_file(BASE_PATH . '/' . $relativo)) {
+            return $fallback;
+        }
+        if (is_file(BASE_PATH . '/public_html/' . $relativo)) {
+            return '/public_html/' . $relativo;
+        }
+
+        return '';
     }
 
     private function mimeTypeFromPath($path)
@@ -484,11 +539,13 @@ class ConfiguracaoGlobalService
             return null;
         }
 
-        $path = parse_url($url, PHP_URL_PATH) ?: $url;
-        $absolutePath = BASE_PATH . '/public_html/' . ltrim($path, '/');
+        $path = ltrim((string) (parse_url($url, PHP_URL_PATH) ?: $url), '/');
 
-        if (is_file($absolutePath)) {
-            return (int) filemtime($absolutePath);
+        // Os dois raizes, na mesma ordem em que o servidor os resolve.
+        foreach (array(BASE_PATH . '/' . $path, BASE_PATH . '/public_html/' . $path) as $absoluto) {
+            if (is_file($absoluto)) {
+                return (int) filemtime($absoluto);
+            }
         }
 
         return null;

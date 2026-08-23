@@ -486,6 +486,15 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
     flex: 0 0 auto;
 }
 
+/* Sugestoes reoferecidas dentro de uma bolha (a barra fixa some depois da
+   primeira troca). Mesmo visual dos atalhos, empilhadas no fluxo da conversa. */
+.norminha-tutor__sugestoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
 .norminha-tutor__chip {
     border: 1px solid var(--norminha-border);
     background: var(--norminha-surface);

@@ -160,7 +160,11 @@ if (!$isAdmin) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
-    <?php if (!empty($faviconPublico['href'])): ?>
+    <?php /* O painel administrativo vai SEM favicon, por decisao do responsavel
+             em 23/08/2026. A marca do site e para quem visita o site; a aba do
+             admin nao precisa dela. O favicon publico segue normalmente nas
+             demais paginas deste layout. */ ?>
+    <?php if (!$isAdmin && !empty($faviconPublico['href'])): ?>
         <link rel="icon" href="<?php echo Helpers::e($faviconPublico['href']); ?>" type="<?php echo Helpers::e($faviconPublico['mime']); ?>" sizes="any">
         <link rel="shortcut icon" href="<?php echo Helpers::e($faviconPublico['href']); ?>">
     <?php endif; ?>

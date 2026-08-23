@@ -384,9 +384,48 @@
             bolha.appendChild(caixa);
         }
 
+        /**
+         * Sugestoes dentro da bolha.
+         *
+         * A barra fixa de atalhos some assim que a conversa comeca -- repetir
+         * "ja tenho cadastro / quero me cadastrar / vamos escolher um curso" a
+         * cada troca empilha a mesma lista e faz o dialogo parecer um menu que
+         * nao sai do lugar. O servidor reoferece os atalhos so quando eles sao
+         * a saida: na abertura e quando nao entendeu o que foi dito.
+         */
+        function adicionarSugestoes(bolha, sugestoes) {
+            if (!sugestoes || !sugestoes.length) { return; }
+
+            var caixa = document.createElement('div');
+            caixa.className = 'norminha-tutor__sugestoes';
+            var incluidas = 0;
+
+            for (var i = 0; i < sugestoes.length; i += 1) {
+                var s = sugestoes[i];
+                if (!s || !s.acao || !s.label) { continue; }
+
+                var chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'norminha-tutor__chip';
+                chip.textContent = String(s.label);
+
+                (function (acao) {
+                    chip.addEventListener('click', function () {
+                        enviar({ action: acao }, String(s.label));
+                    });
+                })(String(s.acao));
+
+                caixa.appendChild(chip);
+                incluidas += 1;
+            }
+
+            if (incluidas > 0) { bolha.appendChild(caixa); }
+        }
+
         function mostrarResposta(dados) {
             var bolha = criarBolha('norminha-tutor__msg--norminha');
             adicionarTexto(bolha, dados.message || '');
+            adicionarSugestoes(bolha, dados.sugestoes);
             adicionarEscolhas(bolha, dados.opcoes);
             adicionarAcoes(bolha, dados.actions);
             adicionarFeedback(bolha, dados.message_id);
@@ -462,6 +501,13 @@
             // Guardado para o caso de a resposta ser "de qual curso?": depois da
             // escolha, e esta pergunta que precisa ser refeita.
             pedidoPendente = payload;
+
+            // A barra fixa de atalhos cumpriu o papel dela ao abrir a conversa.
+            // Daqui em diante ela so ocuparia espaco acima do campo de texto,
+            // repetindo opcoes que a propria resposta ja oferece quando cabem.
+            if (quick && !quick.hidden) {
+                quick.hidden = true;
+            }
 
             if (ecoDoAluno) { mostrarMensagemAluno(ecoDoAluno); }
 

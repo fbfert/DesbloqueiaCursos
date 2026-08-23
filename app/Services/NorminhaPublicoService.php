@@ -83,7 +83,7 @@ class NorminhaPublicoService
         $mensagem = trim((string) $mensagem);
 
         if ($acao === '' && $mensagem === '') {
-            return $this->resposta('duvida_generica', $this->saudacao(), $this->acoesIniciais(), 'speaking');
+            return $this->resposta('duvida_generica', $this->saudacao(), array(), 'speaking', true);
         }
 
         $intencao = $acao !== '' ? $acao : $this->classificar($mensagem);
@@ -248,12 +248,16 @@ class NorminhaPublicoService
 
     private function naoEntendi()
     {
+        // Aqui os atalhos voltam, porque e o momento em que servem: a Norminha
+        // nao entendeu, e mostrar o que ela SABE fazer vale mais que repetir
+        // que nao sabe.
         return $this->resposta(
             'duvida_generica',
             'Ainda não sei responder isso. Por aqui eu ajudo com cadastro, acesso à conta e '
             . 'escolha de curso — e posso te levar até quem resolve o resto.',
-            array_merge($this->acoesIniciais(), array($this->link('Falar com a equipe', '/v2/contato'))),
-            'doubt'
+            array($this->link('Falar com a equipe', '/v2/contato')),
+            'doubt',
+            true
         );
     }
 
@@ -393,9 +397,12 @@ class NorminhaPublicoService
         return array('label' => (string) $label, 'url' => (string) $url);
     }
 
-    private function resposta($intent, $mensagem, array $acoes, $estado)
+    /**
+     * @param bool $comSugestoes reoferece os atalhos dentro da bolha
+     */
+    private function resposta($intent, $mensagem, array $acoes, $estado, $comSugestoes = false)
     {
-        return array(
+        $r = array(
             'ok' => true,
             'message' => $mensagem,
             'intent' => $intent,
@@ -404,5 +411,16 @@ class NorminhaPublicoService
             'sources' => array(),
             'actions' => array_values($acoes),
         );
+
+        // Os atalhos NAO voltam em toda resposta. Repetir "ja tenho cadastro /
+        // quero me cadastrar / vamos escolher um curso" a cada troca empilha a
+        // mesma lista na tela e faz a conversa parecer um menu que nao sai do
+        // lugar. Eles voltam quando sao a saida: quando a Norminha nao entendeu
+        // o que foi dito, e nao ha para onde apontar.
+        if ($comSugestoes) {
+            $r['sugestoes'] = $this->atalhos();
+        }
+
+        return $r;
     }
 }
