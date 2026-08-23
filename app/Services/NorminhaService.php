@@ -270,6 +270,11 @@ class NorminhaService
             'avatar_state' => 'explaining',
             'sources' => isset($gerado['sources']) ? $gerado['sources'] : array(),
             'actions' => $this->acoesPadrao($contexto),
+            // `usage` SEGUE ate finalizar(), que e quem grava modelo, tokens e
+            // latencia. Este metodo remontava o array campo a campo e deixava o
+            // uso para tras -- o elo que faltava para o teto de gasto contar
+            // alguma coisa. Ver docs/norminha/20-ia-no-admin.md.
+            'usage' => isset($gerado['usage']) && is_array($gerado['usage']) ? $gerado['usage'] : array(),
         );
     }
 
