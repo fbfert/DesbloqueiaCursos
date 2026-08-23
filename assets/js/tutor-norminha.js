@@ -104,6 +104,10 @@
         var conversationId = null;
         var enviando = false;
 
+        // O que o aluno pediu antes de a Norminha perguntar de qual curso se
+        // trata. Depois da escolha, e este pedido que e refeito.
+        var pedidoPendente = null;
+
         clearLegacyState();
 
         // ---------------------------------------------------------------
@@ -289,9 +293,93 @@
             rolarParaFim();
         }
 
+        /**
+         * Escolha de curso quando o aluno tem mais de um.
+         *
+         * O servidor SEMPRE mandou a lista em `opcoes` — e ate 23/08/2026 este
+         * arquivo a descartava. O resultado era um beco sem saida: a Norminha
+         * perguntava "sobre qual deles quer falar?", listava os nomes como texto
+         * e nao oferecia nenhuma forma de responder. Clicar nas acoes rapidas ou
+         * digitar o nome do curso levava a mesma pergunta, para sempre.
+         *
+         * A escolha e gravada em data-inscricao-id do proprio container, que e de
+         * onde hints() le. Assim ela vale para todas as mensagens seguintes sem
+         * precisar de estado paralelo.
+         */
+        function escolherCurso(inscricaoId, rotulo) {
+            container.setAttribute('data-inscricao-id', String(inscricaoId));
+
+            // O nome do curso vira a fala do aluno: e o que ele acabou de dizer.
+            mostrarMensagemAluno(rotulo);
+
+            // Repete a pergunta original, agora sem ambiguidade. Sem pergunta
+            // anterior (o aluno abriu o chat e caiu direto na escolha), pede o
+            // panorama do curso escolhido.
+            var repetir = pedidoPendente || { action: 'show_progress' };
+            pedidoPendente = null;
+            enviar(repetir, null);
+        }
+
+        function adicionarEscolhas(bolha, opcoes) {
+            if (!opcoes || !opcoes.length) { return; }
+
+            var caixa = document.createElement('div');
+            caixa.className = 'norminha-tutor__escolhas';
+
+            // Um aluno da casa tem dezenas de matriculas. Botao para cada uma
+            // seria uma parede: mostram-se os mais recentes e diz-se como
+            // chegar ao resto.
+            var limite = Math.min(opcoes.length, 6);
+            var incluidos = 0;
+
+            for (var i = 0; i < limite; i += 1) {
+                var opcao = opcoes[i];
+                var id = opcao ? parseInt(opcao.inscricao_id, 10) : 0;
+                if (!id || id <= 0 || !opcao.curso_titulo) { continue; }
+
+                var botao = document.createElement('button');
+                botao.type = 'button';
+                botao.className = 'norminha-tutor__escolha';
+
+                var titulo = document.createElement('span');
+                titulo.className = 'norminha-tutor__escolha-curso';
+                titulo.textContent = String(opcao.curso_titulo);
+                botao.appendChild(titulo);
+
+                if (opcao.turma_nome) {
+                    var turma = document.createElement('span');
+                    turma.className = 'norminha-tutor__escolha-turma';
+                    turma.textContent = String(opcao.turma_nome);
+                    botao.appendChild(turma);
+                }
+
+                (function (idEscolhido, rotuloEscolhido) {
+                    botao.addEventListener('click', function () {
+                        escolherCurso(idEscolhido, rotuloEscolhido);
+                    });
+                })(id, String(opcao.curso_titulo));
+
+                caixa.appendChild(botao);
+                incluidos += 1;
+            }
+
+            if (!incluidos) { return; }
+
+            if (opcoes.length > incluidos) {
+                var nota = document.createElement('p');
+                nota.className = 'norminha-tutor__escolhas-nota';
+                nota.textContent = 'Você tem ' + opcoes.length
+                    + ' cursos ativos. Se o seu não está aqui, escreva o nome dele.';
+                caixa.appendChild(nota);
+            }
+
+            bolha.appendChild(caixa);
+        }
+
         function mostrarResposta(dados) {
             var bolha = criarBolha('norminha-tutor__msg--norminha');
             adicionarTexto(bolha, dados.message || '');
+            adicionarEscolhas(bolha, dados.opcoes);
             adicionarAcoes(bolha, dados.actions);
             adicionarFeedback(bolha, dados.message_id);
             listaMensagens.appendChild(bolha);
@@ -356,6 +444,10 @@
         function enviar(payload, ecoDoAluno) {
             if (enviando) { return; }
             travar(true);
+
+            // Guardado para o caso de a resposta ser "de qual curso?": depois da
+            // escolha, e esta pergunta que precisa ser refeita.
+            pedidoPendente = payload;
 
             if (ecoDoAluno) { mostrarMensagemAluno(ecoDoAluno); }
 

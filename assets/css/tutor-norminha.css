@@ -378,6 +378,58 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
     margin-top: 8px;
 }
 
+/* Escolha de curso, quando o aluno tem mais de um.
+   Criados pelo JavaScript ao receber `opcoes` do servidor. */
+
+.norminha-tutor__escolhas {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.norminha-tutor__escolha {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    text-align: left;
+    padding: 9px 11px;
+    border: 1px solid var(--norminha-border);
+    border-radius: 12px;
+    background: var(--norminha-surface);
+    color: var(--norminha-ink);
+    font: inherit;
+    cursor: pointer;
+    /* Alvo confortavel no toque: esta lista existe sobretudo no celular. */
+    min-height: 44px;
+}
+
+.norminha-tutor__escolha:hover,
+.norminha-tutor__escolha:focus-visible {
+    border-color: var(--norminha-purple);
+    background: rgba(123, 44, 191, 0.05);
+}
+
+.norminha-tutor__escolha-curso {
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.norminha-tutor__escolha-turma {
+    font-size: 0.74rem;
+    opacity: 0.7;
+}
+
+.norminha-tutor__escolhas-nota {
+    margin: 2px 0 0;
+    font-size: 0.76rem;
+    opacity: 0.75;
+    line-height: 1.35;
+}
+
 .norminha-tutor__acao {
     display: inline-block;
     padding: 7px 12px;

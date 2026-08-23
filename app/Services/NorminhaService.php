@@ -154,7 +154,22 @@ class NorminhaService
             );
         }
 
-        // Ambiguidade não se resolve chutando: pergunta-se.
+        // Ambiguidade: antes de perguntar de novo, ver se o aluno já respondeu.
+        //
+        // Ele pode ter escrito o nome do curso — foi o que o responsável
+        // relatou em 23/08/2026: escrever o nome não produzia efeito nenhum e a
+        // mesma pergunta voltava. A escolha por botão chega como hint de
+        // inscricao_id e nem entra aqui; esta é a saída para quem digita.
+        if ($contexto['estado'] === 'ambiguo') {
+            $escolhida = $this->inscricaoPeloTexto($payload, $contexto['opcoes']);
+            if ($escolhida !== null) {
+                $hintsComEscolha = $this->hints($payload);
+                $hintsComEscolha['inscricao_id'] = $escolhida;
+                $contexto = $this->contextService->resolver($usuarioId, $hintsComEscolha);
+            }
+        }
+
+        // Continuou ambíguo: pergunta-se. Nunca se chuta.
         if ($contexto['estado'] === 'ambiguo') {
             return $this->respostaSimples(
                 $usuarioId, $payload, $contexto,
@@ -840,6 +855,146 @@ class NorminhaService
         }
 
         return $hints;
+    }
+
+    /**
+     * O texto do aluno nomeia um dos cursos?
+     *
+     * Só devolve id quando a correspondência é ÚNICA. Duas matrículas em cursos
+     * de nome parecido — "PND na prática: Biologia" e "PND na prática: Física" —
+     * mantêm a ambiguidade, e a Norminha pergunta de novo em vez de escolher
+     * por conta própria.
+     *
+     * Um texto curto demais não decide nada: "PND" casa com dezenas.
+     *
+     * @return int|null
+     */
+    private function inscricaoPeloTexto(array $payload, array $opcoes)
+    {
+        $texto = isset($payload['message']) ? $this->normalizarParaComparar((string) $payload['message']) : '';
+        if ($texto === '' || mb_strlen($texto) < 4 || !$opcoes) {
+            return null;
+        }
+
+        // Comparar por trecho literal nao sobrevive ao mundo real. O titulo traz
+        // "1ª Fase" e o aluno escreve "1a Fase". Ele escreve as palavras fora de
+        // ordem. E escreve frase, nao titulo: "quero falar do OAB 1a fase".
+        //
+        // Entao conta-se quantas palavras do aluno aparecem em cada matricula.
+        // Enchimento ("quero", "falar") nao casa com nada e simplesmente nao
+        // pontua -- nao e preciso manter lista de palavras a ignorar, que
+        // envelheceria mal.
+        //
+        // Isto NAO e chutar: exige-se que o primeiro colocado tenha pelo menos
+        // duas palavras e supere ESTRITAMENTE todos os outros. Empate mantem a
+        // ambiguidade, e a Norminha pergunta de novo.
+        $palavras = array();
+        foreach (explode(' ', $texto) as $palavra) {
+            // Palavra de ate duas letras ("de", "na", "o") nao distingue nada.
+            if (mb_strlen($palavra) >= 3 || ctype_digit($palavra)) {
+                $palavras[$palavra] = true;
+            }
+        }
+        $palavras = array_keys($palavras);
+
+        if (count($palavras) < 2) {
+            return null;
+        }
+
+        $melhorId = null;
+        $melhorPonto = 0;
+        $segundoPonto = 0;
+
+        foreach ($opcoes as $opcao) {
+            $alvo = trim(
+                $this->normalizarParaComparar((string) $opcao['curso_titulo'])
+                . ' ' . $this->normalizarParaComparar((string) $opcao['turma_nome'])
+            );
+            if ($alvo === '') {
+                continue;
+            }
+
+            $ponto = 0;
+            foreach ($palavras as $palavra) {
+                if ($this->palavraCasa($palavra, $alvo)) {
+                    $ponto++;
+                }
+            }
+
+            if ($ponto > $melhorPonto) {
+                $segundoPonto = $melhorPonto;
+                $melhorPonto = $ponto;
+                $melhorId = (int) $opcao['inscricao_id'];
+            } elseif ($ponto > $segundoPonto) {
+                $segundoPonto = $ponto;
+            }
+        }
+
+        if ($melhorId === null || $melhorPonto < 2 || $melhorPonto === $segundoPonto) {
+            return null;
+        }
+
+        return $melhorId;
+    }
+
+    /**
+     * A palavra do aluno aparece no nome do curso?
+     *
+     * Vale a ocorrência direta e também o prefixo comum de cinco letras: em
+     * português a variação costuma estar no fim da palavra, e um aluno escreve
+     * "biologia" para um curso chamado "CIÊNCIAS BIOLÓGICAS". Cinco letras é
+     * curto o bastante para pegar a flexão e longo o bastante para não
+     * aproximar palavras diferentes -- "educação" e "educativa" só
+     * compartilham quatro.
+     */
+    private function palavraCasa($palavra, $alvo)
+    {
+        if (strpos($alvo, $palavra) !== false) {
+            return true;
+        }
+
+        if (mb_strlen($palavra) < 5) {
+            return false;
+        }
+
+        foreach (explode(' ', $alvo) as $doTitulo) {
+            if (mb_strlen($doTitulo) < 5) {
+                continue;
+            }
+
+            $comum = 0;
+            $limite = min(mb_strlen($palavra), mb_strlen($doTitulo));
+            while ($comum < $limite && mb_substr($palavra, $comum, 1) === mb_substr($doTitulo, $comum, 1)) {
+                $comum++;
+            }
+
+            if ($comum >= 5) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Minúsculas, sem acento e sem pontuação, para comparar nome de curso. */
+    private function normalizarParaComparar($texto)
+    {
+        $texto = trim((string) $texto);
+        if ($texto === '') {
+            return '';
+        }
+
+        $texto = function_exists('mb_strtolower') ? mb_strtolower($texto, 'UTF-8') : strtolower($texto);
+        $de = array('á','à','â','ã','ä','é','è','ê','ë','í','ì','î','ï','ó','ò','ô','õ','ö','ú','ù','û','ü','ç');
+        $para = array('a','a','a','a','a','e','e','e','e','i','i','i','i','o','o','o','o','o','u','u','u','u','c');
+        $texto = str_replace($de, $para, $texto);
+        $texto = preg_replace('/[^a-z0-9]+/', ' ', $texto);
+        $texto = trim(preg_replace('/\s+/', ' ', $texto));
+
+        // Ordinal escrito de qualquer jeito vira o numero: "1a", "1o", "1ª" e
+        // "1º" passam a ser "1". Sem isto o titulo "1ª Fase" nunca casaria com
+        // quem digita "1a Fase" -- e e assim que se digita.
+        return trim(preg_replace('/(\d+)\s*[ao]\b/', '$1', $texto));
     }
 
     private function textoDesambiguacao(array $contexto)
