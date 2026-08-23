@@ -17,6 +17,10 @@ da letra em alguns pontos produz defeito.
 | [`AMBIENTE-DEV.md`](AMBIENTE-DEV.md) | Como trabalhar sem tocar na produção |
 | [`08-telemetria.md`](08-telemetria.md) | O painel do Checkpoint 0: como ler e o que decidir |
 | [`17-deploy.md`](17-deploy.md) | Roteiro de deploy e rollback das duas ondas |
+| [`19-review-go-live.md`](19-review-go-live.md) | **Parecer de go-live**: PASS/FAIL, riscos residuais, recomendação |
+| [`16-qa.md`](16-qa.md) | Cobertura de testes e como reexecutar |
+| [`15-privacidade.md`](15-privacidade.md) | O que sai do servidor quando a IA está ligada |
+| [`15-red-team.md`](15-red-team.md) | 18 cenários de ataque e a barreira de cada um |
 | [`../../tests/Smoke/README.md`](../../tests/Smoke/README.md) | A rede de regressão: uso, baseline, guarda de layout |
 
 ## Estado
@@ -43,7 +47,11 @@ da letra em alguns pontos produz defeito.
 | 13 — Memória de conversa e resumo | **concluída** |
 | 14 — Admin e configurações de IA | **concluída** |
 | **CP1 — Checkpoint: piloto com IA** | bloqueado: falta hard cap e política de privacidade |
-| Onda 2 (15 a 19) — hardening e go-live | pendentes |
+| 15 — Hardening, rate limit definitivo, red team | **concluída** |
+| 16 — QA, runner e regressão | **concluída** |
+| 17 — Deploy e rollback | **concluída** |
+| 18 — Limpeza do legado Claude | **concluída** (commit isolado) |
+| 19 — Revisão independente de go-live | **concluída** |
 
 ## As três correções que mais importam
 
