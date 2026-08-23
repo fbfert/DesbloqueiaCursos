@@ -115,11 +115,37 @@ class NorminhaModelos
         return array_key_exists((string) $modelo, self::catalogo());
     }
 
+    /**
+     * Reduz o nome do provedor ao nome do catálogo.
+     *
+     * Pede-se `gpt-5-mini` e a resposta volta assinada `gpt-5-mini-2025-08-07`:
+     * a OpenAI resolve o alias para o instantâneo datado, e é esse nome que fica
+     * gravado em `norminha_mensagens`. Sem esta redução, TODA resposta seria
+     * contabilizada como "modelo desconhecido", o custo do mês ficaria zerado e
+     * o teto de gasto nunca dispararia — um freio que parece existir e não
+     * segura nada. Descoberto em 23/08/2026, na primeira chamada real.
+     */
+    public static function normalizar($modelo)
+    {
+        $modelo = trim((string) $modelo);
+        if ($modelo === '' || array_key_exists($modelo, self::catalogo())) {
+            return $modelo;
+        }
+
+        // Só o sufixo de data sai. Qualquer outra variação continua sendo outro
+        // modelo, e deve aparecer como tal.
+        $semData = preg_replace('/-\d{4}-\d{2}-\d{2}$/', '', $modelo);
+
+        return array_key_exists($semData, self::catalogo()) ? $semData : $modelo;
+    }
+
     /** Dados de um modelo, ou null. */
     public static function dados($modelo)
     {
         $c = self::catalogo();
-        return isset($c[(string) $modelo]) ? $c[(string) $modelo] : null;
+        $chave = self::normalizar($modelo);
+
+        return isset($c[$chave]) ? $c[$chave] : null;
     }
 
     /**
@@ -151,10 +177,19 @@ class NorminhaModelos
     {
         $casos = array();
         foreach (self::catalogo() as $id => $d) {
+            // Casa o nome do catálogo E o instantâneo datado que o provedor
+            // devolve (gpt-5-mini-2025-08-07). A expressão regular prende a
+            // data ao fim para que "gpt-5-mini-turbo", se existir um dia, não
+            // seja confundido com este.
+            $condicao = sprintf(
+                "(%s = '%s' OR %s REGEXP '^%s-[0-9]{4}-[0-9]{2}-[0-9]{2}$')",
+                $colModelo, $id, $colModelo, preg_quote($id, '/')
+            );
+
             $casos[] = sprintf(
-                "WHEN %s = %s THEN ((GREATEST(%s,0) - LEAST(GREATEST(%s,0), GREATEST(%s,0))) * %F "
+                "WHEN %s THEN ((GREATEST(%s,0) - LEAST(GREATEST(%s,0), GREATEST(%s,0))) * %F "
                 . "+ LEAST(GREATEST(%s,0), GREATEST(%s,0)) * %F + GREATEST(%s,0) * %F) / 1000000",
-                $colModelo, "'" . $id . "'",
+                $condicao,
                 $colEntrada, $colCache, $colEntrada, $d['entrada'],
                 $colCache, $colEntrada, $d['entrada_cache'],
                 $colSaida, $d['saida']

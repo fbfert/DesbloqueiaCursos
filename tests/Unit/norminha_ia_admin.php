@@ -113,6 +113,19 @@ it('separa do total as respostas sem preço conhecido', function () use ($pdo, $
     expect($servico->resumo()['sem_preco'])->toBe(1);
 });
 
+it('a soma em SQL também reconhece o instantâneo datado', function () use ($pdo, $gravarResposta) {
+    $antes = (new NorminhaCustoService($pdo))->gastoDoMes();
+    $gravarResposta('gpt-5-mini-2025-08-07', 1000, 0, 1000);
+
+    $depois = (new NorminhaCustoService($pdo))->gastoDoMes();
+    $esperado = NorminhaModelos::custo('gpt-5-mini', 1000, 0, 1000);
+
+    if (abs(($depois - $antes) - $esperado) > 0.000000001) {
+        throw new RuntimeException('o SQL não cobrou o instantâneo datado');
+    }
+    expect((new NorminhaCustoService($pdo))->resumo()['sem_preco'])->toBe(1);
+});
+
 describe('Teto de gasto');
 
 it('permite enquanto há folga e bloqueia ao estourar', function () use ($pdo) {
@@ -131,6 +144,39 @@ it('teto zero significa sem teto, e diz isso', function () use ($pdo) {
     $r = (new NorminhaCustoService($pdo))->dentroDoTeto(0);
     expect($r['permitido'])->toBeTrue();
     expect($r['motivo'])->toBe('sem_teto');
+});
+
+describe('O nome que o provedor devolve');
+
+/**
+ * Pede-se `gpt-5-mini` e a resposta volta assinada `gpt-5-mini-2025-08-07`. É
+ * esse nome que fica gravado em norminha_mensagens. Descoberto em 23/08/2026,
+ * na primeira chamada real: o teste de chave funcionou e informou custo
+ * US$ 0,000000.
+ *
+ * Se o catálogo não reduzisse o instantâneo ao alias, TODA resposta contaria
+ * como modelo desconhecido, o gasto do mês ficaria zerado e o teto nunca
+ * dispararia. Um freio que parece existir e não segura nada é pior que não ter
+ * freio, porque ninguém vai conferir.
+ */
+
+it('reduz o instantâneo datado ao modelo do catálogo', function () {
+    expect(NorminhaModelos::normalizar('gpt-5-mini-2025-08-07'))->toBe('gpt-5-mini');
+    expect(NorminhaModelos::normalizar('gpt-5.6-luna-2026-01-15'))->toBe('gpt-5.6-luna');
+    expect(NorminhaModelos::normalizar('gpt-5-mini'))->toBe('gpt-5-mini');
+});
+
+it('cobra o instantâneo pelo preço do modelo', function () {
+    $alias = NorminhaModelos::custo('gpt-5-mini', 1000, 0, 1000);
+    $datado = NorminhaModelos::custo('gpt-5-mini-2025-08-07', 1000, 0, 1000);
+    expect($datado)->toBe($alias);
+    expect($datado > 0)->toBeTrue();
+});
+
+it('não confunde outra variante com o modelo do catálogo', function () {
+    // Só o sufixo de data sai. "-turbo" seria outro modelo, com outro preço.
+    expect(NorminhaModelos::custo('gpt-5-mini-turbo', 1000, 0, 1000))->toBeNull();
+    expect(NorminhaModelos::custo('gpt-5-mini-2025-08', 1000, 0, 1000))->toBeNull();
 });
 
 describe('Parâmetros que o modelo aceita');
