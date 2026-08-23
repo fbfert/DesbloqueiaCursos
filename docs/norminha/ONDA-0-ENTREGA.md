@@ -108,7 +108,7 @@ componente, nada lança exceção, o LMS segue respondendo e as tabelas permanec
 
 1. As ações de segurança pendentes do relatório da Etapa 0 (detalhadas em
    [`00-auditoria-preflight.md`](00-auditoria-preflight.md)).
-2. Aplicar o [roteiro de deploy](17-deploy-onda-0.md) — subir com a Norminha desligada, verificar,
+2. Aplicar o [roteiro de deploy](17-deploy.md) — subir com a Norminha desligada, verificar,
    depois ligar.
 3. Deixar rodando 10 a 14 dias.
 4. Ler a lista de perguntas não resolvidas e classificá-las: **conteúdo** ou **navegação**?

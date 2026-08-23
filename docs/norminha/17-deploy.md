@@ -1,8 +1,10 @@
-# Deploy da Onda 0 — roteiro
+# Deploy — roteiro
 
 Alinhado a `docs/deploy.md`, `docs/go-live-checklist.md` e `docs/rollback.md`.
-Cobre **apenas a Onda 0**: nenhuma chamada a provedor de IA, nenhuma chave de API, custo zero por
-mensagem. O deploy da Onda 1 é outro documento, com pré-requisitos próprios.
+
+O código das duas ondas sobe junto e **fica desligado**. A Onda 0 é ligada por uma chave, a Onda 1
+por outra, em momentos diferentes e com pré-requisitos diferentes. As seções 1 a 9 cobrem a Onda 0;
+a seção 10 cobre a Onda 1.
 
 ## A ideia que organiza tudo: subir ≠ ligar
 
@@ -57,18 +59,20 @@ Referência do backup anterior a este projeto: `backups/pre-norminha-20260822-20
 
 ## 3. Migrations
 
-**Três, nesta ordem.** Todas aditivas e idempotentes — nenhuma altera tabela existente do LMS.
+**Quatro, nesta ordem.** Todas aditivas e idempotentes — nenhuma altera tabela existente do LMS.
 
 | Arquivo | O que faz |
 |---|---|
 | `sql/073_norminha_conversas.sql` | cria `norminha_conversas`, `norminha_mensagens`, `norminha_feedback`, `norminha_uso` |
 | `sql/074_norminha_telemetria.sql` | `bloqueios_dia` em `norminha_uso` + três índices por data |
 | `sql/075_norminha_limites_seed.sql` | cria as chaves de limite do rate limit, para aparecerem no admin |
+| `sql/076_norminha_ia_config_seed.sql` | cria `tutor_ia_ativo` (valor 0), tamanho de resposta e prompt complementar |
 
 ```bash
 mysql -u <usuario> -p desbloqueiacursos < sql/073_norminha_conversas.sql
 mysql -u <usuario> -p desbloqueiacursos < sql/074_norminha_telemetria.sql
 mysql -u <usuario> -p desbloqueiacursos < sql/075_norminha_limites_seed.sql
+mysql -u <usuario> -p desbloqueiacursos < sql/076_norminha_ia_config_seed.sql
 ```
 
 Conferência:
@@ -267,6 +271,97 @@ Tudo pelo menu lateral do admin, sob a permissão `conteudo.ver`.
 
 O que **não** se controla pelo admin, por decisão: a chave de API do provedor (Onda 1) fica só no
 `.env`, nunca no banco nem em tela.
+
+## 10. Ligar a Onda 1 — a camada de IA
+
+Só depois do Checkpoint 0, e só se ele apontar que as perguntas não resolvidas são de **conteúdo**.
+Se forem de navegação, o caminho certo é escrever mais atalhos determinísticos e **não** executar
+esta seção.
+
+### 10.1 Pré-requisitos que bloqueiam
+
+Nenhum destes é código. Sem os três, não prossiga:
+
+- [ ] **Hard cap de gasto** configurado no painel da OpenAI. O rate limit da aplicação é código novo
+      sem histórico em produção; o limite do provedor é a única coisa entre um bug e a fatura.
+- [ ] **Política de privacidade** do portal atualizada, refletindo o envio de contexto de aluno a
+      operador estrangeiro. Ver [`15-privacidade.md`](15-privacidade.md) para a lista campo a campo.
+- [ ] **Modelo escolhido.** O padrão do plano (`gpt-4.1`) não consta mais entre os modelos atuais —
+      ver § C15 em [`CONTEXTO-EXECUCAO.md`](CONTEXTO-EXECUCAO.md). `OPENAI_MODEL` vai vazio de
+      propósito, e sem ele o serviço recusa antes de tocar na rede.
+
+### 10.2 Configurar, ainda sem ligar
+
+```bash
+# no .env de produção — o arquivo pertence ao root e é lido pelo usuário do
+# servidor web. NÃO altere permissão: um chmod 600 aqui derruba o site.
+OPENAI_ENABLED=false        # ainda false
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=<o escolhido>
+OPENAI_MAX_OUTPUT_TOKENS=1200
+OPENAI_STORE=false          # a conversa fica no banco do Desbloqueia
+```
+
+> O aviso sobre permissão não é teórico: foi exatamente assim que a produção caiu por 90 segundos
+> durante a correção de segurança de 22/08. O `.htaccess` já protege o `.env`; mexer no modo do
+> arquivo não acrescenta proteção e quebra a leitura.
+
+### 10.3 Testar a credencial antes de expor ao aluno
+
+```bash
+# como administrador, com sessão ativa
+curl -X POST https://desbloqueiacursos.com.br/api/openai/teste      -H 'Content-Type: application/json'      -d '{"_token":"<csrf>","message":"Responda apenas: OK."}'
+```
+
+Este endpoint existe para descobrir barato que o modelo foi digitado errado. Ele **não** é usado
+pela interface do aluno.
+
+### 10.4 Ligar, em duas chaves
+
+```bash
+OPENAI_ENABLED=true          # 1. a integração passa a existir
+```
+```sql
+UPDATE tutor_configuracoes SET valor = '1' WHERE chave = 'tutor_ia_ativo';   -- 2. a Norminha usa
+```
+
+São chaves independentes de propósito: a primeira é decisão de infraestrutura, a segunda é decisão
+de produto e reversível em um clique, sem deploy. A tela de configurações mostra o diagnóstico das
+duas.
+
+### 10.5 Verificação obrigatória com IA ligada
+
+- [ ] pergunta de conteúdo sobre a aula aberta → resposta fundamentada, com fontes
+- [ ] pergunta sem evidência no material → a Norminha **declara** que não tem informação suficiente
+- [ ] **em um quiz**, pedir "qual a alternativa correta" → recusa, com oferta de explicar o conceito
+- [ ] progresso, retomada e certificado continuam vindo do PHP, sem consumir token
+- [ ] painel de telemetria mostra `hybrid` aparecendo; `ai` alto significa evidência não chegando
+
+### 10.6 Piloto antes da base inteira
+
+Não há flag por aluno na V1. Ligue primeiro para você, depois para um grupo pequeno usando os
+toggles de contexto, e responda o Checkpoint 1 antes de ampliar:
+
+1. Proporção `hybrid` × `ai` × `unresolved`
+2. Latência mediana
+3. Tokens por mensagem, e o custo mensal extrapolado
+4. Feedback útil × não útil
+5. **A Norminha afirmou algo que o material não sustenta?** Revise uma amostra à mão — isso não é
+   automatizável
+6. Os testes de red team continuam passando com conteúdo real
+7. O hard cap está ativo, e em que valor?
+
+Se você não souber responder o item 7 de cabeça, não amplie.
+
+### 10.7 Rollback da IA
+
+**Nível 0 — desligar só a IA** (segundos): `tutor_ia_ativo = 0`. A Norminha volta ao comportamento
+da Onda 0 e continua útil. É o rollback que você quer na maioria dos casos.
+
+**Nível 1 — cortar a integração**: `OPENAI_ENABLED=false`. Impede qualquer requisição ao provedor,
+mesmo com a chave presente.
+
+Os dois níveis anteriores (reverter código, restaurar backup) seguem valendo, na seção 8.
 
 ## 11. O que este deploy NÃO faz
 
