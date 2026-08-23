@@ -470,6 +470,31 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
     background: rgba(123, 44, 191, 0.08);
 }
 
+/* --- Convite ao visitante anonimo ---
+   Ocupa o lugar do chat quando nao ha aluno logado. Mesma caixa, mesmo
+   espacamento das acoes rapidas, para o cartao nao mudar de altura. */
+
+.norminha-tutor__convite {
+    margin: 0;
+    padding: 0 14px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--norminha-ink);
+    opacity: 0.8;
+    flex: 0 0 auto;
+}
+
+.norminha-tutor__convite-link {
+    color: var(--norminha-purple);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.norminha-tutor__convite-link:hover,
+.norminha-tutor__convite-link:focus-visible {
+    text-decoration: none;
+}
+
 /* --- Acoes rapidas --- */
 
 .norminha-tutor__acoes-rapidas {

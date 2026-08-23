@@ -1,6 +1,7 @@
 <?php
 use App\Core\Csrf;
 use App\Core\Helpers;
+use App\Core\Session;
 
 /**
  * Norminha — casca visual do chat.
@@ -132,6 +133,17 @@ $contextoNorminha = isset($hints['contexto']) ? (string) $hints['contexto'] : $c
 // "Tirar dúvida desta aula" só existe quando existe aula. Na área geral do
 // aluno o botão some, em vez de perguntar sobre coisa nenhuma.
 $emAula = $hintItem > 0 && in_array($contextoNorminha, array('aula', 'avaliacao'), true);
+
+// O chat existe para aluno logado. A identidade vem da MESMA fonte que a API
+// usa (ApiAuthenticateMiddleware -> Session::get('usuario_id')), para que a
+// tela e o servidor nunca discordem sobre quem esta falando.
+//
+// Para o visitante anonimo o componente volta a ser o que a versao anterior
+// era: avatar + fala do admin. Sem campo de pergunta e sem acoes de aluno, que
+// so responderiam 'nao_autenticado'. O JS ja e defensivo em todos esses pontos
+// (if (form && input), if (quick), if (!listaMensagens) return), entao a
+// ausencia dos blocos degrada limpo: launcher, minimizar e audio seguem vivos.
+$alunoLogado = (int) Session::get('usuario_id') > 0;
 ?>
 
 <!-- Norminha: chat acadêmico. Montado uma única vez, pelo layout. -->
@@ -186,6 +198,7 @@ $emAula = $hintItem > 0 && in_array($contextoNorminha, array('aula', 'avaliacao'
             </div>
         </div>
 
+        <?php if ($alunoLogado): ?>
         <div class="norminha-tutor__acoes-rapidas" data-norminha-quick>
             <button type="button" class="norminha-tutor__chip" data-norminha-acao="resume_course">Continuar de onde parei</button>
             <button type="button" class="norminha-tutor__chip" data-norminha-acao="show_progress">Ver meu progresso</button>
@@ -217,6 +230,12 @@ $emAula = $hintItem > 0 && in_array($contextoNorminha, array('aula', 'avaliacao'
                 <span aria-hidden="true">&#10148;</span>
             </button>
         </form>
+        <?php else: ?>
+            <p class="norminha-tutor__convite">
+                <a class="norminha-tutor__convite-link" href="/login">Entre na sua conta</a>
+                para conversar com a Norminha sobre seus cursos.
+            </p>
+        <?php endif; ?>
     </div>
 
     <button type="button" class="norminha-tutor__launcher" data-norminha-launcher aria-label="Abrir a Norminha" aria-expanded="true">

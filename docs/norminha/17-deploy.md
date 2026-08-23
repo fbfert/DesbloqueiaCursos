@@ -380,3 +380,56 @@ Quando e se o Checkpoint 0 apontar para a IA, dois itens **precedem** qualquer c
   código novo sem histórico em produção; o limite do provedor é a única coisa entre um bug e a fatura.
 - **Política de privacidade** do portal (`/v2/politica-de-privacidade`) refletindo o envio de
   contexto de aluno a operador estrangeiro. É tratamento de dado pessoal.
+
+---
+
+## Pós-deploy de 23/08/2026 — duas descobertas
+
+### 1. A Norminha já estava ligada quando o código chegou
+
+O runbook acima assume que o deploy chega com a Norminha desligada
+(`tutor_ativo = 0`), e que ligar é um segundo passo, deliberado. Não foi o que
+aconteceu.
+
+Em **22/08/2026 22:54:30** todas as dezesseis chaves `tutor_*` de produção foram
+gravadas no mesmo segundo — a assinatura de alguém salvando o formulário em
+`/admin/tutor-norminha/configuracoes`. Entre elas, `tutor_ativo` foi de `0` para
+`1`, e `tutor_checkout` também. Naquele momento nada mudou para o aluno: o
+código em produção ainda era a versão anterior, que não montava o chat.
+
+O efeito só apareceu quando o merge subiu, no dia seguinte. **Subir passou a
+significar ligar**, porque o interruptor já estava na posição ligada. A lição
+não é "não ligue antes"; é que a verificação de "está desligado?" precisa
+acontecer **imediatamente antes do merge**, não no início do dia — foi o que
+deixou a diferença passar despercebida por alguns minutos.
+
+O dado foi conferido logo depois, contra produção: em 15 matrículas reais
+sorteadas, com progresso de 1,05% a 100%, o número que a Norminha informa é
+igual ao da tela nas 15. A correção C1 se sustenta fora do laboratório.
+
+### 2. O chat aparecia para visitante anônimo
+
+Com `tutor_home = 1`, o componente era montado na home pública. Ele não tinha
+**nenhuma** checagem de sessão: o visitante deslogado recebia o campo de
+pergunta e as três ações de aluno ("Continuar de onde parei", "Ver meu
+progresso", "Meu certificado").
+
+Nada vazava — a API respondia `nao_autenticado` em todos os casos, e é assim que
+tem que ser. Mas a tela oferecia o que o servidor ia recusar, e isso é um
+defeito de produto mesmo quando não é de segurança. A versão anterior do
+componente era só avatar e fala, e portanto inofensiva para anônimo; o chat foi
+acrescentado à mesma casca sem que a distinção fosse feita.
+
+**Correção:** a decisão de mostrar o chat passou a vir de
+`Session::get('usuario_id')` — a **mesma** fonte que o `ApiAuthenticateMiddleware`
+usa para autorizar. Tela e servidor não podem discordar sobre quem está falando,
+e a única forma de garantir isso é não ter duas fontes. Para o anônimo, o
+componente volta ao que era, mais um convite para entrar.
+
+O JavaScript já era defensivo em todos os pontos afetados (`if (form && input)`,
+`if (quick)`, `if (!listaMensagens) return`), então a ausência dos blocos degrada
+limpo: launcher, minimizar e áudio seguem funcionando.
+
+Travado por `tests/Unit/norminha_visitante.php` (4 casos), verificado por
+mutação nos dois sentidos: guarda sempre verdadeira (o bug original) e guarda
+sempre falsa (aluno perde o chat) — as duas são detectadas.
