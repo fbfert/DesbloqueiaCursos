@@ -7,8 +7,9 @@ use App\Core\Logger;
 /**
  * Integração com a Responses API da OpenAI (POST /v1/responses).
  *
- * Espelha a estrutura do ClaudeService por coerência com o projeto, mas não o
- * reutiliza nem o altera — o legado Claude segue intocado até a Etapa 18.
+ * A estrutura espelha a do antigo ClaudeService, por coerência com o projeto.
+ * Aquele service foi removido na Etapa 18; o histórico está em
+ * specs/0001-integracao-api-claude/.
  *
  * ISOLAMENTO
  * Este service não conhece a Norminha. Ele recebe uma estrutura pronta, fala

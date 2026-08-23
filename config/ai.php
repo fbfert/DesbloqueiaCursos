@@ -3,19 +3,11 @@
 use App\Core\Env;
 
 return array(
-    'claude' => array(
-        'enabled' => Env::get('ANTHROPIC_ENABLED', 'false') === 'true',
-        'api_key' => Env::get('ANTHROPIC_API_KEY', ''),
-        'base_url' => rtrim(Env::get('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'), '/'),
-        'model' => Env::get('ANTHROPIC_MODEL', 'claude-sonnet-4-5-20250929'),
-        'max_tokens' => (int) Env::get('ANTHROPIC_MAX_TOKENS', '1024'),
-        'temperature' => Env::get('ANTHROPIC_TEMPERATURE', '0.2'),
-        'timeout' => (int) Env::get('ANTHROPIC_TIMEOUT', '30'),
-    ),
-
     // Norminha IA V1 — Responses API da OpenAI.
     //
-    // O bloco `claude` acima e legado e permanece intocado ate a Etapa 18.
+    // O bloco `claude` legado foi removido na Etapa 18 (23/08/2026): nao havia
+    // consumidor ativo e as variaveis ANTHROPIC_* nunca existiram no .env de
+    // producao. Historico em specs/0001-integracao-api-claude/.
     //
     // MODELO: nao ha constante fixa aqui de proposito. O modelo padrao do plano
     // mestre (gpt-4.1) deixou de constar na lista de modelos atuais da OpenAI;

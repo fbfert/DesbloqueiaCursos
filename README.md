@@ -27,7 +27,7 @@ Portal de cursos e eventos em PHP MVC, preparado para Linux/cPanel, MySQL 5.7, c
 - [Recuperação de pedidos: redirecionamento corrigido](docs/2026-06-12-recuperacao-pedidos-redirecionamento-corrigido.md)
 - [Recuperação de pedidos: automação por Cron](docs/2026-06-12-recuperacao-pedidos-cron-automacao.md)
 - [Recuperação de pedidos: entrega final](docs/2026-06-12-recuperacao-pedidos-entrega-final.md)
-- [Integração da API do Claude](specs/0001-integracao-api-claude/spec.md)
+- [Integração da API do Claude](specs/0001-integracao-api-claude/spec.md) — legado, removido em 23/08/2026
 
 ## Execucao Local
 
@@ -196,22 +196,28 @@ php tests/Smoke/smoke.php https://polorainbow.com.br
 
 O script valida rotas criticas do portal, incluindo dashboard admin, dashboard professor, areas protegidas, financeiro, configuracoes globais, certificados e validacao publica, e retorna `0` quando tudo responde como esperado.
 
-## Integração com o Claude
+## Integração de IA
 
-Configure as variáveis abaixo no `.env` antes de usar a integração:
+O provedor de IA do projeto é a **OpenAI**, pela Responses API (`POST /v1/responses`), usada pela
+assistente acadêmica Norminha. Configure no `.env`:
 
-- `ANTHROPIC_ENABLED`
-- `ANTHROPIC_API_KEY`
-- `ANTHROPIC_BASE_URL`
-- `ANTHROPIC_MODEL`
-- `ANTHROPIC_MAX_TOKENS`
-- `ANTHROPIC_TEMPERATURE`
-- `ANTHROPIC_TIMEOUT`
+- `OPENAI_ENABLED` — mantenha `false` até o hard cap de gasto estar configurado no painel do provedor
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL` — vai vazio de propósito; ver `docs/norminha/CONTEXTO-EXECUCAO.md` § C15
+- `OPENAI_MAX_OUTPUT_TOKENS`, `OPENAI_TEMPERATURE`, `OPENAI_TIMEOUT`
+- `OPENAI_STORE` — `false`: a conversa vive no banco do Desbloqueia, não no provedor
 
-A rota interna de teste é:
+Rota de diagnóstico administrativo (não usada pela interface do aluno):
 
 ```text
-POST /api/claude/teste
+POST /api/openai/teste
 ```
 
-Ela aceita `application/json` ou formulário com pelo menos o campo `prompt`.
+A documentação da Norminha está em [`docs/norminha/`](docs/norminha/).
+
+> **Legado.** A integração anterior com o Claude/Anthropic foi removida em 23/08/2026 — não havia
+> consumidor ativo e as variáveis `ANTHROPIC_*` nunca estiveram no `.env` de produção. O registro
+> histórico permanece em [`specs/0001-integracao-api-claude/`](specs/0001-integracao-api-claude/).
+> O tema visual `v4-claude` é identificador de frontend, não tem relação com provedor de IA, e
+> **permanece inalterado**.
+

@@ -1,3 +1,15 @@
+> **LEGADO — encerrado em 23/08/2026.**
+> A integração descrita aqui foi removida do código: `ClaudeService`,
+> `ClaudeController`, a rota `POST /api/claude/teste`, o bloco `claude` de
+> `config/ai.php` e as variáveis `ANTHROPIC_*` não existem mais. Nunca houve
+> consumidor ativo, e as variáveis jamais estiveram no `.env` de produção.
+>
+> O provedor de IA do projeto passou a ser a OpenAI, pela Responses API — ver
+> `docs/norminha/`. Este documento é mantido como registro histórico.
+>
+> Nada aqui se relaciona com o tema visual `v4-claude`, que é identificador de
+> frontend e **permanece inalterado**.
+
 # Spec: Integração da API do Claude no Portal de Cursos
 
 ## Objetivo

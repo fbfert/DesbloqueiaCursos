@@ -1,12 +1,10 @@
 <?php
 
-use App\Controllers\Api\ClaudeController;
 use App\Controllers\Api\HealthController;
 use App\Controllers\Api\NorminhaController;
 use App\Controllers\Api\OpenAIController;
 
 $app->get('/api/health', array(HealthController::class, 'show'));
-$app->post('/api/claude/teste', array(ClaudeController::class, 'testar'), array('auth', 'permission:configuracoes_globais.gerenciar'));
 
 // Norminha IA V1 — área do aluno.
 //
