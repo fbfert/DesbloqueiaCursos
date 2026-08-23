@@ -11,6 +11,7 @@ da letra em alguns pontos produz defeito.
 
 | Arquivo | O que é |
 |---|---|
+| [`ONDA-0-ENTREGA.md`](ONDA-0-ENTREGA.md) | Relatório de entrega da Onda 0: o que foi feito e o que decidir |
 | [`CONTEXTO-EXECUCAO.md`](CONTEXTO-EXECUCAO.md) | Lido por todas as etapas. Invariantes, decisões da auditoria e correções ao plano |
 | [`00-auditoria-preflight.md`](00-auditoria-preflight.md) | Relatório completo dos 12 itens da Etapa 0, com evidência |
 | [`AMBIENTE-DEV.md`](AMBIENTE-DEV.md) | Como trabalhar sem tocar na produção |
