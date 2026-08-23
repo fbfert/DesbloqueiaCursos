@@ -321,7 +321,17 @@ class OpenAIService
                 'latencia_ms' => $latencia,
             ));
 
-            return $this->falha('resposta_vazia', 'O provedor não devolveu conteúdo.', 502, $latencia);
+            // 'incomplete' quer dizer coisa especifica: o modelo gastou o
+            // orcamento de tokens antes de escrever. Nos modelos de raciocinio
+            // isso acontece com facilidade, porque o raciocinio consome do mesmo
+            // orcamento -- e quem le "o provedor nao devolveu conteudo" nao tem
+            // como saber que a solucao e aumentar um numero.
+            $explicacao = $status === 'incomplete'
+                ? 'O modelo gastou todo o limite de tokens antes de escrever a resposta. '
+                    . 'Aumente o limite de saída.'
+                : 'O provedor não devolveu conteúdo.';
+
+            return $this->falha('resposta_vazia', $explicacao, 502, $latencia, $explicacao);
         }
 
         $uso = $this->extrairUso($r);

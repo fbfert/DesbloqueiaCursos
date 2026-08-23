@@ -1365,7 +1365,12 @@ class TutorNorminhaService
         $r = $openai->gerar(array(
             'instructions' => 'Responda apenas: ok',
             'input' => array(array('role' => 'user', 'content' => 'teste de conectividade')),
-            'max_output_tokens' => 16,
+            // 256 e nao 16 (23/08/2026). Nos modelos de raciocinio o pensamento
+            // consome do mesmo orcamento de tokens da resposta: com 16 o modelo
+            // gastava tudo raciocinando e devolvia `incomplete` sem uma linha
+            // escrita, o que parecia falha de integracao. Custa fracao de
+            // centavo e da margem para o "ok" caber.
+            'max_output_tokens' => 256,
         ));
 
         if (empty($r['ok'])) {
