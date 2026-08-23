@@ -413,3 +413,49 @@ Verificado por mutação: reproduzindo o bug, 12 das 34 verificações reprovam.
 declara sucesso para uma página que chegou ilegível. Depois de mexer em layout,
 alguma verificação precisa afirmar que a página continua **vestida**, não apenas
 que ela respondeu.
+
+### C18 — 🔴 O painel do chat foi ao ar sem fundo
+
+Relatado pelo responsável em 23/08/2026: no celular, o chat aparecia
+transparente e o texto ficava ilegível sobre o conteúdo da página.
+
+**A causa.** Quando a Norminha deixou de ser um balão de fala e virou chat, a
+marcação passou de `.norminha-tutor__card` para `.norminha-tutor__panel`. Todo o
+tratamento visual — fundo, borda, raio, sombra e a fita colorida do topo —
+continuou preso à classe antiga, que sumiu do HTML e permaneceu no CSS.
+
+O painel só tinha regras de layout: `display: flex`, `max-height`,
+`overflow: hidden`. Nenhuma superfície. No desktop, sobre página clara, a falta
+passa despercebida — foi assim que ela sobreviveu à Etapa 5, à Etapa 15 e a dois
+deploys.
+
+**A correção.** O painel recebeu a superfície, com fundo **opaco**. O balão
+antigo usava 96–99% de opacidade, aceitável para um enfeite e não para a
+superfície onde se lê uma conversa: os 4% restantes são exatamente a sujeira que
+atrapalha a leitura.
+
+**O que apareceu junto.** Escrevendo o teste, mais três classes órfãs do mesmo
+período (`__shell`, `__avatar-wrap`, `__avatar`), a animação `.is-speaking` —
+morta duas vezes, porque nem a classe era aplicada (o JS usa
+`data-estado-avatar`) nem os elementos existiam —, o keyframe que só ela
+consumia, e uma classe no caminho oposto: `__pensando-texto` estava no HTML sem
+regra nenhuma, herdando o tamanho de fonte do tema onde a Norminha estivesse
+montada.
+
+**Cobertura.** Quatro casos novos em `norminha_arquitetura.php`:
+
+1. toda classe da Norminha usada no HTML tem regra no CSS;
+2. nenhuma regra do CSS aponta para classe que HTML e JS não usam mais;
+3. o painel declara `background`, `border` e `box-shadow`;
+4. o fundo do painel é opaco.
+
+Verificado por mutação: remover o fundo e trocá-lo por `rgba(...,0.85)` são os
+dois pegos.
+
+**A lição.** Pela segunda vez em dois dias um defeito de aparência atravessou a
+suíte inteira — antes foi o `app.css` apagado do layout legado, agora o painel
+sem superfície. Testes que olham comportamento, dados e segurança declaram
+sucesso para uma tela que ninguém consegue ler. Depois de mexer em CSS ou em
+layout, é preciso alguma verificação que afirme que a coisa **tem aparência**,
+não apenas que respondeu.
+

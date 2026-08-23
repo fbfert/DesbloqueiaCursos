@@ -90,55 +90,20 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
     outline-offset: 3px;
 }
 
-.norminha-tutor__shell {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 12px;
-    align-items: end;
-}
+/* .norminha-tutor__shell, __avatar-wrap e __avatar sairam em 23/08/2026,
+   pela mesma razao que __card: montavam o balao de fala, com o avatar grande ao
+   lado do texto. No chat o avatar mora no cabecalho (.norminha-tutor__header-avatar)
+   e estas tres classes nao aparecem em HTML nem em JS desde entao.
 
-.norminha-tutor__avatar-wrap {
-    margin: 0;
-    width: 96px;
-    height: 96px;
-    border-radius: 28px;
-    padding: 8px;
-    background: linear-gradient(160deg, rgba(255, 79, 154, 0.18), rgba(255, 138, 61, 0.16) 48%, rgba(123, 44, 191, 0.18));
-    box-shadow: var(--norminha-shadow);
-    display: grid;
-    place-items: center;
-}
+   Nao e faxina cosmetica. CSS orfao e o que fez o painel ir ao ar sem fundo:
+   a regra existia, parecia cobrir o componente, e nao cobria coisa nenhuma. */
 
-.norminha-tutor__avatar-wrap.is-fallback {
-    background: linear-gradient(160deg, rgba(255, 79, 154, 0.22), rgba(255, 138, 61, 0.2) 48%, rgba(123, 44, 191, 0.2));
-}
-
-.norminha-tutor__avatar {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-    border-radius: 20px;
-    transition: transform 180ms ease, filter 180ms ease;
-}
-
-.norminha-tutor__card {
-    position: relative;
-    padding: 16px 16px 14px;
-    border: 1px solid var(--norminha-border);
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(255, 250, 253, 0.96));
-    box-shadow: var(--norminha-shadow);
-    overflow: hidden;
-}
-
-.norminha-tutor__card::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto;
-    height: 4px;
-    background: linear-gradient(90deg, var(--norminha-pink), var(--norminha-orange), var(--norminha-purple));
-}
+/* .norminha-tutor__card foi removida em 23/08/2026.
+   Era a superficie do balao de fala. Quando a Norminha virou chat, a marcacao
+   passou a usar .norminha-tutor__panel e esta classe ficou orfa -- presente no
+   CSS, ausente do HTML. Todo o tratamento visual (fundo, borda, sombra) morava
+   aqui, e por isso o painel do chat ia ao ar SEM FUNDO NENHUM. Ver a regra de
+   .norminha-tutor__panel mais abaixo. */
 
 .norminha-tutor__eyebrow {
     margin: 0 0 8px;
@@ -207,22 +172,10 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
     cursor: pointer;
 }
 
-.norminha-tutor.is-speaking .norminha-tutor__avatar-wrap {
-    animation: norminha-float 1.8s ease-in-out infinite;
-}
-
-.norminha-tutor.is-speaking .norminha-tutor__avatar {
-    filter: saturate(1.08) contrast(1.04);
-}
-
-@keyframes norminha-float {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-5px);
-    }
-}
+/* A animacao de "falando" saiu em 23/08/2026. Estava morta duas vezes: nem a
+   classe .is-speaking era aplicada (o JS usa o atributo data-estado-avatar) nem
+   os elementos alvo existiam mais. O estado do avatar hoje se expressa trocando
+   o src da imagem em setAvatarState(), e isso funciona. */
 
 @media (max-width: 768px) {
     .norminha-tutor {
@@ -231,19 +184,7 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
         width: min(300px, calc(100vw - 18px));
     }
 
-    .norminha-tutor__shell {
-        gap: 10px;
-    }
-
-    .norminha-tutor__avatar-wrap {
-        width: 74px;
-        height: 74px;
-        border-radius: 22px;
-        padding: 6px;
-    }
-
-    .norminha-tutor__card {
-        padding: 14px 14px 12px;
+    .norminha-tutor__panel {
         border-radius: 20px;
     }
 
@@ -266,19 +207,8 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
         width: min(286px, calc(100vw - 14px));
     }
 
-    .norminha-tutor__shell {
-        grid-template-columns: 60px minmax(0, 1fr);
-        gap: 6px;
-        align-items: end;
-    }
-
-    .norminha-tutor__avatar-wrap {
-        width: 60px;
-        height: 60px;
-    }
-
-    .norminha-tutor__card {
-        padding: 12px 12px 10px;
+    .norminha-tutor__panel {
+        border-radius: 18px;
     }
 
     .norminha-tutor__close {
@@ -324,11 +254,35 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
    a bottom navigation da V2 e a area segura do aparelho.
    =================================================================== */
 
+/* A SUPERFICIE DO CHAT.
+   Ate 23/08/2026 esta regra so organizava o layout: nem fundo, nem borda, nem
+   sombra. O chat inteiro flutuava transparente sobre a pagina. No desktop, com
+   fundo claro atras, a falta passava despercebida; no celular, sobre conteudo,
+   o texto da conversa ficava ilegivel -- foi assim que o defeito apareceu.
+
+   O fundo e OPACO de proposito. O balao antigo usava 96-99% de opacidade, o que
+   serve para um enfeite e nao para a superficie onde se le uma conversa: os 4%
+   restantes viram exatamente a sujeira que impede a leitura. */
 .norminha-tutor__panel {
     display: flex;
     flex-direction: column;
     max-height: min(70vh, 560px);
     overflow: hidden;
+    border: 1px solid var(--norminha-border);
+    border-radius: 22px;
+    background: linear-gradient(180deg, #ffffff, #fffafd);
+    box-shadow: var(--norminha-shadow);
+}
+
+/* Fita colorida no topo, herdada do balao. z-index porque o cabecalho vem logo
+   em seguida no fluxo e a cobriria. */
+.norminha-tutor__panel::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    z-index: 2;
+    background: linear-gradient(90deg, var(--norminha-pink), var(--norminha-orange), var(--norminha-purple));
 }
 
 /* --- Cabecalho --- */
@@ -537,6 +491,16 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
     font-size: 0.78rem;
     opacity: 0.75;
     flex: 0 0 auto;
+}
+
+/* O texto ao lado dos tres pontinhos. Estava no HTML sem regra nenhuma desde
+   que o "pensando" foi criado, e herdava o tamanho do corpo da pagina -- que
+   varia conforme o tema onde a Norminha esta montada. */
+.norminha-tutor__pensando-texto {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    color: var(--norminha-ink);
+    margin-left: 3px;
 }
 
 .norminha-tutor__pensando[hidden] {

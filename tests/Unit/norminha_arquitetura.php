@@ -222,4 +222,108 @@ it('o tema visual v4-claude foi preservado', function () {
     echo "      {$n} arquivos mantêm o identificador de tema\n";
 });
 
+describe('Aparência: a marcação e a folha de estilo concordam');
+
+/**
+ * Este bloco existe por causa de 23/08/2026.
+ *
+ * Quando a Norminha deixou de ser um balão de fala e virou chat, a marcação
+ * passou de .norminha-tutor__card para .norminha-tutor__panel. Todo o
+ * tratamento visual — fundo, borda, sombra — ficou preso à classe antiga, que
+ * sumiu do HTML e continuou no CSS. O painel foi ao ar sem fundo nenhum.
+ *
+ * No desktop, sobre página clara, ninguém percebeu. No celular, sobre conteúdo,
+ * o chat ficou ilegível. Nenhum dos testes viu: todos olhavam comportamento,
+ * dados e segurança. Nenhum perguntava se a coisa tinha superfície.
+ */
+
+function classesDaMarcacao()
+{
+    $html = (string) file_get_contents(BASE_PATH . '/resources/views/components/tutor_norminha.php');
+    preg_match_all('/class="([^"]*)"/', $html, $m);
+
+    $classes = array();
+    foreach ($m[1] as $atributo) {
+        // Ignora atributos montados por PHP: o valor literal não é o que sai.
+        if (strpos($atributo, '<?php') !== false) {
+            continue;
+        }
+        foreach (preg_split('/\s+/', trim($atributo)) as $classe) {
+            if ($classe !== '' && strpos($classe, 'norminha') === 0) {
+                $classes[$classe] = true;
+            }
+        }
+    }
+
+    return array_keys($classes);
+}
+
+it('toda classe da Norminha usada no HTML tem regra no CSS', function () {
+    $css = (string) file_get_contents(BASE_PATH . '/assets/css/tutor-norminha.css');
+    // Fora os comentários: uma classe citada só em explicação não estiliza nada.
+    $cssSemComentario = preg_replace('#/\*.*?\*/#s', '', $css);
+
+    $orfas = array();
+    foreach (classesDaMarcacao() as $classe) {
+        if (strpos($cssSemComentario, '.' . $classe) === false) {
+            $orfas[] = $classe;
+        }
+    }
+
+    if ($orfas) {
+        throw new RuntimeException('classe no HTML sem regra no CSS: ' . implode(', ', $orfas));
+    }
+    expect(true)->toBeTrue();
+});
+
+it('nenhuma regra do CSS aponta para classe que o HTML não usa mais', function () {
+    $css = preg_replace('#/\*.*?\*/#s', '', (string) file_get_contents(BASE_PATH . '/assets/css/tutor-norminha.css'));
+    preg_match_all('/\.(norminha-tutor__[a-z0-9-]+)/', $css, $m);
+
+    $noHtml = array_flip(classesDaMarcacao());
+    // Classes que o JavaScript liga e desliga não aparecem no HTML estático.
+    $js = (string) file_get_contents(BASE_PATH . '/assets/js/tutor-norminha.js');
+
+    $mortas = array();
+    foreach (array_unique($m[1]) as $classe) {
+        if (isset($noHtml[$classe]) || strpos($js, $classe) !== false) {
+            continue;
+        }
+        $mortas[] = $classe;
+    }
+
+    if ($mortas) {
+        throw new RuntimeException('regra de CSS para classe que ninguém usa: ' . implode(', ', $mortas));
+    }
+    expect(true)->toBeTrue();
+});
+
+it('o painel do chat tem superfície própria — fundo, borda e sombra', function () {
+    $css = preg_replace('#/\*.*?\*/#s', '', (string) file_get_contents(BASE_PATH . '/assets/css/tutor-norminha.css'));
+
+    // Pega o bloco que declara o painel com mais de uma propriedade visual.
+    preg_match_all('/\.norminha-tutor__panel\s*\{([^}]*)\}/', $css, $m);
+    $tudo = implode(' ', $m[1]);
+
+    foreach (array('background', 'border', 'box-shadow') as $propriedade) {
+        if (strpos($tudo, $propriedade) === false) {
+            throw new RuntimeException("o painel do chat não declara {$propriedade} — "
+                . 'sobre conteúdo, no celular, a conversa fica ilegível');
+        }
+    }
+    expect(true)->toBeTrue();
+});
+
+it('o fundo do painel é opaco', function () {
+    $css = preg_replace('#/\*.*?\*/#s', '', (string) file_get_contents(BASE_PATH . '/assets/css/tutor-norminha.css'));
+    preg_match_all('/\.norminha-tutor__panel\s*\{([^}]*)\}/', $css, $m);
+    $tudo = implode(' ', $m[1]);
+
+    if (preg_match('/background[^;]*rgba\([^)]*,\s*0?\.\d+\s*\)/', $tudo)) {
+        throw new RuntimeException('o fundo do painel usa transparência — '
+            . 'a superfície onde se lê a conversa precisa ser opaca');
+    }
+    expect(true)->toBeTrue();
+});
+
 exit(testes_resumo());
