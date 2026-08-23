@@ -508,6 +508,11 @@ $app->get('/admin/tutor-norminha/configuracoes', array(TutorNorminhaController::
 // do admin da Norminha — nenhuma permissao nova foi criada.
 $app->get('/admin/tutor-norminha/telemetria', array(TutorNorminhaController::class, 'telemetria'), array('auth', 'permission:conteudo.ver'));
 $app->post('/admin/tutor-norminha/configuracoes/salvar', array(TutorNorminhaController::class, 'salvarConfiguracoes'), array('auth', 'permission:conteudo.gerenciar'));
+// Norminha - IA (23/08/2026). Ver e gerenciar sao permissoes distintas: a
+// credencial e o teto de gasto sao mais sensiveis que a aparencia do widget.
+$app->get('/admin/tutor-norminha/ia', array(TutorNorminhaController::class, 'ia'), array('auth', 'permission:conteudo.ver'));
+$app->post('/admin/tutor-norminha/ia/salvar', array(TutorNorminhaController::class, 'salvarIa'), array('auth', 'permission:conteudo.gerenciar'));
+$app->post('/admin/tutor-norminha/ia/testar', array(TutorNorminhaController::class, 'testarIa'), array('auth', 'permission:conteudo.gerenciar'));
 $app->get('/admin/certificados', array(AdminCertificadosController::class, 'index'), array('auth', 'permission:certificados.ver'));
 $app->get('/admin/certificados/show', array(AdminCertificadosController::class, 'show'), array('auth', 'permission:certificados.ver'));
 $app->get('/admin/certificados/emitir', array(AdminCertificadosController::class, 'emitir'), array('auth', 'permission:certificados.gerenciar'));

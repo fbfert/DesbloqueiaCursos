@@ -1234,4 +1234,200 @@ class TutorNorminhaService
             @unlink($caminhoFisico);
         }
     }
+
+    // ---------------------------------------------------------------------
+    // Credenciais e custo da IA (23/08/2026)
+    //
+    // Ate aqui a chave e o modelo so existiam no .env, o que obrigava acesso ao
+    // servidor para mudar qualquer um dos dois. A tela /admin/tutor-norminha/ia
+    // administra os dois, mais o teto mensal de gasto.
+    // ---------------------------------------------------------------------
+
+    /** Tudo que a tela de IA precisa mostrar. Nunca inclui a chave. */
+    public function painelIa()
+    {
+        $custo = new \App\Services\NorminhaCustoService();
+        $teto = \App\Support\NorminhaCredenciais::tetoMensalUsd();
+        $config = $this->normalizarConfiguracoes($this->configModel->allIndexed());
+
+        return array(
+            'origem_chave' => \App\Support\NorminhaCredenciais::origemDaChave(),
+            'origem_modelo' => \App\Support\NorminhaCredenciais::origemDoModelo(),
+            'pode_guardar' => \App\Support\NorminhaCredenciais::podeGuardarNoBanco(),
+            'modelo' => \App\Support\NorminhaCredenciais::modelo(),
+            'catalogo' => \App\Support\NorminhaModelos::catalogo(),
+            'precos_conferidos_em' => \App\Support\NorminhaModelos::CONFERIDO_EM,
+            'teto_mensal' => $teto,
+            'teto' => $custo->dentroDoTeto($teto),
+            'consumo' => $custo->resumo(),
+            'por_modelo' => $custo->porModelo(),
+            'ia_ativa' => !empty($config['tutor_ia_ativo']),
+        );
+    }
+
+    /**
+     * Grava chave, modelo e teto.
+     *
+     * A chave em branco NAO apaga o que ja existe: o campo chega vazio a cada
+     * carregamento da tela, porque nunca devolvemos o segredo ao navegador.
+     * Tratar vazio como "apagar" faria qualquer salvamento de outro campo
+     * destruir a credencial. Para remover, existe uma caixa explicita.
+     */
+    public function salvarIa(array $input)
+    {
+        $errors = array();
+
+        $modelo = trim((string) (isset($input['tutor_ia_modelo']) ? $input['tutor_ia_modelo'] : ''));
+        if ($modelo !== '' && !\App\Support\NorminhaModelos::existe($modelo)) {
+            $errors[] = 'Modelo desconhecido. Escolha um da lista.';
+        }
+
+        $tetoBruto = str_replace(',', '.', trim((string) (isset($input['tutor_ia_teto_mensal_usd']) ? $input['tutor_ia_teto_mensal_usd'] : '')));
+        if ($tetoBruto === '' || !is_numeric($tetoBruto)) {
+            $errors[] = 'Informe o teto mensal em dolares (use 0 para nao ter teto).';
+            $teto = null;
+        } else {
+            $teto = round((float) $tetoBruto, 2);
+            if ($teto < 0 || $teto > 100000) {
+                $errors[] = 'O teto mensal deve ficar entre 0 e 100000 dolares.';
+            }
+        }
+
+        $chaveNova = trim((string) (isset($input['tutor_ia_openai_key']) ? $input['tutor_ia_openai_key'] : ''));
+        $remover = !empty($input['tutor_ia_remover_chave']);
+
+        if ($chaveNova !== '') {
+            // Validacao de forma, nao de validade: quem diz se a chave funciona
+            // e o botao de teste, contra o provedor.
+            if (strlen($chaveNova) < 20 || strpos($chaveNova, 'sk-') !== 0) {
+                $errors[] = 'A chave da OpenAI deve comecar com "sk-" e ser mais longa que isso.';
+            } elseif (!\App\Support\NorminhaCredenciais::podeGuardarNoBanco()) {
+                $errors[] = 'APP_KEY nao esta definida no .env, entao a chave nao pode ser guardada cifrada. '
+                    . 'Sem ela o segredo seria descartado em silencio.';
+            }
+        }
+
+        if (!empty($errors)) {
+            return array('ok' => false, 'errors' => $errors);
+        }
+
+        $payload = array(
+            \App\Support\NorminhaCredenciais::CHAVE_MODELO => $modelo,
+            \App\Support\NorminhaCredenciais::CHAVE_TETO => (string) $teto,
+        );
+
+        if ($remover) {
+            $payload[\App\Support\NorminhaCredenciais::CHAVE_KEY] = '';
+        } elseif ($chaveNova !== '') {
+            $cifrada = \App\Support\NorminhaCredenciais::cifrar($chaveNova);
+            if ($cifrada === null || $cifrada === '') {
+                // Nunca gravar o vazio por cima: seria a falha silenciosa que
+                // engoliu a credencial do gateway de pagamento.
+                return array('ok' => false, 'errors' => array('Nao foi possivel cifrar a chave. Nada foi alterado.'));
+            }
+            $payload[\App\Support\NorminhaCredenciais::CHAVE_KEY] = $cifrada;
+        }
+
+        $resultado = $this->configModel->saveMany($payload);
+        if (empty($resultado['ok'])) {
+            return array('ok' => false, 'errors' => array('Nao foi possivel salvar. Nada foi alterado.'));
+        }
+
+        return array('ok' => true);
+    }
+
+    /**
+     * Chamada minima ao provedor, para dizer se a credencial funciona.
+     *
+     * Custa alguns tokens de proposito: a unica forma honesta de responder
+     * "a chave funciona?" e usar a chave.
+     */
+    public function testarChaveIa()
+    {
+        $openai = new \App\Services\OpenAIService();
+        $d = $openai->diagnostico();
+
+        if (empty($d['chave_configurada'])) {
+            return array('ok' => false, 'mensagem' => 'Nenhuma chave configurada.');
+        }
+        if ($d['modelo'] === null || $d['modelo'] === '') {
+            return array('ok' => false, 'mensagem' => 'Escolha um modelo antes de testar.');
+        }
+        if (empty($d['habilitado'])) {
+            return array('ok' => false, 'mensagem' => 'A integracao esta desligada por OPENAI_ENABLED=false no .env.');
+        }
+
+        // O input da Responses API e uma LISTA de mensagens, nao um texto.
+        // Mandar string faz montarPayload() devolver null e o servico responder
+        // payload_invalido — um 422 local, antes de qualquer rede. Um botao que
+        // dissesse "a chave falhou" nesse caso estaria acusando a credencial de
+        // um defeito nosso.
+        $r = $openai->gerar(array(
+            'instructions' => 'Responda apenas: ok',
+            'input' => array(array('role' => 'user', 'content' => 'teste de conectividade')),
+            'max_output_tokens' => 16,
+        ));
+
+        if (empty($r['ok'])) {
+            $codigo = isset($r['error_code']) ? (string) $r['error_code'] : '';
+
+            // Falhas que acontecem ANTES da rede sao nossas, e dizer isso evita
+            // que alguem saia trocando uma chave que estava correta.
+            $locais = array('payload_invalido' => true, 'desabilitado' => true, 'sem_chave' => true);
+            if (isset($locais[$codigo])) {
+                return array(
+                    'ok' => false,
+                    'mensagem' => 'O pedido nem chegou a ser enviado — a falha e da configuracao daqui, '
+                        . 'nao da chave. Detalhe tecnico: ' . $codigo . '.',
+                    'codigo' => $codigo,
+                    'status' => isset($r['status']) ? $r['status'] : null,
+                );
+            }
+
+            // O provedor nem sempre devolve texto aproveitavel, e o codigo
+            // interno sozinho ("credencial") nao diz a ninguem o que fazer.
+            $explicacoes = array(
+                'credencial' => 'A OpenAI recusou a chave. Confira se ela foi copiada inteira e se '
+                    . 'continua ativa no painel do provedor.',
+                'limite_provedor' => 'A OpenAI respondeu que o limite de uso foi excedido. Pode ser '
+                    . 'cota da conta ou excesso de pedidos por minuto.',
+                'provedor_indisponivel' => 'A OpenAI esta fora do ar ou instavel neste momento. '
+                    . 'Nada errado com a chave; vale repetir daqui a pouco.',
+                'requisicao_recusada' => 'A OpenAI recusou o pedido. Pode ser um modelo indisponivel '
+                    . 'para esta conta.',
+                'rede' => 'Nao foi possivel alcancar a OpenAI a partir deste servidor.',
+                'tempo_esgotado' => 'A OpenAI demorou demais para responder.',
+            );
+
+            $mensagem = trim((string) (isset($r['message']) ? $r['message'] : ''));
+            if ($mensagem === '') {
+                $mensagem = isset($explicacoes[$codigo])
+                    ? $explicacoes[$codigo]
+                    : 'Falha ao falar com a OpenAI.';
+            }
+
+            return array(
+                'ok' => false,
+                'mensagem' => $mensagem,
+                'codigo' => $codigo !== '' ? $codigo : null,
+                'status' => isset($r['status']) ? $r['status'] : null,
+            );
+        }
+
+        $uso = isset($r['usage']) && is_array($r['usage']) ? $r['usage'] : array();
+        $custo = \App\Support\NorminhaModelos::custo(
+            isset($r['model']) ? $r['model'] : $d['modelo'],
+            isset($uso['input_tokens']) ? $uso['input_tokens'] : 0,
+            isset($uso['cached_input_tokens']) ? $uso['cached_input_tokens'] : 0,
+            isset($uso['output_tokens']) ? $uso['output_tokens'] : 0
+        );
+
+        return array(
+            'ok' => true,
+            'modelo' => isset($r['model']) ? $r['model'] : $d['modelo'],
+            'latencia_ms' => isset($r['latencia_ms']) ? (int) $r['latencia_ms'] : null,
+            'custo' => $custo,
+            'tokens' => $uso,
+        );
+    }
 }

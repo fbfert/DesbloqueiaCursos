@@ -256,7 +256,33 @@ it('falha no meio do laço também devolve null', function () use ($U, $CTX) {
 });
 
 it('IA indisponível devolve null sem chamar nada', function () use ($U, $CTX) {
-    $s = new NorminhaIaService();   // config real: OPENAI_ENABLED=false
+    // Ate 23/08/2026 este teste construia o servico com a configuracao real e
+    // contava com OPENAI_ENABLED ausente para que a integracao estivesse
+    // desligada. Passava por acidente: o .env do dev nunca teve essa variavel, e
+    // o Env da aplicacao sequer era carregado nos testes. Quando a chave e o
+    // modelo passaram a poder vir do banco, "ausente" deixou de significar
+    // "desligado" e o teste comecou a depender do que estivesse gravado.
+    //
+    // Agora a indisponibilidade e declarada, nao herdada do ambiente.
+    $desligado = new class extends OpenAIService {
+        public function __construct() {}
+        public function isEnabled() { return false; }
+        public function hasApiKey() { return true; }
+    };
+
+    $s = new NorminhaIaService($desligado, new NorminhaToolsService(), new NorminhaKnowledgeService(), new NorminhaPromptService());
+    expect($s->disponivel())->toBeFalse();
+    expect($s->gerar('oi', $CTX, opcoes($U, $CTX)))->toBeNull();
+});
+
+it('sem chave também é indisponível, mesmo com a integração ligada', function () use ($U, $CTX) {
+    $semChave = new class extends OpenAIService {
+        public function __construct() {}
+        public function isEnabled() { return true; }
+        public function hasApiKey() { return false; }
+    };
+
+    $s = new NorminhaIaService($semChave, new NorminhaToolsService(), new NorminhaKnowledgeService(), new NorminhaPromptService());
     expect($s->disponivel())->toBeFalse();
     expect($s->gerar('oi', $CTX, opcoes($U, $CTX)))->toBeNull();
 });

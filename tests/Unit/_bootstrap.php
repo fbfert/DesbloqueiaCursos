@@ -74,6 +74,18 @@ function testes_conectar_banco()
     require_once BASE_PATH . '/app/Core/Database.php';
     \App\Core\Database::setConnection($pdo);
 
+    // Popula tambem App\Core\Env (23/08/2026).
+    //
+    // Este bootstrap tem leitor proprio de .env, e por isso o Env da aplicacao
+    // ficava VAZIO nos testes. Nada reclamava: quem lia configuracao recebia o
+    // valor padrao e seguia. Ate aparecer App\Support\Crypto, que sem APP_KEY
+    // devolve null em vez de cifrar — o teste de credencial passava a falhar
+    // por falta de ambiente, e nao por defeito no codigo.
+    //
+    // Carregar aqui, junto do banco, cobre todo teste que ja depende de .env.
+    require_once BASE_PATH . '/app/Core/Env.php';
+    \App\Core\Env::load(BASE_PATH . '/.env');
+
     return $pdo;
 }
 

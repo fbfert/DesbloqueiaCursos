@@ -192,4 +192,51 @@ class TutorNorminhaController extends Controller
 
         return $lista ?: array('Não foi possível salvar a fala.');
     }
+
+    /**
+     * Tela de IA: credencial, modelo, teto de gasto e consumo.
+     *
+     * Separada da tela de configuracoes de proposito. La se decide aparencia e
+     * onde a Norminha aparece; aqui se decide quanto ela custa e com que
+     * inteligencia responde. Sao decisoes de natureza diferente, e misturar as
+     * duas numa pagina so ja tinha deixado a de configuracoes longa demais.
+     */
+    public function ia(Request $request)
+    {
+        return $this->view('admin/tutor-norminha/ia', array_merge(
+            array(
+                'title' => 'Norminha · Inteligencia artificial',
+                'success' => Session::pullFlash('success'),
+                'errors' => Session::pullFlash('errors', array()),
+                'testeResultado' => Session::pullFlash('teste_ia'),
+            ),
+            $this->service->painelIa()
+        ));
+    }
+
+    public function salvarIa(Request $request)
+    {
+        $result = $this->service->salvarIa($request->all());
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', $this->normalizeErrors(isset($result['errors']) ? $result['errors'] : array('Nao foi possivel salvar.')));
+            return $this->redirect('/admin/tutor-norminha/ia');
+        }
+
+        Session::flash('success', 'Configuracoes de IA salvas.');
+        return $this->redirect('/admin/tutor-norminha/ia');
+    }
+
+    /**
+     * Testa a credencial contra o provedor.
+     *
+     * Gasta alguns tokens: e a unica forma honesta de responder "a chave
+     * funciona?". O custo do teste aparece na propria resposta.
+     */
+    public function testarIa(Request $request)
+    {
+        Session::flash('teste_ia', $this->service->testarChaveIa());
+
+        return $this->redirect('/admin/tutor-norminha/ia');
+    }
 }

@@ -48,6 +48,7 @@ $menu = array(
         array('label' => 'Norminha', 'href' => '/admin/tutor-norminha', 'icon' => '✦', 'permissions_any' => array('conteudo.ver')),
         array('label' => 'Norminha · Configurações', 'href' => '/admin/tutor-norminha/configuracoes', 'icon' => '⚙', 'permissions_any' => array('conteudo.ver')),
         array('label' => 'Norminha · Telemetria', 'href' => '/admin/tutor-norminha/telemetria', 'icon' => '📊', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Norminha · IA', 'href' => '/admin/tutor-norminha/ia', 'icon' => '✨', 'permissions_any' => array('conteudo.ver')),
         array('label' => 'Globais', 'href' => '/admin/configuracoes-globais', 'icon' => '⚙', 'permissions_any' => array('configuracoes_globais.ver')),
         array('label' => 'Pagamento', 'href' => '/admin/configuracoes-pagamento', 'icon' => '₿', 'permissions_any' => array('configuracoes_globais.gerenciar')),
         array('label' => 'Checkout rápido', 'href' => '/admin/checkout-rapido', 'icon' => '⚡', 'permissions_any' => array('configuracoes_globais.gerenciar')),

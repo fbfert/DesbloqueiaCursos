@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Logger;
+use App\Support\NorminhaCredenciais;
 
 /**
  * Camada de IA da Norminha: monta o pedido, roda o laço de ferramentas e
@@ -42,21 +43,75 @@ class NorminhaIaService
     private $ciclos = 0;
     private $chamadasDeFerramenta = 0;
 
+    /** @var NorminhaCustoService */
+    private $custo;
+
+    /**
+     * Resultado da checagem de teto, memorizado por instância.
+     *
+     * disponivel() é chamado mais de uma vez no mesmo pedido; sem isto, cada
+     * chamada faria uma agregação no banco para responder a mesma pergunta.
+     */
+    private $tetoAvaliado = null;
+
     public function __construct(
         OpenAIService $openai = null,
         NorminhaToolsService $tools = null,
         NorminhaKnowledgeService $knowledge = null,
-        NorminhaPromptService $prompt = null
+        NorminhaPromptService $prompt = null,
+        NorminhaCustoService $custo = null
     ) {
         $this->openai = $openai ?: new OpenAIService();
         $this->tools = $tools ?: new NorminhaToolsService();
         $this->knowledge = $knowledge ?: new NorminhaKnowledgeService();
         $this->prompt = $prompt ?: new NorminhaPromptService();
+        // Injetavel para que o caminho de falha do teto seja testavel: sem
+        // isso nao ha como provar que ele falha FECHANDO.
+        $this->custo = $custo ?: new NorminhaCustoService();
     }
 
     public function disponivel()
     {
-        return $this->openai->isEnabled() && $this->openai->hasApiKey();
+        if (!$this->openai->isEnabled() || !$this->openai->hasApiKey()) {
+            return false;
+        }
+
+        return $this->dentroDoTetoDeGasto();
+    }
+
+    /**
+     * O teto mensal de gasto ainda permite chamar a IA?
+     *
+     * Estourado o teto, a IA some e o chat volta ao modo determinístico: o aluno
+     * continua obtendo progresso, retomada e certificado, e as perguntas livres
+     * passam a receber "ainda não consigo responder isso". Nenhuma tela de erro,
+     * nenhuma cobrança inesperada.
+     *
+     * FALHA FECHANDO. Se a contagem não puder ser feita — banco fora, consulta
+     * quebrada —, a resposta é "não pode gastar". O inverso liberaria despesa
+     * ilimitada justamente no momento em que ninguém está conseguindo medi-la.
+     */
+    private function dentroDoTetoDeGasto()
+    {
+        if ($this->tetoAvaliado !== null) {
+            return $this->tetoAvaliado;
+        }
+
+        try {
+            $resultado = $this->custo->dentroDoTeto(NorminhaCredenciais::tetoMensalUsd());
+            if (empty($resultado['permitido'])) {
+                Logger::warning('norminha.ia.teto_mensal_atingido', array(
+                    'gasto' => round((float) $resultado['gasto'], 4),
+                    'teto' => round((float) $resultado['teto'], 2),
+                ));
+            }
+            $this->tetoAvaliado = !empty($resultado['permitido']);
+        } catch (\Throwable $e) {
+            Logger::error('norminha.ia.teto_indisponivel', array('message' => $e->getMessage()));
+            $this->tetoAvaliado = false;
+        }
+
+        return $this->tetoAvaliado;
     }
 
     /**
