@@ -3,6 +3,7 @@
 use App\Controllers\Api\ClaudeController;
 use App\Controllers\Api\HealthController;
 use App\Controllers\Api\NorminhaController;
+use App\Controllers\Api\OpenAIController;
 
 $app->get('/api/health', array(HealthController::class, 'show'));
 $app->post('/api/claude/teste', array(ClaudeController::class, 'testar'), array('auth', 'permission:configuracoes_globais.gerenciar'));
@@ -22,6 +23,11 @@ $app->post('/api/claude/teste', array(ClaudeController::class, 'testar'), array(
 //
 // O cliente envia `_token` dentro do próprio JSON — App\Core\Request decodifica
 // application/json antes da validação, então não é preciso cabeçalho customizado.
+// Diagnostico administrativo da integracao OpenAI (Etapa 9). NAO e usada pela
+// UI do aluno: a Norminha fala exclusivamente com /api/norminha/chat. Mesma
+// permissao do teste Claude legado.
+$app->post('/api/openai/teste', array(OpenAIController::class, 'testar'), array('auth', 'permission:configuracoes_globais.gerenciar'));
+
 $app->post('/api/norminha/chat', array(NorminhaController::class, 'chat'), array('auth.api', 'csrf'));
 $app->get('/api/norminha/historico', array(NorminhaController::class, 'historico'), array('auth.api'));
 $app->post('/api/norminha/feedback', array(NorminhaController::class, 'feedback'), array('auth.api', 'csrf'));

@@ -320,6 +320,50 @@ service inteiro tem zero escritas, verificado por busca e por contador do MySQL.
 devolveu **99 motivos e 64 KB** (`motivos_texto` com 11.637 caracteres). O `NorminhaToolsService`
 corta em 5 motivos e informa `motivos_total` e `motivos_omitidos`.
 
+### C15 — 🔴 O modelo padrão do plano não existe mais
+
+O plano mestre fixa `gpt-4.1` como default de `OPENAI_MODEL`. Consultada a documentação oficial em
+**23/08/2026**, `gpt-4.1` **não consta mais na lista de modelos atuais**. Ele não aparece como
+formalmente desativado, mas seus snapshots datados (ex.: `gpt-4.1-nano-2025-04-14`) têm desligamento
+marcado para **23/10/2026**, com migração recomendada para a família `gpt-5.6`.
+
+Modelos correntes na mesma consulta, com preço por milhão de tokens (entrada/saída):
+
+| Modelo | Entrada | Saída | Perfil |
+|---|---|---|---|
+| `gpt-5.6-luna` | US$ 0,20 | US$ 1,20 | econômico |
+| `gpt-5.6-terra` | US$ 2,00 | US$ 12,00 | equilibrado |
+| `gpt-5.6-sol` | US$ 4,00 | US$ 20,00 | trabalho profissional complexo |
+
+**Nenhuma troca foi feita por conta própria**, como o Prompt 9 exige. `OPENAI_MODEL` vai **vazio**
+no `.env.example`, e `config/ai.php` não tem constante de fallback: sem modelo definido, o service
+recusa o pedido com `payload_invalido` antes de qualquer rede. A escolha é decisão do responsável.
+
+Para tutoria fundamentada em conteúdo oficial já recuperado, a diferença de capacidade entre as
+faixas tende a importar menos do que a diferença de preço — dez vezes entre `luna` e `terra`. Mas
+isso é hipótese, não medição: vale testar as duas com perguntas reais do painel de telemetria antes
+de fixar.
+
+> Preço, disponibilidade e formato mudam. Reconfira na documentação oficial no dia da habilitação.
+
+### C16 — Formatos da Responses API confirmados em 23/08/2026
+
+Verificados na documentação oficial antes de escrever o `OpenAIService`:
+
+- **Definição de ferramenta:** `{ "type": "function", "name", "description", "parameters", "strict" }`
+  — sem o aninhamento `function: {...}` do Chat Completions.
+- **Chamada na resposta:** item em `output` com
+  `{ "type": "function_call", "id", "call_id", "name", "arguments" }`, onde `arguments` é **string
+  JSON**, não objeto.
+- **Devolução do resultado:** `{ "type": "function_call_output", "call_id", "output" }`.
+- **`parallel_tool_calls`** é parâmetro válido de topo. A documentação observa que o recurso vale
+  para modelos a partir do GPT-5 — a V1 usa `false`, então o efeito prático é o mesmo.
+- **Tokens em cache** ficam aninhados em `usage.input_tokens_details.cached_tokens`. Ignorá-los faria
+  o painel de custo superestimar.
+
+O parser percorre o array `output` item a item e **ignora tipos desconhecidos** (como `reasoning`),
+em vez de depender de campos de conveniência que podem sumir numa versão nova.
+
 ### C13 — Não existe pré-requisito nem liberação progressiva
 
 Nenhuma coluna, tabela ou service implementa bloqueio entre itens. `conteudo_itens.abre_em` é um
