@@ -2,6 +2,7 @@
 
 use App\Core\Env;
 use App\Support\NorminhaCredenciais;
+use App\Support\NorminhaModelos;
 
 return array(
     // Norminha IA V1 — Responses API da OpenAI.
@@ -51,7 +52,13 @@ return array(
             'base_url' => rtrim(Env::get('OPENAI_BASE_URL', 'https://api.openai.com'), '/'),
             'model' => $modelo,
             'max_output_tokens' => (int) Env::get('OPENAI_MAX_OUTPUT_TOKENS', '1200'),
-            'temperature' => Env::get('OPENAI_TEMPERATURE', '0.2'),
+            // Vazio por padrao desde 23/08/2026. Antes ia 0.2 sempre, e a
+            // familia GPT-5 recusa o parametro com HTTP 400 -- ou seja, a
+            // integracao nao funcionava com NENHUM dos modelos oferecidos.
+            // Continua possivel forcar por .env para um modelo que aceite.
+            'temperature' => NorminhaModelos::aceitaTemperatura($modelo)
+                ? Env::get('OPENAI_TEMPERATURE', '')
+                : '',
             'timeout' => (int) Env::get('OPENAI_TIMEOUT', '30'),
             // A memoria da conversa vive no MySQL do Desbloqueia. Nada de
             // historico no provedor.

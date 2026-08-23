@@ -62,6 +62,8 @@ $pronta = $chaveOk && $modeloAtual !== '';
 .ni-modelo__preco { font-size: 0.8rem; color: #3f3f46; font-variant-numeric: tabular-nums; }
 .ni-modelo__nota { font-size: 0.8rem; color: #52525b; margin-top: 6px; }
 .ni-selo { display: inline-block; font-size: 0.68rem; background: #dcfce7; color: #14532d; border-radius: 999px; padding: 2px 8px; margin-left: 6px; }
+.ni-provedor { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(0,0,0,0.05); font-size: 0.82rem; }
+.ni-provedor span { display: block; margin-top: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .ni-nota { font-size: 0.82rem; color: #52525b; background: #fafafa; border-left: 3px solid #d4d4d8; padding: 10px 12px; margin: 12px 0; }
 .ni-secao { margin: 26px 0; }
 .ni-campo { margin: 14px 0; }
@@ -131,6 +133,13 @@ $pronta = $chaveOk && $modeloAtual !== '';
             <?php echo Helpers::e((string) (isset($teste['mensagem']) ? $teste['mensagem'] : 'Sem detalhe.')); ?>
             <?php if (!empty($teste['codigo'])): ?>
                 (<code><?php echo Helpers::e((string) $teste['codigo']); ?></code><?php echo !empty($teste['status']) ? ', HTTP ' . (int) $teste['status'] : ''; ?>)
+            <?php endif; ?>
+            <?php if (!empty($teste['provedor'])): ?>
+                <?php /* Texto do provedor, cru. E o que diz o que fazer. */ ?>
+                <div class="ni-provedor">
+                    <strong>A OpenAI respondeu:</strong>
+                    <span><?php echo Helpers::e((string) $teste['provedor']); ?></span>
+                </div>
             <?php endif; ?>
         <?php endif; ?>
     </div>

@@ -42,6 +42,7 @@ class NorminhaModelos
                 'entrada' => 0.20,
                 'entrada_cache' => 0.02,
                 'saida' => 1.20,
+                'aceita_temperatura' => false,
                 'recomendado' => true,
                 'nota' => 'Suficiente para tutoria apoiada em conteúdo já recuperado do curso. '
                     . 'Dez vezes mais barato que o equilibrado.',
@@ -52,6 +53,7 @@ class NorminhaModelos
                 'entrada' => 0.25,
                 'entrada_cache' => 0.025,
                 'saida' => 2.00,
+                'aceita_temperatura' => false,
                 'recomendado' => false,
                 'nota' => 'Alternativa da geração anterior, preço parecido com o Luna.',
             ),
@@ -61,6 +63,7 @@ class NorminhaModelos
                 'entrada' => 0.05,
                 'entrada_cache' => 0.005,
                 'saida' => 0.40,
+                'aceita_temperatura' => false,
                 'recomendado' => false,
                 'nota' => 'O mais barato da lista. Respostas mais curtas e menos elaboradas.',
             ),
@@ -70,6 +73,7 @@ class NorminhaModelos
                 'entrada' => 2.00,
                 'entrada_cache' => 0.20,
                 'saida' => 12.00,
+                'aceita_temperatura' => false,
                 'recomendado' => false,
                 'nota' => 'Explicações mais elaboradas. Dez vezes o custo do Luna.',
             ),
@@ -79,11 +83,30 @@ class NorminhaModelos
                 'entrada' => 4.00,
                 'entrada_cache' => 0.40,
                 'saida' => 20.00,
+                'aceita_temperatura' => false,
                 'recomendado' => false,
                 'nota' => 'Pensado para trabalho profissional complexo. Provavelmente mais do '
                     . 'que uma tutoria de curso livre precisa.',
             ),
         );
+    }
+
+    /**
+     * O modelo aceita o parâmetro `temperature`?
+     *
+     * Toda a família GPT-5 recusa, com HTTP 400 e a mensagem "Unsupported
+     * parameter: 'temperature' is not supported with this model". Foi assim que
+     * a integração falhou em 23/08/2026 nos quatro modelos testados — parecia
+     * problema de conta e era um parâmetro a mais.
+     *
+     * Modelo fora do catálogo devolve true: não sabemos, e não cabe a nós
+     * remover em silêncio um parâmetro que alguém configurou de propósito.
+     */
+    public static function aceitaTemperatura($modelo)
+    {
+        $d = self::dados($modelo);
+
+        return $d === null ? true : !empty($d['aceita_temperatura']);
     }
 
     /** O modelo existe no catálogo? */

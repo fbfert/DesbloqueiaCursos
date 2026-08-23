@@ -140,7 +140,20 @@ class OpenAIService
                 'provedor' => $mensagem,
             ));
 
-            return $this->falha($this->codigoPorStatus($status), 'O provedor recusou a requisição.', $status, $latencia);
+            // A explicacao do provedor SEGUE junto (23/08/2026). Antes ela so
+            // ia para o log e quem estava na tela recebia "o provedor recusou a
+            // requisicao" -- generico a ponto de ser inutil. No caso real que
+            // motivou isto, a OpenAI dizia com todas as letras "Unsupported
+            // parameter: 'temperature' is not supported with this model", e o
+            // administrador ficou trocando de modelo as cegas porque a tela
+            // sugeria um problema de conta.
+            return $this->falha(
+                $this->codigoPorStatus($status),
+                'O provedor recusou a requisição.',
+                $status,
+                $latencia,
+                $mensagem
+            );
         }
 
         return $this->interpretar($decodificado, $latencia);
@@ -420,7 +433,7 @@ class OpenAIService
         return max(0.0, min(2.0, round((float) $valor, 2)));
     }
 
-    private function falha($codigo, $mensagem, $status, $latencia = null)
+    private function falha($codigo, $mensagem, $status, $latencia = null, $detalheProvedor = null)
     {
         return array(
             'ok' => false,
@@ -439,6 +452,11 @@ class OpenAIService
             'latencia_ms' => $latencia,
             'error_code' => $codigo,
             'mensagem_interna' => $mensagem,
+            // Texto do provedor, quando houver. Vai para tela de ADMIN, nunca
+            // para o aluno: e diagnostico de integracao, nao conversa.
+            'provedor_mensagem' => $detalheProvedor !== null && trim((string) $detalheProvedor) !== ''
+                ? (string) $detalheProvedor
+                : null,
         );
     }
 }

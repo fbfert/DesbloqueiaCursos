@@ -1411,6 +1411,11 @@ class TutorNorminhaService
                 'mensagem' => $mensagem,
                 'codigo' => $codigo !== '' ? $codigo : null,
                 'status' => isset($r['status']) ? $r['status'] : null,
+                // O que a OpenAI respondeu, palavra por palavra. Vale mais que
+                // qualquer explicacao nossa: no caso que motivou este campo, ela
+                // dizia exatamente qual parametro estava sobrando, enquanto a
+                // tela sugeria problema de conta e mandava trocar de modelo.
+                'provedor' => isset($r['provedor_mensagem']) ? $r['provedor_mensagem'] : null,
             );
         }
 

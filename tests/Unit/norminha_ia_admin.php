@@ -133,6 +133,79 @@ it('teto zero significa sem teto, e diz isso', function () use ($pdo) {
     expect($r['motivo'])->toBe('sem_teto');
 });
 
+describe('Parâmetros que o modelo aceita');
+
+/**
+ * Em 23/08/2026 a integração falhou nos QUATRO modelos testados, com HTTP 400 e
+ * a mensagem "Unsupported parameter: 'temperature' is not supported with this
+ * model". A configuração mandava temperature=0.2 por padrão, e a família GPT-5
+ * inteira recusa esse parâmetro. Ou seja: a integração não funcionava com
+ * nenhum dos modelos oferecidos na tela.
+ *
+ * Pior: a tela dizia "pode ser um modelo indisponível para esta conta" — um
+ * palpite — enquanto a explicação exata do provedor ia só para o log. O
+ * responsável ficou trocando de modelo às cegas.
+ */
+
+it('nenhum modelo do catálogo aceita temperature', function () {
+    foreach (array_keys(NorminhaModelos::catalogo()) as $modelo) {
+        if (NorminhaModelos::aceitaTemperatura($modelo)) {
+            throw new RuntimeException("{$modelo} está marcado como se aceitasse temperature");
+        }
+    }
+    expect(true)->toBeTrue();
+});
+
+it('modelo fora do catálogo não tem o parâmetro removido em silêncio', function () {
+    // Não sabemos o que ele aceita, e apagar configuração alheia sem avisar é
+    // pior que deixar o provedor recusar com uma mensagem clara.
+    expect(NorminhaModelos::aceitaTemperatura('algum-modelo-futuro'))->toBeTrue();
+});
+
+it('o payload enviado não carrega temperature para modelo do catálogo', function () {
+    $servico = new \App\Services\OpenAIService(array(
+        'enabled' => true, 'api_key' => 'sk-x', 'model' => 'gpt-5.6-luna',
+        'base_url' => 'https://api.openai.com', 'max_output_tokens' => 16,
+        'temperature' => '', 'store' => false, 'timeout' => 5,
+    ));
+    $metodo = new ReflectionMethod($servico, 'montarPayload');
+    $metodo->setAccessible(true);
+    $payload = $metodo->invoke($servico, array(
+        'input' => array(array('role' => 'user', 'content' => 'oi')),
+        'instructions' => 'ok',
+        'max_output_tokens' => 16,
+    ));
+
+    if (array_key_exists('temperature', $payload)) {
+        throw new RuntimeException('temperature foi enviada para um modelo que a recusa');
+    }
+    expect(true)->toBeTrue();
+});
+
+it('a configuração real não injeta temperature no modelo escolhido', function () use ($pdo) {
+    $pdo->prepare('UPDATE tutor_configuracoes SET valor = ? WHERE chave = ?')
+        ->execute(array('gpt-5.6-luna', NorminhaCredenciais::CHAVE_MODELO));
+
+    $ai = require BASE_PATH . '/config/ai.php';
+    expect(trim((string) $ai['openai']['temperature']))->toBe('');
+});
+
+it('a falha do provedor carrega a explicação dele, não só a nossa', function () {
+    // Sem isto, "o provedor recusou a requisição" era tudo que chegava à tela.
+    $servico = new \App\Services\OpenAIService();
+    $metodo = new ReflectionMethod($servico, 'falha');
+    $metodo->setAccessible(true);
+
+    $r = $metodo->invoke($servico, 'requisicao_recusada', 'O provedor recusou a requisição.', 400, 120,
+        "Unsupported parameter: 'temperature' is not supported with this model.");
+
+    expect($r['provedor_mensagem'])->toContain('temperature');
+
+    // E quando o provedor não diz nada, o campo não inventa texto.
+    $vazio = $metodo->invoke($servico, 'transporte', 'x', 503, null, '');
+    expect($vazio['provedor_mensagem'])->toBeNull();
+});
+
 describe('Guarda da credencial');
 
 it('guarda cifrado — o texto puro não aparece no banco', function () use ($pdo) {

@@ -132,3 +132,39 @@ Quando a chave passou a poder vir do banco, "ausente" deixou de significar
 indisponibilidade é declarada, não herdada do ambiente. O bootstrap também
 passou a popular `App\Core\Env` — sem isso, qualquer teste que use `Crypto`
 falharia por falta de ambiente e não por defeito no código.
+
+---
+
+## O teste falhava em todos os modelos — e a tela escondia o porquê
+
+Relatado em 23/08/2026, com chave real configurada: `requisicao_recusada,
+HTTP 400` em todos os modelos experimentados.
+
+A OpenAI tinha dito exatamente o que estava errado:
+
+> `Unsupported parameter: 'temperature' is not supported with this model.`
+
+A família GPT-5 inteira recusa `temperature`, e o `config/ai.php` mandava `0.2`
+por padrão. Ou seja: a integração **não funcionava com nenhum dos cinco modelos
+oferecidos na tela**.
+
+`OPENAI_TEMPERATURE` passou a nascer vazia, e o catálogo diz quem aceita o
+parâmetro. Modelo fora do catálogo continua recebendo o que estiver configurado
+— apagar em silêncio uma opção que alguém escolheu de propósito seria pior que
+deixar o provedor recusar com uma mensagem clara.
+
+### O defeito atrás do defeito
+
+O parâmetro a mais custou minutos. O que custou caro foi a tela ter dito
+**"pode ser um modelo indisponível para esta conta"** — um palpite meu — enquanto
+a explicação exata do provedor ia só para o log. O responsável ficou trocando de
+modelo às cegas, procurando um problema de conta que não existia.
+
+`OpenAIService::falha()` agora carrega `provedor_mensagem`, e a tela mostra o
+texto do provedor palavra por palavra, junto do código interno. Esse texto vai
+para tela de administração e nunca para o aluno: é diagnóstico de integração,
+não conversa.
+
+**A regra que fica:** quando um sistema externo explica a recusa, a explicação
+dele vale mais que qualquer texto nosso. Registrar a explicação no log e mostrar
+um palpite na tela é ter a resposta e escondê-la de quem precisa dela.
