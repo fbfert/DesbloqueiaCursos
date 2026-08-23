@@ -34,8 +34,8 @@ Repositório `fbfert/DesbloqueiaCursos`, branch `frontend-v4`.
 - É PROIBIDO chamar `AptidaoCertificadoService::recalcularInscricao()` — escreve.
 - É PROIBIDO chamar `ProgressoService::recalcularInscricao()` — escreve. (Não estava no plano
   original; descoberto na auditoria.)
-- A leitura de elegibilidade de certificado é
-  `LmsElegibilidadeService::calcularElegibilidadeConteudoUnificado($cursoEventoId, $turmaId, $inscricaoId, $alunoId)`.
+- A leitura de elegibilidade de certificado usa `LmsElegibilidadeService`, que é **inteiro somente
+  leitura** (zero INSERT/UPDATE/DELETE). Dois métodos, para fins diferentes — ver § C12.
 - O modelo nunca gera nem executa SQL, nunca recebe credencial/chave/cookie/session id.
 - URLs de ação são construídas e validadas no servidor a partir de mapa de chaves.
 - Conteúdo de aula é dado não confiável; nunca instrução.
@@ -272,6 +272,42 @@ Resolvido antes do Prompt 1:
   `feat/norminha-v1`, banco `desbloqueiacursos_dev`) — ver `docs/norminha/AMBIENTE-DEV.md`.
 
 **A partir daqui, nunca trabalhe dentro de `public_html`.** Aquele diretório é servido ao vivo.
+
+### C12 — Para o certificado, use `calcularParaInscricao()`, não a versão de conteúdo
+
+O plano manda ler elegibilidade por `calcularElegibilidadeConteudoUnificado()`. Esse método é o
+certo para **conteúdo** (1 query, 1,0 ms), mas **não devolve `situacao`** — devolve `apto_conteudo`,
+que é outra coisa.
+
+Quem determina `inscricoes.apto_certificado` é `AptidaoCertificadoService::recalcularInscricao()`, na
+linha 46: `$apto = situacao IN ('apto','certificado_emitido')`, onde `situacao` vem de
+**`LmsElegibilidadeService::calcularParaInscricao($inscricao)`**.
+
+Ou seja: usar a versão de conteúdo faria a Norminha discordar da tela do aluno em casos reais —
+observado `apto_conteudo = true` com `apto_certificado = 0` na inscrição 97. Como o critério de
+sucesso da Onda 0 é "situação de certificado idêntica à da tela", a fonte correta é
+`calcularParaInscricao()`.
+
+`recalcularInscricao()` continua **proibido**: ele escreve. `calcularParaInscricao()` não — o
+service inteiro tem zero escritas, verificado por busca e por contador do MySQL.
+
+| Método | Queries | Devolve | Uso na Norminha |
+|---|---|---|---|
+| `calcularElegibilidadeConteudoUnificado()` | 1 | contagens de conteúdo, `apto_conteudo`, `bloqueios` | progresso |
+| `calcularParaInscricao()` | 8 | **`situacao`** + `motivos` em PT-BR | certificado |
+
+⚠️ **Teto de tamanho é obrigatório.** Numa inscrição real do banco, `calcularParaInscricao()`
+devolveu **99 motivos e 64 KB** (`motivos_texto` com 11.637 caracteres). O `NorminhaToolsService`
+corta em 5 motivos e informa `motivos_total` e `motivos_omitidos`.
+
+### C13 — Não existe pré-requisito nem liberação progressiva
+
+Nenhuma coluna, tabela ou service implementa bloqueio entre itens. `conteudo_itens.abre_em` é um
+ENUM de apresentação (`mesma_pagina`, `nova_aba`, `modal`…), não uma data de liberação.
+
+Portanto "próximo passo" é literalmente o próximo item não concluído na ordem
+`conteudo_modulos.ordem, conteudo_itens.ordem`. Nenhuma regra de bloqueio foi inventada, conforme o
+Prompt 3 exige.
 
 ### C11 — O usuário do banco é superusuário
 
