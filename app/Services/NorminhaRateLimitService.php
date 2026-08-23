@@ -162,9 +162,16 @@ class NorminhaRateLimitService
         );
     }
 
-    /** Log de segurança: aqui o IP entra, como evidência — nunca como identidade. */
+    /**
+     * Registra o bloqueio em dois lugares, porque servem a coisas diferentes:
+     * a coluna bloqueios_dia alimenta o painel de telemetria (consultável por
+     * período); o log guarda a evidência de segurança, com IP — que entra aqui
+     * como evidência, nunca como identidade.
+     */
     private function registrarBloqueio($usuarioId, $motivo, array $estado, $retry)
     {
+        $this->usoModel->registrarBloqueio($usuarioId);
+
         Logger::warning('norminha.ratelimit.bloqueado', array(
             'usuario_id' => $usuarioId,
             'motivo' => $motivo,

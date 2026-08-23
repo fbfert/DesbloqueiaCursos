@@ -91,6 +91,12 @@ $hash = password_hash('SuaSenhaDeTeste', PASSWORD_DEFAULT);
 reais; alterar a senha deles em produção tiraria o acesso de gente de verdade.
 O script recusa rodar se `DATABASE()` for `desbloqueiacursos`.
 
+**Use a MESMA senha para todas as contas de teste**, inclusive a de admin usada no painel de
+telemetria. Um usuário pode ser fixture de mais de um papel — no dump atual o usuário 7 é ao mesmo
+tempo o "aluno B" dos testes de propriedade e o administrador com `conteudo.ver`. Definir senhas
+diferentes para cada papel quebra o login de um deles, e o sintoma é um 401 onde o teste esperava
+403.
+
 O teste zera `norminha_uso` desses usuários no início — sem isso, a janela de
 rate limit consumida por uma execução anterior derrubaria a seguinte.
 

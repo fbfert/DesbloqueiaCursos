@@ -133,6 +133,34 @@ class NorminhaUso
     }
 
     /**
+     * Marca que o aluno recebeu um 429 hoje.
+     *
+     * O bloqueio já ia para o log, mas log de arquivo não se consulta por
+     * período. Aqui ele vira número histórico, na mesma linha que conta as
+     * mensagens do dia. Sem isto, "quantos 429 no período" só poderia ser
+     * aproximado por mensagens_dia — que não enxerga bloqueio de janela.
+     */
+    public function registrarBloqueio($usuarioId)
+    {
+        $usuarioId = (int) $usuarioId;
+        if ($usuarioId <= 0) {
+            return false;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'UPDATE norminha_uso
+                SET bloqueios_dia = bloqueios_dia + 1,
+                    updated_at = NOW()
+              WHERE usuario_id = :usuario_id
+                AND dia = CURDATE()
+              LIMIT 1'
+        );
+        $stmt->execute(array('usuario_id' => $usuarioId));
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
      * Segundos até a virada do dia, pelo relógio do BANCO.
      *
      * É o Retry-After correto quando o limite estourado é o diário. Calcular

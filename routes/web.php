@@ -504,6 +504,9 @@ $app->get('/admin/tutor-norminha/editar', array(TutorNorminhaController::class, 
 $app->post('/admin/tutor-norminha/salvar', array(TutorNorminhaController::class, 'salvar'), array('auth', 'permission:conteudo.gerenciar'));
 $app->post('/admin/tutor-norminha/status', array(TutorNorminhaController::class, 'status'), array('auth', 'permission:conteudo.gerenciar'));
 $app->get('/admin/tutor-norminha/configuracoes', array(TutorNorminhaController::class, 'configuracoes'), array('auth', 'permission:conteudo.ver'));
+// Telemetria da Norminha (Etapa 8). Somente leitura, mesma permissao do resto
+// do admin da Norminha — nenhuma permissao nova foi criada.
+$app->get('/admin/tutor-norminha/telemetria', array(TutorNorminhaController::class, 'telemetria'), array('auth', 'permission:conteudo.ver'));
 $app->post('/admin/tutor-norminha/configuracoes/salvar', array(TutorNorminhaController::class, 'salvarConfiguracoes'), array('auth', 'permission:conteudo.gerenciar'));
 $app->get('/admin/certificados', array(AdminCertificadosController::class, 'index'), array('auth', 'permission:certificados.ver'));
 $app->get('/admin/certificados/show', array(AdminCertificadosController::class, 'show'), array('auth', 'permission:certificados.ver'));

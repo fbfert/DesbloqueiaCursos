@@ -14,6 +14,7 @@ da letra em alguns pontos produz defeito.
 | [`CONTEXTO-EXECUCAO.md`](CONTEXTO-EXECUCAO.md) | Lido por todas as etapas. Invariantes, decisões da auditoria e correções ao plano |
 | [`00-auditoria-preflight.md`](00-auditoria-preflight.md) | Relatório completo dos 12 itens da Etapa 0, com evidência |
 | [`AMBIENTE-DEV.md`](AMBIENTE-DEV.md) | Como trabalhar sem tocar na produção |
+| [`08-telemetria.md`](08-telemetria.md) | O painel do Checkpoint 0: como ler e o que decidir |
 | [`../../tests/Smoke/README.md`](../../tests/Smoke/README.md) | A rede de regressão: uso, baseline, guarda de layout |
 
 ## Estado
@@ -23,8 +24,16 @@ da letra em alguns pontos produz defeito.
 | 0 — Auditoria pré-flight | **concluída** |
 | 0.5 — Rede de segurança (smoke tests) | **concluída** — 34 rotas, baseline gravado |
 | Condições da seção 14.1 | **atendidas** — branch, backup e ambiente de dev |
-| 1 — Migration e Models da conversa | próxima |
-| 2 a 8 — restante da Onda 0 | pendentes |
+| 1 — Migration e Models da conversa | **concluída** |
+| 2 — `NorminhaContextService` | **concluída** |
+| 3 — `NorminhaToolsService` | **concluída** |
+| 4 — Orquestrador determinístico | **concluída** |
+| 5 — API, `auth.api` e rate limit | **concluída** |
+| 6 — Interface de chat e montagem na V2 | **concluída** |
+| 7 — Contexto do LMS no frontend | **concluída** |
+| 8 — Telemetria e painel | **concluída** |
+| **CP0 — Checkpoint: piloto sem IA** | **próximo — decisão sua, com dados reais** |
+| Onda 1 (9 a 14) e Onda 2 (15 a 19) | pendentes |
 
 ## As três correções que mais importam
 

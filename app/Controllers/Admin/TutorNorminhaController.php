@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
 use App\Services\TutorNorminhaService;
+use App\Services\NorminhaTelemetriaService;
 
 class TutorNorminhaController extends Controller
 {
@@ -25,6 +26,36 @@ class TutorNorminhaController extends Controller
                 'errors' => Session::pullFlash('errors', array()),
             ),
             $this->service->listAdmin($request->queryAll())
+        ));
+    }
+
+    /**
+     * Painel de telemetria da Norminha.
+     *
+     * Existe para responder uma pergunta de negócio, não para enfeitar: a
+     * camada de IA se paga? A resposta está na lista de perguntas não
+     * resolvidas, mais do que em qualquer contador.
+     *
+     * Só leitura. Protegido pela mesma permissão do resto do admin da Norminha
+     * (conteudo.ver) — nenhuma permissão nova foi criada.
+     */
+    public function telemetria(Request $request)
+    {
+        $servico = new NorminhaTelemetriaService();
+
+        $dias = (int) $request->query('dias', NorminhaTelemetriaService::DIAS_PADRAO);
+        $dias = max(1, min(365, $dias));
+        $cursoId = (int) $request->query('curso_id', 0);
+
+        return $this->view('admin/tutor-norminha/telemetria', array(
+            'title' => 'Norminha — telemetria',
+            'dias' => $dias,
+            'cursoId' => $cursoId ?: null,
+            'panorama' => $servico->panorama($dias),
+            'perguntas' => $servico->perguntasNaoResolvidas($dias, 50, $cursoId ?: null),
+            'cursosComDuvida' => $servico->cursosComDuvida($dias),
+            'success' => Session::pullFlash('success'),
+            'errors' => Session::pullFlash('errors', array()),
         ));
     }
 
