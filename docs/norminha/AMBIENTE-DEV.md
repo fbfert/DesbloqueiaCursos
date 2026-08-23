@@ -68,6 +68,32 @@ mysql -e "UPDATE desbloqueiacursos_dev.tutor_configuracoes SET valor='1' WHERE c
 proteção da produção: nunca exponha esse diretório pela web e não copie o banco para uma máquina
 sem controle.
 
+## Testes HTTP da API
+
+`tests/Unit/norminha_api.php` fala HTTP com um servidor real, porque middleware,
+CSRF e status HTTP não aparecem em teste de unidade. Ele precisa de credenciais:
+
+```bash
+php -S 127.0.0.1:8000 -t . tests/Smoke/router.php    # em um terminal
+NORMINHA_API_CREDS=/caminho/creds.json php tests/Unit/norminha_api.php
+```
+
+O arquivo de credenciais é um JSON com `e1`, `e2`, `senha`, `u1`, `u2` e `inscricao`.
+Para gerá-lo, defina uma senha conhecida para dois alunos **no banco de dev**:
+
+```php
+$hash = password_hash('SuaSenhaDeTeste', PASSWORD_DEFAULT);
+// UPDATE usuarios SET senha_hash = :hash, status='ativo', tentativas_login=0,
+//        bloqueado_ate=NULL WHERE id IN (:aluno_a, :aluno_b)
+```
+
+⚠️ **Só no banco de desenvolvimento.** Os alunos usados aqui são cópias de contas
+reais; alterar a senha deles em produção tiraria o acesso de gente de verdade.
+O script recusa rodar se `DATABASE()` for `desbloqueiacursos`.
+
+O teste zera `norminha_uso` desses usuários no início — sem isso, a janela de
+rate limit consumida por uma execução anterior derrubaria a seguinte.
+
 ## Backup de referência
 
 `/home/desbloqueiacursos/backups/pre-norminha-20260822-202256/`

@@ -133,6 +133,24 @@ class NorminhaUso
     }
 
     /**
+     * Segundos até a virada do dia, pelo relógio do BANCO.
+     *
+     * É o Retry-After correto quando o limite estourado é o diário. Calcular
+     * isto em PHP erraria por três horas: o PHP roda em UTC e o MySQL em UTC−3,
+     * então das 21h à meia-noite o PHP já virou o dia e devolveria um prazo
+     * negativo ou quase zero — liberando quem deveria estar bloqueado.
+     */
+    public function segundosAteFimDoDia()
+    {
+        $stmt = Database::connection()->query(
+            'SELECT GREATEST(1, TIMESTAMPDIFF(SECOND, NOW(), DATE_ADD(CURDATE(), INTERVAL 1 DAY))) AS restante'
+        );
+        $linha = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+
+        return $linha ? (int) $linha['restante'] : 60;
+    }
+
+    /**
      * Rotação: a tabela não pode crescer para sempre.
      *
      * Uma linha por aluno por dia. Chamado pela Etapa 15; o corte usa CURDATE(),

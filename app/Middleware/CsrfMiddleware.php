@@ -47,6 +47,18 @@ class CsrfMiddleware implements MiddlewareInterface
         );
 
         Logger::error('seguranca.csrf.rejeitado', array_merge($context, array('usuario_id' => $usuarioId)));
+
+        // Rotas de API respondem JSON. Redirecionar aqui faria o fetch() do
+        // cliente receber 200 com HTML e interpretar a falha de CSRF como
+        // sucesso. O comportamento web (flash + redirect) segue intacto.
+        if (strpos($request->path(), '/api/') === 0) {
+            return Response::json(array(
+                'ok' => false,
+                'erro' => 'csrf_invalido',
+                'mensagem' => 'Sua sessao expirou. Recarregue a pagina e tente novamente.',
+            ), 403);
+        }
+
         Session::flash('errors', array('csrf' => 'Sua sessao expirou. Recarregue a pagina e tente novamente.'));
 
         $referer = isset($_SERVER['HTTP_REFERER']) ? trim((string) $_SERVER['HTTP_REFERER']) : '';

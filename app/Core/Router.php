@@ -260,6 +260,10 @@ class Router
             $map = array(
                 'auth' => '\\App\\Middleware\\AuthenticateMiddleware',
                 'auth.v2' => '\\App\\Middleware\\V2AuthenticateMiddleware',
+                // Responde 401 em JSON em vez de redirecionar para o login.
+                // Um fetch() que segue um 302 recebe o HTML do login com 200 e
+                // conclui que deu certo — ver ApiAuthenticateMiddleware.
+                'auth.api' => '\\App\\Middleware\\ApiAuthenticateMiddleware',
                 'csrf' => '\\App\\Middleware\\CsrfMiddleware',
                 'permission' => '\\App\\Middleware\\PermissionMiddleware',
             );
