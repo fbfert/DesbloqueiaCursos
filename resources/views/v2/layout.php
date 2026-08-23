@@ -13,54 +13,8 @@ $v2JsPath  = BASE_PATH . '/v2/assets/js/v2-main.js';
 $v2CssVersion = is_file($v2CssPath) ? filemtime($v2CssPath) : null;
 $v2JsVersion  = is_file($v2JsPath) ? filemtime($v2JsPath) : null;
 
-// ---------------------------------------------------------------------------
-// Norminha (22/08/2026)
-//
-// Ate aqui o componente existia SO no layout legado. Como HOME_VERSION=v2 e a
-// area do aluno viva e a V2, na pratica a Norminha nao aparecia para ninguem.
-// Este e o unico ponto de montagem da V2 — nao replicar em view de pagina, sob
-// pena de o widget aparecer duas vezes (a guarda do smoke reprova isso).
-// ---------------------------------------------------------------------------
-$tutorNorminha = null;
-$tutorNorminhaTtlHoras = 24;
-$tutorNorminhaCssVersion = null;
-$tutorNorminhaJsVersion = null;
-
-$norminhaAssetVersion = function ($relativo) {
-    foreach (array(BASE_PATH . '/' . ltrim($relativo, '/'),
-                   BASE_PATH . '/public_html/' . ltrim($relativo, '/')) as $caminho) {
-        if (is_file($caminho)) {
-            return filemtime($caminho);
-        }
-    }
-    return null;
-};
-
-try {
-    $tutorVirtualService = new App\Services\TutorVirtualService();
-    $tutorConfiguracoes = $tutorVirtualService->configuracoes();
-    $tutorNorminhaTtlHoras = isset($tutorConfiguracoes['tutor_ttl_fechamento_horas'])
-        ? (int) $tutorConfiguracoes['tutor_ttl_fechamento_horas'] : 24;
-
-    $norminhaPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-    $tutorNorminha = $tutorVirtualService->componenteParaLayout($norminhaPath, $_GET);
-} catch (\Throwable $e) {
-    // A Norminha nunca pode derrubar a pagina do aluno. Falhou, nao aparece.
-    $tutorNorminha = null;
-    App\Core\Logger::error('norminha.layout.falha', array('message' => $e->getMessage()));
-}
-
-if ($tutorNorminha) {
-    $tutorNorminhaCssVersion = $norminhaAssetVersion('assets/css/tutor-norminha.css');
-    $tutorNorminhaJsVersion = $norminhaAssetVersion('assets/js/tutor-norminha.js');
-}
-
-// Pistas de contexto. O controller publica o que RESOLVEU; onde ele ainda nao
-// publica, cai-se na query string, que e mais fraca de proposito. Ver
-// App\Support\NorminhaHints.
-if (!isset($norminhaContexto) || !is_array($norminhaContexto)) {
-    $norminhaContexto = App\Support\NorminhaHints::daQuery($_GET, $norminhaPath ?? null);
-}
+// Norminha: montagem compartilhada com o layout de autenticacao.
+require BASE_PATH . '/resources/views/v2/partials/norminha_montagem.php';
 
 // Fase 2.13 — navegação V2 centralizada (V2Nav). Sobrescreve quaisquer hrefs
 // herdados que apontariam ao V1 (ex.: catalogo/categorias/login). `areaHref`

@@ -144,6 +144,19 @@ $emAula = $hintItem > 0 && in_array($contextoNorminha, array('aula', 'avaliacao'
 // (if (form && input), if (quick), if (!listaMensagens) return), entao a
 // ausencia dos blocos degrada limpo: launcher, minimizar e audio seguem vivos.
 $alunoLogado = (int) Session::get('usuario_id') > 0;
+
+// Numa tela cujo assunto ja e entrar ou se cadastrar, um convite para entrar
+// seria circular. Ali mostra-se so a fala — que e exatamente o que a Norminha
+// fazia nessas paginas na V1.
+$rotasDeAutenticacao = array('/login', '/cadastro', '/recuperar-senha',
+    '/v2/login', '/v2/cadastro', '/v2/recuperar-senha');
+$convidarAEntrar = !$alunoLogado;
+foreach ($rotasDeAutenticacao as $rotaDeAutenticacao) {
+    if (strpos($rotaAtual, $rotaDeAutenticacao) === 0) {
+        $convidarAEntrar = false;
+        break;
+    }
+}
 ?>
 
 <!-- Norminha: chat acadêmico. Montado uma única vez, pelo layout. -->
@@ -230,7 +243,7 @@ $alunoLogado = (int) Session::get('usuario_id') > 0;
                 <span aria-hidden="true">&#10148;</span>
             </button>
         </form>
-        <?php else: ?>
+        <?php elseif ($convidarAEntrar): ?>
             <p class="norminha-tutor__convite">
                 <a class="norminha-tutor__convite-link" href="/login">Entre na sua conta</a>
                 para conversar com a Norminha sobre seus cursos.

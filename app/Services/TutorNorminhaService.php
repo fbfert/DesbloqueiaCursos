@@ -305,7 +305,11 @@ class TutorNorminhaService
 
     public function contextosPermitidos()
     {
-        return array('home', 'institucional', 'area_aluno', 'cursos', 'curso', 'aula', 'checkout');
+        // 'avaliacao' entrou em 23/08/2026. O roteador de contexto ja devolvia
+        // esse nome para /v2/quiz e /v2/atividade, mas ele nao estava aqui — o
+        // administrador via a Norminha aparecer na avaliacao (pela saudacao
+        // padrao) e nao tinha como escrever uma fala para ela.
+        return array('home', 'institucional', 'area_aluno', 'cursos', 'curso', 'aula', 'avaliacao', 'checkout');
     }
 
     public function estadosAvatar()

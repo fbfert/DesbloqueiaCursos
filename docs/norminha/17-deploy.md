@@ -433,3 +433,78 @@ limpo: launcher, minimizar e áudio seguem funcionando.
 Travado por `tests/Unit/norminha_visitante.php` (4 casos), verificado por
 mutação nos dois sentidos: guarda sempre verdadeira (o bug original) e guarda
 sempre falsa (aluno perde o chat) — as duas são detectadas.
+
+---
+
+## A Norminha muda no site público da V2 (23/08/2026)
+
+### O sintoma
+
+Com tudo ligado e o roteador reconhecendo `/v2/*`, a Norminha não aparecia em
+**nenhuma** página pública da V2 — que é o site que o visitante de fato navega.
+
+### A causa não estava no código
+
+O mapa rota → contexto estava certo desde 22/08. O que faltava eram dados. As
+seis falas cadastradas estavam todas presas a rotas da V1 (`/`,
+`/como-funciona`, `/cadastro`, `/curso/*`, `/aluno/cursos`, `/aluno/curso/*`).
+Quando nenhuma casa pela rota, o último recurso de `TutorFala::buscarAtiva()` é
+`buscarPorContexto()`, que exige explicitamente `rota IS NULL OR rota = ""` —
+uma fala que valha para o contexto inteiro. Nenhuma das seis tinha isso. Sem
+fala, sem componente.
+
+As áreas de estudo escapavam por causa da saudação padrão da Etapa 6, e isso é o
+que fez o problema parecer menor do que era: **quem testava logado como aluno
+via a Norminha funcionando e não percebia o site público mudo.** É um bom
+lembrete de que "funciona no meu teste" costuma significar "funciona no caminho
+que eu testei".
+
+### A correção
+
+`sql/077_norminha_falas_v2.sql`, usando o mecanismo que já existia. Falas com
+rota nula para `home`, `cursos`, `institucional` e `checkout`; a fala de `home`
+deixou de ser exclusiva de `/` e passou a valer também para `/v2/`. Rota exata
+continua tendo precedência sobre rota nula, então qualquer página pode ser
+personalizada depois pelo admin, sem código.
+
+Três coisas apareceram no caminho:
+
+**`avaliacao` não era escrevível.** O roteador emite esse contexto para
+`/v2/quiz` e `/v2/atividade`, mas ele não estava em `contextosPermitidos()`. O
+administrador via a Norminha aparecer na avaliação, pela saudação padrão, e não
+tinha como escrever uma fala para ela. Corrigido, e o teste agora compara as
+duas listas em vez de confiar que alguém lembre.
+
+**As telas de autenticação usam outro layout.** `login`, `cadastro` e
+`recuperar-senha` renderizam por `v2/auth-layout.php`, que nunca montou a
+Norminha — a fala de cadastro existia desde a V1 e havia sumido. Em vez de
+duplicar as cinquenta linhas de montagem, elas foram extraídas para
+`resources/views/v2/partials/norminha_montagem.php`, incluído pelos dois
+layouts. O comentário original já avisava que a montagem deve ter um ponto só.
+
+Nessas telas o convite "entre na sua conta" é suprimido: pedir para entrar a
+quem está entrando é circular. Fica só a fala, que é o que a V1 fazia ali.
+
+**Uma fala apontava para uma rota que nunca renderiza.** `/v2/como-funciona` é
+um 301 para `/v2/como-funciona-a-sala-virtual`; uma fala presa à primeira jamais
+apareceria. Corrigida antes de ir para produção.
+
+### Achado à parte, que não é da Norminha
+
+`/v2/como-funciona` e `/v2/como-funciona-a-sala-virtual` respondem **404**. A
+página de destino existe em `paginas` com `status = 'publicada'`, mas foi
+apagada logicamente em **20/07/2026 15:13:46** (`deleted_at`), e
+`Pagina::findPublicByRota()` corretamente exige `deleted_at IS NULL`.
+
+Não é defeito de código e é bem anterior a este trabalho: alguém apagou a página
+no admin e o menu continua linkando para ela (`V2Nav::COMO_FUNCIONA_SALA`).
+Restaurar é uma decisão de conteúdo. A fala já está cadastrada para quando a
+página voltar.
+
+### Cobertura
+
+`tests/Unit/norminha_rotas.php` (7 casos) trava o mapa rota → contexto nas duas
+versões do site, a exclusão de `/admin` e `/professor`, a equivalência entre o
+que o roteador emite e o que o admin pode escrever, e a precedência entre fala
+de rota exata e fala de contexto. `tests/Unit/norminha_visitante.php` subiu para
+6 casos. Suíte: 331/331.

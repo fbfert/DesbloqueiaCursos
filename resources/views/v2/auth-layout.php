@@ -7,6 +7,11 @@ $pageTitle = isset($pageTitle) && trim((string) $pageTitle) !== '' ? (string) $p
 $pageDescription = isset($pageDescription) ? (string) $pageDescription : '';
 $homeHref = isset($homeHref) ? (string) $homeHref : '/v2/';
 $contentView = isset($contentView) ? (string) $contentView : BASE_PATH . '/resources/views/v2/pages/login.php';
+
+// Norminha (23/08/2026). Estas telas usam layout proprio, e por isso ficaram de
+// fora quando a V2 ganhou o ponto de montagem — a fala de cadastro existia
+// desde a V1 e nao aparecia mais. Mesmo parcial do layout principal.
+require BASE_PATH . '/resources/views/v2/partials/norminha_montagem.php';
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -25,6 +30,9 @@ $contentView = isset($contentView) ? (string) $contentView : BASE_PATH . '/resou
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <link rel="stylesheet" href="/v2/assets/css/v2-main.css">
   <link rel="icon" href="/v2/assets/img/logo-v2.svg" type="image/svg+xml">
+  <?php if ($tutorNorminha): ?>
+  <?php require BASE_PATH . '/resources/views/components/tutor_norminha_head.php'; ?>
+  <?php endif; ?>
 </head>
 <body class="v2-app">
   <script>
@@ -50,5 +58,9 @@ $contentView = isset($contentView) ? (string) $contentView : BASE_PATH . '/resou
   </main>
 
   <script src="/v2/assets/js/v2-main.js" defer></script>
+  <?php if ($tutorNorminha): ?>
+  <?php require BASE_PATH . '/resources/views/components/tutor_norminha.php'; ?>
+  <script src="/assets/js/tutor-norminha.js<?php echo $tutorNorminhaJsVersion ? '?v=' . (int) $tutorNorminhaJsVersion : ''; ?>" defer></script>
+  <?php endif; ?>
 </body>
 </html>
