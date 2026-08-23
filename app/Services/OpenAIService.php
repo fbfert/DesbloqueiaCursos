@@ -96,6 +96,12 @@ class OpenAIService
             return $this->falha('payload_invalido', 'Pedido inválido para o provedor.', 422);
         }
 
+        // O nome do modelo é extraído ANTES de qualquer log. Nenhuma chamada a
+        // Logger neste arquivo referencia $payload, $input, $corpo ou
+        // instructions — assim a garantia "o prompt nunca é logado" é
+        // verificável por varredura simples, sem exceções para analisar.
+        $modelo = $payload['model'];
+
         $inicio = microtime(true);
         $http = $this->postar($payload);
         $latencia = (int) round((microtime(true) - $inicio) * 1000);
@@ -104,7 +110,7 @@ class OpenAIService
             Logger::error('openai.falha_transporte', array(
                 'erro' => $http['erro_curl'],
                 'latencia_ms' => $latencia,
-                'modelo' => $payload['model'],
+                'modelo' => $modelo,
             ));
 
             return $this->falha('transporte', 'Não foi possível falar com o provedor agora.', 503, $latencia);
@@ -128,7 +134,7 @@ class OpenAIService
             Logger::error('openai.erro_http', array(
                 'status' => $status,
                 'latencia_ms' => $latencia,
-                'modelo' => $payload['model'],
+                'modelo' => $modelo,
                 // Mensagem do provedor: técnica, sem conteúdo do aluno.
                 'provedor' => $mensagem,
             ));

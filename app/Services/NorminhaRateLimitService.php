@@ -38,6 +38,17 @@ class NorminhaRateLimitService
     const LIMITE_DIARIO = 200;
     const LIMITE_IA_DIARIO = 100;
 
+    /**
+     * Ação determinística custa uma consulta ao banco, não um token. Apertá-la
+     * na mesma medida da pergunta livre puniria navegação normal: um aluno que
+     * clica "ver progresso" seis vezes seguidas está usando o produto, não
+     * abusando dele.
+     */
+    const MULTIPLICADOR_ACAO = 3;
+
+    /** Retenção da tabela de uso. Uma linha por aluno por dia. */
+    const DIAS_RETENCAO = 90;
+
     /** Chaves lidas do admin (Etapa 14). Ausentes, valem os defaults acima. */
     const CHAVE_JANELA = 'tutor_ia_limite_5min';
     const CHAVE_DIARIO = 'tutor_ia_limite_diario';
@@ -57,7 +68,7 @@ class NorminhaRateLimitService
      *
      * @return array permitido, motivo, retry_after, limites e contadores
      */
-    public function registrarEVerificar($usuarioId, $usouIa = false)
+    public function registrarEVerificar($usuarioId, $usouIa = false, $ehAcaoDeterministica = false)
     {
         $usuarioId = (int) $usuarioId;
         if ($usuarioId <= 0) {
@@ -66,6 +77,14 @@ class NorminhaRateLimitService
 
         $limiteJanela = $this->limite(self::CHAVE_JANELA, self::LIMITE_JANELA);
         $limiteDiario = $this->limite(self::CHAVE_DIARIO, self::LIMITE_DIARIO);
+
+        // Política mais folgada para atalho determinístico: ele não gasta token,
+        // e travar navegação normal seria o pior tipo de proteção — a que
+        // atrapalha quem usa direito sem incomodar quem abusa.
+        if ($ehAcaoDeterministica) {
+            $limiteJanela = min(10000, $limiteJanela * self::MULTIPLICADOR_ACAO);
+            $limiteDiario = min(10000, $limiteDiario * self::MULTIPLICADOR_ACAO);
+        }
 
         $estado = $this->usoModel->registrar($usuarioId, $usouIa, self::JANELA_SEGUNDOS);
         if (!is_array($estado)) {
@@ -91,6 +110,21 @@ class NorminhaRateLimitService
             return $this->bloqueado('diario', $retry, $estado, $limiteJanela, $limiteDiario);
         }
 
+        // Limite PRÓPRIO para mensagens que consomem provedor. Ele existe
+        // porque o custo é assimétrico: mil atalhos custam mil consultas ao
+        // banco; cem mensagens de IA custam dinheiro. O teto de IA protege a
+        // fatura sem estreitar o uso do resto do produto.
+        $limiteIa = $this->limiteIa($limiteDiario);
+        if ($usouIa && $estado['mensagens_ia_dia'] > $limiteIa) {
+            $retry = $this->usoModel->segundosAteFimDoDia();
+            $this->registrarBloqueio($usuarioId, 'ia_diario', $estado, $retry);
+
+            $r = $this->bloqueado('ia_diario', $retry, $estado, $limiteJanela, $limiteDiario);
+            $r['limite_ia_diario'] = $limiteIa;
+
+            return $r;
+        }
+
         return $this->permitido($estado, $limiteJanela, $limiteDiario);
     }
 
@@ -101,9 +135,24 @@ class NorminhaRateLimitService
     }
 
     /** Mensagem em PT-BR para o aluno, coerente com o motivo do bloqueio. */
+    /**
+     * Rotação: a tabela não pode crescer para sempre. Chamada pelo cron ou
+     * manualmente; devolve quantas linhas saíram.
+     */
+    public function limparAntigas($dias = self::DIAS_RETENCAO)
+    {
+        return $this->usoModel->limparAnteriores($dias);
+    }
+
     public function mensagemDeBloqueio(array $resultado)
     {
-        if (($resultado['motivo'] ?? '') === 'diario') {
+        $motivo = $resultado['motivo'] ?? '';
+
+        if ($motivo === 'ia_diario') {
+            return 'Você já usou bastante a tutoria com IA hoje. As respostas sobre progresso, '
+                . 'retomada e certificado continuam disponíveis, e amanhã voltamos ao normal.';
+        }
+        if ($motivo === 'diario') {
             return 'Você atingiu o limite de mensagens de hoje. Amanhã podemos continuar.';
         }
 
@@ -117,6 +166,15 @@ class NorminhaRateLimitService
     }
 
     // -----------------------------------------------------------------
+
+    /**
+     * Teto diário de mensagens com IA. Metade do limite geral por padrão: quem
+     * conversa muito ainda navega, mas para de gastar token.
+     */
+    private function limiteIa($limiteDiario)
+    {
+        return max(1, min(self::LIMITE_IA_DIARIO, (int) ceil($limiteDiario / 2)));
+    }
 
     private function limite($chave, $padrao)
     {

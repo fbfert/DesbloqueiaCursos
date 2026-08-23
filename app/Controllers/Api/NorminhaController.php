@@ -66,7 +66,13 @@ class NorminhaController extends Controller
         }
 
         // Rate limit ANTES de qualquer trabalho: negar barato é o ponto.
-        $limite = $this->rateLimitService->registrarEVerificar($usuarioId, false);
+        //
+        // `action` é atalho determinístico — consulta ao banco, não token. Ele
+        // entra com política mais folgada para não travar navegação normal.
+        // Se a mensagem vier a consumir IA, o consumo é contabilizado depois,
+        // pelo próprio orquestrador.
+        $ehAcao = isset($payload['action']) && $payload['action'] !== null && trim((string) $payload['action']) !== '';
+        $limite = $this->rateLimitService->registrarEVerificar($usuarioId, false, $ehAcao);
         if (empty($limite['permitido'])) {
             return $this->respostaJson(array(
                 'ok' => false,
