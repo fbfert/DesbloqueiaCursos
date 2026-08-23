@@ -24,6 +24,13 @@ use PDO;
  * inerte por exatamente isso. Por isso aqui não há `date()`: quem decide que
  * dia é hoje é o mesmo relógio que gravou a linha.
  *
+ * O PAPEL GRAVADO É 'assistant', EM INGLÊS
+ *
+ * NorminhaMensagem::PAPEIS aceita 'user', 'assistant' e 'tool'. Este serviço
+ * nasceu filtrando por 'assistente' e, por isso, contava ZERO respostas — o
+ * teto de gasto nunca dispararia. Descoberto em 23/08/2026, com a IA já ligada
+ * em produção.
+ *
  * O TETO É UM FREIO, NÃO UMA CERCA
  *
  * Ele conta o que já foi gasto e recusa a próxima chamada quando o mês estourou.
@@ -45,7 +52,7 @@ class NorminhaCustoService
     {
         $sql = 'SELECT COALESCE(SUM(' . $this->expressao() . '), 0)
                   FROM norminha_mensagens
-                 WHERE papel = "assistente"
+                 WHERE papel = "assistant"
                    AND modelo_ia IS NOT NULL
                    AND YEAR(created_at) = YEAR(CURDATE())
                    AND MONTH(created_at) = MONTH(CURDATE())';
@@ -100,7 +107,7 @@ class NorminhaCustoService
                   COALESCE(SUM(output_tokens), 0) AS saida_mes,
                   SUM(CASE WHEN modelo_ia IS NOT NULL AND ' . $custo . ' IS NULL THEN 1 ELSE 0 END) AS sem_preco
                 FROM norminha_mensagens
-               WHERE papel = "assistente"
+               WHERE papel = "assistant"
                  AND modelo_ia IS NOT NULL
                  AND YEAR(created_at) = YEAR(CURDATE())
                  AND MONTH(created_at) = MONTH(CURDATE())';
@@ -139,7 +146,7 @@ class NorminhaCustoService
                        COUNT(*) AS respostas,
                        SUM(' . $this->expressao() . ') AS custo
                   FROM norminha_mensagens
-                 WHERE papel = "assistente"
+                 WHERE papel = "assistant"
                    AND modelo_ia IS NOT NULL
                    AND YEAR(created_at) = YEAR(CURDATE())
                    AND MONTH(created_at) = MONTH(CURDATE())

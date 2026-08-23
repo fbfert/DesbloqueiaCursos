@@ -749,13 +749,35 @@ class NorminhaService
             $this->registrarNaoResolvida($usuarioId, $contexto, null);
         }
 
+        // Modelo, tokens e latência SEGUEM para o banco (23/08/2026).
+        //
+        // As colunas existem desde a primeira migration e nunca foram
+        // preenchidas: gravava-se só intenção e forma de resolução. O efeito só
+        // apareceu quando entrou o teto de gasto — ele soma o custo a partir
+        // destas colunas, e com todas nulas somava zero para sempre. Um freio
+        // que nunca freia é pior que nenhum, porque ninguém desconfia dele.
+        //
+        // usuario_id também estava ficando nulo na linha do assistente, embora
+        // a da pergunta o trouxesse. Telemetria por aluno não fechava.
+        $uso = isset($resposta['usage']) && is_array($resposta['usage']) ? $resposta['usage'] : array();
+        $doUso = function ($chave) use ($uso) {
+            return isset($uso[$chave]) ? $uso[$chave] : null;
+        };
+
         $mensagemId = $this->mensagemModel->inserir(
             $conversa['id'],
             'assistant',
             $resposta['message'],
             array(
+                'usuario_id' => $usuarioId,
                 'intencao' => $resposta['intent'],
                 'resolved_by' => $resposta['resolved_by'],
+                'openai_response_id' => $doUso('response_id'),
+                'modelo_ia' => $doUso('model'),
+                'input_tokens' => $doUso('input_tokens'),
+                'cached_input_tokens' => $doUso('cached_input_tokens'),
+                'output_tokens' => $doUso('output_tokens'),
+                'latencia_ms' => $doUso('latencia_ms'),
             )
         );
 

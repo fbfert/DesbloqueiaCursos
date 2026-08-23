@@ -75,7 +75,7 @@ $conversaId = (int) $pdo->lastInsertId();
 $gravarResposta = function ($modelo, $entrada, $cache, $saida) use ($pdo, $conversaId) {
     $st = $pdo->prepare('INSERT INTO norminha_mensagens
         (conversa_id, usuario_id, papel, mensagem, modelo_ia, input_tokens, cached_input_tokens, output_tokens, created_at)
-        VALUES (:c, 25, "assistente", "x", :m, :e, :h, :s, NOW())');
+        VALUES (:c, 25, "assistant", "x", :m, :e, :h, :s, NOW())');
     $st->execute(array('c' => $conversaId, 'm' => $modelo, 'e' => $entrada, 'h' => $cache, 's' => $saida));
 };
 
@@ -124,6 +124,92 @@ it('a soma em SQL também reconhece o instantâneo datado', function () use ($pd
         throw new RuntimeException('o SQL não cobrou o instantâneo datado');
     }
     expect((new NorminhaCustoService($pdo))->resumo()['sem_preco'])->toBe(1);
+});
+
+describe('O que se grava é o que se conta');
+
+/**
+ * Dois defeitos que se anulavam mutuamente e deixaram o teto inerte, achados em
+ * 23/08/2026 com a IA já ligada em produção:
+ *
+ *   1. NorminhaService::finalizar() gravava só intenção e forma de resolução. As
+ *      colunas modelo_ia, input_tokens, cached_input_tokens e output_tokens
+ *      existiam desde a primeira migration e nunca foram preenchidas.
+ *   2. Este serviço de custo filtrava por papel = 'assistente'; o código grava
+ *      'assistant'. Nenhuma linha casava.
+ *
+ * Qualquer um dos dois, sozinho, já zerava o gasto do mês para sempre. Um freio
+ * que nunca freia é pior que nenhum: ninguém desconfia dele.
+ */
+
+it('o papel que o custo procura é um papel que o sistema grava', function () {
+    $fonte = (string) file_get_contents(BASE_PATH . '/app/Services/NorminhaCustoService.php');
+    preg_match_all('/papel = "([a-z]+)"/', $fonte, $m);
+
+    if (empty($m[1])) {
+        throw new RuntimeException('o serviço de custo não filtra por papel nenhum');
+    }
+
+    foreach (array_unique($m[1]) as $papel) {
+        if (!in_array($papel, \App\Models\NorminhaMensagem::PAPEIS, true)) {
+            throw new RuntimeException("o custo filtra por papel '{$papel}', que o sistema nunca grava");
+        }
+    }
+    expect(true)->toBeTrue();
+});
+
+it('a resposta da IA grava modelo, tokens e latência', function () use ($pdo) {
+    $servico = new \App\Services\NorminhaService();
+    $metodo = new ReflectionMethod($servico, 'finalizar');
+    $metodo->setAccessible(true);
+
+    $pdo->exec('INSERT INTO norminha_conversas (uuid, usuario_id, created_at, updated_at)
+                VALUES ("t-uso", 25, NOW(), NOW())');
+    $conversa = array('id' => (int) $pdo->lastInsertId(), 'uuid' => 't-uso');
+
+    $metodo->invoke($servico, $conversa, 25, array('estado' => 'ok'), array(
+        'message' => 'resposta da IA',
+        'resolved_by' => 'hybrid',
+        'intent' => 'tutoria_conteudo',
+        'sources' => array(),
+        'avatar_state' => 'speaking',
+        'actions' => array(),
+        'usage' => array(
+            'response_id' => 'resp_teste_123',
+            'model' => 'gpt-5-mini-2025-08-07',
+            'input_tokens' => 480,
+            'cached_input_tokens' => 300,
+            'output_tokens' => 210,
+            'latencia_ms' => 1900,
+        ),
+    ));
+
+    $linha = $pdo->query('SELECT * FROM norminha_mensagens WHERE mensagem = "resposta da IA" ORDER BY id DESC LIMIT 1')
+        ->fetch(PDO::FETCH_ASSOC);
+
+    expect($linha['papel'])->toBe('assistant');
+    expect((int) $linha['usuario_id'])->toBe(25);
+    expect($linha['modelo_ia'])->toBe('gpt-5-mini-2025-08-07');
+    expect((int) $linha['input_tokens'])->toBe(480);
+    expect((int) $linha['cached_input_tokens'])->toBe(300);
+    expect((int) $linha['output_tokens'])->toBe(210);
+    expect((int) $linha['latencia_ms'])->toBe(1900);
+    expect($linha['openai_response_id'])->toBe('resp_teste_123');
+});
+
+it('e essa gravação vira dinheiro na conta do mês', function () use ($pdo) {
+    // O elo que faltava: gravar sem contar, ou contar sem gravar, dá zero.
+    $servico = new NorminhaCustoService($pdo);
+    $gasto = $servico->gastoDoMes();
+    $esperado = NorminhaModelos::custo('gpt-5-mini', 480, 300, 210);
+
+    if ($gasto < $esperado - 0.000000001) {
+        throw new RuntimeException(sprintf(
+            'a resposta gravada não entrou no gasto do mês (mês %.8f, resposta %.8f)',
+            $gasto, $esperado
+        ));
+    }
+    expect(true)->toBeTrue();
 });
 
 describe('Teto de gasto');

@@ -168,3 +168,51 @@ não conversa.
 **A regra que fica:** quando um sistema externo explica a recusa, a explicação
 dele vale mais que qualquer texto nosso. Registrar a explicação no log e mostrar
 um palpite na tela é ter a resposta e escondê-la de quem precisa dela.
+
+---
+
+## O teto de gasto não estava contando nada
+
+Achado em 23/08/2026, com a IA já ligada em produção. O teste de chave
+funcionou e informou **custo US$ 0,000000**. O zero era verdadeiro para o
+sistema e falso para a conta da OpenAI.
+
+Eram três defeitos empilhados, e **qualquer um deles sozinho já zerava o gasto
+do mês para sempre**:
+
+**1. O nome do modelo.** Pede-se `gpt-5-mini` e a resposta volta assinada
+`gpt-5-mini-2025-08-07` — a OpenAI resolve o alias para o instantâneo datado, e
+é esse nome que fica gravado. O catálogo não reduzia um ao outro, então toda
+resposta caía como "modelo desconhecido".
+
+**2. O uso nunca era gravado.** `NorminhaService::finalizar()` gravava apenas
+intenção e forma de resolução. As colunas `modelo_ia`, `input_tokens`,
+`cached_input_tokens`, `output_tokens` e `latencia_ms` existiam desde a primeira
+migration e nunca receberam valor. `usuario_id` também ficava nulo na linha do
+assistente, embora a da pergunta o trouxesse.
+
+**3. O papel procurado não existia.** `NorminhaCustoService` filtrava por
+`papel = 'assistente'`; o sistema grava `'assistant'`. Nenhuma linha casava.
+
+### Por que isso é pior que não ter teto
+
+Um freio que nunca freia não levanta suspeita. A tela mostrava "US$ 0,00 de
+US$ 10,00 — 0%", e essa barra vazia seria lida como "ainda não gastamos nada",
+mês após mês, enquanto a fatura crescia. Um campo em branco pelo menos faz
+alguém perguntar.
+
+### Cobertura
+
+Três casos ligam a ponta que estava solta — gravar, contar, virar dinheiro:
+
+- o papel que o custo procura tem de estar em `NorminhaMensagem::PAPEIS`;
+- uma resposta com `usage` grava modelo, tokens, latência, id e usuário;
+- e essa gravação aparece no gasto do mês.
+
+Verificados por mutação: parar de gravar o modelo e voltar o papel errado são os
+dois pegos, o segundo derrubando três casos de uma vez.
+
+**A regra que fica:** quando um número é escrito por um lado do sistema e lido
+por outro, é preciso um teste que atravesse os dois. Testar cada lado sozinho
+teria passado nos três defeitos — e passou.
+
