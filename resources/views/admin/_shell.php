@@ -9,54 +9,102 @@ $userName = Session::get('usuario_nome', 'Usuário');
 $usuarioId = Session::get('usuario_id');
 $rbacService = new RbacService();
 $moduleTitle = !empty($title) ? (string) $title : 'Painel administrativo';
+/**
+ * Menu lateral do admin.
+ *
+ * REORGANIZADO EM 23/08/2026. O que estava errado antes:
+ *
+ *   - "Configurações" tinha 14 dos 34 itens. Não era uma categoria, era o lugar
+ *     onde tudo que não coubera nas outras foi parar: usuários, permissões,
+ *     RBAC, e-mails, os quatro itens da Norminha, dois de frontend, gateway de
+ *     pagamento e checkout. Quem procurava "Usuários" não tinha por que
+ *     adivinhar que estava em Configurações.
+ *   - "Promocionais" e "Acadêmico" eram títulos para um único link cada. Um
+ *     cabeçalho que anuncia um item só é ruído.
+ *   - "Painel" misturava o Dashboard com Catálogo e Páginas, que são conteúdo.
+ *   - Certificados morava em "Operação", junto de Pedidos e Inscrições.
+ *
+ * O critério agora é o que a pessoa está tentando fazer, e não a semelhança
+ * técnica entre as telas. Nenhum destino e NENHUMA PERMISSÃO mudaram: os 34
+ * itens são os mesmos, com as mesmas chaves de RBAC. Só o agrupamento e a
+ * ordem são novos.
+ *
+ * Os rótulos perderam o prefixo repetido — dentro do grupo "Norminha" não é
+ * preciso escrever "Norminha ·" quatro vezes.
+ */
 $menu = array(
-    array('group' => 'Painel', 'items' => array(
+    array('group' => 'Início', 'items' => array(
         array('label' => 'Dashboard', 'href' => '/admin/dashboard', 'icon' => '◼'),
-        array('label' => 'Catálogo', 'href' => '/admin/catalogo', 'icon' => '▣', 'permissions_any' => array('conteudo.ver')),
-        array('label' => 'Páginas', 'href' => '/admin/paginas', 'icon' => '▤', 'permissions_any' => array('conteudo.ver')),
     )),
-    array('group' => 'Conteudo', 'items' => array(
+
+    // O que se vende e se ensina, do catálogo à sala de aula.
+    array('group' => 'Cursos', 'items' => array(
+        array('label' => 'Catálogo', 'href' => '/admin/catalogo', 'icon' => '▣', 'permissions_any' => array('conteudo.ver')),
         array('label' => 'Categorias', 'href' => '/admin/categorias', 'icon' => '◦', 'permissions_any' => array('conteudo.ver')),
         array('label' => 'Cursos', 'href' => '/admin/cursos', 'icon' => '◧', 'permissions_any' => array('conteudo.ver')),
         array('label' => 'Turmas', 'href' => '/admin/turmas', 'icon' => '◨', 'permissions_any' => array('conteudo.ver')),
-        array('label' => 'Área do curso', 'href' => '/admin/area-curso', 'icon' => '▤', 'permissions_any' => array('area_curso.gerenciar')),
+        array('label' => 'Área interna do curso', 'href' => '/admin/area-curso', 'icon' => '▤', 'permissions_any' => array('area_curso.gerenciar')),
+        array('label' => 'Área acadêmica', 'href' => '/admin/academico', 'icon' => '◈', 'permissions_any' => array('academico.ver')),
     )),
-    array('group' => 'Operação', 'items' => array(
+
+    // Do pedido até a matrícula ativa.
+    array('group' => 'Vendas', 'items' => array(
         array('label' => 'Pedidos', 'href' => '/admin/pedidos', 'icon' => '⟡', 'permissions_any' => array('pedidos.ver')),
         array('label' => 'Inscrições', 'href' => '/admin/inscricoes', 'icon' => '⟢', 'permissions_any' => array('pedidos.ver')),
         array('label' => 'Comprovantes PIX', 'href' => '/admin/comprovantes-pix', 'icon' => '◉', 'permissions_any' => array('pedidos.ver')),
-        array('label' => 'Avisos', 'href' => '/admin/avisos', 'icon' => '✦', 'permissions_any' => array('avisos.visualizar')),
         array('label' => 'Cupons', 'href' => '/admin/cupons', 'icon' => '⌘', 'permissions_any' => array('cupons.ver')),
-        array('label' => 'Certificados', 'href' => '/admin/certificados', 'icon' => '⬚', 'permissions_any' => array('certificados.ver')),
-        array('label' => 'Templates de certificados', 'href' => '/admin/certificados/templates', 'icon' => '✎', 'permissions_any' => array('certificados.ver')),
+        array('label' => 'Presentes', 'href' => '/admin/promocionais/presentes', 'icon' => '❖', 'permissions_any' => array('promocionais.presentes.ver')),
     )),
-    array('group' => 'Promocionais', 'items' => array(
-        array('label' => 'Presentes', 'href' => '/admin/promocionais/presentes', 'icon' => '🎁', 'permissions_any' => array('promocionais.presentes.ver')),
+
+    // Grupo próprio: emitir e desenhar certificado sao tarefas de quem cuida da
+    // conclusao, nao de quem cuida de pedido.
+    array('group' => 'Certificados', 'items' => array(
+        array('label' => 'Emissão', 'href' => '/admin/certificados', 'icon' => '⬚', 'permissions_any' => array('certificados.ver')),
+        array('label' => 'Modelos', 'href' => '/admin/certificados/templates', 'icon' => '✎', 'permissions_any' => array('certificados.ver')),
     )),
-    array('group' => 'Acadêmico', 'items' => array(
-        array('label' => 'Acadêmico', 'href' => '/admin/academico', 'icon' => '✦', 'permissions_any' => array('academico.ver')),
-    )),
+
     array('group' => 'Financeiro', 'items' => array(
-        array('label' => 'Financeiro', 'href' => '/admin/financeiro', 'icon' => '₪', 'permissions_any' => array('financeiro.ver')),
+        array('label' => 'Visão geral', 'href' => '/admin/financeiro', 'icon' => '₪', 'permissions_any' => array('financeiro.ver')),
         array('label' => 'Repasses', 'href' => '/admin/financeiro/repasses', 'icon' => '↻', 'permissions_any' => array('financeiro.ver')),
-        array('label' => 'Professores fiscais', 'href' => '/admin/professores-fiscais', 'icon' => '⧉', 'permissions_any' => array('financeiro.ver')),
         array('label' => 'Rateios', 'href' => '/admin/rateios', 'icon' => '≋', 'permissions_any' => array('financeiro.ver')),
+        array('label' => 'Professores fiscais', 'href' => '/admin/professores-fiscais', 'icon' => '⧉', 'permissions_any' => array('financeiro.ver')),
     )),
-    array('group' => 'Configurações', 'items' => array(
-        array('label' => 'Frontend · Módulos', 'href' => '/admin/frontend/modulos', 'icon' => '▦', 'permissions_any' => array('frontend.modulos.ver')),
-        array('label' => 'Frontend · Menus', 'href' => '/admin/frontend/menus', 'icon' => '☷', 'permissions_any' => array('frontend.menus.ver')),
-        array('label' => 'Norminha', 'href' => '/admin/tutor-norminha', 'icon' => '✦', 'permissions_any' => array('conteudo.ver')),
-        array('label' => 'Norminha · Configurações', 'href' => '/admin/tutor-norminha/configuracoes', 'icon' => '⚙', 'permissions_any' => array('conteudo.ver')),
-        array('label' => 'Norminha · Telemetria', 'href' => '/admin/tutor-norminha/telemetria', 'icon' => '📊', 'permissions_any' => array('conteudo.ver')),
-        array('label' => 'Norminha · IA', 'href' => '/admin/tutor-norminha/ia', 'icon' => '✨', 'permissions_any' => array('conteudo.ver')),
+
+    // Quatro telas espalhadas em "Configurações" viraram um grupo. A Norminha
+    // tem credencial, custo e telemetria proprios; nao e um ajuste entre outros.
+    array('group' => 'Norminha', 'items' => array(
+        array('label' => 'Falas', 'href' => '/admin/tutor-norminha', 'icon' => '✦', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Configurações', 'href' => '/admin/tutor-norminha/configuracoes', 'icon' => '⚙', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Inteligência artificial', 'href' => '/admin/tutor-norminha/ia', 'icon' => '✧', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Telemetria', 'href' => '/admin/tutor-norminha/telemetria', 'icon' => '◫', 'permissions_any' => array('conteudo.ver')),
+    )),
+
+    // O que o visitante vê.
+    array('group' => 'Site', 'items' => array(
+        array('label' => 'Páginas', 'href' => '/admin/paginas', 'icon' => '▥', 'permissions_any' => array('conteudo.ver')),
+        array('label' => 'Módulos da home', 'href' => '/admin/frontend/modulos', 'icon' => '▦', 'permissions_any' => array('frontend.modulos.ver')),
+        array('label' => 'Menus', 'href' => '/admin/frontend/menus', 'icon' => '☷', 'permissions_any' => array('frontend.menus.ver')),
+    )),
+
+    // Tudo que sai daqui e chega no aluno.
+    array('group' => 'Comunicação', 'items' => array(
+        array('label' => 'Avisos', 'href' => '/admin/avisos', 'icon' => '◬', 'permissions_any' => array('avisos.visualizar')),
+        array('label' => 'E-mails', 'href' => '/admin/emails', 'icon' => '✉', 'permissions_any' => array('emails.ver')),
+        array('label' => 'Modelos de e-mail', 'href' => '/admin/emails/modelos', 'icon' => '✎', 'permissions_any' => array('emails.ver')),
+    )),
+
+    // Quem entra e o que cada um pode fazer.
+    array('group' => 'Acessos', 'items' => array(
+        array('label' => 'Usuários', 'href' => '/admin/usuarios', 'icon' => '◍', 'permissions_any' => array('usuarios.ver')),
+        array('label' => 'Permissões', 'href' => '/admin/permissoes', 'icon' => '⊞', 'permissions_any' => array('rbac.permissoes.ver')),
+        array('label' => 'Papéis e RBAC', 'href' => '/admin/rbac', 'icon' => '☰', 'permissions_any' => array('rbac.dashboard.ver')),
+    )),
+
+    // Ajuste de sistema, mexido raramente. Fica por ultimo de proposito.
+    array('group' => 'Ajustes', 'items' => array(
         array('label' => 'Globais', 'href' => '/admin/configuracoes-globais', 'icon' => '⚙', 'permissions_any' => array('configuracoes_globais.ver')),
         array('label' => 'Pagamento', 'href' => '/admin/configuracoes-pagamento', 'icon' => '₿', 'permissions_any' => array('configuracoes_globais.gerenciar')),
         array('label' => 'Checkout rápido', 'href' => '/admin/checkout-rapido', 'icon' => '⚡', 'permissions_any' => array('configuracoes_globais.gerenciar')),
-        array('label' => 'Usuários', 'href' => '/admin/usuarios', 'icon' => '👤', 'permissions_any' => array('usuarios.ver')),
-        array('label' => 'Permissões', 'href' => '/admin/permissoes', 'icon' => '🛡', 'permissions_any' => array('rbac.permissoes.ver')),
-        array('label' => 'E-mails', 'href' => '/admin/emails', 'icon' => '✉', 'permissions_any' => array('emails.ver')),
-        array('label' => 'E-mails · Modelos', 'href' => '/admin/emails/modelos', 'icon' => '✎', 'permissions_any' => array('emails.ver')),
-        array('label' => 'RBAC', 'href' => '/admin/rbac', 'icon' => '☰', 'permissions_any' => array('rbac.dashboard.ver')),
     )),
 );
 
@@ -75,6 +123,29 @@ $menu = array_values(array_filter(array_map(function ($group) use ($rbacService,
 
     return empty($group['items']) ? null : $group;
 }, $menu)));
+
+/**
+ * Qual item fica aceso.
+ *
+ * Ate 23/08/2026 a regra era `strpos($adminPath, $item['href']) === 0`, e ela
+ * errava de dois jeitos:
+ *
+ *   - em /admin/certificados/templates acendiam DOIS itens, porque
+ *     /admin/certificados tambem e prefixo. O mesmo valia para Norminha (quatro
+ *     itens), E-mails, Financeiro e Frontend;
+ *   - /admin/cursos ficaria aceso em /admin/cursos-antigos, porque prefixo de
+ *     texto nao respeita fronteira de caminho.
+ *
+ * Agora: casa quem for igual ao caminho ou for pasta dele (com a barra), e
+ * entre os que casam vence o MAIS LONGO — o filho, nao o pai.
+ */
+$hrefsDoMenu = array();
+foreach ($menu as $grupoDoMenu) {
+    foreach ($grupoDoMenu['items'] as $itemDoMenu) {
+        $hrefsDoMenu[] = $itemDoMenu['href'];
+    }
+}
+$hrefAtivo = \App\Support\AdminMenu::hrefAtivo($adminPath, $hrefsDoMenu);
 
 $breadcrumbs = array(
     array('label' => 'Admin', 'href' => '/admin'),
@@ -100,7 +171,7 @@ if (!empty($title)) {
                 <h2><?php echo Helpers::e($group['group']); ?></h2>
                 <nav class="admin-nav">
                     <?php foreach ($group['items'] as $item): ?>
-                        <?php $active = strpos($adminPath, $item['href']) === 0; ?>
+                        <?php $active = rtrim((string) $item['href'], '/') === $hrefAtivo; ?>
                         <a class="admin-nav__link<?php echo $active ? ' is-active' : ''; ?>" href="<?php echo Helpers::e($item['href']); ?>">
                             <span class="admin-nav__icon"><?php echo Helpers::e($item['icon']); ?></span>
                             <span><?php echo Helpers::e($item['label']); ?></span>
