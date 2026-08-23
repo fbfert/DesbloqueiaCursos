@@ -72,7 +72,18 @@ class NorminhaService
         $this->conversaModel = new NorminhaConversa();
         $this->mensagemModel = new NorminhaMensagem();
         $this->falaModel = new TutorFala();
-        $this->geradorIA = $geradorIA;
+
+        // A camada de IA só é ligada quando REALMENTE disponível — provedor
+        // habilitado e chave presente. Com OPENAI_ENABLED=false o gerador
+        // continua null, e todo o comportamento da Onda 0 permanece idêntico,
+        // inclusive o contador em zero. Ligar por engano seria transformar um
+        // toggle de configuração em gasto.
+        if ($geradorIA !== null) {
+            $this->geradorIA = $geradorIA;
+        } else {
+            $ia = new NorminhaIaService();
+            $this->geradorIA = $ia->disponivel() ? $ia : null;
+        }
     }
 
     /** Quantas vezes o gerador foi acionado. Usado por teste. */
@@ -198,7 +209,20 @@ class NorminhaService
 
         $this->chamadasIA++;
 
-        $gerado = $this->geradorIA->gerar($mensagem, $this->contextService->paraModelo($contexto));
+        // O contexto vai em duas formas: a pública (sem usuario_id, sem
+        // diagnóstico) é o que pode chegar ao modelo; a interna fica em
+        // `opcoes` para o guardrail e as ferramentas, que precisam do escopo
+        // real e nunca o expõem.
+        $gerado = $this->geradorIA->gerar(
+            $mensagem,
+            $this->contextService->paraModelo($contexto),
+            array(
+                'usuario_id' => (int) $usuarioId,
+                'contexto' => $contexto,
+                'historico' => $this->historicoParaModelo($contexto),
+                'prompt_complementar' => $this->promptComplementar(),
+            )
+        );
 
         if (!is_array($gerado) || empty($gerado['message'])) {
             // Provedor indisponível ou resposta vazia: não se inventa texto.
@@ -213,6 +237,21 @@ class NorminhaService
             'sources' => isset($gerado['sources']) ? $gerado['sources'] : array(),
             'actions' => $this->acoesPadrao($contexto),
         );
+    }
+
+    /**
+     * Janela curta de histórico. A implementação real é da Etapa 13; aqui fica
+     * o ponto de extensão, devolvendo vazio.
+     */
+    protected function historicoParaModelo(array $contexto)
+    {
+        return array();
+    }
+
+    /** Complemento de prompt definido no admin (Etapa 14). */
+    protected function promptComplementar()
+    {
+        return null;
     }
 
     // =================================================================
