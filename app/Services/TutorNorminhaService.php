@@ -284,6 +284,11 @@ class TutorNorminhaService
             'tutor_checkout' => 0,
             'tutor_minimizado_padrao' => 0,
             'tutor_ttl_fechamento_horas' => 24,
+            // Limites do rate limit da Norminha (Etapa 5). Ficam aqui, e nao no
+            // .env, porque quem precisa ajusta-los as pressas e o operador do
+            // portal, no meio de um pico — nao quem tem acesso ao servidor.
+            'tutor_ia_limite_5min' => 20,
+            'tutor_ia_limite_diario' => 200,
             'tutor_texto_botao' => 'Ouvir orientação',
             'tutor_titulo_padrao' => 'Norminha',
             'tutor_avatar_idle' => '/assets/norminha/norminha-idle.webp',
@@ -340,6 +345,16 @@ class TutorNorminhaService
                 continue;
             }
 
+            if ($chave === 'tutor_ia_limite_5min') {
+                $normalizadas[$chave] = $this->normalizarLimite($valor, $valorPadrao, 500);
+                continue;
+            }
+
+            if ($chave === 'tutor_ia_limite_diario') {
+                $normalizadas[$chave] = $this->normalizarLimite($valor, $valorPadrao, 10000);
+                continue;
+            }
+
             if ($chave === 'tutor_texto_botao' || $chave === 'tutor_titulo_padrao') {
                 $texto = trim(strip_tags((string) $valor));
                 $normalizadas[$chave] = $texto !== '' ? $texto : $valorPadrao;
@@ -379,6 +394,8 @@ class TutorNorminhaService
         $payload['tutor_checkout'] = $this->normalizarBool(isset($input['tutor_checkout']) ? $input['tutor_checkout'] : $payload['tutor_checkout'], 0);
         $payload['tutor_minimizado_padrao'] = $this->normalizarBool(isset($input['tutor_minimizado_padrao']) ? $input['tutor_minimizado_padrao'] : $payload['tutor_minimizado_padrao'], 0);
         $payload['tutor_ttl_fechamento_horas'] = $this->normalizarTtlHoras(isset($input['tutor_ttl_fechamento_horas']) ? $input['tutor_ttl_fechamento_horas'] : $payload['tutor_ttl_fechamento_horas'], 24);
+        $payload['tutor_ia_limite_5min'] = $this->normalizarLimite(isset($input['tutor_ia_limite_5min']) ? $input['tutor_ia_limite_5min'] : $payload['tutor_ia_limite_5min'], 20, 500);
+        $payload['tutor_ia_limite_diario'] = $this->normalizarLimite(isset($input['tutor_ia_limite_diario']) ? $input['tutor_ia_limite_diario'] : $payload['tutor_ia_limite_diario'], 200, 10000);
         $payload['tutor_texto_botao'] = $this->normalizarTexto(isset($input['tutor_texto_botao']) ? $input['tutor_texto_botao'] : $payload['tutor_texto_botao'], 'Ouvir orientação', 80);
         $payload['tutor_titulo_padrao'] = $this->normalizarTexto(isset($input['tutor_titulo_padrao']) ? $input['tutor_titulo_padrao'] : $payload['tutor_titulo_padrao'], 'Norminha', 80);
 
@@ -407,12 +424,40 @@ class TutorNorminhaService
         return $payload;
     }
 
+    /**
+     * Limite numérico dentro da faixa do PRÓPRIO campo; vazio ou lixo volta ao
+     * padrão. Cada limite tem teto diferente — 500 por janela de 5 minutos,
+     * 10000 por dia —, e usar um teto único deixava passar um valor que a
+     * validação depois recusaria, com mensagem confusa para quem preencheu.
+     */
+    private function normalizarLimite($valor, $padrao, $maximo)
+    {
+        if ($valor === null || $valor === '' || !is_numeric($valor)) {
+            return (int) $padrao;
+        }
+
+        return max(1, min((int) $maximo, (int) $valor));
+    }
+
     private function validarConfiguracoes(array $payload, array $rawInput = array(), array $files = array())
     {
         $errors = array();
 
         if ($payload['tutor_ttl_fechamento_horas'] < 1 || $payload['tutor_ttl_fechamento_horas'] > 168) {
             $errors['tutor_ttl_fechamento_horas'] = 'O TTL de fechamento deve estar entre 1 e 168 horas.';
+        }
+
+        // Faixa sa: o admin ajusta o limite, mas nao pode desligar a protecao
+        // nem torna-la absurda. O NorminhaRateLimitService aplica a mesma faixa
+        // ao ler, entao um valor gravado a mao no banco tambem e contido.
+        if ($payload['tutor_ia_limite_5min'] < 1 || $payload['tutor_ia_limite_5min'] > 500) {
+            $errors['tutor_ia_limite_5min'] = 'O limite por 5 minutos deve estar entre 1 e 500.';
+        }
+        if ($payload['tutor_ia_limite_diario'] < 1 || $payload['tutor_ia_limite_diario'] > 10000) {
+            $errors['tutor_ia_limite_diario'] = 'O limite diário deve estar entre 1 e 10000.';
+        }
+        if ($payload['tutor_ia_limite_diario'] < $payload['tutor_ia_limite_5min']) {
+            $errors['tutor_ia_limite_diario'] = 'O limite diário não pode ser menor que o limite por 5 minutos.';
         }
 
         if (strlen($payload['tutor_texto_botao']) > 80) {

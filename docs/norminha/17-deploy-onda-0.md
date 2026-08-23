@@ -57,16 +57,18 @@ Referência do backup anterior a este projeto: `backups/pre-norminha-20260822-20
 
 ## 3. Migrations
 
-**Duas, nesta ordem.** Ambas aditivas e idempotentes — nenhuma altera tabela existente do LMS.
+**Três, nesta ordem.** Todas aditivas e idempotentes — nenhuma altera tabela existente do LMS.
 
 | Arquivo | O que faz |
 |---|---|
 | `sql/073_norminha_conversas.sql` | cria `norminha_conversas`, `norminha_mensagens`, `norminha_feedback`, `norminha_uso` |
 | `sql/074_norminha_telemetria.sql` | `bloqueios_dia` em `norminha_uso` + três índices por data |
+| `sql/075_norminha_limites_seed.sql` | cria as chaves de limite do rate limit, para aparecerem no admin |
 
 ```bash
 mysql -u <usuario> -p desbloqueiacursos < sql/073_norminha_conversas.sql
 mysql -u <usuario> -p desbloqueiacursos < sql/074_norminha_telemetria.sql
+mysql -u <usuario> -p desbloqueiacursos < sql/075_norminha_limites_seed.sql
 ```
 
 Conferência:
@@ -188,7 +190,7 @@ E o painel: `/admin/tutor-norminha/telemetria`.
 | Sinal | O que significa | O que fazer |
 |---|---|---|
 | `norminha.chat.excecao` no log | erro não previsto | investigar; desligar se for recorrente |
-| bloqueios espalhados por vários alunos | limite apertado demais | subir `tutor_ia_limite_5min` |
+| bloqueios espalhados por vários alunos | limite apertado demais | subir o limite em **Norminha · Configurações** |
 | progresso divergindo da tela | o pior caso | **desligar imediatamente** |
 | ninguém abrindo o chat | problema de descoberta, não de qualidade | mexer em posição e rótulo |
 | latência do site subindo | improvável (o contexto custa 1–2 queries) | comparar com o baseline do smoke |
@@ -250,7 +252,23 @@ Mais barato, mais rápido e sem risco de resposta inventada.
 
 ---
 
-## 10. O que este deploy NÃO faz
+## 10. Onde se controla cada coisa
+
+Tudo pelo menu lateral do admin, sob a permissão `conteudo.ver`.
+
+| Quero | Onde | Observação |
+|---|---|---|
+| **Ligar ou desligar a Norminha** | Norminha · Configurações → *Ativo* | É a chave de emergência. Efeito imediato, sem deploy |
+| Escolher onde ela aparece | Norminha · Configurações → Home / Área do aluno / Cursos / Checkout | Para liberar só a área do aluno, deixe só ela marcada |
+| **Ajustar os limites de mensagens** | Norminha · Configurações → *Limite por 5 minutos* e *por dia* | Faixa: 1–500 e 1–10000. O diário não pode ser menor que o de 5 min |
+| Ver quantos usaram e o que perguntaram | **Norminha · Telemetria** | A lista de não resolvidas é o que decide a Onda 1 |
+| Mudar a saudação por contexto, curso, módulo ou aula | Norminha (falas) | Sem fala cadastrada, as áreas de estudo usam uma saudação padrão |
+| Trocar avatar, título, texto do botão, TTL | Norminha · Configurações | |
+
+O que **não** se controla pelo admin, por decisão: a chave de API do provedor (Onda 1) fica só no
+`.env`, nunca no banco nem em tela.
+
+## 11. O que este deploy NÃO faz
 
 - Não envia dado nenhum para fora do servidor. Não há provedor de IA na Onda 0.
 - Não altera nenhuma tabela existente do LMS.

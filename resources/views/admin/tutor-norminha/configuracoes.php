@@ -197,6 +197,16 @@ $debugAvatarSpeaking = $debugAvatar($previewAvatarSpeakingDiag);
                             <input type="number" name="tutor_ttl_fechamento_horas" min="1" max="168" step="1" value="<?php echo Helpers::e((string) $value('tutor_ttl_fechamento_horas', 24)); ?>">
                         </label>
                         <label>
+                            <span>Limite de mensagens por 5 minutos</span>
+                            <input type="number" name="tutor_ia_limite_5min" min="1" max="500" step="1" value="<?php echo Helpers::e((string) $value('tutor_ia_limite_5min', 20)); ?>">
+                            <small>Contra rajada. Padrão 20. Se muitos alunos estiverem sendo bloqueados no uso normal, aumente.</small>
+                        </label>
+                        <label>
+                            <span>Limite de mensagens por dia</span>
+                            <input type="number" name="tutor_ia_limite_diario" min="1" max="10000" step="1" value="<?php echo Helpers::e((string) $value('tutor_ia_limite_diario', 200)); ?>">
+                            <small>Contra abuso sustentado. Padrão 200. Não pode ser menor que o limite de 5 minutos.</small>
+                        </label>
+                        <label>
                             <span>Texto padrão do botão</span>
                             <input type="text" name="tutor_texto_botao" maxlength="80" value="<?php echo Helpers::e((string) $value('tutor_texto_botao', 'Ouvir orientação')); ?>">
                         </label>
