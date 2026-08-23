@@ -157,7 +157,44 @@ class NorminhaMensagem
     }
 
     /**
-     * Contagem por origem da resposta em um período (telemetria, Etapa 8).
+     * Contagem por origem da resposta nos últimos N dias.
+     *
+     * ESTA é a forma segura de perguntar "e nos últimos 7 dias?". A janela é
+     * calculada em SQL, no mesmo relógio que gravou created_at.
+     *
+     * Calcular a data em PHP e passá-la para contarPorResolucao() produziria o
+     * dia errado toda noite: o PHP roda em UTC e o MySQL em UTC−3, então das 21h
+     * à meia-noite date('Y-m-d') já devolve o dia seguinte. Silencioso, diário
+     * e invisível em teste com janela larga.
+     */
+    public function contarPorResolucaoUltimosDias($dias = 7)
+    {
+        $dias = max(1, min(365, (int) $dias));
+
+        $stmt = Database::connection()->prepare(
+            'SELECT resolved_by, COUNT(*) AS total
+             FROM norminha_mensagens
+             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ' . $dias . ' DAY)
+               AND resolved_by IS NOT NULL
+             GROUP BY resolved_by'
+        );
+        $stmt->execute();
+
+        $contagem = array();
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $linha) {
+            $contagem[$linha['resolved_by']] = (int) $linha['total'];
+        }
+
+        return $contagem;
+    }
+
+    /**
+     * Contagem por origem da resposta em um período explícito.
+     *
+     * ⚠️ $de e $ate precisam ser hora de parede LOCAL — vindos de um formulário
+     * do admin ou do próprio banco. NUNCA calcule com date() do PHP: ele roda em
+     * UTC e o banco em UTC−3. Para janelas relativas use
+     * contarPorResolucaoUltimosDias(), que resolve tudo em SQL.
      *
      * Usa idx_norminha_mensagens_resolucao (resolved_by, created_at) e exige
      * período, para não varrer a tabela inteira.

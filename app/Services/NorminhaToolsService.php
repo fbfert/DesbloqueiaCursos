@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Core\Database;
-use App\Models\Inscricao;
 use PDO;
 
 /**
@@ -51,13 +50,11 @@ class NorminhaToolsService
 
     private $contextService;
     private $elegibilidadeService;
-    private $inscricaoModel;
 
     public function __construct(NorminhaContextService $contextService = null)
     {
         $this->contextService = $contextService ?: new NorminhaContextService();
         $this->elegibilidadeService = new LmsElegibilidadeService();
-        $this->inscricaoModel = new Inscricao();
     }
 
     // =================================================================
@@ -136,7 +133,10 @@ class NorminhaToolsService
                AND p.deleted_at IS NULL
                AND p.status <> "concluido"
                AND p.ultimo_acesso_em IS NOT NULL
-             ORDER BY p.ultimo_acesso_em DESC, i.id DESC
+             -- Desempate deterministico: com dois itens no mesmo segundo, vale o
+             -- primeiro na ordem do curso. Sem isto a resposta poderia variar
+             -- entre chamadas identicas.
+             ORDER BY p.ultimo_acesso_em DESC, m.ordem ASC, i.ordem ASC, i.id ASC
              LIMIT 1'
         );
         $stmt->execute(array('aluno_id' => (int) $usuarioId, 'inscricao_id' => $ctx['inscricao_id']));
@@ -346,6 +346,8 @@ class NorminhaToolsService
         return $this->erro($ctx['estado'] === 'ambiguo' ? 'ambiguo' : 'sem_inscricao', $ctx);
     }
 
+
+
     /**
      * Próximo item na ordem canônica.
      * `$somenteObrigatorios` separa "o que vem agora" de "o que ainda trava a
@@ -383,16 +385,14 @@ class NorminhaToolsService
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    /** Relê a inscrição pela regra de matrícula, para passar ao service real. */
+    /**
+     * A linha da inscrição vem do NorminhaContextService, que já a carregou para
+     * validar o escopo e a memoriza na instância. Buscá-la de novo aqui repetiria
+     * a mesma query na mesma chamada.
+     */
     private function inscricaoAutorizada($usuarioId, $inscricaoId)
     {
-        foreach ($this->inscricaoModel->forUsuarioAprovadas($usuarioId) as $inscricao) {
-            if ((int) $inscricao['id'] === (int) $inscricaoId) {
-                return $inscricao;
-            }
-        }
-
-        return null;
+        return $this->contextService->inscricaoAutorizadaBruta($usuarioId, $inscricaoId);
     }
 
     private function pontoRetomada(array $ctx, array $linha, $origem, $ultimoAcesso)

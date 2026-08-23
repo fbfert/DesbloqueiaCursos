@@ -55,6 +55,20 @@ class NorminhaContextService
 
     private $inscricaoModel;
 
+    /**
+     * Cache por instância das matrículas do aluno.
+     *
+     * forUsuarioAprovadas() é a regra de matrícula inteira, e mais de um ponto
+     * da Norminha precisa dela na mesma requisição: o contexto para validar
+     * escopo, e o NorminhaToolsService para entregar a LINHA da inscrição ao
+     * LmsElegibilidadeService. Sem cache, a mesma query rodava duas vezes por
+     * consulta de certificado.
+     *
+     * Vive enquanto o objeto vive — uma requisição. Não há risco de servir
+     * matrícula desatualizada entre requisições.
+     */
+    private $cacheAprovadas = array();
+
     public function __construct()
     {
         $this->inscricaoModel = new Inscricao();
@@ -71,8 +85,8 @@ class NorminhaContextService
             return $this->semInscricao(0, $hints);
         }
 
-        // 1 query: a regra de matrícula inteira.
-        $inscricoes = $this->inscricaoModel->forUsuarioAprovadas($usuarioId);
+        // 1 query: a regra de matrícula inteira (memorizada na instância).
+        $inscricoes = $this->matriculasAprovadas($usuarioId);
 
         if (!$inscricoes) {
             return $this->semInscricao($usuarioId, $hints);
@@ -141,6 +155,44 @@ class NorminhaContextService
         unset($contexto['usuario_id'], $contexto['hints_descartados']);
 
         return $contexto;
+    }
+
+    /**
+     * Matrículas aprovadas do aluno, memorizadas por instância.
+     * Fonte única da regra de acesso dentro da Norminha.
+     */
+    public function matriculasAprovadas($usuarioId)
+    {
+        $usuarioId = (int) $usuarioId;
+        if ($usuarioId <= 0) {
+            return array();
+        }
+
+        if (!array_key_exists($usuarioId, $this->cacheAprovadas)) {
+            $this->cacheAprovadas[$usuarioId] = $this->inscricaoModel->forUsuarioAprovadas($usuarioId);
+        }
+
+        return $this->cacheAprovadas[$usuarioId];
+    }
+
+    /**
+     * A LINHA bruta da inscrição, para quem precisa entregá-la a um service do
+     * LMS (é o caso do LmsElegibilidadeService).
+     *
+     * ⚠️ USO INTERNO DE SERVIDOR. A linha traz pagador_nome, pagador_email,
+     * pagador_telefone e participante_cpf. Ela NUNCA pode ir para o DTO, para o
+     * modelo de linguagem, nem para o browser. Quem precisa de dado seguro usa
+     * resolver().
+     */
+    public function inscricaoAutorizadaBruta($usuarioId, $inscricaoId)
+    {
+        foreach ($this->matriculasAprovadas($usuarioId) as $inscricao) {
+            if ((int) $inscricao['id'] === (int) $inscricaoId) {
+                return $inscricao;
+            }
+        }
+
+        return null;
     }
 
     // -----------------------------------------------------------------

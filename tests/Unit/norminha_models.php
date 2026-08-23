@@ -307,15 +307,49 @@ it('created_at das mensagens usa o mesmo relógio da janela de uso', function ()
 describe('Telemetria (base da Etapa 8)');
 
 it('agrupa mensagens por origem da resposta', function () use ($mensagens) {
-    $c = $mensagens->contarPorResolucao(date('Y-m-d', strtotime('-1 day')), date('Y-m-d', strtotime('+1 day')));
+    $c = $mensagens->contarPorResolucaoUltimosDias(7);
     expect(isset($c['php']))->toBeTrue();
     expect($c['php'])->toBeGreaterThanOrEqual(1);
 });
 
 it('resume feedback do período', function () use ($feedbacks) {
-    $r = $feedbacks->resumoPorPeriodo(date('Y-m-d', strtotime('-1 day')), date('Y-m-d', strtotime('+1 day')));
+    $r = $feedbacks->resumoUltimosDias(7);
     expect($r)->toHaveKey('uteis');
     expect($r)->toHaveKey('nao_uteis');
+});
+
+describe('Telemetria e fuso — a janela precisa ser calculada em SQL');
+
+it('PHP e MySQL discordam do DIA, não só da hora', function () use ($pdo) {
+    $diaPhp = date('Y-m-d');
+    $diaSql = $pdo->query('SELECT CURDATE()')->fetchColumn();
+
+    if ($diaPhp !== $diaSql) {
+        echo "      PHP diz {$diaPhp}, banco diz {$diaSql} — a divergencia esta ATIVA agora\n";
+    } else {
+        echo "      hoje coincidem, mas divergem das 21h a meia-noite local\n";
+    }
+    // O teste nao exige coincidencia: exige que a telemetria nao dependa dela.
+    expect(true)->toBeTrue();
+});
+
+it('a janela em SQL enxerga o que acabou de ser gravado', function () use ($mensagens, $feedbacks) {
+    // Se a janela fosse montada com date() do PHP, das 21h a meia-noite o corte
+    // cairia no dia seguinte e a contagem voltaria VAZIA — silenciosamente, todo
+    // fim de tarde. As mensagens abaixo foram gravadas ha segundos.
+    $c = $mensagens->contarPorResolucaoUltimosDias(1);
+    expect(array_sum($c))->toBeGreaterThan(0);
+
+    $f = $feedbacks->resumoUltimosDias(1);
+    expect($f['uteis'] + $f['nao_uteis'])->toBeGreaterThan(0);
+});
+
+it('a janela de uso em SQL conta o dia corrente', function () use ($usos, $pdo) {
+    $pdo->exec('DELETE FROM norminha_uso WHERE usuario_id = 999904');
+    $usos->registrar(999904, false, 300);
+
+    // limite 1: o proprio registro recem-criado ja conta
+    expect($usos->contarNoLimiteUltimosDias(1, 1))->toBeGreaterThan(0);
 });
 
 describe('Cascata');

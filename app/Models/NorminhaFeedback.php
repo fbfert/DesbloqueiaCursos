@@ -74,7 +74,35 @@ class NorminhaFeedback
         return $linha ?: null;
     }
 
-    /** Útil x não útil no período (telemetria, Etapa 8). */
+    /**
+     * Útil x não útil nos últimos N dias, com a janela calculada em SQL.
+     * Ver a nota de fuso em NorminhaMensagem::contarPorResolucaoUltimosDias().
+     */
+    public function resumoUltimosDias($dias = 7)
+    {
+        $dias = max(1, min(365, (int) $dias));
+
+        $stmt = Database::connection()->prepare(
+            'SELECT util, COUNT(*) AS total
+             FROM norminha_feedback
+             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ' . $dias . ' DAY)
+             GROUP BY util'
+        );
+        $stmt->execute();
+
+        $resumo = array('uteis' => 0, 'nao_uteis' => 0);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $linha) {
+            $chave = !empty($linha['util']) ? 'uteis' : 'nao_uteis';
+            $resumo[$chave] = (int) $linha['total'];
+        }
+
+        return $resumo;
+    }
+
+    /**
+     * Útil x não útil em período explícito.
+     * ⚠️ $de e $ate são hora de parede local; nunca calcule com date() do PHP.
+     */
     public function resumoPorPeriodo($de, $ate)
     {
         $stmt = Database::connection()->prepare(

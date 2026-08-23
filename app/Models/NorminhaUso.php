@@ -151,7 +151,34 @@ class NorminhaUso
         return $stmt->rowCount();
     }
 
-    /** Quantos alunos bateram o limite no período (telemetria, Etapa 8). */
+    /**
+     * Quantos alunos bateram o limite nos últimos N dias.
+     *
+     * `dia` é gravado com CURDATE(), o relógio do banco. Comparar com uma data
+     * calculada por date() do PHP erraria o dia inteiro toda noite. A janela
+     * fica em SQL.
+     */
+    public function contarNoLimiteUltimosDias($dias, $limiteDiario)
+    {
+        $dias = max(1, min(365, (int) $dias));
+
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) AS total
+             FROM norminha_uso
+             WHERE dia >= DATE_SUB(CURDATE(), INTERVAL ' . $dias . ' DAY)
+               AND mensagens_dia >= :limite'
+        );
+        $stmt->execute(array('limite' => (int) $limiteDiario));
+
+        $linha = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $linha ? (int) $linha['total'] : 0;
+    }
+
+    /**
+     * Quantos alunos bateram o limite em período explícito.
+     * ⚠️ $de e $ate são datas de parede locais; nunca calcule com date() do PHP.
+     */
     public function contarNoLimite($de, $ate, $limiteDiario)
     {
         $stmt = Database::connection()->prepare(
