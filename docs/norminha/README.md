@@ -57,11 +57,11 @@ baseline de uso, e o risco da Etapa 6 é menor do que o plano supõe.
 Encontradas na auditoria, dependem de decisão ou acesso que o código não tem:
 
 1. **Rotacionar credenciais** — `DB_PASSWORD`, `ABACATEPAY_API_KEY`, `ABACATEPAY_WEBHOOK_SECRET`.
-   Ficaram expostas em backup público por tempo indeterminado.
-2. **Mover `backups/` para fora do docroot.**
-3. **Revogar `DEEPSEEK_API_KEY`** — chave viva no `.env`, sem nenhum consumidor no código.
-4. **Verificar os logs do Apache** — houve download dos caminhos que vazaram?
-5. **Avaliar comunicação à ANPD** — dado pessoal e financeiro esteve exposto.
+   ⏳ pendente. A perícia nos logs não achou acesso externo, mas há janela anterior sem registro.
+2. ~~**Mover `backups/` para fora do docroot.**~~ ✅ resolvida em 22/08.
+3. **Revogar `DEEPSEEK_API_KEY`** — ✅ removida do `.env`; ⏳ revogação no painel do provedor pendente.
+4. ~~**Verificar os logs do Apache.**~~ ✅ resolvida — **nenhum download externo** em 6 semanas de log.
+5. **Avaliar comunicação à ANPD** — ⏳ pendente, decisão jurídica.
 6. **Revogar `GRANT ALL PRIVILEGES ON *.*`** de `desbloqueia_user` (hardening, Etapa 15).
 7. **Corrigir `/v2/como-funciona-a-sala-virtual`** — rota viva e no sitemap, página excluída.
 8. **Antes da Onda 1:** hard cap de gasto na conta da OpenAI e revisão da política de privacidade.

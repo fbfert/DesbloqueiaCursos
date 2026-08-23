@@ -308,10 +308,79 @@ Verificado por grep antes de aplicar.
 **Verificação pós-correção:** os 10 caminhos sensíveis retornam 403. 16 rotas públicas, os assets e
 uploads da Norminha e as rotas protegidas continuam com o comportamento anterior.
 
-**Pendente com o responsável (não automatizável):**
-1. Rotacionar `DB_PASSWORD`, `ABACATEPAY_API_KEY`, `ABACATEPAY_WEBHOOK_SECRET` — o backup de 144 MB
-   provavelmente contém o `.env`.
-2. Mover `backups/` para fora do docroot.
-3. Revogar `DEEPSEEK_API_KEY`.
-4. Verificar nos logs do Apache se houve download desses caminhos.
-5. Avaliar obrigação de comunicação à ANPD (dado pessoal e financeiro exposto).
+### Situação das cinco pendências (atualizado em 22/08/2026, 23h)
+
+| # | Pendência | Situação |
+|---|---|---|
+| 1 | Rotacionar `DB_PASSWORD`, `ABACATEPAY_API_KEY`, `ABACATEPAY_WEBHOOK_SECRET` | **pendente** — decisão do responsável |
+| 2 | Mover `backups/` para fora do docroot | **resolvida** |
+| 3 | Revogar `DEEPSEEK_API_KEY` | **removida do `.env`**; revogação no painel do provedor é do responsável |
+| 4 | Verificar nos logs do Apache se houve download | **resolvida — sem evidência de acesso externo** |
+| 5 | Avaliar comunicação à ANPD | **pendente** — decisão jurídica, não técnica |
+
+#### 4. Perícia nos logs — nenhum download externo
+
+Analisados `/var/log/virtualmin/desbloqueiacursos.com.br_access_log*`, cobrindo
+**12/07/2026 a 22/08/2026** (69.282 requisições).
+
+Nos caminhos que estavam expostos (`/backups/`, `/storage/`, `/sql/`, `/config/`, `/app/`):
+
+| Origem | Resultado |
+|---|---|
+| **19 IPs externos distintos** | 78× `403`, 109× `404`, 9× `500`, 1× `301` — **zero `200`** |
+| `129.121.33.89` | 8× `200` — mas este é o **IP do próprio servidor** |
+
+As oito respostas `200` são auto-testes: sete são `HEAD` de 22/08 (o diagnóstico desta auditoria) e
+uma é `GET /sql/001_auth_module.sql` de 13/07, coincidente com o
+`relatorio-auditoria-2026-07-13.md` na home do usuário.
+
+Os nove `500` são `/config/app.php` e `/config/app/.env`: PHP executado fora do app, sem `BASE_PATH`
+definido, transferindo zero bytes. Não houve vazamento de código-fonte.
+
+Um scanner em 16/08 (`34.62.239.178`, user-agent falsificado) fez 174 requisições sondando
+`.env`, `.git`, `laravel.log` e afins: 150× `404`, 14× `403`, e nove `200` — todos em páginas
+públicas legítimas.
+
+⚠️ **Limite desta perícia.** Os logs começam em 12/07/2026 e o backup exposto é de 24/06/2026. Há
+uma janela anterior sem registro, e o `.htaccess` sem proteção existia desde pelo menos 12/05/2026.
+A ausência de evidência de download vale para o período com log, não para toda a exposição.
+
+#### 2. Backups movidos
+
+Nove arquivos, 149 MB (incluindo o tarball de 144 MB), movidos de `public_html/backups/` para
+`/home/desbloqueiacursos/backups/historico-do-docroot/`, modo `700/600`. Os nove `md5sum` conferem
+antes e depois. `GET /backups/` responde `403`. O diretório não existe mais no docroot.
+
+#### 3. Chave órfã removida
+
+`DEEPSEEK_API_KEY` saiu do `.env`, substituída por um comentário explicando por quê. Verificado
+antes: zero referências em `app/`, `resources/`, `scripts/`, `crontab` — a única menção no projeto
+era este próprio relatório. **A revogação no painel da DeepSeek continua pendente**: remover a linha
+não invalida a chave.
+
+#### Incidente durante a correção — 90 segundos de indisponibilidade
+
+Na primeira tentativa de remover a chave, foi executado `chmod 600` no `.env`. O arquivo pertence ao
+`root` e o servidor web roda como `desbloqueiacursos`: o processo perdeu a leitura, ficou sem
+credenciais de banco, e `Database.php:27` passou a lançar exceção.
+
+O diagnóstico demorou porque a cópia de segurança, feita com `cp -p`, preservou o modo `600` — então
+restaurar o conteúdo não resolvia. Só o `php_log` do domínio apontou a linha exata.
+
+**Impacto:** 38 respostas `500` entre 22:48 e 22:49:25, sendo 26 de um visitante real e 12 dos
+próprios diagnósticos. Resolvido com `chmod 644`, o modo original.
+
+**Lição, registrada de propósito:** o endurecimento que causou o incidente era desnecessário — o
+`.env` já estava protegido pelo `.htaccess` (responde `403`). A correção que importava era a do
+`.htaccess`; mexer na permissão foi zelo mal calibrado, e custou mais do que protegeu.
+
+Na segunda tentativa o procedimento mudou: edição no mesmo inode (`open(...,'w')` trunca no lugar),
+**nenhuma alteração de permissão**, e rollback automático caso qualquer rota respondesse fora da
+faixa `2xx`/`3xx`. `perm=644 owner=root:root inode=978641` idênticos antes e depois.
+
+#### Achado adicional, não relacionado
+
+`AH00124: Request exceeded the limit of 10 internal redirects` aparece em **todas** as semanas de log
+do Apache — 2.841 ocorrências em 19/07, 1.243 em 26/07, 565 em 02/08, 110 em 09/08, 295 em 16/08 e
+473 em 22/08. É um laço de redirecionamento interno **pré-existente**, sem relação com este projeto.
+Merece investigação própria.
