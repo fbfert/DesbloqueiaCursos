@@ -56,6 +56,47 @@ class NorminhaController extends Controller
     // POST /api/norminha/chat
     // =================================================================
 
+    /**
+     * Atendimento a quem NAO tem conta.
+     *
+     * Endpoint separado do /chat de proposito. O /chat exige sessao e responde
+     * sobre matricula, progresso e certificado; misturar os dois num `if` faria
+     * um caminho esquecido levar visitante anonimo ao ramo do aluno. Aqui nao ha
+     * usuario, nao ha matricula e nao se consulta tabela de aluno nenhuma.
+     *
+     * Nada do que o visitante escreve e guardado. So um contador por origem,
+     * com o IP em hash, para conter abuso.
+     */
+    public function publico(Request $request)
+    {
+        $payload = $this->corpo($request);
+        if ($payload === null) {
+            return $this->erro('corpo_invalido', 'Nao consegui ler os dados enviados.', 422);
+        }
+
+        $limite = (new \App\Services\NorminhaPublicoLimiteService())->registrar($request->ip());
+        if (empty($limite['permitido'])) {
+            return $this->respostaJson(array(
+                'ok' => false,
+                'erro' => 'limite_excedido',
+                'mensagem' => 'Muitas mensagens seguidas. Aguarde um instante e tente de novo.',
+            ), 429, array('Retry-After' => '60'));
+        }
+
+        $mensagem = isset($payload['message']) ? (string) $payload['message'] : '';
+        $acao = isset($payload['action']) ? (string) $payload['action'] : '';
+
+        // Mesmo teto de tamanho do chat do aluno: nada aqui justifica um texto
+        // maior, e um campo sem limite e um convite.
+        if (mb_strlen($mensagem) > 2000) {
+            return $this->erro('mensagem_longa', 'Escreva de forma mais curta, por favor.', 422);
+        }
+
+        $resposta = (new \App\Services\NorminhaPublicoService())->responder($acao, $mensagem);
+
+        return $this->respostaJson($resposta, 200);
+    }
+
     public function chat(Request $request)
     {
         $usuarioId = (int) Session::get('usuario_id');

@@ -145,16 +145,24 @@ $emAula = $hintItem > 0 && in_array($contextoNorminha, array('aula', 'avaliacao'
 // ausencia dos blocos degrada limpo: launcher, minimizar e audio seguem vivos.
 $alunoLogado = (int) Session::get('usuario_id') > 0;
 
-// Numa tela cujo assunto ja e entrar ou se cadastrar, um convite para entrar
-// seria circular. Ali mostra-se so a fala — que e exatamente o que a Norminha
-// fazia nessas paginas na V1.
-$rotasDeAutenticacao = array('/login', '/cadastro', '/recuperar-senha',
-    '/v2/login', '/v2/cadastro', '/v2/recuperar-senha');
-$convidarAEntrar = !$alunoLogado;
-foreach ($rotasDeAutenticacao as $rotaDeAutenticacao) {
-    if (strpos($rotaAtual, $rotaDeAutenticacao) === 0) {
-        $convidarAEntrar = false;
-        break;
+// Atalhos e saudacao de quem AINDA NAO TEM CONTA (23/08/2026).
+//
+// Ate aqui o visitante deslogado recebia apenas um convite para entrar. Mas e
+// justamente ele quem mais precisa de ajuda: muita gente trava no cadastro,
+// depois no login, depois em como comprar. Agora ele tem chat, servido por
+// App\Services\NorminhaPublicoService — que nao consulta tabela de aluno
+// nenhuma e nao guarda o que a pessoa escreve.
+$atalhosPublicos = array();
+$saudacaoPublica = '';
+if (!$alunoLogado) {
+    try {
+        $servicoPublico = new App\Services\NorminhaPublicoService();
+        $atalhosPublicos = $servicoPublico->atalhos();
+        $saudacaoPublica = $servicoPublico->saudacao();
+    } catch (\Throwable $e) {
+        // Falha aqui nao pode derrubar a pagina publica: sem atalhos, o
+        // visitante ainda tem o campo de texto.
+        $atalhosPublicos = array();
     }
 }
 ?>
@@ -171,6 +179,9 @@ foreach ($rotasDeAutenticacao as $rotaDeAutenticacao) {
     data-csrf="<?php echo Helpers::e(Csrf::token()); ?>"
     data-rota="<?php echo Helpers::e(substr($rotaAtual, 0, 255)); ?>"
     data-contexto="<?php echo Helpers::e($contextoNorminha); ?>"
+    <?php /* Qual endpoint o JS deve chamar. Sem sessao, o do aluno responde
+             401; e o publico que atende quem ainda nao tem conta. */ ?>
+    data-publico="<?php echo $alunoLogado ? '0' : '1'; ?>"
     data-inscricao-id="<?php echo $hintInscricao ?: ''; ?>"
     data-curso-id="<?php echo $hintCurso ?: ''; ?>"
     data-turma-id="<?php echo $hintTurma ?: ''; ?>"
@@ -195,6 +206,10 @@ foreach ($rotasDeAutenticacao as $rotaDeAutenticacao) {
 
         <div class="norminha-tutor__mensagens" data-norminha-mensagens role="log" aria-live="polite" aria-relevant="additions" tabindex="0">
             <div class="norminha-tutor__msg norminha-tutor__msg--norminha">
+                <?php /* Para o visitante, quando o admin nao escreveu fala para
+                         a rota, entra a saudacao do atendimento publico — que
+                         diz o que a Norminha faz por quem ainda nao tem conta. */ ?>
+                <?php if ($texto === '' && $saudacaoPublica !== ''): $texto = $saudacaoPublica; endif; ?>
                 <?php if ($texto !== ''): ?>
                     <p class="norminha-tutor__text"><?php echo nl2br(Helpers::e($texto)); ?></p>
                 <?php else: ?>
@@ -211,13 +226,22 @@ foreach ($rotasDeAutenticacao as $rotaDeAutenticacao) {
             </div>
         </div>
 
-        <?php if ($alunoLogado): ?>
         <div class="norminha-tutor__acoes-rapidas" data-norminha-quick>
-            <button type="button" class="norminha-tutor__chip" data-norminha-acao="resume_course">Continuar de onde parei</button>
-            <button type="button" class="norminha-tutor__chip" data-norminha-acao="show_progress">Ver meu progresso</button>
-            <button type="button" class="norminha-tutor__chip" data-norminha-acao="certificate_status">Meu certificado</button>
-            <?php if ($emAula): ?>
-                <button type="button" class="norminha-tutor__chip" data-norminha-acao="explain_current_lesson">Tirar dúvida desta aula</button>
+            <?php if ($alunoLogado): ?>
+                <button type="button" class="norminha-tutor__chip" data-norminha-acao="resume_course">Continuar de onde parei</button>
+                <button type="button" class="norminha-tutor__chip" data-norminha-acao="show_progress">Ver meu progresso</button>
+                <button type="button" class="norminha-tutor__chip" data-norminha-acao="certificate_status">Meu certificado</button>
+                <?php if ($emAula): ?>
+                    <button type="button" class="norminha-tutor__chip" data-norminha-acao="explain_current_lesson">Tirar dúvida desta aula</button>
+                <?php endif; ?>
+            <?php else: ?>
+                <?php /* Visitante. Os atalhos sao os do serviço PUBLICO e nao
+                         tem nada a ver com os do aluno: nenhum deles consulta
+                         matricula, progresso ou certificado de ninguem. */ ?>
+                <?php foreach ($atalhosPublicos as $atalho): ?>
+                    <button type="button" class="norminha-tutor__chip"
+                            data-norminha-acao="<?php echo Helpers::e($atalho['acao']); ?>"><?php echo Helpers::e($atalho['label']); ?></button>
+                <?php endforeach; ?>
             <?php endif; ?>
         </div>
 
@@ -243,12 +267,6 @@ foreach ($rotasDeAutenticacao as $rotaDeAutenticacao) {
                 <span aria-hidden="true">&#10148;</span>
             </button>
         </form>
-        <?php elseif ($convidarAEntrar): ?>
-            <p class="norminha-tutor__convite">
-                <a class="norminha-tutor__convite-link" href="/login">Entre na sua conta</a>
-                para conversar com a Norminha sobre seus cursos.
-            </p>
-        <?php endif; ?>
     </div>
 
     <button type="button" class="norminha-tutor__launcher" data-norminha-launcher aria-label="Abrir a Norminha" aria-expanded="true">

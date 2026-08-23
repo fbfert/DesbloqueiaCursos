@@ -125,7 +125,12 @@ it('nenhuma tool escreve, e recalcularInscricao não existe em nenhum caminho', 
         // positivo apontando a coluna `util` como se fosse uma tabela.
         $paraAnalise = preg_replace('/ON\s+DUPLICATE\s+KEY\s+UPDATE/i', 'ON_DUPLICATE_CLAUSE', $c);
 
-        $permitidas = array('norminha_conversas', 'norminha_mensagens', 'norminha_feedback', 'norminha_uso');
+        // norminha_uso_publico entrou em 23/08/2026: e o contador por origem do
+        // atendimento a quem nao tem conta. Guarda numero e um hash de IP, nunca
+        // texto do visitante -- o teste "o atendimento publico nao guarda o que
+        // o visitante escreve" cobre essa parte.
+        $permitidas = array('norminha_conversas', 'norminha_mensagens', 'norminha_feedback',
+            'norminha_uso', 'norminha_uso_publico');
         if (preg_match_all('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+`?([a-z_]+)`?/i', $paraAnalise, $todas, PREG_SET_ORDER)) {
             foreach ($todas as $m) {
                 if (!in_array(strtolower($m[2]), $permitidas, true)) {
@@ -322,6 +327,87 @@ it('o fundo do painel é opaco', function () {
     if (preg_match('/background[^;]*rgba\([^)]*,\s*0?\.\d+\s*\)/', $tudo)) {
         throw new RuntimeException('o fundo do painel usa transparência — '
             . 'a superfície onde se lê a conversa precisa ser opaca');
+    }
+    expect(true)->toBeTrue();
+});
+
+describe('A fronteira do atendimento público');
+
+/**
+ * Este é o invariante que sustenta o atendimento a quem não tem conta.
+ *
+ * O serviço público responde sem sessão: não há usuário identificado, e
+ * portanto não há a quem pertencer nenhum dado. Se um dia ele consultar uma
+ * tabela de aluno, qualquer visitante estará a uma consulta de distância de
+ * dado de terceiro — e o pior é que funcionaria em silêncio, devolvendo a
+ * matrícula de outra pessoa como se fosse resposta.
+ *
+ * Por isso o serviço é SEPARADO do NorminhaService em vez de um `if` dentro
+ * dele: com um ramo, bastaria um caminho esquecido.
+ */
+
+it('o serviço público não menciona tabela de aluno', function () {
+    $fonte = fonte('app/Services/NorminhaPublicoService.php');
+
+    $proibidas = array('usuarios', 'inscricoes', 'pedidos', 'certificados',
+        'norminha_conversas', 'norminha_mensagens', 'norminha_feedback', 'norminha_uso',
+        'conteudo_progresso', 'usuario_curso', 'usuario_turma');
+
+    foreach ($proibidas as $tabela) {
+        if (preg_match('/\b' . preg_quote($tabela, '/') . '\b/i', $fonte)) {
+            throw new RuntimeException("o atendimento público menciona a tabela {$tabela}");
+        }
+    }
+    expect(true)->toBeTrue();
+});
+
+it('o serviço público não executa SQL nem lê a sessão', function () {
+    $fonte = fonte('app/Services/NorminhaPublicoService.php');
+
+    foreach (array('Database::', '->query(', '->prepare(', 'Session::', '$_SESSION') as $proibido) {
+        if (strpos($fonte, $proibido) !== false) {
+            throw new RuntimeException("o atendimento público usa {$proibido}");
+        }
+    }
+    expect(true)->toBeTrue();
+});
+
+it('o endpoint público não exige sessão, e o do aluno exige', function () {
+    $rotas = (string) file_get_contents(BASE_PATH . '/routes/api.php');
+
+    if (!preg_match("/'\/api\/norminha\/publico'.*?array\(([^)]*)\)\);/s", $rotas, $m)) {
+        throw new RuntimeException('a rota pública não foi encontrada');
+    }
+    if (strpos($m[1], 'auth.api') !== false) {
+        throw new RuntimeException('a rota pública exige sessão — então não atende quem não tem conta');
+    }
+    // CSRF continua: o componente fornece o token mesmo em sessão anônima.
+    if (strpos($m[1], 'csrf') === false) {
+        throw new RuntimeException('a rota pública ficou sem csrf');
+    }
+
+    if (!preg_match("/'\/api\/norminha\/chat'.*?array\(([^)]*)\)\);/s", $rotas, $mc)
+        || strpos($mc[1], 'auth.api') === false) {
+        throw new RuntimeException('o /chat do aluno deixou de exigir sessão');
+    }
+    expect(true)->toBeTrue();
+});
+
+it('o atendimento público não guarda o que o visitante escreve', function () {
+    // Quem não tem conta não consentiu com nada. O único registro permitido é o
+    // contador por origem, e mesmo o IP entra como hash.
+    $limite = fonte('app/Services/NorminhaPublicoLimiteService.php');
+
+    if (preg_match('/INSERT INTO\s+(?!norminha_uso_publico)/i', $limite)) {
+        throw new RuntimeException('o freio público escreve em outra tabela');
+    }
+    foreach (array('mensagem', 'message', 'texto') as $campo) {
+        if (preg_match('/INSERT INTO[^;]*\b' . $campo . '\b/is', $limite)) {
+            throw new RuntimeException("o freio público grava o campo {$campo}");
+        }
+    }
+    if (strpos($limite, "hash('sha256'") === false) {
+        throw new RuntimeException('o IP não está sendo transformado em hash');
     }
     expect(true)->toBeTrue();
 });

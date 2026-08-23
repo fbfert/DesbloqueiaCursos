@@ -26,6 +26,12 @@ $app->get('/api/health', array(HealthController::class, 'show'));
 // permissao do teste Claude legado.
 $app->post('/api/openai/teste', array(OpenAIController::class, 'testar'), array('auth', 'permission:configuracoes_globais.gerenciar'));
 
+// Atendimento a quem ainda nao tem conta: cadastro, acesso e escolha de curso.
+// SEM 'auth.api' de proposito -- e para quem nao esta logado. Continua com
+// 'csrf', que o componente fornece mesmo em sessao anonima, e tem limite por
+// origem dentro do proprio controller.
+$app->post('/api/norminha/publico', array(NorminhaController::class, 'publico'), array('csrf'));
+
 $app->post('/api/norminha/chat', array(NorminhaController::class, 'chat'), array('auth.api', 'csrf'));
 $app->get('/api/norminha/historico', array(NorminhaController::class, 'historico'), array('auth.api'));
 $app->post('/api/norminha/feedback', array(NorminhaController::class, 'feedback'), array('auth.api', 'csrf'));

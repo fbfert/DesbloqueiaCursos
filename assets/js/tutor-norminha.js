@@ -24,7 +24,15 @@
 
     var STORAGE_KEY = 'norminha_tutor_minimized_v1';
     var LEGACY_KEYS = ['norminha_tutor_closed_until', 'norminha_tutor_closed_v2', 'norminha_tutor_closed'];
-    var ENDPOINT = '/api/norminha/chat';
+    // Dois destinos, escolhidos pelo servidor via data-publico.
+    //
+    // /chat exige sessao e responde sobre matricula, progresso e certificado.
+    // /publico atende quem ainda nao tem conta -- cadastro, acesso e escolha de
+    // curso -- e nao consulta dado de aluno nenhum. Quem decide qual usar e o
+    // componente, no servidor: deixar o navegador escolher seria confiar no
+    // cliente para dizer se ha sessao.
+    var ENDPOINT_ALUNO = '/api/norminha/chat';
+    var ENDPOINT_PUBLICO = '/api/norminha/publico';
     var TIMEOUT_MS = 20000;
     var LIMITE_MENSAGEM = 2000;
 
@@ -409,6 +417,12 @@
         // Envio
         // ---------------------------------------------------------------
 
+        function endpoint() {
+            return container.getAttribute('data-publico') === '1'
+                ? ENDPOINT_PUBLICO
+                : ENDPOINT_ALUNO;
+        }
+
         function hints() {
             var mapa = {
                 route: container.getAttribute('data-rota') || '',
@@ -451,10 +465,14 @@
 
             if (ecoDoAluno) { mostrarMensagemAluno(ecoDoAluno); }
 
-            var corpo = {
-                _token: csrf,
-                context: hints()
-            };
+            var corpo = { _token: csrf };
+
+            // O contexto e coisa de aluno: ele carrega inscricao, curso e aula.
+            // No atendimento publico nao ha nada disso, e mandar o objeto vazio
+            // so daria ao endpoint publico a forma de um pedido autenticado.
+            if (container.getAttribute('data-publico') !== '1') {
+                corpo.context = hints();
+            }
             if (payload.action) { corpo.action = payload.action; }
             if (payload.message) { corpo.message = payload.message; }
             if (conversationId) { corpo.conversation_id = conversationId; }
@@ -474,7 +492,7 @@
             };
             if (controlador) { opcoes.signal = controlador.signal; }
 
-            fetch(ENDPOINT, opcoes).then(function (resposta) {
+            fetch(endpoint(), opcoes).then(function (resposta) {
                 window.clearTimeout(expirou);
                 return resposta.json().then(function (dados) {
                     return { status: resposta.status, dados: dados };
