@@ -164,7 +164,15 @@ if (!$isAdmin) {
         <link rel="icon" href="<?php echo Helpers::e($faviconPublico['href']); ?>" type="<?php echo Helpers::e($faviconPublico['mime']); ?>" sizes="any">
         <link rel="shortcut icon" href="<?php echo Helpers::e($faviconPublico['href']); ?>">
     <?php endif; ?>
+    <link rel="stylesheet" href="/assets/css/app.css">
     <?php if ($useFrontendTheme): ?>
+        <link rel="stylesheet" href="/assets/css/frontend.css<?php echo $frontendCssVersion ? '?v=' . (int) $frontendCssVersion : ''; ?>">
+        <?php if ($frontendTemplateVersion === 'v2'): ?>
+            <link rel="stylesheet" href="/assets/css/frontend-v2.css<?php echo $frontendV2CssVersion ? '?v=' . (int) $frontendV2CssVersion : ''; ?>">
+        <?php endif; ?>
+        <?php if ($loadOrientationUiAssets): ?>
+            <link rel="stylesheet" href="/assets/css/orientacao-usuario.css<?php echo $orientacaoUsuarioCssVersion ? '?v=' . (int) $orientacaoUsuarioCssVersion : ''; ?>">
+        <?php endif; ?>
         <?php /* CSS e script de preferencia so quando o componente vai existir:
                  antes eles eram servidos em toda pagina de tema frontend,
                  inclusive onde a Norminha nao aparece. */ ?>

@@ -378,3 +378,38 @@ Prompt 3 exige.
 `desbloqueia_user` tem `GRANT ALL PRIVILEGES ON *.*`. Qualquer injeção de SQL em qualquer ponto do
 sistema alcança o servidor MySQL inteiro, não só o banco da aplicação. Não foi alterado (mexer em
 grants de produção sem janela é arriscado), mas deve entrar no hardening da Etapa 15.
+
+### C17 — 🔴 Um edit apagou quatro folhas de estilo, e o admin foi ao ar sem aparência
+
+Na Etapa 6 eu quis remover do layout legado apenas o CSS e o script inline da
+Norminha, substituídos pelo parcial compartilhado. O edit levou junto quatro
+`<link>` vizinhos:
+
+- `/assets/css/app.css` — **fora de qualquer condicional**, é a folha base de
+  todas as páginas renderizadas por `resources/views/layout.php`;
+- `/assets/css/frontend.css`;
+- `/assets/css/frontend-v2.css`;
+- `/assets/css/orientacao-usuario.css`.
+
+E `View::render()` manda **tudo** por esse layout — inclusive o painel
+administrativo, que carrega `app.css` + `admin.css`. Sem a primeira, o admin
+inteiro ficou sem estilo. Foi assim que o responsável descobriu, em 23/08, um
+dia depois do deploy.
+
+**O que falhou não foi só o edit.** Nenhum dos 331 testes olhava para folha de
+estilo. Eles verificavam status HTTP, erro de PHP, duplicação do componente da
+Norminha e comportamento de dados. Todos passavam com o site sem aparência,
+porque nenhum perguntava se a página tinha aparência.
+
+**Correção:** as quatro folhas foram restauradas na posição original — conferido
+por diff contra `pre-onda0-20260823`, e a única diferença que resta é
+`tutor-norminha.css`, que saiu de propósito.
+
+**Cobertura:** `smoke_guarda_layout()` passou a exigir que todo documento HTML
+completo traga a folha do seu layout — `app.css` no legado, `v2-main.css` na V2.
+Verificado por mutação: reproduzindo o bug, 12 das 34 verificações reprovam.
+
+**A lição, que vale além deste caso:** um teste que só olha status e exceção
+declara sucesso para uma página que chegou ilegível. Depois de mexer em layout,
+alguma verificação precisa afirmar que a página continua **vestida**, não apenas
+que ela respondeu.

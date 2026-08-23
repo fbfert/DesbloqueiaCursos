@@ -305,6 +305,25 @@ function smoke_guarda_layout($corpo, $modoNorminha)
         $falhas[] = "JS da Norminha incluído {$js}x";
     }
 
+    // Folha de estilo base (23/08/2026).
+    //
+    // Em 22/08 um edit no layout legado apagou quatro <link> junto com o da
+    // Norminha, entre eles /assets/css/app.css — que nao estava dentro de
+    // condicional nenhuma e sustenta TODAS as paginas, inclusive o admin. O
+    // site subiu sem estilo e nenhum teste percebeu: todos olhavam status HTTP,
+    // erro de PHP e os assets da Norminha. Nenhum perguntava se a pagina tinha
+    // aparencia.
+    //
+    // Um documento HTML completo tem que trazer a folha do seu layout: app.css
+    // no legado, v2-main.css na V2. Sem nenhuma das duas, chegou sem estilo.
+    if (stripos($corpo, '<html') !== false && stripos($corpo, '</body>') !== false) {
+        $temBase = $contar('/assets/css/app.css') > 0
+            || $contar('/v2/assets/css/v2-main.css') > 0;
+        if (!$temBase) {
+            $falhas[] = 'pagina sem folha de estilo base (nem app.css nem v2-main.css)';
+        }
+    }
+
     foreach (smoke_erros_php($corpo) as $erro) {
         $falhas[] = "erro de PHP no corpo: {$erro}";
     }
