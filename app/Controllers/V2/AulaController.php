@@ -11,6 +11,7 @@ use App\Core\Helpers;
 use App\Services\AreaCursoService;
 use App\Services\ConteudoCursoService;
 use App\Support\VideoEmbedResolver;
+use App\Support\NorminhaHints;
 
 /**
  * LMS V2 (Fase 2.7) — estritamente LEITURA e NAVEGAÇÃO.
@@ -168,7 +169,27 @@ class AulaController extends Controller
         // o módulo atual para já abrir expandido quando o aluno voltar.
         $overviewUrl = $this->urlV2Overview($inscricao, $cursoId, $turmaId, $moduloAtualId);
 
+        // Pistas para a Norminha.
+        //
+        // O item vem de $itemAtual, que é o RESOLVIDO — não de $formCtx, que
+        // carrega o conteudo_id cru da URL. A diferença aparece quando alguém
+        // troca o conteudo_id por um item de outro curso: a página ignora o
+        // pedido e mostra a visão geral (o conteúdo alheio nunca é exibido),
+        // mas $formCtx continuaria com o id inválido. A Norminha então
+        // anunciaria uma aula que o aluno não está vendo, e ofereceria "tirar
+        // dúvida desta aula" sobre coisa nenhuma.
+        //
+        // O backend revalida tudo de novo — isto é sugestão, não autorização.
+        $norminhaIds = $formCtx;
+        $norminhaIds['item_id'] = $itemAtual !== null ? (int) $formCtx['item_id'] : null;
+
+        $norminhaContexto = NorminhaHints::montar(
+            $norminhaIds['item_id'] !== null ? NorminhaHints::CONTEXTO_AULA : NorminhaHints::CONTEXTO_CURSO,
+            $norminhaIds
+        );
+
         $data = array_merge($base, array(
+            'norminhaContexto' => $norminhaContexto,
             'title' => ($cabecalho['curso_nome'] !== '' ? $cabecalho['curso_nome'] : 'Aula') . ' — Desbloqueia Cursos',
             'pageTitle' => ($cabecalho['curso_nome'] !== '' ? $cabecalho['curso_nome'] : 'Aula') . ' — Desbloqueia Cursos',
             'pageDescription' => 'Ambiente de aprendizagem com seu conteúdo real.',

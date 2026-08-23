@@ -11,6 +11,7 @@ use App\Models\Pedido;
 use App\Services\AuthService;
 use App\Services\InscricaoService;
 use App\Services\PedidoService;
+use App\Support\NorminhaHints;
 
 /**
  * Área do Aluno V2 (Fase 2.6) — leitura, com dados reais do usuário
@@ -89,6 +90,10 @@ class AlunoController extends Controller
         $data = array_merge($this->dadosLayout($usuarioId, $usuarioNome), array(
             'title' => 'Minha área — Desbloqueia Cursos',
             'pageTitle' => 'Minha área — Desbloqueia Cursos',
+            // Area geral: NAO se afirma que ha aula atual. Sem item, a Norminha
+            // nao oferece "tirar duvida desta aula" sobre coisa nenhuma, e o
+            // contexto fica em area_aluno.
+            'norminhaContexto' => NorminhaHints::montar(NorminhaHints::CONTEXTO_AREA_ALUNO),
             'pageDescription' => 'Sua área do aluno: cursos, pedidos, certificados e perfil.',
             'abaAtiva' => $aba,
             'abas' => $abas,

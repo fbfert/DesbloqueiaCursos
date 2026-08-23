@@ -10,6 +10,7 @@ use App\Core\View;
 use App\Services\AreaCursoService;
 use App\Services\ConteudoCursoService;
 use App\Services\ConteudoAvaliacaoTextualService;
+use App\Support\NorminhaHints;
 
 /**
  * LMS V2 (Fase 2.10) — Atividades avaliativas discursivas reais (resposta
@@ -298,6 +299,9 @@ class AtividadeController extends Controller
         $data = array_merge($base, array(
             'title' => $titulo . ' — Desbloqueia Cursos',
             'pageTitle' => $titulo . ' — Desbloqueia Cursos',
+            // Avaliacao textual tambem vale nota: contexto `avaliacao`. So o id
+            // do item sai daqui; nenhuma resposta esperada ou chave de correcao.
+            'norminhaContexto' => NorminhaHints::montar(NorminhaHints::CONTEXTO_AVALIACAO, $formCtx),
             'pageDescription' => 'Responda a atividade do seu curso.',
             'estado' => null,
             'cabecalho' => $cabecalho,

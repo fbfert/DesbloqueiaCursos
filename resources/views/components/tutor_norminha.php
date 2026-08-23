@@ -108,21 +108,30 @@ if ($avatarInicial === null) {
 }
 $avatarLauncher = $avatarIdle !== null ? $avatarIdle : $avatarSpeaking;
 
-// Pistas de contexto. São SUGESTÕES: o backend revalida cada uma contra a
-// sessão (NorminhaContextService). Nada de dado pessoal entra no HTML.
-$hintInscricao = isset($_GET['inscricao_id']) && ctype_digit((string) $_GET['inscricao_id']) ? (int) $_GET['inscricao_id'] : 0;
-$hintCurso = isset($_GET['curso_id']) && ctype_digit((string) $_GET['curso_id']) ? (int) $_GET['curso_id'] : 0;
-$hintTurma = isset($_GET['turma_id']) && ctype_digit((string) $_GET['turma_id']) ? (int) $_GET['turma_id'] : 0;
-$hintModulo = isset($_GET['modulo_id']) && ctype_digit((string) $_GET['modulo_id']) ? (int) $_GET['modulo_id'] : 0;
-$hintItem = 0;
-foreach (array('conteudo_id', 'item_id', 'aula_id') as $chaveItem) {
-    if (isset($_GET[$chaveItem]) && ctype_digit((string) $_GET[$chaveItem])) {
-        $hintItem = (int) $_GET[$chaveItem];
-        break;
-    }
-}
-$rotaAtual = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-$emAula = $hintItem > 0;
+// Pistas de contexto, no contrato de App\Support\NorminhaHints.
+//
+// Preferência para o que o CONTROLLER resolveu; a query string é reserva, para
+// rotas ainda não ligadas. Numa URL adulterada os dois divergem, e a Norminha
+// precisa concordar com a página que o aluno está vendo.
+//
+// Isto é SUGESTÃO, não autorização: NorminhaContextService revalida cada id
+// contra a sessão. Nada de nome, e-mail, CPF ou nota entra no HTML — e, em
+// avaliação, nenhum dado da prova além do id do item.
+$hints = isset($norminhaContexto) && is_array($norminhaContexto)
+    ? $norminhaContexto
+    : App\Support\NorminhaHints::daQuery($_GET);
+
+$hintInscricao = isset($hints['inscricao_id']) ? (int) $hints['inscricao_id'] : 0;
+$hintCurso = isset($hints['curso_id']) ? (int) $hints['curso_id'] : 0;
+$hintTurma = isset($hints['turma_id']) ? (int) $hints['turma_id'] : 0;
+$hintModulo = isset($hints['modulo_id']) ? (int) $hints['modulo_id'] : 0;
+$hintItem = isset($hints['item_id']) ? (int) $hints['item_id'] : 0;
+$rotaAtual = isset($hints['rota']) && $hints['rota'] !== null ? (string) $hints['rota'] : '/';
+$contextoNorminha = isset($hints['contexto']) ? (string) $hints['contexto'] : $contextoNorminha;
+
+// "Tirar dúvida desta aula" só existe quando existe aula. Na área geral do
+// aluno o botão some, em vez de perguntar sobre coisa nenhuma.
+$emAula = $hintItem > 0 && in_array($contextoNorminha, array('aula', 'avaliacao'), true);
 ?>
 
 <!-- Norminha: chat acadêmico. Montado uma única vez, pelo layout. -->

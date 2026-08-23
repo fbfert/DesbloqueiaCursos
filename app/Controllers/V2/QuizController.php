@@ -11,6 +11,7 @@ use App\Models\ConteudoQuizTentativa;
 use App\Services\AreaCursoService;
 use App\Services\ConteudoCursoService;
 use App\Services\ConteudoQuizService;
+use App\Support\NorminhaHints;
 
 /**
  * LMS V2 (Fase 2.9) — Quizzes objetivos reais.
@@ -148,7 +149,13 @@ class QuizController extends Controller
             'enviar_action' => '/v2/quiz/enviar',
         );
 
+        // Quiz vale nota: o contexto é `avaliacao`, e é por ele que o guardrail
+        // pedagógico decide não entregar gabarito. Só o id do item sai daqui —
+        // nenhuma alternativa, resposta ou marcação de acerto entra no DOM.
+        $norminhaContexto = NorminhaHints::montar(NorminhaHints::CONTEXTO_AVALIACAO, $formCtx);
+
         $data = array_merge($base, array(
+            'norminhaContexto' => $norminhaContexto,
             'title' => ($cabecalho['quiz_nome'] !== '' ? $cabecalho['quiz_nome'] : 'Quiz') . ' — Desbloqueia Cursos',
             'pageTitle' => ($cabecalho['quiz_nome'] !== '' ? $cabecalho['quiz_nome'] : 'Quiz') . ' — Desbloqueia Cursos',
             'pageDescription' => 'Responda o quiz do seu curso.',

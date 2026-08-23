@@ -55,6 +55,13 @@ if ($tutorNorminha) {
     $tutorNorminhaJsVersion = $norminhaAssetVersion('assets/js/tutor-norminha.js');
 }
 
+// Pistas de contexto. O controller publica o que RESOLVEU; onde ele ainda nao
+// publica, cai-se na query string, que e mais fraca de proposito. Ver
+// App\Support\NorminhaHints.
+if (!isset($norminhaContexto) || !is_array($norminhaContexto)) {
+    $norminhaContexto = App\Support\NorminhaHints::daQuery($_GET, $norminhaPath ?? null);
+}
+
 // Fase 2.13 — navegação V2 centralizada (V2Nav). Sobrescreve quaisquer hrefs
 // herdados que apontariam ao V1 (ex.: catalogo/categorias/login). `areaHref`
 // (papel-dependente) e `homeHref` são preservados quando já informados.
