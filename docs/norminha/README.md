@@ -15,6 +15,7 @@ da letra em alguns pontos produz defeito.
 | [`00-auditoria-preflight.md`](00-auditoria-preflight.md) | Relatório completo dos 12 itens da Etapa 0, com evidência |
 | [`AMBIENTE-DEV.md`](AMBIENTE-DEV.md) | Como trabalhar sem tocar na produção |
 | [`08-telemetria.md`](08-telemetria.md) | O painel do Checkpoint 0: como ler e o que decidir |
+| [`17-deploy-onda-0.md`](17-deploy-onda-0.md) | Roteiro de deploy e rollback da Onda 0 |
 | [`../../tests/Smoke/README.md`](../../tests/Smoke/README.md) | A rede de regressão: uso, baseline, guarda de layout |
 
 ## Estado
@@ -32,6 +33,7 @@ da letra em alguns pontos produz defeito.
 | 6 — Interface de chat e montagem na V2 | **concluída** |
 | 7 — Contexto do LMS no frontend | **concluída** |
 | 8 — Telemetria e painel | **concluída** |
+| Deploy da Onda 0 | roteiro pronto — ver `17-deploy-onda-0.md` |
 | **CP0 — Checkpoint: piloto sem IA** | **próximo — decisão sua, com dados reais** |
 | Onda 1 (9 a 14) e Onda 2 (15 a 19) | pendentes |
 
