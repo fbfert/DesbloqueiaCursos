@@ -62,6 +62,11 @@ class NorminhaService
     /** Contador de chamadas ao gerador. Precisa ser 0 na Onda 0. */
     private $chamadasIA = 0;
 
+    private $memoriaService;
+
+    /** Conversa em curso, para a janela de memória saber de onde ler. */
+    private $conversaAtual = null;
+
     public function __construct(
         NorminhaContextService $contextService = null,
         NorminhaToolsService $toolsService = null,
@@ -72,6 +77,7 @@ class NorminhaService
         $this->conversaModel = new NorminhaConversa();
         $this->mensagemModel = new NorminhaMensagem();
         $this->falaModel = new TutorFala();
+        $this->memoriaService = new NorminhaMemoriaService();
 
         // A camada de IA só é ligada quando REALMENTE disponível — provedor
         // habilitado e chave presente. Com OPENAI_ENABLED=false o gerador
@@ -150,6 +156,11 @@ class NorminhaService
         }
 
         $conversa = $this->abrirConversa($usuarioId, $conversaExistente, $contexto);
+        $this->conversaAtual = array(
+            'id' => $conversa['id'],
+            'usuario_id' => $usuarioId,
+            'resumo' => $conversaExistente && isset($conversaExistente['resumo']) ? $conversaExistente['resumo'] : null,
+        );
 
         // A mensagem do aluno é persistida UMA vez, antes de qualquer resolução.
         $this->mensagemModel->inserir(
@@ -240,12 +251,22 @@ class NorminhaService
     }
 
     /**
-     * Janela curta de histórico. A implementação real é da Etapa 13; aqui fica
-     * o ponto de extensão, devolvendo vazio.
+     * Janela curta de histórico (Etapa 13).
+     *
+     * A conversa corrente é guardada em $conversaAtual durante processar(); sem
+     * ela não há histórico a enviar — que é o caso da primeira mensagem.
      */
     protected function historicoParaModelo(array $contexto)
     {
-        return array();
+        if (!$this->conversaAtual) {
+            return array();
+        }
+
+        return $this->memoriaService->janelaComResumo(
+            $this->conversaAtual,
+            (int) $this->conversaAtual['usuario_id'],
+            NorminhaMemoriaService::MAX_MENSAGENS
+        );
     }
 
     /** Complemento de prompt definido no admin (Etapa 14). */
@@ -692,6 +713,12 @@ class NorminhaService
         );
 
         $this->conversaModel->tocarUltimaMensagem($conversa['id']);
+
+        // Conversa longa ganha resumo, para a janela seguinte não perder o fio
+        // sem carregar tudo. O resumo guarda ASSUNTO, nunca número.
+        if ($this->memoriaService->precisaResumir($conversa['id'], $usuarioId)) {
+            $this->memoriaService->atualizarResumo($conversa['id'], $usuarioId);
+        }
 
         return array(
             'ok' => true,
