@@ -44,7 +44,7 @@ $old = isset($old) && is_array($old) ? $old : array();
       </div>
 
       <div class="dc-field">
-        <label for="dc-cad-telefone">Telefone</label>
+        <label for="dc-cad-telefone">WhatsApp</label>
         <input type="text" id="dc-cad-telefone" name="telefone" class="dc-input" placeholder="(00) 00000-0000"
                value="<?php echo Helpers::e(isset($old['telefone']) ? (string) $old['telefone'] : ''); ?>" autocomplete="tel">
       </div>

@@ -102,7 +102,7 @@ $statusFluxo = isset($situacaoInscricao['status_fluxo']) ? (string) $situacaoIns
           <input class="dc-input" type="email" name="pagador_email" value="<?php echo Helpers::e(isset($pagadorPrefill['email']) && $pagadorPrefill['email'] !== '' ? $pagadorPrefill['email'] : $usuarioEmail); ?>">
         </div>
         <div class="dc-field">
-          <label>Telefone</label>
+          <label>WhatsApp</label>
           <input class="dc-input" type="text" name="pagador_telefone" value="<?php echo Helpers::e(isset($pagadorPrefill['telefone']) ? $pagadorPrefill['telefone'] : ''); ?>" data-skip-old-input="1">
         </div>
         <div class="dc-field">

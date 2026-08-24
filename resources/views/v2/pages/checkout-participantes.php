@@ -80,7 +80,7 @@ $etapaAtual = 2;
             <input class="v2-input" type="email" id="cp-email-<?php echo $i; ?>" name="participantes[<?php echo $i; ?>][email]" value="<?php echo Helpers::e($email); ?>" autocomplete="off">
           </div>
           <div class="v2-field">
-            <label for="cp-tel-<?php echo $i; ?>">Telefone</label>
+            <label for="cp-tel-<?php echo $i; ?>">WhatsApp</label>
             <input class="v2-input" type="text" id="cp-tel-<?php echo $i; ?>" name="participantes[<?php echo $i; ?>][telefone]" value="<?php echo Helpers::e($tel); ?>" inputmode="tel" autocomplete="off">
           </div>
         </fieldset>

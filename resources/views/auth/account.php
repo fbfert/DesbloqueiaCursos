@@ -20,7 +20,7 @@
         </label>
 
         <label>
-            Telefone
+            WhatsApp
             <input type="text" name="telefone" value="<?php echo htmlspecialchars(isset($old['telefone']) ? $old['telefone'] : (isset($conta['telefone']) ? $conta['telefone'] : ''), ENT_QUOTES, 'UTF-8'); ?>">
         </label>
 

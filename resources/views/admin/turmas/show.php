@@ -155,7 +155,7 @@
                 <tr>
                     <th>Nome</th>
                     <th>E-mail</th>
-                    <th>WhatsApp/Telefone</th>
+                    <th>WhatsApp</th>
                     <th>Ações</th>
                 </tr>
             </thead>

@@ -103,7 +103,7 @@ if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resourc
                     <input type="email" name="pagador_email" value="<?php echo Helpers::e(isset($pagadorPrefill['email']) && $pagadorPrefill['email'] !== '' ? $pagadorPrefill['email'] : (isset($usuarioEmail) ? $usuarioEmail : '')); ?>">
                 </label>
                 <label>
-                    Telefone
+                    WhatsApp
                     <input type="text" name="pagador_telefone" value="<?php echo Helpers::e(isset($pagadorPrefill['telefone']) ? $pagadorPrefill['telefone'] : ''); ?>" data-skip-old-input="1">
                 </label>
                 <label>

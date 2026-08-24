@@ -220,7 +220,7 @@ class TurmaInscritosExportService
             . '<thead><tr style="background-color:#eef2f7;font-weight:bold;">'
             . '<th width="19%">Aluno</th>'
             . '<th width="20%">E-mail</th>'
-            . '<th width="11%">Telefone</th>'
+            . '<th width="11%">WhatsApp</th>'
             . '<th width="14%">Status</th>'
             . '<th width="8%">Progr.</th>'
             . '<th width="8%">Presença</th>'

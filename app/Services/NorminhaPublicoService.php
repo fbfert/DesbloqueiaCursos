@@ -136,7 +136,7 @@ class NorminhaPublicoService
             . "— nome completo, do jeito que deve sair no certificado;\n"
             . "— CPF;\n"
             . "— um e-mail que você acessa, porque é por ele que a gente fala com você;\n"
-            . "— telefone;\n"
+            . "— WhatsApp (opcional);\n"
             . "— e uma senha fácil de lembrar.\n\n"
             . 'No fim é só aceitar os termos. Qualquer coisa, me chame aqui.',
             array(

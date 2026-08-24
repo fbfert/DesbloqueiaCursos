@@ -32,7 +32,7 @@ $cidadeAtual = (string) $value('cidade');
             <label>Nome<input type="text" name="nome" value="<?php echo Helpers::e($value('nome')); ?>" required></label>
             <label>E-mail<input type="email" name="email" value="<?php echo Helpers::e($value('email')); ?>" required></label>
             <label>CPF<input type="text" name="cpf" value="<?php echo Helpers::e($value('cpf')); ?>" required></label>
-            <label>Telefone<input type="text" name="telefone" value="<?php echo Helpers::e($value('telefone')); ?>"></label>
+            <label>WhatsApp<input type="text" name="telefone" value="<?php echo Helpers::e($value('telefone')); ?>"></label>
             <label>Estado (UF)
                 <select name="estado" id="usuario-estado">
                     <option value="">Selecione o estado</option>

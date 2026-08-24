@@ -1101,10 +1101,8 @@ class CheckoutController extends Controller
             $errors[] = 'Informe um e-mail valido do pagador.';
         }
 
-        $pagadorTelefone = trim((string) $request->input('pagador_telefone', ''));
-        if ($pagadorTelefone === '') {
-            $errors[] = 'Informe o telefone do pagador.';
-        }
+        // Telefone do pagador é opcional: `pedidos.pagador_telefone` aceita NULL
+        // e o gateway não usa esse dado. Exigir aqui só custava venda.
 
         return $errors;
     }

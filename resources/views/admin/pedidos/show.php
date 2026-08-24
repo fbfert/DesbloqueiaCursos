@@ -69,7 +69,7 @@ $exigeMotivoReenvioComprovante = !empty($pedido['comprovantes']);
             <?php endif; ?>
             <strong>Pagador:</strong> <?php echo htmlspecialchars((string) $pedido['pagador_nome'], ENT_QUOTES, 'UTF-8'); ?><br>
             <strong>E-mail:</strong> <?php echo htmlspecialchars((string) $pedido['pagador_email'], ENT_QUOTES, 'UTF-8'); ?><br>
-            <strong>Telefone/WhatsApp:</strong> <?php echo htmlspecialchars($telefonePagador !== '' ? $telefonePagador : '-', ENT_QUOTES, 'UTF-8'); ?><br>
+            <strong>WhatsApp:</strong> <?php echo htmlspecialchars($telefonePagador !== '' ? $telefonePagador : '-', ENT_QUOTES, 'UTF-8'); ?><br>
             <strong>CPF:</strong> <?php echo htmlspecialchars((string) $pedido['pagador_cpf'], ENT_QUOTES, 'UTF-8'); ?><br>
             <strong>Total:</strong> R$ <?php echo number_format((float) $pedido['total'], 2, ',', '.'); ?><br>
             <strong>Status do pagamento:</strong> <?php echo htmlspecialchars((string) $pedido['status'], ENT_QUOTES, 'UTF-8'); ?>

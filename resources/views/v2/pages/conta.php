@@ -63,7 +63,7 @@ $ufs = array('AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','P
           <input class="v2-input" type="text" id="conta-cpf" name="cpf" value="<?php echo Helpers::e($campo('cpf')); ?>" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" data-mask-cpf required>
         </div>
         <div class="v2-field">
-          <label for="conta-tel">Telefone</label>
+          <label for="conta-tel">WhatsApp</label>
           <input class="v2-input" type="text" id="conta-tel" name="telefone" value="<?php echo Helpers::e($campo('telefone')); ?>" inputmode="tel">
         </div>
         <div class="v2-field">

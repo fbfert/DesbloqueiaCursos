@@ -105,7 +105,7 @@ $erroDe = function ($campo) use ($errors) {
       </div>
 
       <div class="v2-field<?php echo $erroDe('telefone') !== '' ? ' has-error' : ''; ?>">
-        <label for="v2-cad-telefone">Telefone <span class="v2-muted v2-sm">(opcional)</span></label>
+        <label for="v2-cad-telefone">WhatsApp <span class="v2-muted v2-sm">(opcional)</span></label>
         <input type="tel" id="v2-cad-telefone" name="telefone" class="v2-input" value="<?php echo Helpers::e($oldTelefone); ?>"
                autocomplete="tel"<?php echo $autofocusCampo === 'telefone' ? ' autofocus' : ''; ?>
                <?php echo $erroDe('telefone') !== '' ? 'aria-describedby="e-v2-cad-telefone"' : ''; ?>>

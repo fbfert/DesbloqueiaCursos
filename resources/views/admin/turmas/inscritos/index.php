@@ -199,7 +199,7 @@ $formatarNota = function ($valor) {
                     <tr>
                         <th><?php echo $colunaOrdenavel('nome', 'Aluno'); ?></th>
                         <th><?php echo $colunaOrdenavel('email', 'E-mail'); ?></th>
-                        <th>Telefone</th>
+                        <th>WhatsApp</th>
                         <th><?php echo $colunaOrdenavel('status', 'Status'); ?></th>
                         <th><?php echo $colunaOrdenavel('progresso', 'Progresso'); ?></th>
                         <th>Presença</th>

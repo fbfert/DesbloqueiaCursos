@@ -222,7 +222,7 @@ class PedidoService
             $erros[] = 'Informe um e-mail válido do pagador.';
         }
         if ($pagadorTelefone === '') {
-            $erros[] = 'Informe o telefone do pagador.';
+            $erros[] = 'Informe o WhatsApp do pagador.';
         }
         if ($cupomCodigo !== '' && $cupomJustificativa === '') {
             $erros[] = 'Informe a justificativa para aplicar o cupom manualmente.';

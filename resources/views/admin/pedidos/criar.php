@@ -109,7 +109,7 @@ if (!empty($formData['pagador_telefone'])) {
                     <input type="email" name="pagador_email" id="pedido-pagador-email" value="<?php echo Helpers::e($alunoDadosPadrao['email']); ?>" required>
                 </label>
 
-                <label>Telefone do pagador
+                <label>WhatsApp do pagador
                     <input type="text" name="pagador_telefone" id="pedido-pagador-telefone" value="<?php echo Helpers::e($alunoDadosPadrao['telefone']); ?>" required>
                 </label>
 
@@ -197,7 +197,7 @@ if (!empty($formData['pagador_telefone'])) {
         if (alunoResumoNome) alunoResumoNome.textContent = aluno.nome || 'Aluno selecionado';
         if (alunoResumoEmail) alunoResumoEmail.textContent = aluno.email ? aluno.email : '';
         if (alunoResumoCpf) alunoResumoCpf.textContent = aluno.cpf ? 'CPF ' + aluno.cpf : '';
-        if (alunoResumoTelefone) alunoResumoTelefone.textContent = aluno.telefone ? 'Telefone ' + aluno.telefone : '';
+        if (alunoResumoTelefone) alunoResumoTelefone.textContent = aluno.telefone ? 'WhatsApp ' + aluno.telefone : '';
     }
 
     function preencherAluno(aluno) {

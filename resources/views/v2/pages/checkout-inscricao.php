@@ -147,8 +147,8 @@ $mostrarForm = $loggedIn && !in_array($statusFluxo, array('matriculado', 'penden
           <input class="v2-input" type="email" id="ci-email" name="pagador_email" value="<?php echo Helpers::e($pf('email', $usuarioEmail)); ?>" autocomplete="email">
         </div>
         <div class="v2-field">
-          <label for="ci-tel">Telefone <span class="v2-muted v2-sm">(obrigatório)</span></label>
-          <input class="v2-input" type="text" id="ci-tel" name="pagador_telefone" value="<?php echo Helpers::e($pf('telefone')); ?>" inputmode="tel" autocomplete="tel" required>
+          <label for="ci-tel">WhatsApp <span class="v2-muted v2-sm">(opcional)</span></label>
+          <input class="v2-input" type="text" id="ci-tel" name="pagador_telefone" value="<?php echo Helpers::e($pf('telefone')); ?>" inputmode="tel" autocomplete="tel">
         </div>
         <div class="v2-field">
           <label for="ci-estado">Estado</label>

@@ -46,7 +46,7 @@ if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resourc
         </label>
 
         <label>
-            Telefone
+            WhatsApp
             <input type="text" name="telefone" value="<?php echo htmlspecialchars(isset($old['telefone']) ? $old['telefone'] : '', ENT_QUOTES, 'UTF-8'); ?>">
         </label>
 

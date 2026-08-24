@@ -69,7 +69,7 @@ $loggedIn  = !empty($loggedIn);
             <input class="dc-input" type="email" name="participantes[<?php echo $i; ?>][email]" value="<?php echo Helpers::e($emailParticipante); ?>">
           </div>
           <div class="dc-field">
-            <label>Telefone</label>
+            <label>WhatsApp</label>
             <input class="dc-input" type="text" id="<?php echo $i === 0 ? 'participante-1-telefone' : ''; ?>" name="participantes[<?php echo $i; ?>][telefone]" value="<?php echo Helpers::e($telefoneParticipante); ?>" <?php echo $i === 0 ? 'data-skip-old-input="1"' : ''; ?>>
           </div>
         </div>

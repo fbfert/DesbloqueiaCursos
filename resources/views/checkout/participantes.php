@@ -78,7 +78,7 @@ if ((string) $frontend_template === 'v4-claude') { require BASE_PATH . '/resourc
                         <input type="email" name="participantes[<?php echo $i; ?>][email]" value="<?php echo Helpers::e($emailParticipante); ?>">
                     </label>
                     <label>
-                        Telefone
+                        WhatsApp
                         <input type="text" id="<?php echo $i === 0 ? 'participante-1-telefone' : ''; ?>" name="participantes[<?php echo $i; ?>][telefone]" value="<?php echo Helpers::e($telefoneParticipante); ?>" <?php echo $i === 0 ? 'data-skip-old-input="1"' : ''; ?>>
                     </label>
                 </section>

@@ -212,7 +212,7 @@ $errosPagina = isset($errors) && is_array($errors) ? array_values($errors) : arr
               <div><span class="v2-muted v2-sm">CPF</span><b><?php echo Helpers::e((string) $perfil['cpf_mascarado']); ?></b></div>
             <?php endif; ?>
             <?php if (!empty($perfil['telefone_mascarado'])): ?>
-              <div><span class="v2-muted v2-sm">Telefone</span><b><?php echo Helpers::e((string) $perfil['telefone_mascarado']); ?></b></div>
+              <div><span class="v2-muted v2-sm">WhatsApp</span><b><?php echo Helpers::e((string) $perfil['telefone_mascarado']); ?></b></div>
             <?php endif; ?>
           </div>
           <?php if (!empty($perfil['editar_href'])): ?>
@@ -220,7 +220,7 @@ $errosPagina = isset($errors) && is_array($errors) ? array_values($errors) : arr
               <a href="<?php echo Helpers::e((string) $perfil['editar_href']); ?>" class="v2-btn v2-btn-primary v2-btn-sm"><i class="ti ti-edit"></i> Editar perfil</a>
             </div>
           <?php endif; ?>
-          <p class="v2-muted v2-sm" style="margin-top:12px;">CPF e telefone são exibidos mascarados por segurança.</p>
+          <p class="v2-muted v2-sm" style="margin-top:12px;">CPF e WhatsApp são exibidos mascarados por segurança.</p>
         </div>
       </section>
     <?php endif; ?>
