@@ -139,16 +139,16 @@ $mostrarForm = $loggedIn && !in_array($statusFluxo, array('matriculado', 'penden
           <input class="v2-input" type="text" id="ci-nome" name="pagador_nome" value="<?php echo Helpers::e($pf('nome', $usuarioNome)); ?>" autocomplete="name">
         </div>
         <div class="v2-field">
-          <label for="ci-cpf">CPF do pagador</label>
-          <input class="v2-input" type="text" id="ci-cpf" name="pagador_cpf" value="<?php echo Helpers::e($pf('cpf')); ?>" placeholder="000.000.000-00" inputmode="numeric" data-mask-cpf autocomplete="off">
+          <label for="ci-cpf">CPF do pagador <span class="v2-muted v2-sm">(obrigatório)</span></label>
+          <input class="v2-input" type="text" id="ci-cpf" name="pagador_cpf" value="<?php echo Helpers::e($pf('cpf')); ?>" placeholder="000.000.000-00" inputmode="numeric" data-mask-cpf autocomplete="off" required>
         </div>
         <div class="v2-field">
           <label for="ci-email">E-mail do pagador</label>
           <input class="v2-input" type="email" id="ci-email" name="pagador_email" value="<?php echo Helpers::e($pf('email', $usuarioEmail)); ?>" autocomplete="email">
         </div>
         <div class="v2-field">
-          <label for="ci-tel">Telefone</label>
-          <input class="v2-input" type="text" id="ci-tel" name="pagador_telefone" value="<?php echo Helpers::e($pf('telefone')); ?>" inputmode="tel" autocomplete="tel">
+          <label for="ci-tel">Telefone <span class="v2-muted v2-sm">(obrigatório)</span></label>
+          <input class="v2-input" type="text" id="ci-tel" name="pagador_telefone" value="<?php echo Helpers::e($pf('telefone')); ?>" inputmode="tel" autocomplete="tel" required>
         </div>
         <div class="v2-field">
           <label for="ci-estado">Estado</label>

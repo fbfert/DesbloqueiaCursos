@@ -123,11 +123,11 @@ class CheckoutController extends Controller
         }
 
 
-        if (trim((string) $pagadorPrefill['cpf']) === '' || trim((string) $pagadorPrefill['telefone']) === '') {
-            Session::flash('errors', array('Atualize seu cadastro com CPF e telefone antes de iniciar a inscrição.'));
-            return $this->redirect('/minha-conta');
-        }
-
+        // Cadastro incompleto (CPF/telefone) NÃO interrompe mais a compra: o
+        // próprio formulário desta etapa pede esses dados, valida em
+        // validateInscricao() no POST e devolve o que faltar ao cadastro via
+        // sincronizarDadosDoPagadorNoCadastro(). Redirecionar para /minha-conta
+        // aqui tirava o comprador do fluxo V2 sem caminho de volta.
         $errors = Session::pullFlash('errors', array());
 
         return $this->renderCheckout($request, 'inscricao', array(
@@ -843,11 +843,15 @@ class CheckoutController extends Controller
             $pagadorEstado = (string) $pagadorPrefill['estado'];
         }
 
-        // Cidade/estado digitados no checkout: se o cadastro do aluno ainda não
-        // tem essa informação, aproveita e já preenche, para as próximas compras.
-        if ($pagadorCidadeSubmetida !== '' && $pagadorEstadoSubmetida !== '') {
-            $this->sincronizarCidadeEstadoNoCadastro((int) Session::get('usuario_id', 0), $pagadorCidadeSubmetida, $pagadorEstadoSubmetida);
-        }
+        // Telefone/cidade/estado digitados no checkout: se o cadastro do aluno
+        // ainda não tem essa informação, aproveita e já preenche, para as
+        // próximas compras.
+        $this->sincronizarDadosDoPagadorNoCadastro(
+            (int) Session::get('usuario_id', 0),
+            $pagadorTelefone,
+            $pagadorCidadeSubmetida,
+            $pagadorEstadoSubmetida
+        );
 
         $resultado = $this->pedidoService->criarCheckoutDraft(array(
             'curso_evento_id' => $cursoId,
@@ -1239,33 +1243,52 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Aproveita cidade/estado digitados no checkout para completar o cadastro do
-     * aluno, apenas quando o cadastro ainda não tem essa informação (nunca
-     * sobrescreve um valor já salvo).
+     * Completa o cadastro do aluno com os dados digitados no checkout.
+     *
+     * Só preenche campo que está VAZIO no cadastro — nunca sobrescreve dado já
+     * informado pelo aluno. Como o telefone é opcional no cadastro (/cadastro)
+     * mas obrigatório para o pedido, é aqui que ele volta para o perfil, em vez
+     * de barrar a compra e mandar o comprador editar a conta.
      */
-    private function sincronizarCidadeEstadoNoCadastro($usuarioId, $cidade, $estado)
+    private function sincronizarDadosDoPagadorNoCadastro($usuarioId, $telefone, $cidade, $estado)
     {
         $usuarioId = (int) $usuarioId;
-        $cidade = trim((string) $cidade);
-        $estado = strtoupper(trim((string) $estado));
-
-        if ($usuarioId <= 0 || $cidade === '' || !preg_match('/^[A-Z]{2}$/', $estado)) {
+        if ($usuarioId <= 0) {
             return;
         }
 
         $usuario = $this->usuarioModel->findById($usuarioId);
-        if (!$usuario || !empty($usuario['cidade']) || !empty($usuario['estado'])) {
+        if (!$usuario) {
             return;
         }
 
-        $this->usuarioModel->updateProfile($usuarioId, array(
+        $atualizacao = array();
+
+        $telefone = preg_replace('/\D+/', '', (string) $telefone);
+        if ($telefone !== '' && trim((string) (isset($usuario['telefone']) ? $usuario['telefone'] : '')) === '') {
+            $atualizacao['telefone'] = $telefone;
+        }
+
+        $cidade = trim((string) $cidade);
+        $estado = strtoupper(trim((string) $estado));
+        if ($cidade !== '' && preg_match('/^[A-Z]{2}$/', $estado)
+            && empty($usuario['cidade']) && empty($usuario['estado'])) {
+            $atualizacao['cidade'] = $cidade;
+            $atualizacao['estado'] = $estado;
+        }
+
+        if (empty($atualizacao)) {
+            return;
+        }
+
+        $this->usuarioModel->updateProfile($usuarioId, array_merge(array(
             'nome' => $usuario['nome'],
             'email' => $usuario['email'],
             'cpf' => $usuario['cpf'],
             'telefone' => $usuario['telefone'],
-            'cidade' => $cidade,
-            'estado' => $estado,
-        ));
+            'cidade' => isset($usuario['cidade']) ? $usuario['cidade'] : null,
+            'estado' => isset($usuario['estado']) ? $usuario['estado'] : null,
+        ), $atualizacao));
     }
 
     private function carregarParticipantePrefill($usuarioId)
