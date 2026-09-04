@@ -52,6 +52,10 @@ const ALTERNATIVAS_OAB = 4;          // A, B, C e D — a OAB nao tem cinco
 const MARGEM_PERCEPTIVEL = 15;       // caracteres, mesmo corte do verificador
 const TETO_VIES_COMPRIMENTO = 0.25;  // no maximo 1 em 4, que e o acaso com 4 opcoes
 const TETO_POSICAO_PURA = 0.60;      // 'correta e a mais curta' sem exigir margem perceptivel
+// Limites reais das colunas. Sem estas checagens o --dry-run aprova o lote e a
+// importacao real morre com 'Data too long', jogando fora o trabalho do autor.
+const MAX_REFERENCIA = 120;          // conteudo_quiz_perguntas.referencia varchar(120)
+const MAX_TEMA = 190;                // conteudo_quiz_perguntas.tema varchar(190)
 
 $opts = getopt('', ['arquivo:', 'dry-run']);
 $caminho = $opts['arquivo'] ?? '';
@@ -161,6 +165,14 @@ if (is_array($questoes)) {
         }
         if ($tema === '') {
             $erros[] = "questao {$n}: tema e obrigatorio (alimenta o desempenho por tema do aluno)";
+        } elseif (mb_strlen($tema) > MAX_TEMA) {
+            $erros[] = "questao {$n}: tema com " . mb_strlen($tema) . ' caracteres; a coluna aceita '
+                . MAX_TEMA . ' — encurte, senao a gravacao falha por truncamento';
+        }
+        $referencia = trim((string) ($q['referencia'] ?? ''));
+        if (mb_strlen($referencia) > MAX_REFERENCIA) {
+            $erros[] = "questao {$n}: referencia com " . mb_strlen($referencia) . ' caracteres; a coluna aceita '
+                . MAX_REFERENCIA . ' — encurte, senao a gravacao falha por truncamento';
         }
         if (mb_strlen($explicacao) < 80) {
             $erros[] = "questao {$n}: explicacao curta demais; ela e exibida ao aluno depois do envio e precisa ensinar";

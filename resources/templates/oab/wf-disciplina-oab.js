@@ -69,7 +69,7 @@ Escolha os componentes pelo que o SEU conteúdo pede. Uma aula de "Mapa visual" 
 ## Regras inegociáveis
 
 1. ${CITACAO}
-2. **Questões: exatamente quatro alternativas (A, B, C e D)**, uma correta, marcada com class="correta". Pelo menos duas questões comentadas, cada uma seguida de um h3 de comentário que analisa os três distratores e explica como cada um foi construído.
+2. **Questões: exatamente quatro alternativas (A, B, C e D)**, uma correta. **NÃO marque a alternativa correta no HTML** — nada de class="correta" no <li>, porque isso pinta a resposta de verde e entrega o gabarito antes de o aluno pensar. O gabarito é revelado no comentário logo abaixo, num <span class="selo verde">Gabarito: X</span>, exatamente como faz o modelo. Pelo menos duas questões comentadas, cada uma seguida de um h3 de comentário que analisa os três distratores e explica como cada um foi construído.
 3. **O tamanho da alternativa não pode entregar o gabarito**, em nenhuma das duas direções. Se você escrever duas questões, não deixe a correta ser a mais longa nas duas nem a mais curta nas duas.
 4. Nada de recurso externo, iframe ou script src. Sem tag de estilo no corpo.
 5. Português brasileiro correto, com acentuação.
