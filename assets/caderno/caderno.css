@@ -755,3 +755,45 @@ html:not(.js) .campo-senha input{padding-right:2px}
 }
 @media (min-width:900px){ .recibo-dobra[open]>summary{display:none} .recibo-dobra[open] .recibo{margin-top:16px} }
 .ck .campo.erro .ajuda{color:var(--texto2);font-weight:400}
+
+/* ---------- institucionais, validar certificado e erro ---------- */
+.migalha{display:flex;flex-wrap:wrap;gap:8px;font-size:13.5px;line-height:var(--pauta-px);color:var(--texto2)}
+.migalha a{color:var(--tinta);font-weight:600;text-underline-offset:4px}
+.migalha a:hover{text-decoration-thickness:2px}
+.instit .t1{margin-top:8px}
+.instit .lead{margin-top:16px}
+.instit-texto{margin-top:var(--pauta-px);max-width:62ch;overflow-wrap:anywhere}
+.instit-texto p,.instit-texto li{line-height:var(--pauta-px)}
+.instit-texto h1,.instit-texto h4,.instit-texto h5{font-size:inherit;line-height:var(--pauta-px)}
+.instit-texto h4,.instit-texto h5{font-weight:600}
+.instit-texto img,.instit-texto video{height:auto;max-width:100%}
+.instit-texto table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse}
+.instit-texto th,.instit-texto td{padding:0 12px 0 0;text-align:left;vertical-align:top}
+.instit-texto blockquote{border-left:3px solid var(--tinta);padding-left:16px;color:var(--texto2)}
+.instit-mapa{margin-top:var(--pauta-px);max-width:62ch;background:var(--papel);padding:8px;box-shadow:var(--sombra-papel);transform:rotate(-.4deg)}
+.instit-mapa iframe{display:block;width:100%;height:352px;border:0}
+.instit-mapa-link{margin-top:16px;line-height:var(--pauta-px)}
+
+.cert .selo{margin-bottom:12px}
+.cert .lead{margin-top:16px}
+.cert-form,.cert-aviso{max-width:460px}
+.cert-aviso{margin-top:32px}
+.cert-ajuda{max-width:460px;margin-top:16px;font-size:13px;line-height:1.5;color:var(--texto2)}
+.cert-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:28px}
+.cert-folha{position:relative;max-width:460px;margin-top:32px;padding:26px 20px 28px;background:#fff;box-shadow:var(--sombra-papel);transform:rotate(-.5deg)}
+.cert-folha .t2{color:var(--verde)}
+.cert-resultado p{margin-top:6px;color:var(--texto2);font-size:14.5px}
+.cert-folha .ficha-linhas dd{font-weight:600;text-align:right;overflow-wrap:anywhere}
+.cert-folha .carimbo{display:block;width:max-content;margin:24px 0 0 auto;padding:9px 14px;font-size:12px;transform:rotate(-8deg);background:rgba(255,255,255,.7)}
+
+.erro-pag{padding-bottom:40px}
+.erro-sombra{max-width:560px;filter:drop-shadow(0 12px 14px rgba(34,16,74,.22))}
+.erro-folha{position:relative;background:var(--papel);padding:36px 24px 78px;transform:rotate(-.8deg);
+  background-image:repeating-linear-gradient(180deg,transparent 0 31px,var(--pauta) 31px 32px);
+  clip-path:polygon(0 0,100% 0,100% 94%,96% 97%,92% 93%,88% 98%,84% 94%,79% 99%,75% 95%,70% 98%,66% 93%,61% 97%,56% 94%,52% 99%,47% 95%,42% 98%,37% 93%,33% 97%,28% 94%,23% 99%,19% 95%,14% 98%,9% 94%,5% 98%,0 94%)}
+.erro-folha .t1{font-size:clamp(36px,9vw,58px)}
+.erro-folha .t3{margin-top:16px;color:var(--texto2)}
+.erro-folha .lead{margin-top:16px}
+.erro-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:28px}
+.erro-nota{position:absolute;right:22px;bottom:30px;transform:rotate(-4deg);font-size:18px}
+@media (min-width:900px){ .erro-folha{padding:48px 44px 88px} }

@@ -220,10 +220,10 @@
 **Interfaces:**
 - Consumes: `institTitulo`, `institResumo`, `institHtml` (já sanitizado — renderizar como a V2 faz), `institMapEmbedUrl`, `institMapLinkUrl`, `institBreadcrumb`; `certificado`, `codigo`, `cpf`, `erro`; dados de `V2ErrorPage`. `carimbo.php`.
 
-- [ ] 11.1 Trocar a renderização por `TemaPublico::view(...)` nos três pontos.
-- [ ] 11.2 Institucional com texto longo alinhado à pauta (`line-height` múltiplo de 32 px no corpo); validar certificado com campo "escrever na linha" e resultado com carimbo verde "VÁLIDO" ou aviso de não encontrado, mesmos campos da V2; erro "Esta página foi arrancada do caderno." com borda rasgada (CSS `clip-path`), código de status preservado e links de volta.
-- [ ] 11.3 Verificar: `/v2/quem-somos` com página cadastrada na fixture, `/v2/rota-que-nao-existe` → 404 com página do tema, validação de certificado com código inexistente; `php -l`.
-- [ ] 11.4 Commit "Institucionais, certificado e erro no tema caderno".
+- [x] 11.1 Trocar a renderização por `TemaPublico::view(...)` nos três pontos.
+- [x] 11.2 Institucional com texto longo alinhado à pauta (`line-height` múltiplo de 32 px no corpo); validar certificado com campo "escrever na linha" e resultado com carimbo verde "VÁLIDO" ou aviso de não encontrado, mesmos campos da V2; erro "Esta página foi arrancada do caderno." com borda rasgada (CSS `clip-path`), código de status preservado e links de volta.
+- [x] 11.3 Verificar: `/v2/quem-somos` com página cadastrada na fixture, `/v2/rota-que-nao-existe` → 404 com página do tema, validação de certificado com código inexistente; `php -l`.
+- [x] 11.4 Commit "Institucionais, certificado e erro no tema caderno".
 
 ## 12. Smoke e paridade com a chave nos dois valores
 

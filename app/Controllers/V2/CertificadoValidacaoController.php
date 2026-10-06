@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Services\CertificadoService;
+use App\Support\TemaPublico;
 
 /**
  * Validação Pública de Certificados V2 (Fase 2.11) — casca visual V2 sobre o
@@ -156,7 +157,7 @@ class CertificadoValidacaoController extends Controller
             'erro' => is_array($erro) ? $erro : null,
         ));
 
-        return new Response(View::render('v2/certificados-validar', $data, false), (int) $status);
+        return new Response(View::render(TemaPublico::view('certificados-validar'), $data, false), (int) $status);
     }
 
     private function dadosLayout()

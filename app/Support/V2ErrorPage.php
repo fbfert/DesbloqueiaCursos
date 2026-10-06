@@ -68,6 +68,6 @@ class V2ErrorPage
             'areaHref' => $areaHref,
         ), $v2Data);
 
-        return new Response(View::render('v2/erro', $data, false), $status);
+        return new Response(View::render(TemaPublico::view('erro'), $data, false), $status);
     }
 }

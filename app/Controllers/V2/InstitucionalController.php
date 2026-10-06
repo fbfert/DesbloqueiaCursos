@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Services\PaginaService;
+use App\Support\TemaPublico;
 use App\Support\V2ErrorPage;
 use App\Support\V2InstitucionalContent;
 use App\Support\V2Nav;
@@ -141,7 +142,7 @@ class InstitucionalController extends Controller
             'institMapLinkUrl' => $conteudo['mapLinkUrl'],
         ));
 
-        return new Response(View::render('v2/institucional', $data, false));
+        return new Response(View::render(TemaPublico::view('institucional'), $data, false));
     }
 
     private function dadosLayout()
