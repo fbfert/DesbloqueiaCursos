@@ -134,7 +134,7 @@ button.link{border:0;background:none;cursor:pointer;font-size:inherit}
   border-bottom:2px solid var(--violeta);padding:6px 2px;outline:none;min-height:44px;-webkit-appearance:none;appearance:none}
 .campo textarea{min-height:96px;resize:vertical;line-height:var(--pauta-px);background:repeating-linear-gradient(180deg,transparent 0 31px,var(--pauta) 31px 32px)}
 .campo select{padding-right:28px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322104A' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9.5c2 1.9 4 3.9 6 5.8 2-1.9 4-3.9 6-5.9'/%3E%3C/svg%3E") right 2px center/18px no-repeat}
-.campo input::placeholder,.campo textarea::placeholder{color:var(--apagado);font-weight:400}
+.campo input::placeholder,.campo textarea::placeholder{color:var(--texto2);font-weight:400}
 .campo input:focus,.campo select:focus,.campo textarea:focus{border-bottom-color:var(--tinta);background-color:rgba(31,63,168,.05)}
 .campo input:focus-visible,.campo select:focus-visible,.campo textarea:focus-visible{outline:none;box-shadow:0 2px 0 var(--tinta)}
 .campo .ajuda{font-size:12.5px;color:var(--texto2);margin-top:6px}
