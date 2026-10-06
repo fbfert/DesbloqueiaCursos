@@ -26,8 +26,11 @@ $continuarUrl = isset($continuarPagamentoUrl) ? (string) $continuarPagamentoUrl 
 $itens = isset($pedido['itens']) && is_array($pedido['itens']) ? $pedido['itens'] : array();
 $participantes = isset($pedido['participantes']) && is_array($pedido['participantes']) ? $pedido['participantes'] : array();
 $slotCupom = isset($slotCupom) ? (string) $slotCupom : '';
+// Status em que o backend sempre recusa cupom: mesma lista fixa de
+// CupomService::pedidoStatusBloqueadoParaCupom (cancelado, reembolsado, expirado).
+$cupomStatusBloqueado = in_array($statusNorm, array('cancelado', 'reembolsado', 'expirado'), true);
 // Campo de cupom (POST /v2/checkout/cupom): só com o pedido ainda aberto para pagamento.
-if ($slotCupom === '' && empty($comprovanteAguardandoAprovacao) && empty($pedidoPagoOuAprovado)) {
+if ($slotCupom === '' && !$cupomStatusBloqueado && empty($comprovanteAguardandoAprovacao) && empty($pedidoPagoOuAprovado)) {
     $cupomErro = isset($errors['cupom_codigo']) && !is_array($errors['cupom_codigo']) ? caderno_ck_erro($errors['cupom_codigo'])[0] : '';
     $cupomAplicado = isset($pedido['cupom']) && is_array($pedido['cupom']) ? $pedido['cupom'] : array();
     $cupomDesc = (float) ($pedido['desconto_total'] ?? 0);
