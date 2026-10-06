@@ -17,8 +17,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && !empty($_GET)) {
     \App\Support\OrigemTrafego::capturarDeQuery($_GET);
 }
 
+\App\Core\ErrorHandler::register((require BASE_PATH . '/config/app.php')['debug']);
+
 // Previa do tema publico: ?tema=caderno|v2 so vale para quem tem conteudo.gerenciar.
-// So consulta o banco quando o parametro existe.
+// So consulta o banco quando o parametro existe. Fica depois do ErrorHandler para
+// que uma falha de banco/RBAC aqui passe pelo tratamento de erro padrao.
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['tema'])) {
     \App\Support\TemaPublico::aplicarPrevia(
         is_string($_GET['tema']) ? $_GET['tema'] : null,
@@ -28,7 +31,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['tema'])) {
         }
     );
 }
-\App\Core\ErrorHandler::register((require BASE_PATH . '/config/app.php')['debug']);
 
 $app = new \App\Core\App(BASE_PATH);
 
