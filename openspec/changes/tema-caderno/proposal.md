@@ -12,12 +12,13 @@ O site público (V2) funciona, mas tem cara de template genérico — fundo bran
 - Sistema de movimento nativo (Web Animations API, View Transitions, IntersectionObserver), sem biblioteca externa: um momento orquestrado por página, transição "a foto vira capa" entre catálogo e curso, modo leve automático e respeito a movimento reduzido.
 - A home deixa de listar o catálogo completo: abertura com a trilha, estante de categorias, até 6 cursos em destaque, "o que você leva", ranking dos mais procurados e chamada final.
 - Fontes e ícones hospedados no próprio servidor (sem Google Fonts e sem Tabler `@latest` por CDN nas páginas do tema).
+- **Campo de cupom no resumo do pedido** (a V2 hoje só exibe cupom já aplicado): rota nova `POST /v2/checkout/cupom` que reaproveita a aplicação de cupom existente e mantém o aluno no tema; mensagens desse caminho passam a ter acentuação correta.
 
 **Fora de escopo:**
 - Área do aluno, aula, quiz, atividade e minha conta — continuam na V2 nesta fase (próxima fase do redesign).
 - Admin/backoffice e área do professor/revisor.
 - Troca das capas dos cursos (permanecem as atuais por decisão do produto).
-- Regras de negócio, rotas, controllers além da linha de seleção de view, models, banco e gateway de pagamento.
+- Regras de negócio, models, banco e gateway de pagamento. Em controllers, só a linha de seleção de view e a ação fina de cupom V2.
 - Remoção das views V2 das páginas migradas — só depois que todo o site público estiver no tema.
 - GSAP ou qualquer biblioteca de animação.
 
@@ -32,7 +33,7 @@ O site público (V2) funciona, mas tem cara de template genérico — fundo bran
 ## Impact
 
 - **Código novo:** `app/Support/TemaPublico.php` (seletor), `resources/views/caderno/` (layout, partials, páginas), `assets/caderno/` (CSS, JS, fontes, sprite de ícones).
-- **Código alterado:** uma linha de seleção de view nos controllers V2 do escopo (`Home`, `Catalogo`, `Categorias`, `Curso`, `Institucional`, `CertificadoValidacao`, `Login` — inclusive a escolha pós-login —, `Cadastro`, `RecuperarSenha`), em `App\Support\V2ErrorPage` e em `CheckoutController::renderCheckout()`; `config/app.php` (chave); `.env.example`; `tests/Smoke/rotas.php`; testes unitários novos.
+- **Código alterado:** uma linha de seleção de view nos controllers V2 do escopo (`Home`, `Catalogo`, `Categorias`, `Curso`, `Institucional`, `CertificadoValidacao`, `Login` — inclusive a escolha pós-login —, `Cadastro`, `RecuperarSenha`), em `App\Support\V2ErrorPage` e em `CheckoutController::renderCheckout()`; `CheckoutController::aplicarCupomV2()` (novo) e rota `POST /v2/checkout/cupom` em `routes/web.php`; acentuação das mensagens de aplicação de cupom em `PedidoService` e `CupomService`; `config/app.php` (chave); `.env.example`; `tests/Smoke/rotas.php`; testes unitários novos.
 - **Banco:** nenhuma migration.
 - **Produção:** deploy com `TEMA_PUBLICO=v2` (nada muda para o aluno); validação pela prévia de administrador; virada para `caderno` com aprovação do produto. Rollback: `TEMA_PUBLICO=v2`.
 - **Dependências:** nenhuma nova. Fontes Instrument Serif, Geist e Kalam (licença SIL OFL) hospedadas localmente.

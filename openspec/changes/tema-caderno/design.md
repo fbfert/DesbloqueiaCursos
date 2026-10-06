@@ -109,7 +109,7 @@ Tokens (CSS custom properties):
 - **Home:** abertura (título com marca-texto, "Escolher meu curso", números, trilha + carimbo) → estante de categorias → até 6 em destaque (dados de `featuredCourses`) → "o que você leva" (ao vivo/sob demanda, simulado oficial, certificado com validação pública) → mais procurados como ranking com barras de marca-texto proporcionais a alunos (`topCourses`) → chamada final → rodapé.
 - **Catálogo:** busca como linha de caderno; categorias como divisórias de fichário (borda direita da folha ≥ 1100 px; abas roláveis no celular); "Filtrar e ordenar" em folha que sobe; grade de fotos coladas; paginação como números de página. Os filtros continuam sendo o `GET /v2/catalogo` existente (funciona sem JS); o JS só melhora (filtragem instantânea quando todos os cursos já estão na página, animação FLIP).
 - **Curso:** capa colada grande + título; ficha de inscrição (preço, turma, "Desbloquear") lateral fixa no desktop e barra fixa no celular; seções atuais com títulos sublinhados à caneta; conteúdo programático como trilha vertical; turmas como fichas pautadas; professor como assinatura.
-- **Checkout:** uma coluna no celular; checklist riscado no topo ("Etapa N de 5" no celular); resumo como recibo serrilhado (lateral no desktop, recolhível no celular); cupom aplicado exibido como cupom recortado; pagamento online quando habilitado e PIX com instruções em post-it; comprovante "grampeado" (área de envio com grampo); carimbo de comprovante em análise; mesmos formulários, campos, CSRF e endpoints atuais.
+- **Checkout:** uma coluna no celular; checklist riscado no topo ("Etapa N de 5" no celular); resumo como recibo serrilhado (lateral no desktop, recolhível no celular); campo de cupom no visual de cupom recortado (ver decisão 7); pagamento online quando habilitado e PIX com instruções em post-it; comprovante "grampeado" (área de envio com grampo); carimbo de comprovante em análise; mesmos formulários, campos, CSRF e endpoints atuais.
 - **Login, pós-login, cadastro, recuperação e redefinição de senha:** folha limpa centralizada; força da senha como marca-texto que preenche.
 - **Institucionais:** texto longo alinhado à pauta. **Validar certificado:** linha para o código + carimbo de resultado. **Erro:** "esta página foi arrancada do caderno", com borda rasgada e caminho de volta.
 - **Norminha:** mesma montagem (`v2/partials/norminha_montagem.php`), com ajustes de pele no CSS do tema.
@@ -118,9 +118,16 @@ Tokens (CSS custom properties):
 
 O banco local não tem cursos, categorias com cursos nem capas. Uma fixture SQL local (em `tests/Fixtures/`, nunca aplicada em produção) cria categorias, cursos, turmas e módulos de exemplo; as capas usam imagens de exemplo locais. A validação com dados reais acontece pela prévia de administrador em produção.
 
-## Open Questions
+### 7. Campo de cupom no checkout (decisão do produto, 06/10/2026)
 
-- **Campo de cupom no checkout.** A V2 não tem campo para digitar cupom: `checkout-resumo` só exibe o cupom já aplicado; o campo `cupom_codigo` existe apenas no checkout V1 (`resources/views/checkout/resumo.php`). O tema mantém a paridade com a V2 (exibe o cupom aplicado, no visual de "cupom recortado"). Incluir o campo de digitação é mudança funcional e fica para decisão do produto — se aprovada, entra como tarefa da etapa de checkout reaproveitando o endpoint existente.
+A V2 não tem campo para digitar cupom — `checkout-resumo` só exibe o cupom já aplicado; o campo existe apenas no checkout V1. O tema passa a oferecê-lo no resumo do pedido, no visual de "cupom recortado".
+
+- **Rota nova:** `POST /v2/checkout/cupom` com `auth.v2` (CSRF automático), em `CheckoutController::aplicarCupomV2()`, fina, no mesmo padrão de `enviarComprovanteV2()`: lê `pedido_id` e `cupom_codigo` do corpo, chama o **mesmo** `PedidoService::aplicarCupomAoPedido()` (que valida a propriedade do pedido, registra acesso negado e delega a `CupomService::aplicarAoPedido()`), e redireciona sempre para `/v2/checkout/resumo?pedido_id=N` (PRG), com flash de sucesso ou de erro em `cupom_codigo`.
+- **Por que não reaproveitar `POST /checkout/cupom`:** ele redireciona fixo para o resumo V1 (`/checkout/resumo`), o que tiraria o aluno do tema no meio do funil. Mudar o destino dele afetaria o fluxo V1, que segue no ar para rollback.
+- **Pré-preenchimento:** o campo vem com `Session::get('cupom_promocional_codigo')` quando houver (o mesmo valor que o V1 usa), entregue à view pelos dados do resumo.
+- **Quando aparece:** só enquanto o pedido aceita cupom — a view usa o mesmo critério que o backend aplica; se o backend recusar, a mensagem dele é exibida.
+- **Mensagens:** as mensagens de usuário do caminho de aplicação (`PedidoService::aplicarCupomAoPedido()` e as validações de `CupomService::aplicarAoPedido()`) hoje estão sem acentuação ("Cupom nao encontrado.", "Curso em promocao nao aceita cupom."). Elas passam a ter acentuação correta, conforme a regra editorial do projeto. O texto muda; a regra não.
+- **Sem mudança de regra de negócio, banco ou permissão.**
 
 ## Risks / Trade-offs
 

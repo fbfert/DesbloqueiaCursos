@@ -22,7 +22,7 @@ O sistema SHALL renderizar as páginas públicas do escopo com o tema definido e
 - **THEN** a página é renderizada com a view V2, sem erro
 
 ### Requirement: Mesmas rotas, dados e regras
-O tema caderno MUST usar as mesmas rotas, os mesmos dados entregues pelos controllers e as mesmas regras de negócio da V2. Nenhuma informação ou ação disponível na V2 de uma página do escopo MUST deixar de existir no tema.
+O tema caderno MUST usar as mesmas rotas, os mesmos dados entregues pelos controllers e as mesmas regras de negócio da V2; a única rota nova é a de aplicar cupom no checkout. Nenhuma informação ou ação disponível na V2 de uma página do escopo MUST deixar de existir no tema.
 
 #### Scenario: Paridade da página do curso
 - **WHEN** um curso tem turmas abertas, conteúdo programático e preço promocional
@@ -30,7 +30,34 @@ O tema caderno MUST usar as mesmas rotas, os mesmos dados entregues pelos contro
 
 #### Scenario: Paridade do checkout
 - **WHEN** o aluno percorre o checkout no tema caderno
-- **THEN** estão disponíveis compra para si, para terceiros e em lote, exibição do cupom aplicado ao pedido, pagamento online quando habilitado e PIX manual com envio de comprovante
+- **THEN** estão disponíveis compra para si, para terceiros e em lote, aplicação de cupom, pagamento online quando habilitado e PIX manual com envio de comprovante
+
+### Requirement: Aplicar cupom no checkout
+O resumo do pedido no tema SHALL oferecer um campo para o aluno digitar e aplicar um cupom ao próprio pedido, enquanto o pedido ainda aceita cupom. A aplicação MUST seguir as regras de cupom já existentes (inclusive: cupom não se aplica a curso em promoção) e MUST devolver o aluno ao resumo do pedido no tema, com o resultado em texto.
+
+#### Scenario: Cupom válido
+- **WHEN** o aluno digita um cupom ativo e elegível no resumo do pedido e aplica
+- **THEN** o aluno volta ao resumo no tema, com o cupom aplicado, o desconto e o novo total visíveis e uma mensagem de confirmação
+
+#### Scenario: Cupom inválido
+- **WHEN** o aluno aplica um código que não existe
+- **THEN** o pedido não muda e o resumo mostra, junto do campo, uma mensagem em português com acentuação correta explicando o motivo
+
+#### Scenario: Curso em promoção
+- **WHEN** o pedido contém curso em promoção e o aluno aplica um cupom
+- **THEN** o pedido não muda e o resumo informa que curso em promoção não aceita cupom
+
+#### Scenario: Cupom promocional guardado
+- **WHEN** o aluno chegou ao site por um link de cupom promocional e abre o resumo do pedido
+- **THEN** o campo de cupom já vem preenchido com aquele código
+
+#### Scenario: Pedido de outra pessoa
+- **WHEN** um usuário envia um cupom para um pedido que não é dele
+- **THEN** o pedido não muda e a tentativa é registrada como acesso negado
+
+#### Scenario: Requisição sem CSRF
+- **WHEN** chega uma aplicação de cupom sem token CSRF válido
+- **THEN** a requisição é rejeitada sem alterar o pedido
 
 ### Requirement: Prévia restrita a administradores
 O sistema SHALL permitir que um usuário com `conteudo.gerenciar` ative o tema caderno só na própria sessão, por `?tema=caderno`, e o desative por `?tema=v2`, independentemente de `TEMA_PUBLICO`. Para os demais visitantes, o parâmetro MUST ser ignorado.
