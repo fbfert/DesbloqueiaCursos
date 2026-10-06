@@ -114,11 +114,11 @@
 - Consumes: variáveis do `HomeController` V2 (`featuredCourses`, `topCourses`, `categories`, `heroStats`, `heroTitulo`, `heroSubtitulo`, `coursePalette` e as de navegação); `caderno_icone()`; `Caderno.*`.
 - Produces: `partials/foto-curso.php` espera `$curso` (mesmo formato dos itens de `featuredCourses`/`cursos` V2) e `$vtNome` opcional; emite `style="view-transition-name: capa-<id>"` na imagem e `titulo-<id>` no `<h3>`, link para a URL do curso V2. `partials/lombada.php` espera `$categoria` (formato dos itens de `categories`). `partials/carimbo.php` espera `$linhas` (array de 3 strings) e `$cor` (`laranja|verde|tinta`).
 
-- [ ] 4.1 `HomeController`: `View::render(TemaPublico::view('home'), $data, false)`.
-- [ ] 4.2 Montar `pages/home.php` conforme `home-pagina.html` e a seção 5 do design: abertura (título, marca-texto, `Escolher meu curso`, números de `heroStats`, trilha com rótulos Inscrição/Aulas/Simulado, anotação, carimbo) → estante (`categories`, com lado explicativo no desktop) → até **6** de `featuredCourses` (`array_slice`) → "O que você leva de cada curso." (3 provas fixas, texto do protótipo) → "Os mais procurados." (`topCourses` com barra proporcional ao maior número de alunos) → chamada final. Seções vazias não são renderizadas.
-- [ ] 4.3 Módulo `Caderno.pagina('home', …)`: cena da trilha (adiada até a trilha estar inteira na tela), contagem dos números, estante (`aoVer`), ranking (`aoVer`).
-- [ ] 4.4 Verificar com `.env` `TEMA_PUBLICO=caderno` e a fixture aplicada: `curl -s http://127.0.0.1:8010/ | grep -c 'data-pagina="home"'` = 1; em navegador 360 px e 1360 px a página corresponde ao protótipo aprovado; JS desativado → tudo visível; com `TEMA_PUBLICO=v2` a home é a V2. `php -l`, `node --check`.
-- [ ] 4.5 Commit "Home no tema caderno".
+- [x] 4.1 `HomeController`: `View::render(TemaPublico::view('home'), $data, false)`.
+- [x] 4.2 Montar `pages/home.php` conforme `home-pagina.html` e a seção 5 do design: abertura (título, marca-texto, `Escolher meu curso`, números de `heroStats`, trilha com rótulos Inscrição/Aulas/Simulado, anotação, carimbo) → estante (`categories`, com lado explicativo no desktop) → até **6** de `featuredCourses` (`array_slice`) → "O que você leva de cada curso." (3 provas fixas, texto do protótipo) → "Os mais procurados." (`topCourses` com barra proporcional ao maior número de alunos) → chamada final. Seções vazias não são renderizadas.
+- [x] 4.3 Módulo `Caderno.pagina('home', …)`: cena da trilha (adiada até a trilha estar inteira na tela), contagem dos números, estante (`aoVer`), ranking (`aoVer`).
+- [x] 4.4 Verificar com `.env` `TEMA_PUBLICO=caderno` e a fixture aplicada: `curl -s http://127.0.0.1:8010/ | grep -c 'data-pagina="home"'` = 1; em navegador 360 px e 1360 px a página corresponde ao protótipo aprovado; JS desativado → tudo visível; com `TEMA_PUBLICO=v2` a home é a V2. `php -l`, `node --check`.
+- [x] 4.5 Commit "Home no tema caderno".
 
 ## 5. Catálogo
 

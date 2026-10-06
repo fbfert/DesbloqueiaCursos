@@ -89,3 +89,61 @@
   revelar();
   clearTimeout(window.CADERNO_TRAVA); // iniciou com sucesso: a trava de 2,5 s do layout nao e mais necessaria
 })();
+
+/* Home: trilha da abertura (adiada ate estar inteira na tela), numeros, estante e ranking. */
+Caderno.pagina('home', function () {
+  var C = window.Caderno, leve = C.leve;
+  var hero = document.querySelector('.hero');
+  if (!hero) return;
+  void hero.offsetWidth; // estilo inicial calculado antes da troca: a transicao do marca-texto acontece
+  hero.classList.add('aberta');
+
+  C.aoVer(hero.querySelector('.numeros'), function (el) {
+    var ns = el.querySelectorAll('[data-n]');
+    for (var i = 0; i < ns.length; i++) C.contar(ns[i], leve ? 700 : 1300);
+  });
+
+  var trilha = hero.querySelector('.trilha');
+  if (trilha) {
+    // a barra inferior do celular cobre o pe da tela: "inteira" desconta a altura dela
+    var bnav = document.querySelector('.bnav'), pe = bnav ? bnav.offsetHeight : 0;
+    var r = trilha.getBoundingClientRect();
+    var base = r.top >= 0 && r.bottom <= innerHeight - pe ? 650 : 150; // ja visivel: espera o titulo assentar
+    C.aoVer(trilha, function (t) { cena(t, base); }, { threshold: 0.9, rootMargin: '0px 0px -' + pe + 'px 0px' });
+  }
+
+  function cena(t, base) {
+    var aros = t.querySelectorAll('.aro'), oks = t.querySelectorAll('.ok'), rots = t.querySelectorAll('.rotulo');
+    var dur = leve ? 1400 : 2400, passos = leve ? [560, 1080] : [900, 1700];
+    C.tracar(aros[0], { duration: 380, delay: base });
+    C.animar(rots[0], [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: base + 150 });
+    C.tracar(oks[0], { duration: 220, delay: base + 420, easing: 'ease-in' });
+    C.tracar(t.querySelector('.cam'), { duration: dur, delay: base + 380 });
+    for (var k = 0; k < 2; k++) {
+      var d = base + 380 + passos[k];
+      C.tracar(aros[k + 1], { duration: 340, delay: d - 160 });
+      C.animar(rots[k + 1], [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: d });
+      C.tracar(oks[k + 1], { duration: 220, delay: d + 240, easing: 'ease-in' });
+    }
+    var fim = base + 380 + dur;
+    C.animar(t.querySelector('.anot'), [{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: fim - 500 });
+    C.carimbar(t.querySelector('.carimbo'), fim + 80);
+    t.classList.add('em-cena'); // os quadros iniciais (fill both) ja seguram o estado oculto
+  }
+
+  if (leve) return; // modo leve: so a cena principal
+
+  C.aoVer(document.querySelector('[data-cena=estante]'), function (el) {
+    var ls = el.querySelectorAll('.lomb');
+    for (var i = 0; i < ls.length; i++) {
+      C.animar(ls[i], [{ transform: 'translateY(110%)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: i * 70, fill: 'backwards' });
+    }
+  });
+
+  C.aoVer(document.querySelector('[data-cena=ranking]'), function (el) {
+    var bs = el.querySelectorAll('.barra');
+    for (var i = 0; i < bs.length; i++) {
+      C.animar(bs[i], [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 800, delay: 150 + i * 90, easing: 'cubic-bezier(.6,0,.3,1)', fill: 'backwards' });
+    }
+  });
+});

@@ -16,7 +16,10 @@
 --       * "Oficinas de ACE": só uma turma encerrada (mesmo efeito, outro motivo);
 --       * "IA na prática": sem conteúdo programático;
 --     os demais têm conteúdo programático com 4 a 6 módulos;
---   - páginas institucionais /quem-somos e /onde-estamos publicadas.
+--   - páginas institucionais /quem-somos e /onde-estamos publicadas;
+--   - professores vinculados a 3 cursos (nome no card e assinatura na página
+--     do curso) e 5 pedidos aprovados (CAD-FIX-*) que alimentam o ranking
+--     "Os mais procurados" da home.
 --
 -- Capas: o CursoService só aceita thumbnail em /assets/uploads/thumbnails/ (e o
 -- arquivo precisa existir). As imagens de exemplo ficam versionadas em
@@ -211,3 +214,59 @@ INSERT INTO paginas (titulo, slug, rota, resumo, conteudo_html, status, ordem, p
    'publicada', 20, NOW(), NOW(), NOW(), NULL)
 ON DUPLICATE KEY UPDATE titulo = VALUES(titulo), resumo = VALUES(resumo), conteudo_html = VALUES(conteudo_html),
   status = 'publicada', publicada_em = COALESCE(publicada_em, NOW()), deleted_at = NULL, updated_at = NOW();
+
+-- ---------------------------------------------------------------------------
+-- Professores vinculados (curso_pessoas_vinculadas, tipo 'professor'): viram
+-- o nome no card e a assinatura na página do curso. Os cursos de PND ficam
+-- sem professor de propósito (o card mostra as turmas no lugar).
+-- Idempotente: apaga e recria os vínculos dos cursos da fixture.
+-- ---------------------------------------------------------------------------
+DELETE FROM curso_pessoas_vinculadas
+WHERE curso_evento_id IN (SELECT id FROM cursos_eventos WHERE slug LIKE 'caderno-%');
+
+INSERT INTO curso_pessoas_vinculadas (curso_evento_id, usuario_id, nome, tipo_pessoa, ordem, status, created_at, updated_at, deleted_at)
+SELECT ce.id, NULL, p.nome, 'professor', p.ordem, 'ativo', NOW(), NOW(), NULL
+FROM (
+  SELECT 'caderno-oab-1-fase-completo' AS curso, 'Felipe Boeck Fert' AS nome, 1 AS ordem
+  UNION ALL SELECT 'caderno-ia-na-pratica-estudos', 'Felipe Boeck Fert', 1
+  UNION ALL SELECT 'caderno-cerebro-infantil-neurociencia', 'Norma Rodrigues dos Santos', 1
+) p
+INNER JOIN cursos_eventos ce ON ce.slug = p.curso;
+
+-- ---------------------------------------------------------------------------
+-- Pedidos aprovados para o ranking "Os mais procurados" da home
+-- (CursoEvento::topPublicBySales soma pedido_itens.quantidade de pedidos
+-- aprovados/pagos de cursos com turma aberta). Um pedido em lote por curso:
+--   Elaboração de Projeto de ACE 60, TCC sem Medo 37, OAB 14,
+--   PND · Pedagogia 6, cérebro infantil 2.
+-- Idempotente: pedidos pelo código (CAD-FIX-*); itens apagados e recriados.
+-- ---------------------------------------------------------------------------
+INSERT INTO pedidos (codigo, tipo_pedido, status, aprovado_em, subtotal, desconto_total, acrescimo_total, total, canal_origem, created_at, updated_at, deleted_at)
+SELECT v.codigo, 'lote', 'aprovado', NOW(), v.qtd * ce.valor_promocional, 0, 0, v.qtd * ce.valor_promocional, 'fixture-caderno', NOW(), NOW(), NULL
+FROM (
+  SELECT 'caderno-elaboracao-projeto-ace' AS curso, 'CAD-FIX-ACE' AS codigo, 60 AS qtd
+  UNION ALL SELECT 'caderno-tcc-sem-medo', 'CAD-FIX-TCC', 37
+  UNION ALL SELECT 'caderno-oab-1-fase-completo', 'CAD-FIX-OAB', 14
+  UNION ALL SELECT 'caderno-pnd-pedagogia', 'CAD-FIX-PND-PED', 6
+  UNION ALL SELECT 'caderno-cerebro-infantil-neurociencia', 'CAD-FIX-NEURO', 2
+) v
+INNER JOIN cursos_eventos ce ON ce.slug = v.curso
+ON DUPLICATE KEY UPDATE status = 'aprovado', subtotal = VALUES(subtotal), total = VALUES(total), deleted_at = NULL, updated_at = NOW();
+
+DELETE pi FROM pedido_itens pi
+INNER JOIN pedidos p ON p.id = pi.pedido_id
+WHERE p.codigo LIKE 'CAD-FIX-%';
+
+INSERT INTO pedido_itens (pedido_id, curso_evento_id, turma_id, quantidade, valor_unitario, valor_total, status, created_at, updated_at, deleted_at)
+SELECT p.id, ce.id,
+       (SELECT t.id FROM turmas t WHERE t.curso_evento_id = ce.id AND t.status = 'aberta' AND t.deleted_at IS NULL ORDER BY t.id LIMIT 1),
+       v.qtd, ce.valor_promocional, v.qtd * ce.valor_promocional, 'ativo', NOW(), NOW(), NULL
+FROM (
+  SELECT 'caderno-elaboracao-projeto-ace' AS curso, 'CAD-FIX-ACE' AS codigo, 60 AS qtd
+  UNION ALL SELECT 'caderno-tcc-sem-medo', 'CAD-FIX-TCC', 37
+  UNION ALL SELECT 'caderno-oab-1-fase-completo', 'CAD-FIX-OAB', 14
+  UNION ALL SELECT 'caderno-pnd-pedagogia', 'CAD-FIX-PND-PED', 6
+  UNION ALL SELECT 'caderno-cerebro-infantil-neurociencia', 'CAD-FIX-NEURO', 2
+) v
+INNER JOIN cursos_eventos ce ON ce.slug = v.curso
+INNER JOIN pedidos p ON p.codigo = v.codigo;

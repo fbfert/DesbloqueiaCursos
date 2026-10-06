@@ -10,6 +10,7 @@ use App\Core\View;
 use App\Services\CategoriaService;
 use App\Services\ConfiguracaoGlobalService;
 use App\Services\CursoService;
+use App\Support\TemaPublico;
 
 class HomeController extends Controller
 {
@@ -78,7 +79,7 @@ class HomeController extends Controller
             'success' => Session::pullFlash('success'),
         );
 
-        return new Response(View::render('v2/home', $data, false));
+        return new Response(View::render(TemaPublico::view('home'), $data, false));
     }
 
     private function normalizarCursos(array $cursos, $ehTop = false)
