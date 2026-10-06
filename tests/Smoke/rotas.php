@@ -22,7 +22,7 @@
  * Ver tests/Smoke/README.md para como adicionar uma rota.
  */
 
-return array(
+$rotas = array(
 
     // Presente em toda página HTML do portal, nos dois layouts (legado e V2).
     'marcador_padrao' => '<html lang="pt-BR"',
@@ -36,9 +36,6 @@ return array(
         array('path' => '/v2/catalogo',                 'nome' => 'Catálogo V2'),
         array('path' => '/v2/categorias',               'nome' => 'Categorias V2'),
         array('path' => '/v2/curso',                    'nome' => 'Curso V2'),
-        // Com curso real (fixture tests/Fixtures/tema_caderno_vitrine.sql). Em base sem
-        // esse curso a página cai no catálogo; se o id não existir, ajuste ou remova.
-        array('path' => '/v2/curso/?curso_id=15',       'nome' => 'Curso V2 com curso_id (fixture)'),
         array('path' => '/v2/catalogo/?q=caderno',      'nome' => 'Catálogo V2 com busca'),
         array('path' => '/v2/login',                    'nome' => 'Login V2'),
         array('path' => '/v2/cadastro',                 'nome' => 'Cadastro V2'),
@@ -121,3 +118,17 @@ return array(
         'sucesso_nao_contem' => '/v2/login',
     ),
 );
+
+// Ficha de curso com curso real: o id vem de SMOKE_CURSO_ID (ex.: 15 na fixture
+// tests/Fixtures/tema_caderno_vitrine.sql; em produção, o id de um curso publicado).
+// Sem a variável, a rota é pulada — nenhum id fixo, para não gerar FAIL falso em
+// base que não tenha aquele curso.
+$smokeCursoId = (int) getenv('SMOKE_CURSO_ID');
+if ($smokeCursoId > 0) {
+    $rotas['anonimo'][] = array(
+        'path' => '/v2/curso/?curso_id=' . $smokeCursoId,
+        'nome' => 'Curso V2 com curso_id=' . $smokeCursoId . ' (SMOKE_CURSO_ID)',
+    );
+}
+
+return $rotas;

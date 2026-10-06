@@ -43,7 +43,7 @@ pipeline ou em `&&`.
 
 ## O que cada modo cobre
 
-**Anônimo — rotas públicas.** 27 rotas (home V1 e V2, catálogo, categorias, curso, login, cadastro,
+**Anônimo — rotas públicas.** 26 rotas (27 com `SMOKE_CURSO_ID`; home V1 e V2, catálogo, categorias, curso, login, cadastro,
 recuperação de senha, validação de certificado, institucionais, sitemap, robots). Verifica status
 HTTP e a presença de um marcador estrutural do layout.
 
@@ -185,9 +185,12 @@ docker compose -f docker/local/compose.yml exec -T app php tests/Smoke/smoke.php
 
 Notas:
 
-- A rota `/v2/curso/?curso_id=15` usa o curso da fixture `tests/Fixtures/tema_caderno_vitrine.sql`
-  (também é ela que dá corpo a `/v2/quem-somos` e `/v2/onde-estamos`). Sem a fixture, o curso 15 pode
-  não existir; ajuste o id.
+- A ficha de curso com curso real (`/v2/curso/?curso_id=N`) só entra quando `SMOKE_CURSO_ID=N` está
+  definida; sem ela, a rota é pulada (nenhum id fixo, para não dar FAIL falso numa base sem aquele
+  curso). No ambiente local, a fixture `tests/Fixtures/tema_caderno_vitrine.sql` cria o curso 15 (e
+  dá corpo a `/v2/quem-somos` e `/v2/onde-estamos`):
+  `docker compose -f docker/local/compose.yml exec -T -e SMOKE_CURSO_ID=15 app php tests/Smoke/smoke.php http://127.0.0.1:8010`.
+  Em produção, use o id de um curso publicado.
 - Os passos do checkout (`/v2/checkout/*`) entram em **protegidas**: sem sessão, terminam em `/v2/login`.
   O conteúdo deles logado não é coberto pelo smoke (que não faz POST de pedido); a paridade de links e
   campos entre os dois temas foi conferida à parte, com cookie de login e `pedido_id` de um pedido
