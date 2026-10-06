@@ -116,8 +116,8 @@ Caderno.pagina('home', function () {
     // da tela, entao a area util desconta a altura dela. Em tela baixa (celular deitado)
     // a trilha nao cabe: basta ocupar 3/4 da area util. Se a pessoa rolar alem
     // da trilha, a cena roda do mesmo jeito. Sem rolagem, um relogio garante a cena:
-    // trilha quase inteira (3/4) em 1,5 s; qualquer parte na tela em 2,5 s (teto da spec
-    // para estados ocultos, R11). Trilha toda
+    // trilha quase inteira (3/4) 1 s antes do prazo; qualquer parte na tela no prazo de
+    // 2,5 s (teto da spec para estados ocultos, R11). Trilha toda
     // abaixo da dobra continua esperando a rolagem: a trilha nunca fica oculta na tela.
     var bnav = document.querySelector('.bnav'), base = 0, pedido = 0, feito = false, relogio = 0;
     var medir = function () {
@@ -147,9 +147,14 @@ Caderno.pagina('home', function () {
     var agendar = function () { if (!pedido) pedido = requestAnimationFrame(verificar); };
     addEventListener('scroll', agendar, { passive: true });
     addEventListener('resize', agendar);
+    // Prazo de 2,5 s contado como a trava do <head>: do inicio da resposta (o gate
+    // inline roda logo depois), nao de quando este arquivo chegou. Sem a Navigation
+    // Timing, conta a partir de agora.
+    var nav = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+    var prazo = Math.max(0, 2500 - (nav ? Math.max(0, performance.now() - nav.responseStart) : 0));
     relogio = setTimeout(function () {
-      if (!forcar(0.75)) relogio = setTimeout(function () { forcar(0); }, 1000);
-    }, 1500);
+      if (!forcar(0.75)) relogio = setTimeout(function () { forcar(0); }, Math.min(1000, prazo));
+    }, Math.max(0, prazo - 1000));
     verificar();
   }
 
