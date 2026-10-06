@@ -1148,7 +1148,7 @@ class CupomService
         }
 
         if ($cupom['tipo'] !== 'publico' && empty($relacoes)) {
-            $errors[] = 'Cupom privado sem relacoes configuradas.';
+            $errors[] = 'Cupom privado sem relações configuradas.';
         }
 
         return $errors;
