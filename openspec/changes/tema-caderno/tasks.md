@@ -230,9 +230,9 @@
 **Files:**
 - Modify: `tests/Smoke/rotas.php` (rotas do escopo que faltarem, inclusive `/v2/categorias` e `/v2/certificados/validar`), `tests/Smoke/README.md` (como rodar com `TEMA_PUBLICO` nos dois valores)
 
-- [ ] 12.1 Rodar `php tests/Smoke/smoke.php http://127.0.0.1:8010` no container com `TEMA_PUBLICO=v2` e depois com `TEMA_PUBLICO=caderno` (editar o `.env` local) — esperado nos dois: mesmas rotas PASS (as 2 falhas conhecidas de páginas sem dados em produção não contam se a fixture cobrir `quem-somos`), nenhuma página com erro PHP, guarda de layout da Norminha passando.
-- [ ] 12.2 Paridade: para home, catálogo, curso e resumo do checkout, comparar com `TEMA_PUBLICO` nos dois valores que todo link de ação (`href` de cursos/turmas/inscrição, `action` dos forms, `name` dos campos) existe nas duas versões — script descartável com `curl` + `grep -o 'action="[^"]*"\|name="[^"]*"'` e `diff`; diferenças só onde o design prevê (campo de cupom).
-- [ ] 12.3 Commit "Smoke do tema caderno nos dois valores da chave".
+- [x] 12.1 Rodar `php tests/Smoke/smoke.php http://127.0.0.1:8010` no container com `TEMA_PUBLICO=v2` e depois com `TEMA_PUBLICO=caderno` (editar o `.env` local) — esperado nos dois: mesmas rotas PASS (as 2 falhas conhecidas de páginas sem dados em produção não contam se a fixture cobrir `quem-somos`), nenhuma página com erro PHP, guarda de layout da Norminha passando.
+- [x] 12.2 Paridade: para home, catálogo, curso e resumo do checkout, comparar com `TEMA_PUBLICO` nos dois valores que todo link de ação (`href` de cursos/turmas/inscrição, `action` dos forms, `name` dos campos) existe nas duas versões — script descartável com `curl` + `grep -o 'action="[^"]*"\|name="[^"]*"'` e `diff`; diferenças só onde o design prevê (campo de cupom).
+- [x] 12.3 Commit "Smoke do tema caderno nos dois valores da chave".
 
 ## 13. Desempenho, acessibilidade e entrega
 

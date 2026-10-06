@@ -36,11 +36,17 @@ return array(
         array('path' => '/v2/catalogo',                 'nome' => 'Catálogo V2'),
         array('path' => '/v2/categorias',               'nome' => 'Categorias V2'),
         array('path' => '/v2/curso',                    'nome' => 'Curso V2'),
+        // Com curso real (fixture tests/Fixtures/tema_caderno_vitrine.sql). Em base sem
+        // esse curso a página cai no catálogo; se o id não existir, ajuste ou remova.
+        array('path' => '/v2/curso/?curso_id=15',       'nome' => 'Curso V2 com curso_id (fixture)'),
+        array('path' => '/v2/catalogo/?q=caderno',      'nome' => 'Catálogo V2 com busca'),
         array('path' => '/v2/login',                    'nome' => 'Login V2'),
         array('path' => '/v2/cadastro',                 'nome' => 'Cadastro V2'),
         array('path' => '/v2/recuperar-senha',          'nome' => 'Recuperar senha V2'),
         array('path' => '/v2/certificados/validar',     'nome' => 'Validar certificado V2'),
-        array('path' => '/v2/quem-somos',               'nome' => 'Quem somos V2'),
+        // Página de erro do tema (404 com layout).
+        array('path' => '/v2/pagina-que-nao-existe',    'nome' => 'Erro 404 V2', 'status' => 404),
+        array('path' => '/v2/quem-somos',              'nome' => 'Quem somos V2'),
         array('path' => '/v2/termos-de-uso',            'nome' => 'Termos de uso V2'),
         array('path' => '/v2/politica-de-privacidade',  'nome' => 'Política de privacidade V2'),
         array('path' => '/v2/onde-estamos',             'nome' => 'Onde estamos V2'),
@@ -78,6 +84,12 @@ return array(
         array('path' => '/v2/atividade',   'nome' => 'Atividade V2',       'destino' => '/v2/login'),
         array('path' => '/v2/minha-conta', 'nome' => 'Minha conta V2',     'destino' => '/v2/login'),
         array('path' => '/v2/pos-login',   'nome' => 'Pós-login V2',       'destino' => '/v2/login'),
+        // Checkout do tema caderno/V2: sem sessão, todo passo termina no login.
+        array('path' => '/v2/checkout/inscricao',     'nome' => 'Checkout inscrição V2',     'destino' => '/v2/login'),
+        array('path' => '/v2/checkout/participantes', 'nome' => 'Checkout participantes V2', 'destino' => '/v2/login'),
+        array('path' => '/v2/checkout/resumo',        'nome' => 'Checkout resumo V2',        'destino' => '/v2/login'),
+        array('path' => '/v2/checkout/pagamento',     'nome' => 'Checkout pagamento V2',     'destino' => '/v2/login'),
+        array('path' => '/v2/checkout/comprovante',   'nome' => 'Checkout comprovante V2',   'destino' => '/v2/login'),
         array('path' => '/area-curso',     'nome' => 'Área do curso (legado)', 'destino' => '/login'),
         array('path' => '/meus-cursos',    'nome' => 'Meus cursos (legado)',   'destino' => '/login'),
         array('path' => '/minha-conta',    'nome' => 'Minha conta (legado)',   'destino' => '/login'),

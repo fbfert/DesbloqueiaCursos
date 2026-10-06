@@ -43,11 +43,11 @@ pipeline ou em `&&`.
 
 ## O que cada modo cobre
 
-**Anônimo — rotas públicas.** 24 rotas (home V1 e V2, catálogo, categorias, curso, login, cadastro,
+**Anônimo — rotas públicas.** 27 rotas (home V1 e V2, catálogo, categorias, curso, login, cadastro,
 recuperação de senha, validação de certificado, institucionais, sitemap, robots). Verifica status
 HTTP e a presença de um marcador estrutural do layout.
 
-**Anônimo — rotas protegidas.** 10 rotas (`/v2/aluno`, `/v2/aula`, `/v2/quiz`, `/v2/atividade`,
+**Anônimo — rotas protegidas.** 16 rotas (`/v2/aluno`, `/v2/aula`, `/v2/quiz`, `/v2/atividade`,
 `/v2/minha-conta`, `/v2/pos-login`, `/area-curso`, `/meus-cursos`, `/minha-conta`, `/pedidos`).
 **Isto é teste de segurança, não de disponibilidade:** um HTTP 200 aqui significa conteúdo de aluno
 exposto a visitante. A suíte exige que a cadeia termine no login correto — `/v2/login` para o
@@ -169,3 +169,29 @@ componente duplicado · CSS/JS duplicado · erro de PHP no corpo · rota protegi
 | Rota | Problema |
 |---|---|
 | `/v2/como-funciona-a-sala-virtual` | Rota registrada em `routes/web.php:118` e anunciada no `sitemap.xml`, mas a página está excluída em `paginas` (`deleted_at` preenchido). Retorna 404 — encontrado pelo smoke na primeira execução. Corrigir: republicar a página no admin **ou** remover a rota, a entrada do sitemap (`SitemapController.php:37`) e a constante `V2Nav::COMO_FUNCIONA_SALA`. |
+
+## Tema público (`TEMA_PUBLICO=caderno|v2`)
+
+O tema "caderno" é escolhido pela chave `TEMA_PUBLICO` do `.env` (lida a cada requisição). A suíte
+precisa passar **com as mesmas rotas PASS nos dois valores**:
+
+```bash
+# local, dentro do container (o app responde em 127.0.0.1:8010)
+sed -i 's/^TEMA_PUBLICO=.*/TEMA_PUBLICO=v2/' .env
+docker compose -f docker/local/compose.yml exec -T app php tests/Smoke/smoke.php http://127.0.0.1:8010
+sed -i 's/^TEMA_PUBLICO=.*/TEMA_PUBLICO=caderno/' .env
+docker compose -f docker/local/compose.yml exec -T app php tests/Smoke/smoke.php http://127.0.0.1:8010
+```
+
+Notas:
+
+- A rota `/v2/curso/?curso_id=15` usa o curso da fixture `tests/Fixtures/tema_caderno_vitrine.sql`
+  (também é ela que dá corpo a `/v2/quem-somos` e `/v2/onde-estamos`). Sem a fixture, o curso 15 pode
+  não existir; ajuste o id.
+- Os passos do checkout (`/v2/checkout/*`) entram em **protegidas**: sem sessão, terminam em `/v2/login`.
+  O conteúdo deles logado não é coberto pelo smoke (que não faz POST de pedido); a paridade de links e
+  campos entre os dois temas foi conferida à parte, com cookie de login e `pedido_id` de um pedido
+  `aguardando_pagamento` local.
+- A guarda "folha de estilo base" aceita `app.css` (legado), `v2-main.css` (V2) ou `caderno.css`
+  (tema). Com a chave em `caderno`, as páginas do escopo do tema trazem só `caderno.css`.
+- Deixe a chave em `caderno` ao terminar, para o ambiente local voltar ao estado de desenvolvimento.

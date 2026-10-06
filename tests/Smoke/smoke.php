@@ -315,12 +315,13 @@ function smoke_guarda_layout($corpo, $modoNorminha)
     // aparencia.
     //
     // Um documento HTML completo tem que trazer a folha do seu layout: app.css
-    // no legado, v2-main.css na V2. Sem nenhuma das duas, chegou sem estilo.
+    // no legado, v2-main.css na V2, caderno.css no tema caderno. Sem nenhuma delas, chegou sem estilo.
     if (stripos($corpo, '<html') !== false && stripos($corpo, '</body>') !== false) {
         $temBase = $contar('/assets/css/app.css') > 0
-            || $contar('/v2/assets/css/v2-main.css') > 0;
+            || $contar('/v2/assets/css/v2-main.css') > 0
+            || $contar('/assets/caderno/caderno.css') > 0;
         if (!$temBase) {
-            $falhas[] = 'pagina sem folha de estilo base (nem app.css nem v2-main.css)';
+            $falhas[] = 'pagina sem folha de estilo base (nem app.css, v2-main.css nem caderno.css)';
         }
     }
 
