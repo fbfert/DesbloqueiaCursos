@@ -187,11 +187,11 @@
 - Consumes: os dados de cada etapa que `renderCheckout()` já monta (ler `resources/views/v2/pages/checkout-*.php` e `v2/checkout/*.php`); `carimbo.php` (tarefa 4).
 - Produces: `partials/checklist-checkout.php` espera `$etapaAtual` ∈ {`inscricao`,`participantes`,`resumo`,`pagamento`,`comprovante`}; `partials/recibo.php` espera `$pedido` (formato do resumo V2) e `$slotCupom` (HTML opcional, preenchido na tarefa 10).
 
-- [ ] 9.1 `renderCheckout()`: `View::render(TemaPublico::view('checkout/' . $nome), $data, false)`.
-- [ ] 9.2 Etapas com os **mesmos forms, `name`s, ações, CSRF e campos ocultos da V2**: checklist riscado (no celular "Etapa N de 5"); inscrição (pagador, compra para mim/terceiros/lote, quantidade); participantes; resumo com recibo serrilhado; pagamento (online quando habilitado + PIX com instruções em post-it e botão copiar chave); comprovante (área de envio "grampeada", estados enviar/reenviar/em análise/pago da V2); comprovante enviado com carimbo "COMPROVANTE EM ANÁLISE".
-- [ ] 9.3 Módulo `checkout`: risco da etapa concluída ao carregar a próxima; carimbo na tela de enviado; copiar chave PIX com retorno em texto.
-- [ ] 9.4 Verificar ponta a ponta no local com a fixture: pedido para mim, pedido para terceiros, envio de comprovante (imagem pequena), estados em análise e pago (alterando o status no banco local); `php -l`, `node --check`.
-- [ ] 9.5 Commit "Checkout no tema caderno".
+- [x] 9.1 `renderCheckout()`: `View::render(TemaPublico::view('checkout/' . $nome), $data, false)`.
+- [x] 9.2 Etapas com os **mesmos forms, `name`s, ações, CSRF e campos ocultos da V2**: checklist riscado (no celular "Etapa N de 5"); inscrição (pagador, compra para mim/terceiros/lote, quantidade); participantes; resumo com recibo serrilhado; pagamento (online quando habilitado + PIX com instruções em post-it e botão copiar chave); comprovante (área de envio "grampeada", estados enviar/reenviar/em análise/pago da V2); comprovante enviado com carimbo "COMPROVANTE EM ANÁLISE".
+- [x] 9.3 Módulo `checkout`: risco da etapa concluída ao carregar a próxima; carimbo na tela de enviado; copiar chave PIX com retorno em texto.
+- [x] 9.4 Verificar ponta a ponta no local com a fixture: pedido para mim, pedido para terceiros, envio de comprovante (imagem pequena), estados em análise e pago (alterando o status no banco local); `php -l`, `node --check`.
+- [x] 9.5 Commit "Checkout no tema caderno".
 
 ## 10. Cupom no checkout
 

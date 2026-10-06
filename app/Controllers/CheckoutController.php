@@ -19,6 +19,7 @@ use App\Services\InscricaoService;
 use App\Services\PedidoService;
 use App\Services\CursoService;
 use App\Services\Payments\AbacatePayService;
+use App\Support\TemaPublico;
 use App\Support\V2ErrorPage;
 
 class CheckoutController extends Controller
@@ -1430,7 +1431,7 @@ class CheckoutController extends Controller
     {
         if ($this->emModoV2($request)) {
             $data = array_merge($this->dadosLayoutCheckoutV2(), $data);
-            return new Response(View::render('v2/checkout/' . $nome, $data, false));
+            return new Response(View::render(TemaPublico::view('checkout/' . $nome), $data, false));
         }
 
         return $this->view('checkout/' . $nome, $data);

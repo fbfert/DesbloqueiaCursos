@@ -33,14 +33,15 @@
   }
 
   // Carimbo cai de cima com quique; no modo normal o papel (pai) treme.
-  function carimbar(el, atrasoMs) {
+  // `graus`: inclinação final (padrão -14, a do carimbo redondo).
+  function carimbar(el, atrasoMs, graus) {
     if (!el) return;
-    var d = atrasoMs || 0;
+    var d = atrasoMs || 0, g = graus == null ? -14 : graus;
     animar(el, [
-      { opacity: 0, transform: 'scale(2.3) rotate(-32deg)' },
-      { opacity: .92, transform: 'scale(1) rotate(-14deg)', offset: .78 },
-      { opacity: .92, transform: 'scale(1.04) rotate(-14deg)', offset: .88 },
-      { opacity: .92, transform: 'scale(1) rotate(-14deg)' }
+      { opacity: 0, transform: 'scale(2.3) rotate(' + (g - 18) + 'deg)' },
+      { opacity: .92, transform: 'scale(1) rotate(' + g + 'deg)', offset: .78 },
+      { opacity: .92, transform: 'scale(1.04) rotate(' + g + 'deg)', offset: .88 },
+      { opacity: .92, transform: 'scale(1) rotate(' + g + 'deg)' }
     ], { duration: 420, delay: d, easing: 'cubic-bezier(.55,0,.9,.4)' });
     if (!leve) animar(el.parentNode, [
       { transform: 'none' }, { transform: 'translate(-3px,2px)' }, { transform: 'translate(2px,-1px)' },
@@ -494,4 +495,152 @@ Caderno.pagina('cadastro', function () {
   };
   inp.addEventListener('input', medir);
   medir();
+}, true);
+
+/* Checkout: risco a caneta da etapa recem-concluida, carimbo na tela de enviado,
+   copiar a chave PIX com retorno em texto, area de envio grampeada (arrastar e
+   soltar + nome do arquivo), envio unico dos formularios (sem pedido duplicado
+   no clique duplo) e foco no aviso de erro. Tudo e melhoria: sem JS, os forms
+   nativos funcionam. Roda tambem em movimento reduzido (sempre=true): so a
+   animacao e cortada. */
+Caderno.pagina('checkout', function () {
+  var C = window.Caderno, html = document.documentElement, i;
+  var mover = !C.reduzido && html.classList.contains('anima');
+
+  // ---------- aviso de erro devolvido pelo servidor recebe o foco ----------
+  var avisos = document.getElementById('ck-avisos');
+  if (avisos && avisos.querySelector('[data-ck-erro]')) { try { avisos.focus(); } catch (e) {} }
+
+  // ---------- checklist: a etapa anterior e riscada ao chegar nesta ----------
+  var lista = document.querySelector('[data-checklist]');
+  if (lista) {
+    if (mover) {
+      setTimeout(function () {
+        C.tracar(lista.querySelector('.recente .ck-ok'), { duration: 260, easing: 'ease-in' });
+        lista.classList.add('riscada');
+      }, 140);
+    } else lista.classList.add('riscada');
+  }
+
+  // ---------- recibo: aberto ao lado no desktop, recolhido no celular ----------
+  if (matchMedia('(min-width:900px)').matches) {
+    var dobras = document.querySelectorAll('[data-recibo-dobra]');
+    for (i = 0; i < dobras.length; i++) dobras[i].open = true;
+  }
+
+  // ---------- carimbo "comprovante em analise" (ornamento, aria-hidden) ----------
+  var folha = document.querySelector('[data-carimbar]');
+  if (folha) {
+    if (mover) C.carimbar(folha.querySelector('.carimbo'), 450, -7);
+    folha.classList.add('em-cena'); // os quadros iniciais (fill both) seguram o estado oculto
+  }
+
+  // ---------- quantidade so para terceiros/lote ----------
+  var tipos = document.querySelectorAll('[data-ck-tipo]'), qtd = document.querySelector('[data-ck-qtd]');
+  if (tipos.length && qtd) {
+    var sincronizar = function () {
+      var v = '';
+      for (var j = 0; j < tipos.length; j++) if (tipos[j].checked) v = tipos[j].value;
+      qtd.hidden = v === 'propria' && !qtd.classList.contains('erro');
+    };
+    for (i = 0; i < tipos.length; i++) tipos[i].addEventListener('change', sincronizar);
+    sincronizar();
+  }
+
+  // ---------- copiar a chave PIX ----------
+  var bloco = document.querySelector('[data-pix-key-block]');
+  var botao = bloco && bloco.querySelector('[data-pix-copy]');
+  var chave = bloco && bloco.querySelector('[data-pix-key-input]');
+  var retorno = bloco && bloco.querySelector('[data-pix-feedback]');
+  if (botao && chave && retorno) {
+    var relogio = 0;
+    var dizer = function (t) {
+      clearTimeout(relogio);
+      retorno.textContent = t;
+      relogio = setTimeout(function () { retorno.textContent = ''; }, 6000);
+    };
+    var copiou = function () { dizer('Chave copiada. Agora cole no app do seu banco.'); };
+    var manual = function () {
+      chave.focus(); chave.select();
+      dizer('Não deu para copiar sozinho. A chave está selecionada: copie pelo menu do aparelho.');
+    };
+    var antigo = function () {
+      try { chave.focus(); chave.select(); if (document.execCommand('copy')) { copiou(); return; } } catch (e) {}
+      manual();
+    };
+    botao.hidden = false;
+    botao.addEventListener('click', function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(chave.value).then(copiou, antigo);
+      else antigo();
+    });
+  }
+
+  // ---------- area de envio grampeada ----------
+  var area = document.querySelector('[data-grampeado]');
+  var arquivo = area && area.querySelector('input[type=file]');
+  var nome = area && area.querySelector('[data-arquivo-nome]');
+  if (arquivo && nome) {
+    var tamanho = function (b) {
+      return b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+    };
+    var mostrar = function (grampear) {
+      var f = arquivo.files && arquivo.files[0];
+      area.classList.toggle('com-arquivo', !!f);
+      nome.textContent = f ? 'Arquivo grampeado: ' + f.name + ' (' + tamanho(f.size) + ')' : '';
+      if (f && grampear && mover) {
+        C.animar(area.querySelector('.grampeado-grampo'), [
+          { transform: 'translateY(-10px) rotate(-7deg)' }, { transform: 'translateY(2px) rotate(-7deg)', offset: .7 }, { transform: 'rotate(-7deg)' }
+        ], { duration: 260, fill: 'none' });
+      }
+    };
+    var marcar = function (e) { e.preventDefault(); area.classList.add('arrastando'); };
+    var soltar = function (e) {
+      if (e.type === 'dragleave' && e.relatedTarget && area.contains(e.relatedTarget)) return;
+      area.classList.remove('arrastando');
+    };
+    arquivo.addEventListener('change', function () { mostrar(true); });
+    area.addEventListener('dragenter', marcar);
+    area.addEventListener('dragover', marcar);
+    area.addEventListener('dragleave', soltar);
+    area.addEventListener('drop', function (e) {
+      e.preventDefault();
+      soltar(e);
+      var fs = e.dataTransfer && e.dataTransfer.files;
+      if (!fs || !fs.length) return;
+      try {
+        if (fs.length > 1 && window.DataTransfer) { var dt = new DataTransfer(); dt.items.add(fs[0]); fs = dt.files; }
+        arquivo.files = fs;
+      } catch (er) {
+        nome.textContent = 'Este aparelho não aceita soltar o arquivo aqui. Toque em escolher arquivo.';
+        return;
+      }
+      mostrar(true);
+    });
+    mostrar(false); // arquivo ja escolhido (voltar do historico)
+  }
+
+  // ---------- envio unico: o segundo clique/Enter nao gera outro pedido ----------
+  var forms = document.querySelectorAll('form[data-ck-envio]');
+  for (i = 0; i < forms.length; i++) forms[i].addEventListener('submit', function (e) {
+    var f = this, b = f.querySelector('button[type=submit]');
+    if (f.getAttribute('data-enviando') === '1') { e.preventDefault(); return; }
+    f.setAttribute('data-enviando', '1');
+    if (!b) return;
+    b.setAttribute('data-html', b.innerHTML);
+    // no proximo tick: desabilitar antes cancelaria o envio nativo
+    setTimeout(function () {
+      var rot = b.getAttribute('data-loading-label');
+      if (rot) b.textContent = rot;
+      b.disabled = true;
+    }, 0);
+  });
+  // Voltar pelo historico (bfcache) devolve os botoes prontos para uso.
+  addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    for (var k = 0; k < forms.length; k++) {
+      var b = forms[k].querySelector('button[type=submit]');
+      forms[k].removeAttribute('data-enviando');
+      if (b && b.hasAttribute('data-html')) { b.innerHTML = b.getAttribute('data-html'); b.disabled = false; }
+    }
+  });
 }, true);
