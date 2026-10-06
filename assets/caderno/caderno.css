@@ -32,7 +32,7 @@ img{display:block;height:auto}
 a{color:inherit}
 button,input,select,textarea{font:inherit;color:inherit}
 input[type=checkbox],input[type=radio]{accent-color:var(--tinta);width:18px;height:18px}
-:focus-visible{outline:3px solid var(--laranja);outline-offset:3px;border-radius:4px}
+:focus-visible{outline:3px solid var(--tinta);outline-offset:3px;border-radius:4px}
 [hidden]{display:none!important}
 .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .pular{position:absolute;left:12px;top:-60px;z-index:60;background:var(--violeta);color:#fff;padding:10px 16px;border-radius:0 0 8px 8px;font-weight:600;text-decoration:none}
@@ -378,7 +378,7 @@ html.folha-aberta{overflow:hidden}
 .chip{border:1.5px solid var(--violeta);border-radius:999px;padding:8px 14px;background:none;cursor:pointer;font-weight:500;font-size:14px;min-height:40px;text-decoration:none;display:inline-flex;align-items:center;transition:background-color .15s ease,color .15s ease}
 .chip[aria-pressed=true],.chip[aria-current],.opcao input:checked+.chip{background:var(--violeta);color:#fff}
 .opcao{position:relative;display:inline-flex}
-.opcao input:focus-visible+.chip{outline:3px solid var(--laranja);outline-offset:3px}
+.opcao input:focus-visible+.chip{outline:3px solid var(--tinta);outline-offset:3px}
 
 /* ---------- rodapé de papelão ---------- */
 .rodape{margin-top:24px;background:
@@ -493,7 +493,7 @@ html:not(.js) .campo-senha input{padding-right:2px}
 @media (min-width:760px){ .cats-lista{grid-template-columns:repeat(2,1fr)} }
 .cats-lista li{display:flex;align-content:flex-start;flex-wrap:wrap;align-items:baseline;gap:2px 12px;padding:14px 0 15px;border-bottom:1.5px solid rgba(34,16,74,.16)}
 .cats-nome{font-weight:600;font-size:17.5px;color:var(--violeta);text-decoration:underline;text-decoration-color:rgba(31,63,168,.45);text-decoration-thickness:1.5px;text-underline-offset:4px;display:inline-block;padding:8px 0}
-.cats-nome:focus-visible{outline:3px solid var(--tinta);outline-offset:3px;border-radius:2px}
+.cats-nome:focus-visible{border-radius:2px}
 .cats-qt{font-size:13.5px;color:var(--texto2);font-variant-numeric:tabular-nums}
 .cats-lista p{flex-basis:100%;color:var(--texto2);font-size:15px;line-height:1.55;max-width:46ch}
 
