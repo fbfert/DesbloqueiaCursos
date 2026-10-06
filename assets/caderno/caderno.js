@@ -353,3 +353,15 @@ Caderno.pagina('catalogo', function () {
     sincronizar();
   });
 }, true);
+
+/* Categorias: a estante completa sobe da prancha, como na home. Modo leve: sem cena. */
+Caderno.pagina('categorias', function () {
+  var C = window.Caderno;
+  if (C.leve) return;
+  C.aoVer(document.querySelector('[data-cena=estante]'), function (el) {
+    var ls = el.querySelectorAll('.lomb');
+    for (var i = 0; i < ls.length; i++) {
+      C.animar(ls[i], [{ transform: 'translateY(110%)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: i * 70, fill: 'backwards' });
+    }
+  });
+});

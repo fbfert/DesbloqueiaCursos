@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Services\CategoriaService;
+use App\Support\TemaPublico;
 
 /**
  * Página de Categorias da V2 (listagem real, com dados do catálogo atual).
@@ -42,7 +43,7 @@ class CategoriasController extends Controller
             'coursePalette' => $this->coursePalette(),
         );
 
-        return new Response(View::render('v2/categorias', $data, false));
+        return new Response(View::render(TemaPublico::view('categorias'), $data, false));
     }
 
     private function normalizarCategorias(array $categorias)
@@ -57,6 +58,7 @@ class CategoriasController extends Controller
                 'nome' => isset($categoria['nome']) ? (string) $categoria['nome'] : '',
                 'thumbnail' => !empty($categoria['thumbnail']) ? (string) $categoria['thumbnail'] : '',
                 'total_cursos' => isset($categoria['total_cursos']) ? (int) $categoria['total_cursos'] : 0,
+                'descricao' => isset($categoria['descricao']) ? trim((string) $categoria['descricao']) : '',
                 'url' => $slug !== ''
                     ? '/v2/catalogo/?categoria=' . rawurlencode($slug)
                     : '/v2/catalogo/',

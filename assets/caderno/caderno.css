@@ -421,3 +421,27 @@ html.folha-aberta{overflow:hidden}
   *,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}
   .anima .rv{opacity:1;transform:none}
 }
+
+/* ---------- categorias: estante completa ---------- */
+.cats-topo .lead{margin-top:14px}
+.cats-estante{margin-top:6px}
+.estante.grande{gap:9px}
+.estante.grande .lomb{width:74px;height:calc(var(--h) * 1.12);gap:12px;padding-top:14px}
+.estante.grande .lomb .tit{font-size:16px}
+.estante.grande .lomb small{font-size:11.5px}
+.estante.grande .lomb .etq{font-size:11.5px;max-width:64px}
+.cats-nota{margin-top:30px;transform:rotate(-2deg);transform-origin:left}
+@media (min-width:900px){
+  .estante-rolo.cheia{display:block;overflow-x:auto;scroll-snap-type:none}
+  .estante.grande{gap:12px}
+  .estante.grande .lomb{width:88px;height:calc(var(--h) * 1.3)}
+  .estante.grande .lomb .tit{font-size:18px}
+  .estante.grande .lomb small{font-size:12.5px}
+}
+.cats-lista{list-style:none;margin-top:26px;display:grid;gap:0 40px;max-width:900px}
+@media (min-width:760px){ .cats-lista{grid-template-columns:repeat(2,1fr)} }
+.cats-lista li{display:flex;align-content:flex-start;flex-wrap:wrap;align-items:baseline;gap:2px 12px;padding:14px 0 15px;border-bottom:1.5px solid rgba(34,16,74,.16)}
+.cats-nome{font-weight:600;font-size:17.5px;color:var(--violeta);text-decoration:underline;text-decoration-color:rgba(31,63,168,.45);text-decoration-thickness:1.5px;text-underline-offset:4px;display:inline-block;padding:8px 0}
+.cats-nome:focus-visible{outline:3px solid var(--tinta);outline-offset:3px;border-radius:2px}
+.cats-qt{font-size:13.5px;color:var(--texto2);font-variant-numeric:tabular-nums}
+.cats-lista p{flex-basis:100%;color:var(--texto2);font-size:15px;line-height:1.55;max-width:46ch}

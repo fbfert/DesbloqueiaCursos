@@ -144,10 +144,10 @@
 **Interfaces:**
 - Consumes: `categorias` do controller; `lombada.php` (tarefa 4).
 
-- [ ] 6.1 `CategoriasController`: `TemaPublico::view('categorias')`.
-- [ ] 6.2 Página: estante completa com todas as categorias (lombadas grandes, altura variando por quantidade de cursos), cada lombada linkando para o catálogo filtrado; abaixo, lista acessível das mesmas categorias (nome, contagem, descrição se houver).
-- [ ] 6.3 Verificar teclado (Tab percorre lombadas, Enter abre), 360/1360 px, `php -l`.
-- [ ] 6.4 Commit "Categorias no tema caderno".
+- [x] 6.1 `CategoriasController`: `TemaPublico::view('categorias')`.
+- [x] 6.2 Página: estante completa com todas as categorias (lombadas grandes, altura variando por quantidade de cursos), cada lombada linkando para o catálogo filtrado; abaixo, lista acessível das mesmas categorias (nome, contagem, descrição se houver).
+- [x] 6.3 Verificar teclado (Tab percorre lombadas, Enter abre), 360/1360 px, `php -l`.
+- [x] 6.4 Commit "Categorias no tema caderno".
 
 ## 7. Curso
 

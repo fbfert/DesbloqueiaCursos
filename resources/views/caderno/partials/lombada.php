@@ -7,6 +7,8 @@
  *               (id, nome, total_cursos, url);
  *   $indice     opcional: posição na estante (varia cor, altura e elástico).
  *               Sem ele, usa o id da categoria.
+ *   $alturaLomb opcional: altura em px da lombada (a estante completa varia pela
+ *               quantidade de cursos). Sem ele, usa a altura da sequência.
  *
  * Emite um <li> (a estante é uma <ul class="estante">). Cores das lombadas
  * escolhidas para texto branco com contraste AA.
@@ -53,6 +55,9 @@ $lombCores = array('#22104A', '#2F5D50', '#A33B2B', '#1F3FA8', '#A8641A', '#3B35
 $lombAlturas = array(300, 270, 288, 258, 292, 266, 280);
 $lombCor = $lombCores[$lombPos % count($lombCores)];
 $lombAltura = $lombAlturas[$lombPos % count($lombAlturas)];
+if (isset($alturaLomb) && (int) $alturaLomb > 0) {
+    $lombAltura = (int) $alturaLomb; // a estante completa dimensiona pela quantidade de cursos
+}
 $lombElastico = in_array($lombPos % 7, array(0, 2, 5), true);
 $lombSigla = caderno_etiqueta($lombNome);
 ?>
