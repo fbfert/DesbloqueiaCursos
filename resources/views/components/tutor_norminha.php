@@ -269,7 +269,7 @@ if (!$alunoLogado) {
         </form>
     </div>
 
-    <button type="button" class="norminha-tutor__launcher" data-norminha-launcher aria-label="Abrir a Norminha" aria-expanded="true">
+    <button type="button" class="norminha-tutor__launcher<?php echo $avatarLauncher === null ? ' is-fallback' : ''; ?>" data-norminha-launcher aria-label="Abrir a Norminha" aria-expanded="true">
         <?php if ($avatarLauncher !== null): ?>
             <img class="norminha-tutor__launcher-avatar" src="<?php echo Helpers::e($avatarLauncher); ?>"
                  alt="" aria-hidden="true" loading="lazy" decoding="async" data-norminha-launcher-avatar>

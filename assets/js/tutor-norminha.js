@@ -131,6 +131,7 @@
             launcherAvatar.addEventListener('error', function () {
                 launcherAvatar.style.display = 'none';
                 launcherFallback.style.display = '';
+                if (launcherButton) { launcherButton.classList.add('is-fallback'); }
             });
             launcherFallback.style.display = 'none';
         }
