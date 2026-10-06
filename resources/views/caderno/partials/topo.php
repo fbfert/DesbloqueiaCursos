@@ -3,9 +3,10 @@
  * Cabeçalho do tema caderno. Usa as variáveis de navegação preparadas pelo
  * layout (V2Nav::links) e $navAtual ('inicio', 'cursos', 'categorias',
  * 'certificado' ou ''). No celular, o menu é um <details>: abre e fecha sem JS.
+ * Os forms de saída não imprimem o _token: o View::render injeta o campo em
+ * todo <form method="post"> (Csrf::injectIntoHtml); imprimir aqui duplicava.
  */
 
-use App\Core\Csrf;
 use App\Core\Helpers;
 
 $navItens = array(
@@ -31,7 +32,6 @@ $navAtual = isset($navAtual) ? (string) $navAtual : '';
       <?php if ($loggedIn): ?>
       <a class="entrar" href="<?= Helpers::e($areaHref) ?>"><?= caderno_icone('usuario') ?><span><?= Helpers::e($usuarioPrimeiroNome !== '' ? $usuarioPrimeiroNome : 'Minha área') ?></span></a>
       <form class="sair" method="post" action="/v2/logout" data-native-submit>
-        <?= Csrf::field() ?>
         <button type="submit">Sair</button>
       </form>
       <?php else: ?>
@@ -55,7 +55,6 @@ $navAtual = isset($navAtual) ? (string) $navAtual : '';
           </nav>
           <?php if ($loggedIn): ?>
           <form method="post" action="/v2/logout" data-native-submit>
-            <?= Csrf::field() ?>
             <button type="submit">Sair da conta</button>
           </form>
           <?php endif; ?>
