@@ -42,6 +42,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--tinta);width:18px;heig
 /* ---------- aviso de prévia (administrador) ---------- */
 .aviso-previa{position:relative;z-index:25;background:var(--violeta);color:var(--papel);font:500 13px/1.4 var(--sans);padding:6px 16px;text-align:center}
 .aviso-previa a{color:var(--postit);text-decoration:underline;text-underline-offset:3px}
+.aviso-previa :focus-visible{outline-color:var(--postit)}
 
 /* ---------- a folha ---------- */
 .folha{background:var(--papel);position:relative;min-height:100vh;overflow:hidden;overflow:clip}
