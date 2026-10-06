@@ -197,9 +197,13 @@ Caderno.pagina('catalogo', function () {
   // ---------- folha que sobe ----------
   var botao = form.querySelector('[data-abrir-filtros]'), folha = form.querySelector('[data-filtros]');
   var papel = folha && folha.querySelector('.papel'), relogio = 0;
-  if (botao && papel) {
+  // So vira dialogo se html.js ainda estiver ai. Se este script chegou depois da trava
+  // de 2,5 s, os filtros ja estao inline (botao oculto): ficam como regiao comum do
+  // form, sem role/aria-modal (que esconderia o resto da pagina do leitor de tela).
+  if (botao && papel && html.classList.contains('js')) {
     papel.setAttribute('role', 'dialog');
     papel.setAttribute('aria-modal', 'true');
+    papel.setAttribute('aria-labelledby', 'cat-filtros-tit');
     papel.setAttribute('tabindex', '-1');
     var focaveis = function () {
       var l = papel.querySelectorAll('button,[href],input,select,textarea'), r = [];
@@ -237,6 +241,15 @@ Caderno.pagina('catalogo', function () {
     folha.addEventListener('click', function (e) {
       var t = e.target;
       while (t && t !== folha) { if (t.hasAttribute && t.hasAttribute('data-fechar')) { fechar(); return; } t = t.parentNode; }
+    });
+    // Voltar pelo historico (bfcache) nunca restaura a folha aberta.
+    addEventListener('pageshow', function (e) {
+      if (!e.persisted) return;
+      clearTimeout(relogio);
+      document.removeEventListener('keydown', teclas);
+      folha.classList.remove('visivel', 'aberta');
+      html.classList.remove('folha-aberta');
+      botao.setAttribute('aria-expanded', 'false');
     });
   }
 

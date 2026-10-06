@@ -133,13 +133,13 @@ $catOpcao = function ($tipo, $nome, $valor, $rotulo, $marcado) {
   require BASE_PATH . '/resources/views/caderno/partials/divisorias.php';
   ?>
 
-  <button class="filtros-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="cat-filtros" data-abrir-filtros>
+  <button class="filtros-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="cat-filtros-papel" data-abrir-filtros>
     <?= caderno_icone('filtro') ?>Filtrar e ordenar<?php if ($catFiltrosAtivos > 0): ?><span class="filtros-qt"><?= $catFiltrosAtivos ?><span class="vh"> <?= $catFiltrosAtivos === 1 ? 'filtro ativo' : 'filtros ativos' ?></span></span><?php endif; ?>
   </button>
 
   <div class="filtros sheet" id="cat-filtros" data-filtros>
     <div class="fundo" data-fechar></div>
-    <div class="papel" aria-labelledby="cat-filtros-tit">
+    <div class="papel" id="cat-filtros-papel">
       <div class="papel-cab">
         <h2 id="cat-filtros-tit">Filtrar e ordenar</h2>
         <button type="button" class="papel-fechar" data-fechar><?= caderno_icone('fechar') ?><span class="vh">Fechar filtros</span></button>
