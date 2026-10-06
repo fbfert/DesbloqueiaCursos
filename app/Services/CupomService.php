@@ -642,22 +642,22 @@ class CupomService
     {
         $pedido = $this->loadPedidoContext($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'errors' => array('Pedido nao encontrado.'));
+            return array('ok' => false, 'errors' => array('Pedido não encontrado.'));
         }
 
         $cupomCodigo = $cupomCodigo !== null ? $this->normalizeCodigo($cupomCodigo) : (isset($pedido['cupom_codigo']) ? $this->normalizeCodigo($pedido['cupom_codigo']) : '');
         if ($cupomCodigo === '') {
-            return array('ok' => false, 'errors' => array('Codigo do cupom e obrigatorio.'));
+            return array('ok' => false, 'errors' => array('Código do cupom é obrigatório.'));
         }
 
         $cupom = $this->cupomModel->findByCodigo($cupomCodigo);
         if (!$cupom) {
-            return array('ok' => false, 'errors' => array('Cupom nao encontrado.'));
+            return array('ok' => false, 'errors' => array('Cupom não encontrado.'));
         }
 
         $permitirConfirmado = !empty($options['permitir_confirmado']);
         if ($this->pedidoStatusBloqueadoParaCupom($pedido, $permitirConfirmado)) {
-            return array('ok' => false, 'errors' => array('Pedido nao permite aplicacao de cupom neste status.'));
+            return array('ok' => false, 'errors' => array('Pedido não permite aplicação de cupom neste status.'));
         }
 
         $relacoes = $this->groupRelations($this->cupomRelacaoModel->forCupom($cupom['id']));
@@ -683,7 +683,7 @@ class CupomService
             'permitir_confirmado' => $permitirConfirmado,
         ));
         if (empty($validacao['ok'])) {
-            return array('ok' => false, 'errors' => isset($validacao['errors']) ? $validacao['errors'] : array('Cupom invalido.'));
+            return array('ok' => false, 'errors' => isset($validacao['errors']) ? $validacao['errors'] : array('Cupom inválido.'));
         }
 
         $pedidoCupomAtual = $this->pedidoCupomModel->findByPedido($pedidoId);
@@ -692,7 +692,7 @@ class CupomService
         $descontoAnterior = 0.00;
         $totalAnterior = 0.00;
         if ($pedidoCupomAtual && strtoupper((string) $pedidoCupomAtual['cupom_codigo']) !== strtoupper((string) $cupomCodigo) && !$permitirSubstituicao) {
-            return array('ok' => false, 'errors' => array('Pedido ja possui outro cupom aplicado.'));
+            return array('ok' => false, 'errors' => array('Pedido já possui outro cupom aplicado.'));
         }
         if ($pedidoCupomAtual) {
             $cupomAnteriorCodigo = isset($pedidoCupomAtual['cupom_codigo']) ? (string) $pedidoCupomAtual['cupom_codigo'] : null;
@@ -1011,11 +1011,11 @@ class CupomService
         $agora = date('Y-m-d H:i:s');
 
         if ($cupom['status'] !== 'ativo') {
-            $errors[] = 'Cupom nao esta ativo.';
+            $errors[] = 'Cupom não está ativo.';
         }
 
         if (!empty($cupom['data_inicio']) && $cupom['data_inicio'] > $agora) {
-            $errors[] = 'Cupom ainda nao esta valido.';
+            $errors[] = 'Cupom ainda não está válido.';
         }
 
         if (!empty($cupom['data_fim']) && $cupom['data_fim'] < $agora) {
@@ -1039,17 +1039,17 @@ class CupomService
         if (!empty($cupom['limite_por_usuario']) && $pedidoUsuarioId) {
             $usoUsuario = $this->cupomUsoModel->countByCupomAndUsuario($cupom['id'], $pedidoUsuarioId);
             if ($usoUsuario >= (int) $cupom['limite_por_usuario']) {
-                $errors[] = 'Limite de uso por usuario atingido.';
+                $errors[] = 'Limite de uso por usuário atingido.';
             }
         }
 
         if (!empty($cupom['quantidade_minima_vagas']) && (int) $pedido['quantidade_total'] < (int) $cupom['quantidade_minima_vagas']) {
-            $errors[] = 'Quantidade minima de vagas nao atingida.';
+            $errors[] = 'Quantidade mínima de vagas não atingida.';
         }
 
         foreach ($pedido['itens'] as $item) {
             if (!empty($item['curso_em_promocao']) && (int) $item['curso_em_promocao'] === 1) {
-                $errors[] = 'Curso em promocao nao aceita cupom.';
+                $errors[] = 'Curso em promoção não aceita cupom.';
                 break;
             }
         }
@@ -1059,7 +1059,7 @@ class CupomService
             foreach ($pedido['itens'] as $item) {
                 $tipoCursoItem = function_exists('mb_strtolower') ? mb_strtolower(trim((string) $item['curso_tipo']), 'UTF-8') : strtolower(trim((string) $item['curso_tipo']));
                 if (!in_array($tipoCursoItem, $relacaoTiposCurso, true)) {
-                    $errors[] = 'Cupom restrito a tipo de curso especifico.';
+                    $errors[] = 'Cupom restrito a tipo de curso específico.';
                     break;
                 }
             }
@@ -1069,7 +1069,7 @@ class CupomService
         if ($relacaoCidades) {
             $cidade = $this->normalizeToken(isset($pedido['pagador_cidade']) ? $pedido['pagador_cidade'] : '');
             if ($cidade === '' || !in_array($cidade, $relacaoCidades, true)) {
-                $errors[] = 'Cupom restrito a cidade especifica.';
+                $errors[] = 'Cupom restrito a cidade específica.';
             }
         }
 
@@ -1077,14 +1077,14 @@ class CupomService
         if ($relacaoEstados) {
             $estado = $this->normalizeToken(isset($pedido['pagador_estado']) ? $pedido['pagador_estado'] : '');
             if ($estado === '' || !in_array($estado, $relacaoEstados, true)) {
-                $errors[] = 'Cupom restrito a estado especifico.';
+                $errors[] = 'Cupom restrito a estado específico.';
             }
         }
 
         $relacaoUsuarios = isset($relacoes['usuario']) ? $relacoes['usuario'] : array();
         if ($cupom['tipo'] === 'usuario' || $relacaoUsuarios) {
             if (!$pedidoUsuarioId || !in_array((string) $pedidoUsuarioId, $relacaoUsuarios, true)) {
-                $errors[] = 'Cupom restrito a usuario especifico.';
+                $errors[] = 'Cupom restrito a usuário específico.';
             }
         }
 
@@ -1104,7 +1104,7 @@ class CupomService
                 }
             }
             if (!$empresaPermitida) {
-                $errors[] = 'Cupom restrito a empresa especifica.';
+                $errors[] = 'Cupom restrito a empresa específica.';
             }
         }
 
@@ -1119,14 +1119,14 @@ class CupomService
                 }
             }
             if (!$permitido) {
-                $errors[] = 'Cupom restrito a perfil especifico.';
+                $errors[] = 'Cupom restrito a perfil específico.';
             }
         }
 
         if (($cupom['escopo'] ?? 'todo_site') === 'cursos_especificos') {
             $cursosPermitidos = $this->cupomCursoModel->courseIdsForCupom($cupom['id']);
             if (empty($cursosPermitidos)) {
-                $errors[] = 'Cupom configurado para cursos especificos sem cursos vinculados.';
+                $errors[] = 'Cupom configurado para cursos específicos sem cursos vinculados.';
             } else {
                 $cursosDoPedido = array();
                 foreach ($pedido['itens'] as $item) {
@@ -1142,7 +1142,7 @@ class CupomService
                 }
 
                 if (!$temIntersecao) {
-                    $errors[] = 'Este cupom nao e valido para o curso selecionado.';
+                    $errors[] = 'Este cupom não é válido para o curso selecionado.';
                 }
             }
         }

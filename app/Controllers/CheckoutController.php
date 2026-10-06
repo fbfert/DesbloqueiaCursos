@@ -515,6 +515,65 @@ class CheckoutController extends Controller
         return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
     }
 
+    /**
+     * Texto da recusa de cupom para o aluno. O CupomService devolve `errors`
+     * (lista) e o PedidoService, `message`; qualquer um dos dois é o motivo real.
+     */
+    public static function mensagemResultadoCupom(array $resultado)
+    {
+        if (!empty($resultado['message'])) {
+            return (string) $resultado['message'];
+        }
+        if (!empty($resultado['errors']) && is_array($resultado['errors'])) {
+            $textos = array();
+            foreach ($resultado['errors'] as $erro) {
+                if (is_scalar($erro) && trim((string) $erro) !== '') {
+                    $textos[] = trim((string) $erro);
+                }
+            }
+            if ($textos) {
+                return implode(' ', $textos);
+            }
+        }
+
+        return 'Não foi possível aplicar o cupom.';
+    }
+
+    /**
+     * Cupom no resumo do tema (POST /v2/checkout/cupom). Reaproveita a mesma
+     * aplicação do V1 (mesmas regras) e sempre volta ao resumo V2.
+     */
+    public function aplicarCupomV2(Request $request)
+    {
+        $pedidoId = (int) $request->input('pedido_id', 0);
+        if ($pedidoId <= 0) {
+            return $this->redirect('/v2/aluno/?aba=pedidos');
+        }
+
+        $destino = '/v2/checkout/resumo?pedido_id=' . $pedidoId;
+        $cupomCodigo = trim((string) $request->input('cupom_codigo', ''));
+        if ($cupomCodigo === '') {
+            Session::flash('errors', array('cupom_codigo' => 'Informe o código do cupom.'));
+            return $this->redirect($destino);
+        }
+
+        $resultado = $this->pedidoService->aplicarCupomAoPedido(
+            $pedidoId,
+            $cupomCodigo,
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($resultado['ok'])) {
+            Session::flash('errors', array('cupom_codigo' => self::mensagemResultadoCupom($resultado)));
+        } else {
+            Session::flash('success', 'Cupom aplicado. O novo total já está no resumo.');
+        }
+
+        return $this->redirect($destino);
+    }
+
     public function comprovante(Request $request)
     {
         $emV2 = $this->emModoV2($request);

@@ -4,10 +4,10 @@
  * estados de resources/views/v2/pages/checkout-resumo.php: dados do pedido
  * (no recibo serrilhado), itens e participantes (fora do estado pago) e a
  * próxima etapa (pago → minha área; cancelado → catálogo; senão, o link
- * $continuarPagamentoUrl montado no backend). Sem formulário nesta etapa.
+ * $continuarPagamentoUrl montado no backend). Único formulário: o campo de cupom.
  *
- * $slotCupom: o recibo tem o lugar do cupom reservado; a tarefa 10 preenche
- * com o campo de cupom. Vazio, o recibo mostra o cupom já aplicado.
+ * $slotCupom: o recibo tem o lugar do cupom reservado; aqui ele recebe
+ * o campo de cupom (pedido aberto). Vazio, o recibo mostra o cupom já aplicado.
  */
 
 use App\Core\Helpers;
@@ -26,6 +26,31 @@ $continuarUrl = isset($continuarPagamentoUrl) ? (string) $continuarPagamentoUrl 
 $itens = isset($pedido['itens']) && is_array($pedido['itens']) ? $pedido['itens'] : array();
 $participantes = isset($pedido['participantes']) && is_array($pedido['participantes']) ? $pedido['participantes'] : array();
 $slotCupom = isset($slotCupom) ? (string) $slotCupom : '';
+// Campo de cupom (POST /v2/checkout/cupom): só com o pedido ainda aberto para pagamento.
+if ($slotCupom === '' && empty($comprovanteAguardandoAprovacao) && empty($pedidoPagoOuAprovado)) {
+    $cupomErro = isset($errors['cupom_codigo']) && !is_array($errors['cupom_codigo']) ? caderno_ck_erro($errors['cupom_codigo'])[0] : '';
+    $cupomAplicado = isset($pedido['cupom']) && is_array($pedido['cupom']) ? $pedido['cupom'] : array();
+    $cupomDesc = (float) ($pedido['desconto_total'] ?? 0);
+    $cupomValor = isset($cupomPromocional) ? (string) $cupomPromocional : '';
+    ob_start();
+    ?>
+    <div class="cupom-recorte">
+      <form method="post" action="/v2/checkout/cupom" novalidate>
+        <input type="hidden" name="pedido_id" value="<?= (int) ($pedido['id'] ?? 0) ?>">
+        <div class="campo<?= $cupomErro !== '' ? ' erro' : '' ?>">
+          <label for="cupom-codigo">Código do cupom</label>
+          <input type="text" id="cupom-codigo" name="cupom_codigo" value="<?= Helpers::e($cupomValor) ?>" maxlength="80" autocomplete="off" autocapitalize="characters" spellcheck="false"<?= $cupomErro !== '' ? ' aria-invalid="true" aria-describedby="cupom-codigo-erro"' : '' ?>>
+          <?php if ($cupomErro !== ''): ?><p class="erro-msg" id="cupom-codigo-erro"><?= Helpers::e($cupomErro) ?></p><?php endif; ?>
+        </div>
+        <button class="btn" type="submit">Aplicar cupom</button>
+      </form>
+      <?php if (!empty($cupomAplicado['cupom_codigo'])): ?>
+      <p class="recibo-cupom-ok">Cupom aplicado: <b class="recibo-cupom"><?= Helpers::e((string) $cupomAplicado['cupom_codigo']) ?></b><?= $cupomDesc > 0 ? ' (desconto de ' . Helpers::e(caderno_ck_dinheiro($cupomDesc)) . ')' : '' ?></p>
+      <?php endif; ?>
+    </div>
+    <?php
+    $slotCupom = (string) ob_get_clean();
+}
 $reciboDobravel = false;
 $reciboTitulo = 'Resumo do pedido';
 $etapaAtual = 'resumo';

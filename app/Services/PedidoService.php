@@ -1621,12 +1621,12 @@ class PedidoService
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.cupom.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para aplicar cupom neste pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para aplicar cupom neste pedido.');
         }
 
         return $this->cupomService->aplicarAoPedido($pedidoId, $cupomCodigo, $actorUserId, $ipAddress, $userAgent);

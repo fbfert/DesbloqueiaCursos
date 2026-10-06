@@ -695,6 +695,7 @@ html:not(.js) .campo-senha input{padding-right:2px}
 .recibo dl{margin-top:4px}
 .recibo .desconto dt,.recibo .desconto dd{color:var(--verde)}
 .recibo-cupom{letter-spacing:.06em}
+.recibo-cupom-ok{margin-top:10px;font-size:13.5px;color:var(--texto2)}
 .recibo-dobra{max-width:460px}
 .recibo-dobra>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:48px;padding:8px 14px;cursor:pointer;list-style:none;background:#fff;box-shadow:var(--sombra-papel);font-weight:600}
 .recibo-dobra>summary::-webkit-details-marker{display:none}

@@ -140,6 +140,7 @@ $app->get('/v2/checkout/resumo', array(CheckoutController::class, 'resumo'), arr
 // 'auth' (nenhum dado de pedido é exposto a anônimo). O início real do
 // AbacatePay é feito por POST HTML nativo ao endpoint legado já existente
 // (/aluno/pedidos/pagar/abacatepay); não há POST V2 dedicado.
+$app->post('/v2/checkout/cupom', array(CheckoutController::class, 'aplicarCupomV2'), array('auth.v2'));
 $app->get('/v2/checkout/pagamento', array(CheckoutController::class, 'pagamento'), array('auth.v2'));
 // Fase 2.12C — Comprovante PIX em visual V2. GET apenas apresenta o que o backend
 // já autoriza (mesma checagem de propriedade de detalharCheckout); exige sessão
