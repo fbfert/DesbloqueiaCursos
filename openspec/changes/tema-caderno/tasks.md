@@ -240,12 +240,12 @@
 - Create: `docs/<data-da-entrega>-tema-caderno.md` (nome no padrão `AAAA-MM-DD-...` dos demais relatórios)
 - Modify: `docs/deploy.md` (seção sobre `TEMA_PUBLICO` e prévia)
 
-- [ ] 13.1 Orçamento: para cada página do escopo, `gzip -c` de `caderno.css` e `caderno.js` dentro de 25600 e 15360 bytes; Lighthouse mobile (`npx -y lighthouse@12 <url> --only-categories=performance,accessibility --form-factor=mobile --output=json --quiet --chrome-flags="--headless"`) em home, catálogo, curso e resumo: LCP ≤ 2,5 s, CLS ≤ 0,1, acessibilidade ≥ 95; nenhuma requisição a `fonts.googleapis.com`, `fonts.gstatic.com` ou `@tabler/icons`.
-- [ ] 13.2 Acessibilidade manual: percorrer home → catálogo → curso → login → checkout só com teclado; foco visível em todos os controles; leitor de tela (NVDA ou TalkBack) anuncia estante, divisórias, folha de filtros e erros de campo; movimento reduzido ativado → nada se move e tudo aparece; JS bloqueado → tudo visível e funcional.
-- [ ] 13.3 Navegadores: Chrome desktop, Chrome Android (DevTools perfil Moto G Power + rede 4G lenta), Firefox e Safari/WebKit — sem view transitions onde não houver suporte, sem quebra. Modo leve: com `Object.defineProperty(navigator, "hardwareConcurrency", {value: 2})` injetado antes do carregamento (DevTools > Sources > Overrides no início de `caderno.js`), a home faz só a cena curta da trilha e as seções não animam ao rolar.
-- [ ] 13.4 Revisar todos os textos novos de interface e mensagens em PT-BR com acentuação (`docs/padrao-editorial-ptbr.md`).
-- [ ] 13.5 Escrever o relatório de entrega em `docs/` no padrão dos demais (o que muda, decisões, verificação, como ativar a prévia, como virar a chave, rollback) e atualizar `docs/deploy.md`.
-- [ ] 13.6 Commit "Relatorio de entrega do tema caderno".
+- [x] 13.1 Orçamento: para cada página do escopo, `gzip -c` de `caderno.css` e `caderno.js` dentro de 25600 e 15360 bytes; Lighthouse mobile (`npx -y lighthouse@12 <url> --only-categories=performance,accessibility --form-factor=mobile --output=json --quiet --chrome-flags="--headless"`) em home, catálogo, curso e resumo: LCP ≤ 2,5 s, CLS ≤ 0,1, acessibilidade ≥ 95; nenhuma requisição a `fonts.googleapis.com`, `fonts.gstatic.com` ou `@tabler/icons`.
+- [x] 13.2 Acessibilidade manual: percorrer home → catálogo → curso → login → checkout só com teclado; foco visível em todos os controles; leitor de tela (NVDA ou TalkBack) anuncia estante, divisórias, folha de filtros e erros de campo; movimento reduzido ativado → nada se move e tudo aparece; JS bloqueado → tudo visível e funcional.
+- [x] 13.3 Navegadores: Chrome desktop, Chrome Android (DevTools perfil Moto G Power + rede 4G lenta), Firefox e Safari/WebKit — sem view transitions onde não houver suporte, sem quebra. Modo leve: com `Object.defineProperty(navigator, "hardwareConcurrency", {value: 2})` injetado antes do carregamento (DevTools > Sources > Overrides no início de `caderno.js`), a home faz só a cena curta da trilha e as seções não animam ao rolar.
+- [x] 13.4 Revisar todos os textos novos de interface e mensagens em PT-BR com acentuação (`docs/padrao-editorial-ptbr.md`).
+- [x] 13.5 Escrever o relatório de entrega em `docs/` no padrão dos demais (o que muda, decisões, verificação, como ativar a prévia, como virar a chave, rollback) e atualizar `docs/deploy.md`.
+- [x] 13.6 Commit "Relatorio de entrega do tema caderno".
 
 ## Workflow follow-up
 
