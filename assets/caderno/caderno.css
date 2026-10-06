@@ -116,8 +116,8 @@ main:focus{outline:none}
   border:0;cursor:pointer;padding:14px 22px;min-height:48px;border-radius:999px;background:var(--violeta);color:#fff;
   box-shadow:0 3px 0 #0e0524;transition:transform .12s var(--ease-out),box-shadow .12s var(--ease-out)}
 .btn:active{transform:translateY(3px);box-shadow:0 0 0 #0e0524}
-.btn-laranja{background:var(--laranja);color:#fff;box-shadow:0 3px 0 #a84600}
-.btn-laranja:active{box-shadow:0 0 0 #a84600}
+.btn-laranja{background:var(--laranja);color:var(--violeta);box-shadow:0 3px 0 #a84600,inset 0 0 0 1.5px rgba(34,16,74,.18)}
+.btn-laranja:active{box-shadow:0 0 0 #a84600,inset 0 0 0 1.5px rgba(34,16,74,.18)}
 .btn[disabled],.btn[aria-disabled=true]{background:#8d86a3;box-shadow:none;cursor:not-allowed;transform:none}
 .btn-bloco{display:flex;width:100%}
 .btn-sec{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:15px;color:var(--violeta);text-decoration:none;padding:12px 22px;min-height:48px;background:none;border:0;cursor:pointer}
@@ -159,9 +159,10 @@ button.link{border:0;background:none;cursor:pointer;font-size:inherit}
 .selo{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--sans);border:1.5px solid currentColor;border-radius:999px;padding:4px 10px;color:var(--violeta)}
 .selo::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .selo.verde{color:var(--verde)} .selo.laranja{color:var(--laranja-texto)} .selo.tinta{color:var(--tinta)} .selo.apagado{color:var(--texto2)}
-.carimbo{position:relative;display:inline-grid;place-items:center;text-align:center;border-radius:50%;
-  width:var(--d,128px);height:var(--d,128px);border:3.5px solid var(--c,var(--laranja));color:var(--c,var(--laranja));
-  font:800 11px var(--sans);letter-spacing:.06em;line-height:1.25;transform:rotate(-14deg);mix-blend-mode:multiply;opacity:.92}
+/* Carimbo é decorativo: a marcação usa aria-hidden="true" e repete a informação em texto normal por perto. */
+.carimbo{--c:var(--laranja-texto);position:relative;display:inline-grid;place-items:center;text-align:center;border-radius:50%;
+  width:var(--d,128px);height:var(--d,128px);border:3.5px solid var(--c);border-color:color-mix(in srgb,var(--c) 80%,transparent);color:var(--c);
+  font:800 11px var(--sans);letter-spacing:.06em;line-height:1.25;transform:rotate(-14deg)}
 .carimbo span{display:block;border-top:2px solid currentColor;border-bottom:2px solid currentColor;padding:5px 2px;font-size:13.5px;margin:4px 0}
 .carimbo.ret{width:auto;height:auto;border-radius:6px;padding:8px 14px;transform:rotate(-5deg);font-size:12.5px}
 .carimbo.verde{--c:var(--verde)} .carimbo.tinta{--c:var(--tinta)} .carimbo.vermelho{--c:var(--vermelho)}
@@ -263,7 +264,7 @@ button.link{border:0;background:none;cursor:pointer;font-size:inherit}
 .foto h3{font-weight:600;font-size:16.5px;line-height:1.3;margin-top:5px;text-wrap:balance}
 .foto .meta{font-size:13px;color:var(--texto2);margin-top:7px}
 .foto .preco{display:flex;align-items:baseline;gap:8px;margin-top:12px}
-.foto .preco b{font-size:19px;font-variant-numeric:tabular-nums} .foto .preco s{font-size:13px;color:var(--apagado)}
+.foto .preco b{font-size:19px;font-variant-numeric:tabular-nums} .foto .preco s{font-size:13px;color:var(--texto2)}
 .foto .preco .off{margin-left:auto;font-family:var(--mao);color:var(--laranja-texto);font-size:16px;transform:rotate(-4deg)}
 @media (hover:hover) and (pointer:fine){
   .lomb:hover{transform:translateY(-24px);box-shadow:inset 3px 0 0 rgba(255,255,255,.13),inset -4px 0 0 rgba(0,0,0,.2),0 18px 22px -14px rgba(0,0,0,.5)}
@@ -332,14 +333,14 @@ button.link{border:0;background:none;cursor:pointer;font-size:inherit}
 /* ---------- rodapé de papelão ---------- */
 .rodape{margin-top:24px;background:
   radial-gradient(circle at 20% 30%,rgba(255,255,255,.06) 0 1px,transparent 2px) 0 0/7px 7px,
-  linear-gradient(180deg,#C29A6A,#A47C4B);color:#3a2610;padding:30px 0 calc(var(--bnav-h) + 28px + env(safe-area-inset-bottom,0px));font-size:14px}
+  linear-gradient(180deg,#C29A6A,#A47C4B);color:#1a0f03;padding:30px 0 calc(var(--bnav-h) + 28px + env(safe-area-inset-bottom,0px));font-size:14px}
 .rodape .miolo{display:grid;gap:22px}
 .rodape .marca{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.1;color:#2a1a08}
 .rodape .lema{margin-top:6px}
 .rodape nav{display:flex;flex-wrap:wrap;gap:4px 22px}
 .rodape a{text-decoration:none;display:inline-block;padding:6px 0}
 .rodape a:hover{text-decoration:underline}
-.rodape .legal{font-size:12.5px;color:#4a3318;grid-column:1/-1;border-top:1px solid rgba(58,38,16,.22);padding-top:14px}
+.rodape .legal{font-size:12.5px;color:#1a0f03;grid-column:1/-1;border-top:1px solid rgba(58,38,16,.22);padding-top:14px}
 .rodape :focus-visible{outline-color:var(--violeta)}
 .auth .rodape{padding-bottom:30px}
 @media (min-width:900px){ .rodape{padding-bottom:36px} .rodape .miolo{grid-template-columns:1fr auto;align-items:center} }
