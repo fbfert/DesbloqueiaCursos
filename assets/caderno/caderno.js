@@ -21,6 +21,7 @@
 
   function contar(el, duracaoMs) {
     if (!el) return;
+    if (!el.dataset.n) return;
     var alvo = +el.dataset.n || 0;
     if (reduzido) { el.textContent = alvo.toLocaleString('pt-BR'); return; }
     var t0 = performance.now();
@@ -57,14 +58,14 @@
         io.unobserve(es[i].target);
         callback(es[i].target);
       }
-    }, Object.assign({ rootMargin: '0px 0px -12% 0px' }, opcoes));
+    }, opcoes);
     io.observe(el);
   }
 
   function revelar() {
     var itens = document.querySelectorAll('.rv');
     for (var i = 0; i < itens.length; i++) {
-      if (leve) itens[i].classList.add('visto');
+      if (leve) { itens[i].style.transition = 'none'; itens[i].classList.add('visto'); } // leve: ja visivel, sem animacao
       else aoVer(itens[i], function (el) { el.classList.add('visto'); });
     }
   }
