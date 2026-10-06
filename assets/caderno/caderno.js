@@ -108,24 +108,40 @@ Caderno.pagina('home', function () {
     // A cena espera a trilha "inteira" na tela. A barra inferior do celular cobre o pe
     // da tela, entao a area util desconta a altura dela. Em tela baixa (celular deitado)
     // a trilha nao cabe: basta ocupar 3/4 da area util. Se a pessoa rolar alem
-    // da trilha, a cena roda do mesmo jeito: a trilha nunca fica oculta.
-    var bnav = document.querySelector('.bnav'), base = 0, pedido = 0, feito = false;
+    // da trilha, a cena roda do mesmo jeito. Sem rolagem, um relogio garante a cena:
+    // trilha quase inteira (3/4) em 1,5 s; qualquer parte na tela em 4,5 s. Trilha toda
+    // abaixo da dobra continua esperando a rolagem: a trilha nunca fica oculta na tela.
+    var bnav = document.querySelector('.bnav'), base = 0, pedido = 0, feito = false, relogio = 0;
+    var medir = function () {
+      var util = innerHeight - (bnav ? bnav.offsetHeight : 0), r = trilha.getBoundingClientRect();
+      if (!base) base = r.top >= 0 && r.bottom <= util ? 650 : 150; // ja visivel: espera o titulo assentar
+      return { r: r, util: util, visivel: Math.min(r.bottom, util) - Math.max(r.top, 0) };
+    };
+    var iniciar = function () {
+      feito = true;
+      clearTimeout(relogio);
+      removeEventListener('scroll', agendar);
+      removeEventListener('resize', agendar);
+      cena(trilha, base);
+    };
     var verificar = function () {
       pedido = 0;
       if (feito) return;
-      var util = innerHeight - (bnav ? bnav.offsetHeight : 0), r = trilha.getBoundingClientRect();
-      var visivel = Math.min(r.bottom, util) - Math.max(r.top, 0);
-      if (!base) base = r.top >= 0 && r.bottom <= util ? 650 : 150; // ja visivel: espera o titulo assentar
-      if (r.bottom < 0 || visivel >= Math.min(r.height * 0.9, util * 0.75)) {
-        feito = true;
-        removeEventListener('scroll', agendar);
-        removeEventListener('resize', agendar);
-        cena(trilha, base);
-      }
+      var m = medir();
+      if (m.r.bottom < 0 || m.visivel >= Math.min(m.r.height * 0.9, m.util * 0.75)) iniciar();
+    };
+    var forcar = function (fracao) {
+      if (feito) return false;
+      var m = medir();
+      if (m.visivel > 0 && m.visivel >= m.r.height * fracao) { iniciar(); return true; }
+      return false;
     };
     var agendar = function () { if (!pedido) pedido = requestAnimationFrame(verificar); };
     addEventListener('scroll', agendar, { passive: true });
     addEventListener('resize', agendar);
+    relogio = setTimeout(function () {
+      if (!forcar(0.75)) relogio = setTimeout(function () { forcar(0); }, 3000);
+    }, 1500);
     verificar();
   }
 
