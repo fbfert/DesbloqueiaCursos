@@ -158,10 +158,10 @@
 **Interfaces:**
 - Consumes: `curso`, `estadoIndisponivel`, `mensagem`, `titulo` do controller (ler `resources/views/v2/pages/curso.php` para o formato de `$curso`: turmas, módulos, seções textuais, preços, professor); `foto-curso` não — a capa aqui usa `view-transition-name: capa-<id>` e `titulo-<id>`.
 
-- [ ] 7.1 `CursoController`: `TemaPublico::view('curso')` nos dois pontos.
-- [ ] 7.2 Página: capa colada grande + título (com os nomes de view transition) → ficha de inscrição (preço atual, original riscado, turma, botão `Desbloquear` com o mesmo destino da V2; lateral `position: sticky` ≥ 900 px; barra fixa inferior no celular acima do bnav) → seções da V2 na mesma ordem e com os mesmos títulos (Sobre o curso, O que você vai aprender, Objetivo geral, Público-alvo, Pré-requisitos, Metodologia, Ementa, Conteúdo programático, Avaliação, Produto final), cada uma só se tiver conteúdo → conteúdo programático como trilha vertical (`trilha-modulos.php`) → turmas abertas como fichas pautadas → professor como assinatura. Estado indisponível com a mensagem da V2.
-- [ ] 7.3 Verificar com a fixture: curso completo, curso sem turma (sem botão de compra quebrado, mensagem da V2), curso sem conteúdo programático (seção ausente), curso em promoção (preço original riscado); transição catálogo→curso no Chrome; `php -l`, `node --check`.
-- [ ] 7.4 Commit "Pagina do curso no tema caderno".
+- [x] 7.1 `CursoController`: `TemaPublico::view('curso')` nos dois pontos.
+- [x] 7.2 Página: capa colada grande + título (com os nomes de view transition) → ficha de inscrição (preço atual, original riscado, turma, botão `Desbloquear` com o mesmo destino da V2; lateral `position: sticky` ≥ 900 px; barra fixa inferior no celular acima do bnav) → seções da V2 na mesma ordem e com os mesmos títulos (Sobre o curso, O que você vai aprender, Objetivo geral, Público-alvo, Pré-requisitos, Metodologia, Ementa, Conteúdo programático, Avaliação, Produto final), cada uma só se tiver conteúdo → conteúdo programático como trilha vertical (`trilha-modulos.php`) → turmas abertas como fichas pautadas → professor como assinatura. Estado indisponível com a mensagem da V2.
+- [x] 7.3 Verificar com a fixture: curso completo, curso sem turma (sem botão de compra quebrado, mensagem da V2), curso sem conteúdo programático (seção ausente), curso em promoção (preço original riscado); transição catálogo→curso no Chrome; `php -l`, `node --check`.
+- [x] 7.4 Commit "Pagina do curso no tema caderno".
 
 ## 8. Autenticação
 

@@ -365,3 +365,74 @@ Caderno.pagina('categorias', function () {
     }
   });
 });
+
+/* Curso: troca de turma sem recarregar (melhoria do link GET ?turma_id=, como na V2)
+   e a tinta da trilha de modulos desenhada conforme a rolagem. Os modulos ficam
+   sempre legiveis; so o traco e os checks esperam. Reduzido/leve: trilha ja
+   desenhada. Roda tambem em movimento reduzido (sempre=true) por causa da turma. */
+Caderno.pagina('curso', function () {
+  var C = window.Caderno;
+  var raiz = document.getElementById('curso');
+  if (!raiz) return;
+
+  // ---------- turma escolhida ----------
+  var lista = raiz.querySelector('.turmas');
+  if (lista) lista.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('.turma-ficha');
+    if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button) return;
+    var cta = a.getAttribute('data-cta-href');
+    if (!cta) return;
+    e.preventDefault();
+    var fs = lista.querySelectorAll('.turma-ficha'), i, nome = a.getAttribute('data-turma-nome') || '', inicio = a.getAttribute('data-turma-inicio') || '';
+    for (i = 0; i < fs.length; i++) {
+      var sel = fs[i] === a, rot = fs[i].querySelector('[data-rotulo-escolha]');
+      fs[i].classList.toggle('escolhida', sel);
+      if (sel) fs[i].setAttribute('aria-current', 'true'); else fs[i].removeAttribute('aria-current');
+      if (rot) rot.textContent = sel ? 'Turma escolhida' : 'Escolher esta turma';
+    }
+    var l = raiz.querySelectorAll('[data-cta]');
+    for (i = 0; i < l.length; i++) l[i].setAttribute('href', cta);
+    l = raiz.querySelectorAll('[data-turma-nome]:not(a)');
+    for (i = 0; i < l.length; i++) l[i].textContent = nome;
+    var di = raiz.querySelector('[data-turma-inicio]:not(a)'), dl = raiz.querySelector('[data-turma-inicio-linha]');
+    if (di) di.textContent = inicio;
+    if (dl) dl.hidden = !inicio;
+    if (history.replaceState) {
+      try { var u = new URL(a.href, location.href); u.hash = ''; history.replaceState(history.state, '', u.pathname + u.search + '#turmas'); } catch (er) {}
+    }
+  });
+
+  // ---------- trilha de modulos ----------
+  var trilha = raiz.querySelector('[data-trilha-mod]');
+  if (!trilha || C.reduzido || C.leve) return;
+  var mods = trilha.querySelectorAll('.mod'), feitos = 0, progresso = [], pedido = 0;
+  if (!mods.length) return;
+  trilha.classList.add('rolando');
+  var bnav = document.querySelector('.bnav'), barra = document.querySelector('.barra-compra');
+  var desenhar = function () {
+    pedido = 0;
+    var cobre = (bnav && bnav.offsetHeight ? bnav.offsetHeight : 0) + (barra && barra.offsetHeight ? barra.offsetHeight : 0);
+    var fim = document.documentElement.scrollHeight - innerHeight - 4 <= (window.pageYOffset || 0);
+    var linha = (innerHeight - cobre) * 0.72; // a caneta corre um pouco acima do pe da area util
+    for (var i = 0; i < mods.length; i++) {
+      var m = mods[i], r = m.getBoundingClientRect(), tr = m.querySelector('.mod-traco');
+      if (!m.classList.contains('feito') && (fim || r.top + 20 < linha)) {
+        m.classList.add('feito');
+        C.tracar(m.querySelector('.ok'), { duration: 260, delay: 120, easing: 'cubic-bezier(.3,0,.3,1)' });
+        feitos++;
+      }
+      if (tr) {
+        var p = fim ? 1 : Math.max(0, Math.min(1, (linha - r.top - 48) / Math.max(1, r.height - 52)));
+        if (p > (progresso[i] || 0)) { progresso[i] = p; tr.style.clipPath = 'inset(0 0 ' + ((1 - p) * 100).toFixed(2) + '% 0)'; }
+      }
+    }
+    if (feitos === mods.length && (!progresso.length || fim || progresso[mods.length - 2] >= 1)) {
+      removeEventListener('scroll', agendar);
+      removeEventListener('resize', agendar);
+    }
+  };
+  var agendar = function () { if (!pedido) pedido = requestAnimationFrame(desenhar); };
+  addEventListener('scroll', agendar, { passive: true });
+  addEventListener('resize', agendar);
+  desenhar();
+}, true);

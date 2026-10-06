@@ -9,6 +9,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Models\CursoEvento;
 use App\Services\CursoService;
+use App\Support\TemaPublico;
 
 /**
  * Ficha de Curso V2 integrada com dados reais (Fase 2.3).
@@ -101,7 +102,7 @@ class CursoController extends Controller
             'success' => Session::pullFlash('success'),
         ));
 
-        return new Response(View::render('v2/curso', $data, false));
+        return new Response(View::render(TemaPublico::view('curso'), $data, false));
     }
 
     /**
@@ -333,7 +334,7 @@ class CursoController extends Controller
             'success' => null,
         ));
 
-        return new Response(View::render('v2/curso', $data, false), (int) $status);
+        return new Response(View::render(TemaPublico::view('curso'), $data, false), (int) $status);
     }
 
     private function dadosLayout($usuarioId, $usuarioNome, $hasAdminAccess, $hasProfessorAccess)
