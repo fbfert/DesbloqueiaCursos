@@ -75,8 +75,9 @@ com extensão diferente de `.php` dentro dessas pastas (ex.: `.bak`, `.tmp`,
 
 Relatório completo: `docs/2026-10-06-tema-caderno.md`.
 
-- **Valores:** só `TEMA_PUBLICO=caderno` ativa o tema; qualquer outro valor,
-  ou a ausência da chave, mantém a V2. Vale para home, catálogo, categorias,
+- **Valores:** `TEMA_PUBLICO=caderno` ativa o tema, sem diferenciar maiúsculas
+  nem espaços nas pontas (`Caderno` também vale); qualquer outro valor, ou a
+  ausência da chave, mantém a V2. Vale para home, catálogo, categorias,
   curso, institucionais, validar certificado, erro, login, pós-login, cadastro,
   recuperar e redefinir senha e as etapas do checkout. Área do aluno, aula,
   quiz, atividade e minha conta continuam sempre na V2. A raiz `/` só mostra a
@@ -88,10 +89,12 @@ Relatório completo: `docs/2026-10-06-tema-caderno.md`.
   link "sair" ou o fim da sessão. Para quem não tem a permissão, `?tema` é
   ignorado.
 - **Virada:** `TEMA_PUBLICO=caderno` no `.env`, sem deploy de código, só com
-  aprovação do produto. Depois, rode o smoke contra a produção.
+  aprovação do produto. Depois, rode o smoke contra a produção, com
+  `SMOKE_CURSO_ID=<id de um curso publicado>` para incluir a ficha de um curso real.
 - **Rollback:** `TEMA_PUBLICO=v2` no `.env`. Vale na requisição seguinte.
 - **Fontes e ícones são do próprio site**, em `assets/caderno/` (CSS, JS,
-  `fontes/*.woff2`) e no sprite SVG de `resources/views/caderno/partials/icones.php`.
+  `fontes/*.woff2`, com as licenças SIL OFL em `fontes/OFL-*.txt`) e no sprite
+  SVG de `resources/views/caderno/partials/icones.php`.
   As páginas do tema não usam Google Fonts nem o CDN do Tabler; suba a pasta
   `assets/caderno/fontes/` junto, ou os títulos caem na fonte de reserva.
   `assets/caderno/exemplos/` não precisa ir para a produção.
@@ -101,25 +104,43 @@ Relatório completo: `docs/2026-10-06-tema-caderno.md`.
 - **Antes da virada, compressão e cache.** Em 06/10/2026 a produção servia
   CSS, JS e HTML sem `Content-Encoding` e os estáticos sem `Cache-Control`.
   Sem compressão, home, catálogo e curso do tema passam de 2,5 s de LCP na 4G
-  lenta; com gzip, ficam em 2,0–2,2 s. Sugestão para o `.htaccess` da raiz,
-  a validar no cPanel (os módulos precisam estar habilitados na hospedagem):
+  lenta; com gzip, ficam em 2,0–2,2 s. Sugestão a validar no cPanel (os
+  módulos precisam estar habilitados na hospedagem), em duas partes:
 
-  ```apache
-  <IfModule mod_deflate.c>
-      AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript application/json image/svg+xml
-  </IfModule>
-  <IfModule mod_expires.c>
-      ExpiresActive On
-      ExpiresByType text/css "access plus 1 year"
-      ExpiresByType application/javascript "access plus 1 year"
-      ExpiresByType font/woff2 "access plus 1 year"
-  </IfModule>
-  ```
+  1. No `.htaccess` da raiz, só compressão e o cache das fontes. **Não**
+     coloque ali cache longo para `text/css` ou `application/javascript`: ele
+     valeria para o site inteiro, e arquivos linkados sem `?v=` (por exemplo
+     `/assets/css/app.css`, `/assets/css/admin.css`, `/v2/assets/css/v2-main.css`
+     e `/v2/assets/js/v2-main.js`) ficariam até um ano sem receber correções.
 
-  O cache longo é seguro para `assets/caderno/` porque os links levam
-  `?v=<filemtime>`. Confira depois com
+     ```apache
+     <IfModule mod_deflate.c>
+         AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript application/json image/svg+xml
+     </IfModule>
+     <IfModule mod_expires.c>
+         ExpiresActive On
+         ExpiresByType font/woff2 "access plus 1 year"
+     </IfModule>
+     ```
+
+  2. Um `.htaccess` novo **dentro de `assets/caderno/`**, com o cache longo
+     só para o CSS e o JS do tema, que são seguros porque os links levam
+     `?v=<filemtime>` (cada alteração muda a URL):
+
+     ```apache
+     <IfModule mod_expires.c>
+         ExpiresActive On
+         ExpiresByType text/css "access plus 1 year"
+         ExpiresByType application/javascript "access plus 1 year"
+     </IfModule>
+     ```
+
+  O resto do CSS e do JS continua como hoje (sem `Expires`; o navegador
+  revalida pelo `ETag`). Confira depois com
   `curl -s -o /dev/null -D - -H "Accept-Encoding: gzip" https://desbloqueiacursos.com.br/v2/` —
-  a resposta precisa trazer `Content-Encoding: gzip`.
+  a resposta precisa trazer `Content-Encoding: gzip` — e, com `-D -`, que
+  `/assets/caderno/caderno.css?v=...` traz `Expires` de um ano e
+  `/assets/css/app.css` não.
 - **Capas dos cursos:** as atuais têm 1,7–2,0 MB cada. Na página do curso a
   capa é o maior elemento da tela; reexportá-las em tamanho e formato menores
   (a mesma arte) é o que permite o LCP de 2,5 s também ali.

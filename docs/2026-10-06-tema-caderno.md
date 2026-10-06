@@ -61,8 +61,9 @@ pedida pelo usuário durante a entrega, vale também para a V2).
 ## Decisões
 
 **Chave + prévia por sessão, e não troca direta.** `TEMA_PUBLICO=caderno` é o
-único valor que ativa o tema; qualquer outro valor, ou a ausência da chave,
-mantém a V2. A prévia só é gravada na sessão de quem tem `conteudo.gerenciar`;
+único valor que ativa o tema, comparado sem diferenciar maiúsculas e sem os
+espaços das pontas (`Caderno` ou ` caderno ` também valem); qualquer outro
+valor, ou a ausência da chave, mantém a V2. A prévia só é gravada na sessão de quem tem `conteudo.gerenciar`;
 para os demais o parâmetro `?tema` é ignorado e uma prévia antiga é removida.
 Página do escopo sem view no tema cai na V2, sem erro.
 
@@ -88,12 +89,17 @@ protótipo aprovado, por exigência de WCAG AA na spec:
   (2,8:1 sobre o papel) para a tinta `#1F3FA8`, 3 px com recuo de 3 px
   (7,25:1 a 8,99:1 nos fundos do tema; na faixa violeta da prévia o anel é
   amarelo post-it).
+- **Onda final** — o número de cursos das lombadas (10,5 px) perdeu a
+  opacidade de 88 %: branco sobre as sete cores de lombada fica entre 4,66:1
+  (`#A8641A`) e 16,9:1, antes 4,0:1 na pior. O placeholder dos campos passou
+  de `--apagado` (2,8:1 sobre o papel) para `--texto2` (7,2:1).
 
 **Cupom só onde o backend aceita (R10).** O campo aparece só enquanto o pedido
-aceita cupom. A regra da view foi registrada para incluir também pedidos
-cancelados, expirados e reembolsados (o backend sempre recusa nesses status);
-esse ajuste está na onda de correções finais da branch, junto da acentuação
-de `CupomService` ("Cupom privado sem relacoes configuradas.").
+aceita cupom: some com comprovante em análise, com pedido pago ou aprovado e
+também com pedido cancelado, expirado ou reembolsado (a mesma lista fixa de
+`CupomService::pedidoStatusBloqueadoParaCupom`, em que o backend sempre
+recusa). **Corrigido nesta onda**, junto da acentuação da mensagem de
+`CupomService` ("Cupom privado sem relações configuradas.").
 
 **Movimento nativo, sem biblioteca.** Web Animations API, IntersectionObserver
 e `@view-transition { navigation: auto; }` (a foto do catálogo "vira" a capa do
@@ -103,6 +109,9 @@ paga no 4G pré-pago.
 **Nada fica escondido.** Estados ocultos de animação só existem sob a classe
 `html.anima`, posta por um script inline mínimo no `<head>`. Uma trava tira
 `.anima` em 2,5 s se `caderno.js` não assumir (`window.CADERNO_TRAVA`, R2).
+A trilha da home, quando já está ao menos em parte na tela, começa sozinha no
+mesmo prazo de 2,5 s, contado do início da resposta como a trava (R11); se
+`caderno.js` chegar depois da trava, a home não esconde nem anima nada.
 Movimento reduzido: nada anima e não há view transitions. Modo leve
 (`saveData` ou `hardwareConcurrency <= 2`): só a cena principal, versão curta,
 sem revelações ao rolar.
@@ -117,13 +126,13 @@ propriedades tipadas, como o restante do projeto.
 |---|---|---|
 | Seletor | `app/Support/TemaPublico.php` | `ativo()`, `view($nome)` (cai na V2 sem view no tema), `aplicarPrevia()`, `emPrevia()` |
 | Chave | `config/app.php` → `tema_publico`; `.env.example` | `TEMA_PUBLICO=v2` por padrão |
-| Prévia | `index.php` (início da requisição GET com `?tema=`) | grava ou remove `tema_previa` na sessão, só com `conteudo.gerenciar` |
+| Prévia | `index.php` (requisição GET com `?tema=`, logo depois do `ErrorHandler::register` e antes do roteamento) | grava ou remove `tema_previa` na sessão, só com `conteudo.gerenciar` |
 | Controllers | `app/Controllers/V2/{Home,Catalogo,Categorias,Curso,Institucional,CertificadoValidacao,Login,Cadastro,RecuperarSenha}Controller.php`, `app/Support/V2ErrorPage.php`, `CheckoutController::renderCheckout()` | uma linha de seleção de view cada; `CheckoutController::aplicarCupomV2()` novo |
 | Rotas | `routes/web.php` | `POST /v2/checkout/cupom` (`auth.v2`, CSRF) |
 | Views | `resources/views/caderno/` | `layout.php` e `auth-layout.php`; shims com o mesmo nome da V2; conteúdo em `pages/`; 21 partials (topo, rodapé, barra inferior, foto colada, lombada, trilhas, carimbo, post-it, recibo, checklist, sprite de ícones…) |
 | CSS | `assets/caderno/caderno.css` | tokens, base, componentes e páginas num arquivo só |
 | JS | `assets/caderno/caderno.js` | núcleo de movimento + módulos por página (`Caderno.pagina('nome', init)` só roda quando `<body data-pagina>` corresponde) |
-| Fontes | `assets/caderno/fontes/` | Instrument Serif (títulos), Geist variável (texto), Kalam (anotações) — woff2, SIL OFL |
+| Fontes | `assets/caderno/fontes/` | Instrument Serif (títulos), Geist variável (texto), Kalam (anotações) — woff2, SIL OFL (textos das licenças em `fontes/OFL-*.txt`) |
 | Ícones | `resources/views/caderno/partials/icones.php` | sprite SVG inline de traço de caneta, substitui o Tabler |
 | Mensagens | `app/Services/PedidoService.php`, `app/Services/CupomService.php` | acentuação das mensagens do caminho de aplicação de cupom (o texto muda, a regra não) |
 | Norminha | `resources/views/components/tutor_norminha.php`, `assets/js/tutor-norminha.js` | "N" de reserva no botão sem avatar (N1) |
@@ -141,12 +150,13 @@ Ambiente: Docker local (PHP 8.3 com `php -S`, MariaDB 10.5), fixture aplicada,
 ### Orçamento por página
 
 Medido com `gzip -c` (nível padrão) sobre os arquivos servidos, e no HTML real
-de cada página do escopo.
+de cada página do escopo. Valores reconferidos depois da onda final de
+correções (na Tarefa 13 eram 63.330 → 15.032 B e 31.890 → 9.721 B).
 
 | Recurso | Bruto | gzip | Orçamento | Uso |
 |---|---|---|---|---|
-| `caderno.css` | 63.330 B | **15.032 B** | 25.600 B | 59 % |
-| `caderno.js` + script inline do `<head>` | 31.890 B | **9.721 + ~180 B** | 15.360 B | 64 % |
+| `caderno.css` | 63.317 B | **15.023 B** | 25.600 B | 59 % |
+| `caderno.js` + script inline do `<head>` | 32.641 B | **10.008 + ~180 B** | 15.360 B | 66 % |
 
 As 21 páginas do escopo carregam o mesmo `caderno.css` e o mesmo `caderno.js`
 (não há CSS ou JS por página), então o orçamento vale igual para todas:
@@ -157,7 +167,10 @@ estados específicos do pedido; usam o mesmo layout e os mesmos arquivos.
 
 Fora do tema, mas na mesma página: a Norminha (componente compartilhado com a
 V2) soma 6.665 B gzip de JS e 4.368 B de CSS em todas as páginas públicas,
-exceto o checkout; `conteudo-html-embed` soma 362 B de JS e 274 B de CSS.
+exceto o checkout; `conteudo-html-embed` soma 362 B de JS e 274 B de CSS
+(`gzip -c` de `assets/js/tutor-norminha.js`, `assets/css/tutor-norminha.css`,
+`assets/js/conteudo-html-embed.js` e `assets/css/conteudo-html-embed.css`,
+conferido na onda final).
 
 ### Lighthouse mobile (Moto G Power, 4G lenta simulada)
 
@@ -174,8 +187,10 @@ Apache com `mod_deflate`.
 
 - **Com compressão**, as quatro páginas cumprem LCP ≤ 2,5 s, CLS ≤ 0,1 e
   acessibilidade ≥ 95. **Sem compressão**, home, catálogo e curso passam do
-  LCP: são cerca de 122 KiB de texto a mais na 4G lenta, dos quais cerca de
-  47 KiB no CSS que bloqueia a renderização.
+  LCP: são cerca de 122 KiB de texto a mais na 4G lenta (auditoria
+  `uses-text-compression` do Lighthouse), dos quais cerca de 47 KiB no CSS
+  que bloqueia a renderização (63.330 B brutos − 15.032 B com gzip, tabela
+  acima na medição da Tarefa 13).
 - **A produção hoje não comprime nem define cache para os arquivos estáticos**
   (conferido em 06/10/2026: `curl -H "Accept-Encoding: gzip"` em
   `/v2/assets/css/v2-main.css` volta sem `Content-Encoding` e sem
@@ -186,8 +201,11 @@ Apache com `mod_deflate`.
   as capas têm 13–15 KB; **em produção as capas atuais têm 1,7–2,0 MB cada**
   (PNG). Com elas, o LCP da página do curso em 4G lenta fica muito acima de
   2,5 s em qualquer tema. Para comparação, a home V2 em produção hoje mede
-  LCP 41,5 s, 31,6 MB transferidos, desempenho 65 e acessibilidade 92 no mesmo
-  Lighthouse. No tema, as capas fora da página do curso têm `loading="lazy"`.
+  LCP 41,5 s, desempenho 65 e acessibilidade 92 no mesmo Lighthouse. No tema,
+  as capas fora da página do curso têm `loading="lazy"`
+  (`resources/views/caderno/partials/foto-curso.php`, usado na home e no
+  catálogo); a capa da página do curso, que é o LCP, usa
+  `fetchpriority="high"`.
 - Catálogo 98 e não 100 por `heading-order`: os títulos dos cards são `h3`
   sem um `h2` antes na página.
 
@@ -262,8 +280,11 @@ categorias e curso não animam.
 
 ### Testes
 
-- Smoke `tests/Smoke/smoke.php`: **43/43** com `TEMA_PUBLICO=caderno`
-  (reexecutado em 06/10/2026) e 43/43 com `TEMA_PUBLICO=v2` (Tarefa 12).
+- Smoke `tests/Smoke/smoke.php` (reexecutado na onda final): com
+  `TEMA_PUBLICO=caderno`, **42/42** sem `SMOKE_CURSO_ID` e **43/43** com
+  `SMOKE_CURSO_ID=15` (a ficha do curso da fixture); com `TEMA_PUBLICO=v2`,
+  43/43 com `SMOKE_CURSO_ID=15`. A rota com curso real só entra quando a
+  variável está definida, para não depender de um id fixo.
 - Paridade de formulários, campos e links entre V2 e caderno em 18 páginas:
   sem diferença de `action`, `name` ou link; só a âncora da seção de turmas
   muda (`#v2-curso-turmas` → `#turmas`).
@@ -311,7 +332,8 @@ TEMA_PUBLICO=caderno
 ```
 
 Sem deploy de código. Só com aprovação do produto. Depois da virada, rodar
-`php tests/Smoke/smoke.php https://desbloqueiacursos.com.br`.
+`SMOKE_CURSO_ID=<id de um curso publicado> php tests/Smoke/smoke.php https://desbloqueiacursos.com.br`
+(sem a variável, a ficha de curso com curso real é pulada).
 
 ## Rollback
 
@@ -343,15 +365,22 @@ código, reenviar as versões anteriores dos controllers, `index.php`,
 - Erros de login sem campo associado vão para o campo "E-mail ou CPF"; o campo
   de senha nunca recebe `aria-invalid`.
 - No celular em pé, quem não rola vê o espaço da trilha da home em branco por
-  até 4,5 s antes da cena começar sozinha.
+  até 2,5 s, contados do início da resposta, antes da cena começar sozinha; a
+  cena pode começar com a trilha só em parte na tela (R11). Medido na onda
+  final em 360×780 sem rolar: a cena começa entre 2,5 e 2,6 s depois do
+  início da resposta (2,1–2,3 s depois do evento `load`).
+- Qualquer 404 ou 403 sob `/v2/...` (inclusive `/v2/aluno/...`, que continua
+  na V2) usa a página de erro do tema quando a chave está em `caderno`.
+- Trocar de turma na página do curso não é anunciado por leitor de tela (sem
+  região `aria-live`); só o texto do link clicado muda.
+- "Pagar com PIX" no pagamento só leva à etapa do comprovante, onde ficam a
+  chave PIX e o envio do comprovante.
 - No modo leve, os números da home ainda contam (versão curta) e as animações
   do checkout não consultam o modo leve.
 - Módulos do curso sempre expandidos: cursos longos ficam extensos.
 - Imagens e ícones próprios das categorias da V2 não aparecem nas lombadas.
 - Safari < 16: `.folha` usa `overflow: hidden` e, nessas versões, o topo fixo
   pode deixar de ser fixo; não foi possível testar.
-- `tests/Smoke/rotas.php` fixa `curso_id=15`, que só existe na fixture; contra
-  a produção essa verificação cai no catálogo.
 - O checkout logado (participantes, pagamento) não tem cobertura automatizada.
 
 ## Achados anteriores ao tema
@@ -363,10 +392,13 @@ correção própria:
    `tests/Unit/checkout_rapido_fase1.php` "CPF invalido e recusado" já falhava
    antes do tema (15 passou, 1 falhou, reexecutado em 06/10/2026). Afeta o
    cadastro e o checkout nas duas versões.
-2. **Mensagens do `AuthService` sem acento**, iguais na V2: "Dados de acesso
-   invalidos.", "Informe um e-mail valido.", "Informe um CPF valido.", "A
-   confirmacao da senha nao confere.", "O aceite dos termos de uso e
-   obrigatorio."
+2. **Mensagens do `AuthService` sem acento**, iguais na V2. No login: "Dados
+   de acesso invalidos.", "Usuario sem permissao de acesso."; no cadastro:
+   "Informe um e-mail valido.", "Informe um CPF valido.", "A confirmacao da
+   senha nao confere.", "O aceite dos termos de uso e obrigatorio.", "O aceite
+   da politica de privacidade e obrigatorio.", "Este e-mail ja esta
+   cadastrado.", "Este CPF ja esta cadastrado."; na redefinição de senha:
+   "A confirmacao da senha nao confere.", "Token invalido ou expirado."
 3. **Painel da Norminha sem JS** abre por cima do conteúdo e mostra `<br>`
    literal.
 4. **Produção sem compressão e sem cache de estáticos**, e **capas de 2 MB**:
