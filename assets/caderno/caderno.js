@@ -105,11 +105,28 @@ Caderno.pagina('home', function () {
 
   var trilha = hero.querySelector('.trilha');
   if (trilha) {
-    // a barra inferior do celular cobre o pe da tela: "inteira" desconta a altura dela
-    var bnav = document.querySelector('.bnav'), pe = bnav ? bnav.offsetHeight : 0;
-    var r = trilha.getBoundingClientRect();
-    var base = r.top >= 0 && r.bottom <= innerHeight - pe ? 650 : 150; // ja visivel: espera o titulo assentar
-    C.aoVer(trilha, function (t) { cena(t, base); }, { threshold: 0.9, rootMargin: '0px 0px -' + pe + 'px 0px' });
+    // A cena espera a trilha "inteira" na tela. A barra inferior do celular cobre o pe
+    // da tela, entao a area util desconta a altura dela. Em tela baixa (celular deitado)
+    // a trilha nao cabe: basta ocupar 3/4 da area util. Se a pessoa rolar alem
+    // da trilha, a cena roda do mesmo jeito: a trilha nunca fica oculta.
+    var bnav = document.querySelector('.bnav'), base = 0, pedido = 0, feito = false;
+    var verificar = function () {
+      pedido = 0;
+      if (feito) return;
+      var util = innerHeight - (bnav ? bnav.offsetHeight : 0), r = trilha.getBoundingClientRect();
+      var visivel = Math.min(r.bottom, util) - Math.max(r.top, 0);
+      if (!base) base = r.top >= 0 && r.bottom <= util ? 650 : 150; // ja visivel: espera o titulo assentar
+      if (r.bottom < 0 || visivel >= Math.min(r.height * 0.9, util * 0.75)) {
+        feito = true;
+        removeEventListener('scroll', agendar);
+        removeEventListener('resize', agendar);
+        cena(trilha, base);
+      }
+    };
+    var agendar = function () { if (!pedido) pedido = requestAnimationFrame(verificar); };
+    addEventListener('scroll', agendar, { passive: true });
+    addEventListener('resize', agendar);
+    verificar();
   }
 
   function cena(t, base) {
