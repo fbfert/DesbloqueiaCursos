@@ -542,6 +542,10 @@ Caderno.pagina('checkout', function () {
       var v = '';
       for (var j = 0; j < tipos.length; j++) if (tipos[j].checked) v = tipos[j].value;
       qtd.hidden = v === 'propria' && !qtd.classList.contains('erro');
+      // Campo oculto invalido travaria o envio sem aviso: volta a 1 (o servidor
+      // usa 1 na compra propria) e reaparece valido em terceiros/lote.
+      var n = qtd.querySelector('input');
+      if (qtd.hidden && n && !n.checkValidity()) n.value = 1;
     };
     for (i = 0; i < tipos.length; i++) tipos[i].addEventListener('change', sincronizar);
     sincronizar();
