@@ -54,3 +54,8 @@ Portal de cursos e eventos Polo Rainbow.
 8. Certificados
 9. Financeiro e repasses
 10. Logs, auditoria e lixeira
+
+## Especificação de mudanças (OpenSpec)
+- Mudanças relevantes são propostas em `openspec/changes/<nome>/` antes de implementar (ver seção "Fluxo de desenvolvimento" do `CLAUDE.md`).
+- Requisitos vigentes ficam em `openspec/specs/`; contexto e regras em `openspec/config.yaml`.
+- `openspec/` não é pública: está bloqueada no `.htaccess` junto com `docs/` e `specs/`.

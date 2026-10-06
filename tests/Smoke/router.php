@@ -17,7 +17,7 @@ $caminho = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $caminho = $caminho === false || $caminho === null ? '/' : $caminho;
 
 // Impede que o servidor local exponha o que o .htaccess bloqueia em produção.
-if (preg_match('#^/(app|backups|config|docs|resources|routes|scripts|specs|sql|storage|tests)(/|$)#', $caminho)) {
+if (preg_match('#^/(app|backups|config|docs|openspec|resources|routes|scripts|specs|sql|storage|tests)(/|$)#', $caminho)) {
     http_response_code(403);
     echo 'Acesso negado.';
     return true;

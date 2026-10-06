@@ -19,16 +19,17 @@ RedirectMatch 404 /\.git
 # servidos por rotas controladas. Bloquear por HTTP não altera o app.
 #
 # Permanecem públicos, por design: assets/, uploads/, icon/ e v2/.
+# openspec/ (2026-10-05) é bloqueado como specs/: especificações de desenvolvimento.
 # ---------------------------------------------------------------------------
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    RewriteRule ^(app|backups|config|docs|resources|routes|scripts|specs|sql|storage|tests)(/|$) - [F,L]
+    RewriteRule ^(app|backups|config|docs|openspec|resources|routes|scripts|specs|sql|storage|tests)(/|$) - [F,L]
 </IfModule>
 
 # Rede de segurança para o caso de mod_rewrite estar indisponível.
 <IfModule !mod_rewrite.c>
-    RedirectMatch 403 ^/(app|backups|config|docs|resources|routes|scripts|specs|sql|storage|tests)(/|$)
+    RedirectMatch 403 ^/(app|backups|config|docs|openspec|resources|routes|scripts|specs|sql|storage|tests)(/|$)
 </IfModule>
 
 # Extensões que nunca devem ser baixadas de qualquer lugar da árvore.

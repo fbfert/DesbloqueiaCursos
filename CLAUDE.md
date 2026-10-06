@@ -106,9 +106,24 @@ Migrations: arquivos SQL simples e numerados em `sql/` (ex.: `054_pedido_recuper
 - Recuperação de senha usa token com validade de 60 minutos.
 - PIX é manual no MVP (comprovante anexado pelo pagador, aprovação manual no admin).
 
-## Fluxo de desenvolvimento (Spec Kit)
+## Fluxo de desenvolvimento (OpenSpec)
 
-O projeto segue um fluxo `spec -> plan -> tasks -> implement -> validação`, definido em `.specify/memory/constitution.md` e exemplificado em `specs/0000-adocao-spec-kit/`. Para mudanças relevantes, crie/atualize spec, plano e tarefas antes de implementar. Princípios fixos dessa constituição:
+Mudanças relevantes seguem o [OpenSpec](https://github.com/Fission-AI/OpenSpec) (CLI `openspec`,
+instalado globalmente via `npm i -g @fission-ai/openspec` — não é dependência do projeto):
+
+- `/opsx:explore` — investigar opções antes de decidir.
+- `/opsx:propose <ideia>` — cria `openspec/changes/<nome>/` com `proposal.md` (por quê),
+  `specs/` (delta de requisitos), `design.md` (como) e `tasks.md`. Revisar antes de implementar.
+- `/opsx:apply` — implementar as tarefas da mudança.
+- `/opsx:archive` — ao concluir, funde o delta em `openspec/specs/` e arquiva a mudança.
+
+`openspec/specs/` guarda os requisitos vigentes, uma capability por domínio (`checkout`, `cupons`,
+`rbac`…). A base é especificada sob demanda: a spec de uma área nasce na primeira mudança que a
+toca. O contexto do projeto e as regras por artefato ficam em `openspec/config.yaml`. Artefatos em
+PT-BR; títulos estruturais e `SHALL`/`MUST` em inglês. Valide com `openspec validate --all`.
+
+`specs/0001-*` e `specs/0002-*` são histórico do formato anterior (spec/plan/tasks) — não crie
+novas pastas ali. Princípios que continuam fixos:
 
 - Regras de negócio centralizadas em Services; controllers finos.
 - Compatibilidade obrigatória com MySQL 5.7.

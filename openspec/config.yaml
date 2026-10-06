@@ -1,0 +1,43 @@
+schema: spec-driven
+
+context: |
+  Language: pt-BR
+  All artifacts must be written in pt-BR.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  Projeto: Desbloqueia Cursos (Polo Rainbow) — portal de cursos e eventos em produção
+  (catálogo, checkout, área do aluno/professor/revisor, admin, certificados, financeiro,
+  assistente Norminha). Antes de propor, leia CLAUDE.md e AGENTS.md.
+
+  Stack e restrições fixas:
+  - PHP MVC sem framework, sem Composer, sem dependência externa nova.
+  - Controllers finos; regra de negócio em Services; Models em PDO puro com prepared statements.
+  - SQL compatível com MySQL 5.7 (servidor real: MariaDB 10.5). Migrations SQL numeradas e
+    aditivas em sql/, aplicadas manualmente — sem runner.
+  - Frontend mobile-first, JS sem framework. Admin desktop-first.
+  - Deploy manual via FTP para cPanel. A raiz do repositório é o docroot: todo diretório novo
+    não público precisa ser bloqueado no .htaccess.
+  - Todo texto de interface em PT-BR com acentuação correta (docs/padrao-editorial-ptbr.md).
+
+  Regras de negócio que nenhuma mudança pode violar sem decisão explícita:
+  - Cupom não se aplica a curso em promoção.
+  - Rateio sobre valor líquido recebido, teto de 75%.
+  - Professor só vê cursos atribuídos e nunca vê comprovantes PIX.
+  - Toda exclusão passa por TrashService com justificativa; mudança relevante gera auditoria.
+  - HTML de editor sempre passa por HtmlSanitizer::clean().
+
+  Organização das specs (openspec/specs/): uma capability por domínio de negócio, com nomes em
+  kebab-case em português (ex.: checkout, cupons, rbac, certificados, perfil-revisor, norminha).
+  Specs da base atual são criadas sob demanda, quando a área é tocada pela primeira vez.
+
+rules:
+  proposal:
+    - Declarar explicitamente o que está fora de escopo.
+    - Citar migrations novas (número e nome) e impacto em produção (deploy, rollback).
+  design:
+    - Indicar quais Services/Models/Controllers/views mudam e por quê.
+    - Justificar qualquer SQL que não seja trivialmente compatível com MySQL 5.7.
+  tasks:
+    - Incluir tarefa de validação com php -l nos arquivos PHP alterados e node --check nos JS.
+    - Incluir tarefa de revisão dos textos de interface (acentuação PT-BR).
+    - Incluir rota nova no smoke test (tests/Smoke) quando houver rota crítica nova.
