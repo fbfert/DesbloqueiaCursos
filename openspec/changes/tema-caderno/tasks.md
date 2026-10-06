@@ -129,11 +129,11 @@
 **Interfaces:**
 - Consumes: variáveis do `CatalogoController` V2 (`cursos`, `chips`, `categoriaSelecionada`, `tituloCategoria`, `totalCursos`, `paginacao`, `modalidadesView`, `estado` e as de navegação); `foto-curso.php` (tarefa 4).
 
-- [ ] 5.1 `CatalogoController`: `TemaPublico::view('catalogo')`.
-- [ ] 5.2 `pages/catalogo.php` conforme `catalogo-pagina.html`: título, busca (form `GET` existente, campo com o mesmo `name` da V2), divisórias de categoria como links/`GET` (funcionam sem JS), botão "Filtrar e ordenar" que abre a folha (sem JS, os filtros ficam visíveis inline abaixo da busca), contagem, grade de `foto-curso`, paginação como números de página a partir de `paginacao`, estado vazio com anotação.
-- [ ] 5.3 Módulo `catalogo`: folha que sobe (com foco preso, Esc fecha, foco volta ao botão); FLIP ao trocar de categoria quando a navegação for por JS; busca instantânea **só** quando todos os cursos já estão na página (sem paginação), senão submete o form.
-- [ ] 5.4 Verificar: abas e folha operáveis só pelo teclado; sem JS, filtros por `GET` funcionam; 360/768/1360 px; `php -l`, `node --check`.
-- [ ] 5.5 Commit "Catalogo no tema caderno".
+- [x] 5.1 `CatalogoController`: `TemaPublico::view('catalogo')`.
+- [x] 5.2 `pages/catalogo.php` conforme `catalogo-pagina.html`: título, busca (form `GET` existente, campo com o mesmo `name` da V2), divisórias de categoria como links/`GET` (funcionam sem JS), botão "Filtrar e ordenar" que abre a folha (sem JS, os filtros ficam visíveis inline abaixo da busca), contagem, grade de `foto-curso`, paginação como números de página a partir de `paginacao`, estado vazio com anotação.
+- [x] 5.3 Módulo `catalogo`: folha que sobe (com foco preso, Esc fecha, foco volta ao botão); FLIP ao trocar de categoria quando a navegação for por JS; busca instantânea **só** quando todos os cursos já estão na página (sem paginação), senão submete o form.
+- [x] 5.4 Verificar: abas e folha operáveis só pelo teclado; sem JS, filtros por `GET` funcionam; 360/768/1360 px; `php -l`, `node --check`.
+- [x] 5.5 Commit "Catalogo no tema caderno".
 
 ## 6. Categorias
 

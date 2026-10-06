@@ -10,6 +10,7 @@ use App\Core\View;
 use App\Services\CategoriaService;
 use App\Services\ConfiguracaoGlobalService;
 use App\Services\CursoService;
+use App\Support\TemaPublico;
 
 /**
  * Catálogo V2 integrado com dados reais (Fase 2.2).
@@ -204,7 +205,7 @@ class CatalogoController extends Controller
             'success' => Session::pullFlash('success'),
         );
 
-        return new Response(View::render('v2/catalogo', $data, false));
+        return new Response(View::render(TemaPublico::view('catalogo'), $data, false));
     }
 
     private function valorEfetivo(array $curso)
@@ -328,6 +329,8 @@ class CatalogoController extends Controller
                 'slug' => $slug,
                 'url' => $this->montarUrl(array_merge($estado, array('categoria' => $slug, 'pagina' => 1))),
                 'ativo' => $slug === $categoriaSlugAtual,
+                // Total público da categoria; só apresentação (contador da divisória no tema caderno).
+                'total' => isset($categoria['total_cursos']) ? (int) $categoria['total_cursos'] : null,
             );
         }
 

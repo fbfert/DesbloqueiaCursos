@@ -70,9 +70,12 @@
     }
   }
 
-  function pagina(nome, init) {
-    if (reduzido || !document.body || document.body.dataset.pagina !== nome) return;
-    try { init(); } catch (e) { html.classList.remove('anima'); }
+  // Cena da pagina. Com `sempre`, roda tambem em movimento reduzido: e o caso de
+  // modulos com funcao (folha de filtros, busca), que so cortam a animacao.
+  // Se o init falhar, volta tudo ao estado sem JS (.js sai: conteudo inline).
+  function pagina(nome, init, sempre) {
+    if ((reduzido && !sempre) || !document.body || document.body.dataset.pagina !== nome) return;
+    try { init(); } catch (e) { html.classList.remove('anima', 'js'); }
   }
 
   window.Caderno = {
@@ -180,3 +183,160 @@ Caderno.pagina('home', function () {
     }
   });
 });
+
+/* Catalogo: folha de filtros (foco preso, Esc fecha, foco volta ao botao). Busca
+   instantanea e troca de divisoria no navegador so quando todos os cursos ja estao
+   na pagina (o servidor marca data-busca-local / data-categoria-local); fora disso,
+   o form e os links GET seguem para o servidor. FLIP na troca, exceto leve/reduzido.
+   Roda tambem em movimento reduzido (sempre=true): so a animacao e cortada. */
+Caderno.pagina('catalogo', function () {
+  var C = window.Caderno, html = document.documentElement;
+  var form = document.getElementById('cat-form');
+  if (!form) return;
+
+  // ---------- folha que sobe ----------
+  var botao = form.querySelector('[data-abrir-filtros]'), folha = form.querySelector('[data-filtros]');
+  var papel = folha && folha.querySelector('.papel'), relogio = 0;
+  if (botao && papel) {
+    papel.setAttribute('role', 'dialog');
+    papel.setAttribute('aria-modal', 'true');
+    papel.setAttribute('tabindex', '-1');
+    var focaveis = function () {
+      var l = papel.querySelectorAll('button,[href],input,select,textarea'), r = [];
+      for (var i = 0; i < l.length; i++) if (!l[i].disabled && l[i].getClientRects().length) r.push(l[i]);
+      return r;
+    };
+    var teclas = function (e) {
+      if (e.key === 'Escape' || e.keyCode === 27) { e.preventDefault(); fechar(); return; }
+      if (e.key !== 'Tab' && e.keyCode !== 9) return;
+      var f = focaveis(), a = document.activeElement;
+      if (!f.length) return;
+      if (e.shiftKey && (a === f[0] || a === papel)) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && a === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+      else if (!papel.contains(a)) { e.preventDefault(); f[0].focus(); }
+    };
+    var abrir = function () {
+      clearTimeout(relogio);
+      folha.classList.add('aberta');
+      html.classList.add('folha-aberta');
+      botao.setAttribute('aria-expanded', 'true');
+      void papel.offsetWidth; // estado inicial calculado: a transicao de subida acontece
+      folha.classList.add('visivel');
+      papel.focus();
+      document.addEventListener('keydown', teclas);
+    };
+    var fechar = function () {
+      if (!folha.classList.contains('visivel')) return;
+      folha.classList.remove('visivel');
+      botao.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('keydown', teclas);
+      relogio = setTimeout(function () { folha.classList.remove('aberta'); html.classList.remove('folha-aberta'); }, C.reduzido ? 0 : 240);
+      botao.focus();
+    };
+    botao.addEventListener('click', abrir);
+    folha.addEventListener('click', function (e) {
+      var t = e.target;
+      while (t && t !== folha) { if (t.hasAttribute && t.hasAttribute('data-fechar')) { fechar(); return; } t = t.parentNode; }
+    });
+  }
+
+  // ---------- busca e divisorias no navegador ----------
+  var campo = document.getElementById('cat-busca'), campoCat = form.querySelector('[data-campo-categoria]');
+  var abas = form.querySelector('[data-abas]'), grade = document.getElementById('cat-grade');
+  var vazio = document.getElementById('cat-vazio'), resumo = document.getElementById('cat-resumo'), titulo = document.getElementById('cat-titulo');
+  var buscaLocal = form.getAttribute('data-busca-local') === '1', catLocal = form.getAttribute('data-categoria-local') === '1';
+
+  // No celular as divisorias rolam: a ativa comeca a vista.
+  var ativa = abas && abas.querySelector('[aria-current]');
+  if (ativa && abas.scrollWidth > abas.clientWidth) {
+    var ra = ativa.getBoundingClientRect(), rb = abas.getBoundingClientRect();
+    if (ra.right > rb.right) abas.scrollLeft += ra.left - rb.left - 24;
+  }
+
+  var norm = function (s) {
+    s = String(s || '').toLowerCase();
+    return s.normalize ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : s;
+  };
+  var url = function (base, mudar) {
+    try {
+      var u = new URL(base, location.href);
+      for (var k in mudar) { if (mudar[k]) u.searchParams.set(k, mudar[k]); else u.searchParams.delete(k); }
+      u.searchParams.delete('pagina');
+      return u.pathname + u.search;
+    } catch (e) { return null; }
+  };
+  // Divisoria que vai ao servidor leva junto a busca digitada e ainda nao enviada.
+  var levarBusca = function (a) {
+    var v = campo ? campo.value.trim() : '';
+    if (!campo || v === campo.defaultValue.trim()) return;
+    var novo = url(a.href, { busca: v });
+    if (novo) a.href = novo;
+  };
+
+  var itens = grade ? grade.children : [], textos = [], estado = { cat: campoCat ? campoCat.value : '', q: '' };
+  // Busca ja feita no servidor (lista ja filtrada): fica fixa; so a busca local filtra aqui.
+  var qServidor = campo ? campo.defaultValue.trim() : '';
+  for (var i = 0; i < itens.length; i++) textos[i] = norm(itens[i].getAttribute('data-texto'));
+  var nomeDe = function (slug) {
+    var a = slug && abas ? abas.querySelector('.aba[data-cat="' + slug.replace(/["\\]/g, '') + '"]') : null;
+    return a ? a.getAttribute('data-nome') : '';
+  };
+
+  var aplicar = function (animar) {
+    var q = norm(estado.q), antes = [], n = 0, k = 0, j, it, a, b;
+    var mover = animar && !C.reduzido && !C.leve;
+    if (mover) for (j = 0; j < itens.length; j++) antes[j] = itens[j].hidden ? null : itens[j].getBoundingClientRect();
+    for (j = 0; j < itens.length; j++) {
+      it = itens[j];
+      it.hidden = !((!estado.cat || it.getAttribute('data-cat') === estado.cat) && (!q || textos[j].indexOf(q) > -1));
+      if (!it.hidden) n++;
+    }
+    grade.hidden = n === 0;
+    if (vazio) vazio.hidden = n > 0;
+    if (abas) abas.classList.toggle('sem-totais', !!estado.q); // totais da categoria nao refletem a busca
+    var nome = nomeDe(estado.cat);
+    resumo.textContent = n + (n === 1 ? ' curso' : ' cursos') + (nome ? ' em ' + nome : '') + (estado.q || qServidor ? ' para \u201c' + (estado.q || qServidor) + '\u201d' : '');
+    if (!mover) return;
+    for (j = 0; j < itens.length; j++) {
+      it = itens[j];
+      if (it.hidden) continue;
+      b = it.getBoundingClientRect(); a = antes[j];
+      if (b.top > innerHeight && (!a || a.top > innerHeight)) continue; // fora da tela: sem custo
+      if (a) {
+        if (a.left !== b.left || a.top !== b.top) C.animar(it, [{ transform: 'translate(' + (a.left - b.left) + 'px,' + (a.top - b.top) + 'px)' }, { transform: 'none' }], { duration: 420, fill: 'none' });
+      } else {
+        C.animar(it, [{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: Math.min(k++, 8) * 40, fill: 'backwards' });
+      }
+    }
+  };
+  var sincronizar = function () {
+    var novo = url(location.href, { busca: buscaLocal ? estado.q : qServidor, categoria: estado.cat });
+    if (novo && history.replaceState) history.replaceState(history.state, '', novo);
+  };
+
+  if (buscaLocal && grade && campo) {
+    var espera = 0;
+    campo.addEventListener('input', function () {
+      clearTimeout(espera);
+      espera = setTimeout(function () { estado.q = campo.value.trim(); aplicar(true); sincronizar(); }, 180);
+    });
+  }
+
+  if (abas) abas.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('.aba');
+    if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button) return;
+    if (!catLocal || !grade || !campoCat) { levarBusca(a); return; }
+    e.preventDefault();
+    estado.cat = a.getAttribute('data-cat') || '';
+    if (buscaLocal && campo) estado.q = campo.value.trim();
+    campoCat.value = estado.cat;
+    var l = abas.querySelectorAll('.aba');
+    for (var j = 0; j < l.length; j++) l[j].removeAttribute('aria-current');
+    a.setAttribute('aria-current', 'page');
+    var nome = nomeDe(estado.cat), t = nome ? 'Cursos de ' + nome : 'Todos os cursos';
+    if (titulo) titulo.textContent = (nome || t) + '.';
+    document.title = t + ' \u2014 Desbloqueia Cursos';
+    aplicar(true);
+    sincronizar();
+  });
+}, true);
