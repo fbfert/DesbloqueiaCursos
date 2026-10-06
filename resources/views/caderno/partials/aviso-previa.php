@@ -17,7 +17,7 @@ parse_str((string) ($_SERVER['QUERY_STRING'] ?? ''), $consulta);
 $consulta['tema'] = 'v2';
 $hrefSair = $caminhoAtual . '?' . http_build_query($consulta);
 ?>
-<div class="aviso-previa" role="status" style="background:#22104A;color:#FCFCFA;font:500 13px/1.4 Geist,system-ui,sans-serif;padding:6px 16px;text-align:center">
+<div class="aviso-previa" role="status">
     Prévia do tema caderno &middot;
-    <a href="<?= Helpers::e($hrefSair) ?>" style="color:#FFE98A;text-decoration:underline">Sair da prévia</a>
+    <a href="<?= Helpers::e($hrefSair) ?>">Sair da prévia</a>
 </div>
