@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Support\SafeRedirect;
+use App\Support\TemaPublico;
 
 /**
  * Cadastro V2 (Fase 2.5) — apenas renderização visual.
@@ -54,7 +55,7 @@ class CadastroController extends Controller
             'areaHref' => $this->resolveAreaHref(),
         );
 
-        return new Response(View::render('v2/cadastro', $data, false));
+        return new Response(View::render(TemaPublico::view('cadastro'), $data, false));
     }
 
     private function resolveAreaHref()

@@ -8,6 +8,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Support\SafeRedirect;
+use App\Support\TemaPublico;
 
 /**
  * Login V2 (Fase 2.4) — apenas renderização visual.
@@ -67,7 +68,7 @@ class LoginController extends Controller
             'areaHref' => $this->resolveAreaHref(),
         );
 
-        return new Response(View::render('v2/login', $data, false));
+        return new Response(View::render(TemaPublico::view('login'), $data, false));
     }
 
     /**
@@ -96,7 +97,7 @@ class LoginController extends Controller
             'catalogoHref' => \App\Support\V2Nav::CATALOGO,
         );
 
-        return new Response(View::render('v2/pos-login', $data, false));
+        return new Response(View::render(TemaPublico::view('pos-login'), $data, false));
     }
 
     /**

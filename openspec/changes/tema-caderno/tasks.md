@@ -172,10 +172,10 @@
 **Interfaces:**
 - Consumes: variáveis de cada controller (ex.: `loginAction`, `old`, `errors`, `redirectSeguro`, `origemFlag`, `cadastroAction`, `termosHref`, `privacidadeHref`, `recuperarAction`, `redefinirAction`, `token`). **Campos, `name`s, ações, CSRF e campos ocultos idênticos aos da V2** — ler cada `resources/views/v2/pages/<pagina>.php`.
 
-- [ ] 8.1 Trocar a renderização nos controllers por `TemaPublico::view(...)`.
-- [ ] 8.2 Páginas: folha centralizada, campos "escrever na linha" com rótulo visível e erro em texto junto do campo, mostrar/ocultar senha, máscara de CPF existente reaproveitada; no cadastro, força da senha como marca-texto que preenche (aria-live com o texto da força).
-- [ ] 8.3 Verificar fluxos reais no ambiente local: login com `aluno.homologacao@polorainbow.com.br` / `Local@12345` (redireciona como na V2), login inválido mostra erro, cadastro novo, pedido de recuperação; `php -l`, `node --check`.
-- [ ] 8.4 Commit "Autenticacao no tema caderno".
+- [x] 8.1 Trocar a renderização nos controllers por `TemaPublico::view(...)`.
+- [x] 8.2 Páginas: folha centralizada, campos "escrever na linha" com rótulo visível e erro em texto junto do campo, mostrar/ocultar senha, máscara de CPF existente reaproveitada; no cadastro, força da senha como marca-texto que preenche (aria-live com o texto da força).
+- [x] 8.3 Verificar fluxos reais no ambiente local: login com `aluno.homologacao@polorainbow.com.br` / `Local@12345` (redireciona como na V2), login inválido mostra erro, cadastro novo, pedido de recuperação; `php -l`, `node --check`.
+- [x] 8.4 Commit "Autenticacao no tema caderno".
 
 ## 9. Checkout: etapas
 

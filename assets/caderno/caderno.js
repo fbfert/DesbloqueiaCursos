@@ -436,3 +436,62 @@ Caderno.pagina('curso', function () {
   addEventListener('resize', agendar);
   desenhar();
 }, true);
+
+/* Autenticacao: mostrar/ocultar senha e mascara de CPF (a mesma da V2) em
+   qualquer tela do tema. Funcao, nao animacao: roda tambem em movimento reduzido. */
+(function () {
+  var i, l = document.querySelectorAll('[data-ver-senha]');
+  for (i = 0; i < l.length; i++) l[i].addEventListener('click', function () {
+    var inp = document.getElementById(this.getAttribute('data-ver-senha'));
+    if (!inp) return;
+    var mostrar = inp.type === 'password';
+    inp.type = mostrar ? 'text' : 'password';
+    this.setAttribute('aria-pressed', mostrar ? 'true' : 'false');
+  });
+  // Ao enviar, a senha volta a ser campo de senha (gerenciadores de senha e historico).
+  l = document.querySelectorAll('.auth-form');
+  for (i = 0; i < l.length; i++) l[i].addEventListener('submit', function () {
+    var bs = this.querySelectorAll('[data-ver-senha][aria-pressed=true]');
+    for (var j = 0; j < bs.length; j++) bs[j].click();
+  });
+  var mascara = function (v) {
+    var d = v.replace(/\D/g, '').slice(0, 11);
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return d.slice(0, 3) + '.' + d.slice(3);
+    if (d.length <= 9) return d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6);
+    return d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6, 9) + '-' + d.slice(9);
+  };
+  l = document.querySelectorAll('[data-mask-cpf]');
+  for (i = 0; i < l.length; i++) {
+    l[i].value = mascara(l[i].value);
+    l[i].addEventListener('input', function () { this.value = mascara(this.value); });
+  }
+})();
+
+/* Cadastro: forca da senha como marca-texto que preenche (mesmos criterios da
+   V2), com o nivel em texto num aria-live. */
+Caderno.pagina('cadastro', function () {
+  var caixa = document.querySelector('[data-forca]');
+  var inp = caixa && document.getElementById(caixa.getAttribute('data-forca'));
+  if (!inp) return;
+  var trilho = caixa.querySelector('.forca-trilho'), texto = caixa.querySelector('.forca-texto');
+  var NOMES = ['', 'Fraca', 'Média', 'Boa', 'Forte'], atual = -1;
+  var medir = function () {
+    var v = inp.value, s = 0;
+    if (v) {
+      if (v.length >= 8) s++;
+      if (/[a-z]/.test(v) && /[A-Z]/.test(v)) s++;
+      if (/\d/.test(v)) s++;
+      if (/[^A-Za-z0-9]/.test(v)) s++;
+      if (v.length < 8) s = Math.min(s, 1);
+      s = Math.max(1, s);
+    }
+    if (s === atual) return;
+    atual = s;
+    caixa.setAttribute('data-nivel', s);
+    trilho.style.setProperty('--n', s);
+    texto.textContent = s ? 'Força: ' + NOMES[s] : '';
+  };
+  inp.addEventListener('input', medir);
+  medir();
+}, true);

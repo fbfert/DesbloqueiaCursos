@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Support\TemaPublico;
 
 /**
  * Recuperação de Senha V2 (Fase 2.5) — apenas renderização visual.
@@ -40,7 +41,7 @@ class RecuperarSenhaController extends Controller
             'loginHref' => '/v2/login',
         );
 
-        return new Response(View::render('v2/recuperar-senha', $data, false));
+        return new Response(View::render(TemaPublico::view('recuperar-senha'), $data, false));
     }
 
     /**
@@ -67,6 +68,6 @@ class RecuperarSenhaController extends Controller
             'loginHref' => '/v2/login',
         );
 
-        return new Response(View::render('v2/recuperar-senha-redefinir', $data, false));
+        return new Response(View::render(TemaPublico::view('recuperar-senha-redefinir'), $data, false));
     }
 }

@@ -408,6 +408,57 @@ html.folha-aberta{overflow:hidden}
 .auth-topo .voltar{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:14.5px;text-decoration:none;min-height:44px}
 .auth-folha{max-width:460px;padding-top:20px;padding-bottom:56px}
 @media (min-width:900px){ .auth-folha{margin:0 auto;padding-top:40px} }
+/* folha curta: o rodapé desce até o pé da tela */
+.auth .folha,[data-pagina=pos-login] .folha{display:flex;flex-direction:column}
+.auth .folha>main,[data-pagina=pos-login] .folha>main{flex:1 0 auto}
+.auth-cab .lead{margin-top:10px;font-size:15.5px}
+.auth-aviso{margin-top:22px;max-width:420px}
+.auth-aviso .link{display:inline-block;margin-top:2px}
+.auth-form{max-width:420px}
+.auth-form input::placeholder{font-size:14.5px}
+.auth-form .btn-bloco{margin-top:30px}
+.auth-form .erro-msg{color:var(--vermelho);font-weight:600;font-size:12.5px;margin-top:6px}
+.opcional{font-weight:400;color:var(--texto2)}
+.auth-esqueci{margin-top:14px;text-align:right;font-size:14.5px}
+.auth-pe{margin-top:26px;padding-top:16px;border-top:1px dashed var(--linha);max-width:420px;font-size:15px;color:var(--texto2)}
+.auth-voltar{display:inline-flex;align-items:center;gap:6px;min-height:44px}
+.auth-voltar .ico{width:18px;height:18px}
+.auth-aceites{margin-top:8px}
+.aceite .marcar{margin-top:14px}
+.aceite .erro-msg{margin-left:28px}
+.aceite.erro input{outline:2px solid var(--vermelho);outline-offset:1px}
+.campo .erro-msg+.erro-msg{margin-top:2px}
+/* senha: olho só com JS (sem script o campo segue normal) */
+.ver-senha .ico{width:22px;height:22px}
+.ver-senha[aria-pressed=true] .olho-aberto,.ver-senha[aria-pressed=false] .olho-fechado{display:none}
+html:not(.js) .ver-senha{display:none}
+html:not(.js) .campo-senha input{padding-right:2px}
+/* força da senha: marca-texto que preenche sob o campo */
+.forca{display:none;align-items:center;gap:12px;margin-top:8px;min-height:20px}
+.js .forca{display:flex}
+.forca[data-nivel="0"]{min-height:0;margin-top:0}
+.forca[data-nivel="0"] .forca-trilho{display:none}
+.forca-trilho{position:relative;flex:1;height:10px;max-width:220px;background:repeating-linear-gradient(90deg,var(--linha) 0 6px,transparent 6px 11px) 0 50%/100% 2px no-repeat}
+.forca-trilho i{position:absolute;left:0;top:0;bottom:0;width:calc(var(--n,0) * 25%);border-radius:5px 7px 4px 6px;background:var(--marca);transform:skewX(-8deg);transition:width .35s var(--ease-out),background-color .35s ease}
+.forca[data-nivel="1"] i{background:rgba(194,54,43,.32)}
+.forca[data-nivel="3"] i,.forca[data-nivel="4"] i{background:rgba(30,122,85,.34)}
+.forca-texto{font-size:12.5px;font-weight:600;color:var(--texto2);min-width:9ch}
+@media (prefers-reduced-motion:reduce){ .forca-trilho i{transition:none} }
+/* pós-login: duas fichas de escolha */
+.poslogin{padding:28px 0 64px;max-width:860px}
+.poslogin-ola{font-family:var(--mao);color:var(--tinta);font-size:21px;transform:rotate(-2deg);transform-origin:left;margin-bottom:6px}
+.poslogin-escolhas{list-style:none;display:grid;gap:26px;margin-top:28px}
+@media (min-width:640px){ .poslogin-escolhas{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.poslogin-escolhas>li:first-child .escolha{--r:-.6deg} .poslogin-escolhas>li:last-child .escolha{--r:.5deg}
+.escolha{display:flex;flex-direction:column;height:100%;text-decoration:none;padding:0 18px 20px;background:#fff repeating-linear-gradient(180deg,transparent 0 29px,rgba(64,104,196,.2) 29px 30px) 0 52px;
+  box-shadow:var(--sombra-papel);transform:rotate(var(--r,0deg));transition:transform .25s var(--ease-out),box-shadow .25s var(--ease-out)}
+.escolha-topo{display:flex;align-items:center;gap:10px;height:52px;margin:0 -18px;padding:8px 18px;background:#fff;border-bottom:1.5px solid rgba(214,64,64,.5)}
+.escolha-topo .ico{width:24px;height:24px;color:var(--tinta);flex:none}
+.escolha-nome{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.1}
+.escolha-texto{flex:1;font-size:15px;line-height:30px;color:var(--texto2);padding-top:0}
+.escolha-acao{align-self:flex-start;margin-top:16px}
+.escolha:focus-visible{outline-offset:6px}
+@media (hover:hover){ .escolha:hover{transform:rotate(0deg) translateY(-2px);box-shadow:0 2px 3px rgba(0,0,0,.08),0 18px 28px -16px rgba(34,16,74,.5)} }
 @media (max-width:420px){ .auth-topo .voltar span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} }
 
 /* ---------- movimento (só quando permitido) ---------- */
