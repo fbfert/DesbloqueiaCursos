@@ -62,13 +62,18 @@ class RevisaoComentario
         return $stmt->rowCount();
     }
 
+    /**
+     * So tria o que ainda esta em aberto. A condicao no WHERE, e nao so no
+     * Service, impede que dois gestores triando ao mesmo tempo sobrescrevam um
+     * ao outro: o segundo recebe rowCount() = 0.
+     */
     public function updateTriagem($id, $status, $resposta, $triadoPor)
     {
         $stmt = Database::connection()->prepare(
-            'UPDATE revisao_comentarios
+            "UPDATE revisao_comentarios
              SET status = :status, resposta = :resposta, triado_por = :triado_por,
                  triado_em = NOW(), updated_at = NOW()
-             WHERE id = :id AND deleted_at IS NULL'
+             WHERE id = :id AND status = 'aberto' AND deleted_at IS NULL"
         );
         $stmt->execute(array(
             'status' => $status,
@@ -109,13 +114,29 @@ class RevisaoComentario
      */
     public function listarPorCurso($cursoId, array $filtros = array())
     {
-        $sql = 'SELECT rc.*, u.nome AS autor_nome, t.nome AS triado_por_nome
+        $filtros['curso_evento_id'] = (int) $cursoId;
+        return $this->listar($filtros);
+    }
+
+    /**
+     * Fila de um curso ou de todos (curso_evento_id opcional), na ordem em que
+     * precisa ser tratada. $limite e opcional: a fila do admin, que cobre todos
+     * os cursos, limita; a lista do revisor, que e de um curso so, nao.
+     */
+    public function listar(array $filtros = array(), $limite = null)
+    {
+        $sql = 'SELECT rc.*, u.nome AS autor_nome, t.nome AS triado_por_nome, ce.nome AS curso_nome
                 FROM revisao_comentarios rc
                 LEFT JOIN usuarios u ON u.id = rc.autor_id
                 LEFT JOIN usuarios t ON t.id = rc.triado_por
-                WHERE rc.curso_evento_id = :curso_evento_id AND rc.deleted_at IS NULL';
-        $params = array('curso_evento_id' => (int) $cursoId);
+                LEFT JOIN cursos_eventos ce ON ce.id = rc.curso_evento_id
+                WHERE rc.deleted_at IS NULL';
+        $params = array();
 
+        if (!empty($filtros['curso_evento_id'])) {
+            $sql .= ' AND rc.curso_evento_id = :curso_evento_id';
+            $params['curso_evento_id'] = (int) $filtros['curso_evento_id'];
+        }
         if (!empty($filtros['status'])) {
             $sql .= ' AND rc.status = :status';
             $params['status'] = $filtros['status'];
@@ -137,11 +158,63 @@ class RevisaoComentario
         // a fila precisa ser tratada.
         $sql .= " ORDER BY FIELD(rc.status, 'aberto', 'aceito', 'resolvido', 'recusado'),
                            FIELD(rc.severidade, 'erro', 'impreciso', 'duvida', 'sugestao'),
-                           rc.created_at ASC";
+                           rc.created_at ASC, rc.id ASC";
+
+        if ($limite !== null) {
+            $sql .= ' LIMIT ' . max(1, (int) $limite);
+        }
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Cursos que tem ao menos um apontamento, para o filtro da fila do admin.
+     */
+    public function cursosComComentarios()
+    {
+        $stmt = Database::connection()->query(
+            'SELECT ce.id, ce.nome, COUNT(*) AS total
+             FROM revisao_comentarios rc
+             INNER JOIN cursos_eventos ce ON ce.id = rc.curso_evento_id
+             WHERE rc.deleted_at IS NULL
+             GROUP BY ce.id, ce.nome
+             ORDER BY ce.nome'
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Texto de identificacao dos alvos de um tipo, em uma consulta so: id => texto.
+     * Alvo excluido (ou inexistente) simplesmente nao volta no mapa.
+     */
+    public function descricoesDeAlvos($alvoTipo, array $ids)
+    {
+        $fontes = array(
+            'conteudo_item' => array('conteudo_itens', 'titulo'),
+            'conteudo_modulo' => array('conteudo_modulos', 'titulo'),
+            'quiz_pergunta' => array('conteudo_quiz_perguntas', 'enunciado'),
+            'quiz_alternativa' => array('conteudo_quiz_alternativas', 'texto'),
+        );
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if (!isset($fontes[$alvoTipo]) || empty($ids)) {
+            return array();
+        }
+
+        list($tabela, $coluna) = $fontes[$alvoTipo];
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = Database::connection()->prepare(
+            "SELECT id, {$coluna} AS texto FROM {$tabela}
+             WHERE id IN ({$placeholders}) AND deleted_at IS NULL"
+        );
+        $stmt->execute($ids);
+
+        $mapa = array();
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $linha) {
+            $mapa[(int) $linha['id']] = (string) $linha['texto'];
+        }
+        return $mapa;
     }
 
     /**

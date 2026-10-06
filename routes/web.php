@@ -66,6 +66,7 @@ use App\Controllers\Admin\QuizController as AdminQuizController;
 use App\Controllers\Professor\AreaCursoController as ProfessorAreaCursoController;
 use App\Controllers\Revisor\DashboardController as RevisorDashboardController;
 use App\Controllers\Revisor\RevisaoController as RevisorRevisaoController;
+use App\Controllers\Admin\RevisoesController as AdminRevisoesController;
 use App\Controllers\Professor\AcademicoController as ProfessorAcademicoController;
 use App\Controllers\Professor\FinanceiroController as ProfessorFinanceiroController;
 use App\Controllers\AvisosController;
@@ -554,6 +555,11 @@ $app->get('/revisor/questoes', array(RevisorRevisaoController::class, 'questoes'
 $app->post('/revisor/comentario', array(RevisorRevisaoController::class, 'comentar'), array('auth', 'permission:area_curso.revisor.comentar'));
 $app->post('/revisor/comentario/editar', array(RevisorRevisaoController::class, 'editarComentario'), array('auth', 'permission:area_curso.revisor.comentar'));
 $app->post('/revisor/comentario/excluir', array(RevisorRevisaoController::class, 'excluirComentario'), array('auth', 'permission:area_curso.revisor.comentar'));
+
+// Fila de triagem no admin (openspec/changes/fila-revisao-admin). Exige
+// conteudo.gerenciar, que o perfil Revisor nao tem: o revisor nunca tria.
+$app->get('/admin/revisoes', array(AdminRevisoesController::class, 'index'), array('auth', 'permission:conteudo.gerenciar'));
+$app->post('/admin/revisoes/triar', array(AdminRevisoesController::class, 'triar'), array('auth', 'permission:conteudo.gerenciar'));
 
 $app->get('/professor', array(ProfessorDashboardController::class, 'index'), array('auth'));
 $app->get('/professor/dashboard', array(ProfessorDashboardController::class, 'index'), array('auth'));

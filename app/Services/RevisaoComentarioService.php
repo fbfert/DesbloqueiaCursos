@@ -148,12 +148,19 @@ class RevisaoComentarioService
             return array('ok' => false, 'errors' => array('status' => 'Situação inválida para triagem.'));
         }
 
+        if ($comentario['status'] !== 'aberto') {
+            return array('ok' => false, 'errors' => array('status' => 'Este apontamento já foi triado.'));
+        }
+
         $resposta = trim((string) $resposta);
         if ($status === 'recusado' && $resposta === '') {
             return array('ok' => false, 'errors' => array('resposta' => 'Explique por que o apontamento foi recusado.'));
         }
 
-        $this->comentarioModel->updateTriagem($id, $status, $resposta, $gestorId);
+        // rowCount() = 0: outro gestor triou entre a leitura acima e este UPDATE.
+        if ($this->comentarioModel->updateTriagem($id, $status, $resposta, $gestorId) === 0) {
+            return array('ok' => false, 'errors' => array('status' => 'Este apontamento já foi triado.'));
+        }
 
         $this->audit->record(
             'revisao.comentario.triado',
@@ -202,6 +209,114 @@ class RevisaoComentarioService
     /**
      * Rotulos para a interface, em um lugar so.
      */
+    const LIMITE_FILA = 200;
+
+    /**
+     * Fila de triagem do admin, de um curso ou de todos.
+     *
+     * Filtro com valor fora do dominio e ignorado (vira "todos"), nunca erro: a
+     * URL da fila e compartilhada e editada a mao. A descricao do alvo e
+     * resolvida em lote, uma consulta por tipo de alvo, e nao uma por linha.
+     */
+    public function fila(array $filtros = array())
+    {
+        $filtros = self::normalizarFiltrosFila($filtros);
+        $linhas = $this->comentarioModel->listar($filtros, self::LIMITE_FILA + 1);
+
+        $truncado = count($linhas) > self::LIMITE_FILA;
+        if ($truncado) {
+            $linhas = array_slice($linhas, 0, self::LIMITE_FILA);
+        }
+
+        $idsPorTipo = array();
+        foreach ($linhas as $linha) {
+            $idsPorTipo[$linha['alvo_tipo']][] = (int) $linha['alvo_id'];
+        }
+        $descricoes = array();
+        foreach ($idsPorTipo as $tipo => $ids) {
+            $descricoes[$tipo] = $this->comentarioModel->descricoesDeAlvos($tipo, $ids);
+        }
+
+        foreach ($linhas as &$linha) {
+            $texto = isset($descricoes[$linha['alvo_tipo']][(int) $linha['alvo_id']])
+                ? $descricoes[$linha['alvo_tipo']][(int) $linha['alvo_id']] : null;
+            $linha['alvo_removido'] = $texto === null;
+            $linha['alvo_descricao'] = $texto === null ? 'Alvo removido' : self::resumirTexto($texto, 160);
+        }
+        unset($linha);
+
+        return array(
+            'itens' => $linhas,
+            'truncado' => $truncado,
+            'filtros' => $filtros,
+            'cursos' => $this->comentarioModel->cursosComComentarios(),
+        );
+    }
+
+    /**
+     * Querystring da fila a partir de filtros ja normalizados — usada para
+     * voltar a fila depois da triagem sem aceitar URL vinda do navegador.
+     */
+    public static function queryStringFila(array $filtros)
+    {
+        $filtros = self::normalizarFiltrosFila($filtros);
+        $query = http_build_query(array_filter(array(
+            'curso_id' => $filtros['curso_evento_id'],
+            'severidade' => $filtros['severidade'],
+            'status' => $filtros['status'],
+        )));
+        return $query === '' ? '' : '?' . $query;
+    }
+
+    public static function normalizarFiltrosFila(array $filtros)
+    {
+        // is_scalar: "?severidade[]=x" chega como array, e o cast de array para
+        // string emite warning — que o ErrorHandler do projeto transforma em 500.
+        $valor = function ($chave) use ($filtros) {
+            return isset($filtros[$chave]) && is_scalar($filtros[$chave]) ? (string) $filtros[$chave] : '';
+        };
+        $cursoId = (int) $valor('curso_evento_id');
+        $severidade = $valor('severidade');
+        $status = $valor('status');
+
+        return array(
+            'curso_evento_id' => $cursoId > 0 ? $cursoId : 0,
+            'severidade' => in_array($severidade, self::SEVERIDADES, true) ? $severidade : '',
+            'status' => in_array($status, self::STATUS, true) ? $status : '',
+        );
+    }
+
+    /**
+     * Texto puro de uma linha, para identificar o alvo: o enunciado de uma
+     * questao pode ser HTML de editor, e aqui ele e so rotulo — nunca e
+     * renderizado como HTML, entao e reduzido a texto e escapado na view.
+     */
+    private static function resumirTexto($texto, $limite)
+    {
+        $texto = html_entity_decode(strip_tags((string) $texto), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $texto = trim(preg_replace('/\s+/u', ' ', $texto));
+        if (function_exists('mb_strlen')) {
+            if (mb_strlen($texto, 'UTF-8') > $limite) {
+                $texto = rtrim(mb_substr($texto, 0, $limite - 1, 'UTF-8')) . '…';
+            }
+        } elseif (preg_match_all('/./us', $texto) > $limite) {
+            preg_match('/^.{' . ($limite - 1) . '}/us', $texto, $corte);
+            $texto = rtrim($corte[0]) . '…';
+        }
+        return $texto === '' ? '(sem texto)' : $texto;
+    }
+
+    public static function rotuloAlvoTipo($alvoTipo)
+    {
+        $mapa = array(
+            'conteudo_item' => 'Item de conteúdo',
+            'conteudo_modulo' => 'Módulo',
+            'quiz_pergunta' => 'Pergunta de quiz',
+            'quiz_alternativa' => 'Alternativa de quiz',
+        );
+        return isset($mapa[$alvoTipo]) ? $mapa[$alvoTipo] : $alvoTipo;
+    }
+
     public static function rotuloSeveridade($severidade)
     {
         $mapa = array(

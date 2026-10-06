@@ -44,6 +44,7 @@ $menu = array(
         array('label' => 'Cursos', 'href' => '/admin/cursos', 'icon' => '◧', 'permissions_any' => array('conteudo.ver')),
         array('label' => 'Turmas', 'href' => '/admin/turmas', 'icon' => '◨', 'permissions_any' => array('conteudo.ver')),
         array('label' => 'Área interna do curso', 'href' => '/admin/area-curso', 'icon' => '▤', 'permissions_any' => array('area_curso.gerenciar')),
+        array('label' => 'Revisões', 'href' => '/admin/revisoes', 'icon' => '✎', 'permissions_any' => array('conteudo.gerenciar')),
         array('label' => 'Área acadêmica', 'href' => '/admin/academico', 'icon' => '◈', 'permissions_any' => array('academico.ver')),
     )),
 

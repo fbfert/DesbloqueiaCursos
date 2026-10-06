@@ -5,7 +5,9 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Core\Request;
 use App\Core\Session;
+use App\Models\RevisaoComentario;
 use App\Services\CursoService;
+use App\Services\RbacService;
 
 class CursosController extends Controller
 {
@@ -14,6 +16,22 @@ class CursosController extends Controller
     public function __construct()
     {
         $this->cursoService = new CursoService();
+    }
+
+    /**
+     * Apontamentos "erro" em aberto do curso, para o alerta das telas do curso.
+     * Zero para quem nao pode abrir a fila (/admin/revisoes exige
+     * conteudo.gerenciar): o alerta nao aponta para uma tela que daria 403.
+     */
+    private function errosRevisaoAbertos($cursoId)
+    {
+        $usuarioId = Session::get('usuario_id');
+        if ((int) $cursoId <= 0 || !$usuarioId
+            || !(new RbacService())->userHasPermission($usuarioId, 'conteudo.gerenciar')) {
+            return 0;
+        }
+
+        return (new RevisaoComentario())->contarErrosAbertos($cursoId);
     }
 
     public function index(Request $request)
@@ -98,6 +116,7 @@ class CursosController extends Controller
             'errors' => Session::pullFlash('errors', array()),
             'action_url' => '/admin/cursos/editar',
             'form_data' => $this->cursoService->formData($cursoId),
+            'errosRevisaoAbertos' => $this->errosRevisaoAbertos($cursoId),
         ));
     }
 
@@ -156,6 +175,7 @@ class CursosController extends Controller
                 'title' => 'Curso/evento',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
+                'errosRevisaoAbertos' => $this->errosRevisaoAbertos($cursoId),
             ),
             $formData
         ));

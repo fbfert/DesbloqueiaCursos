@@ -24,6 +24,8 @@ if (empty($professoresResponsaveisNomes) && !empty($curso['professor_responsavel
     </div>
 </section>
 
+<?php $cursoIdAlerta = (int) $curso['id']; require BASE_PATH . '/resources/views/admin/cursos/_alerta_revisao.php'; ?>
+
 <section class="status-card">
     <dl class="summary-list">
         <dt>Slug</dt><dd><?php echo Helpers::e($curso['slug']); ?></dd>

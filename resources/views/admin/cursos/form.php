@@ -71,6 +71,7 @@ if (empty($modulosExistentes)) {
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
 <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
+<?php $cursoIdAlerta = isset($curso['id']) ? (int) $curso['id'] : 0; require BASE_PATH . '/resources/views/admin/cursos/_alerta_revisao.php'; ?>
 
 <section class="status-card">
     <form method="post" action="<?php echo Helpers::e($action_url); ?>" class="admin-form" enctype="multipart/form-data">

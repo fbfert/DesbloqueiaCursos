@@ -3,7 +3,7 @@
 Data: 2026-08-21
 Spec: `specs/0002-perfil-revisor/`
 Migration: `sql/072_perfil_revisor_comentarios.sql`
-Estado: **fases 1 a 3 concluídas**; fila de triagem no admin (fase 4) pendente
+Estado: **fases 1 a 4 concluídas** — a fila de triagem no admin (fase 4) foi entregue em 05/10/2026, ver `docs/2026-10-05-fila-revisao-admin.md`
 
 Um especialista externo — advogado, professor da área, revisor técnico — passa a
 ler os cursos que lhe forem atribuídos e registrar apontamentos por escrito,
@@ -138,8 +138,8 @@ julgar. Está declarado na seção de riscos da spec, e o acesso depende de
 
 ## Pendências
 
-**Fase 4 — fila de triagem no admin.** Sem ela, os apontamentos entram e ninguém
-responde. É o outro lado do fluxo e a próxima entrega.
+~~**Fase 4 — fila de triagem no admin.**~~ Entregue em 05/10/2026 pela mudança
+OpenSpec `fila-revisao-admin` (`docs/2026-10-05-fila-revisao-admin.md`).
 
 **Fora de escopo declarado** (segunda versão, se houver demanda): seleção de
 trecho dentro do iframe por `postMessage`, comentário em alternativa individual,

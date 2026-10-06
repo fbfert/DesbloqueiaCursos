@@ -82,6 +82,7 @@ return array(
         array('path' => '/meus-cursos',    'nome' => 'Meus cursos (legado)',   'destino' => '/login'),
         array('path' => '/minha-conta',    'nome' => 'Minha conta (legado)',   'destino' => '/login'),
         array('path' => '/pedidos',        'nome' => 'Pedidos (legado)',       'destino' => '/login'),
+        array('path' => '/admin/revisoes', 'nome' => 'Fila de revisões (admin)', 'destino' => '/login'),
     ),
 
     // ---------------------------------------------------------------------
