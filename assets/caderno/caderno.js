@@ -96,6 +96,9 @@
 
 /* Home: trilha da abertura (adiada ate estar inteira na tela), numeros, estante e ranking. */
 Caderno.pagina('home', function () {
+  // JS chegou depois da trava (sem html.anima): o conteudo ja esta visivel no estado
+  // final; esconder e redesenhar agora seria um "piscar". Nada a animar.
+  if (!document.documentElement.classList.contains('anima')) return;
   var C = window.Caderno, leve = C.leve;
   var hero = document.querySelector('.hero');
   if (!hero) return;
@@ -113,7 +116,8 @@ Caderno.pagina('home', function () {
     // da tela, entao a area util desconta a altura dela. Em tela baixa (celular deitado)
     // a trilha nao cabe: basta ocupar 3/4 da area util. Se a pessoa rolar alem
     // da trilha, a cena roda do mesmo jeito. Sem rolagem, um relogio garante a cena:
-    // trilha quase inteira (3/4) em 1,5 s; qualquer parte na tela em 4,5 s. Trilha toda
+    // trilha quase inteira (3/4) em 1,5 s; qualquer parte na tela em 2,5 s (teto da spec
+    // para estados ocultos, R11). Trilha toda
     // abaixo da dobra continua esperando a rolagem: a trilha nunca fica oculta na tela.
     var bnav = document.querySelector('.bnav'), base = 0, pedido = 0, feito = false, relogio = 0;
     var medir = function () {
@@ -144,7 +148,7 @@ Caderno.pagina('home', function () {
     addEventListener('scroll', agendar, { passive: true });
     addEventListener('resize', agendar);
     relogio = setTimeout(function () {
-      if (!forcar(0.75)) relogio = setTimeout(function () { forcar(0); }, 3000);
+      if (!forcar(0.75)) relogio = setTimeout(function () { forcar(0); }, 1000);
     }, 1500);
     verificar();
   }
