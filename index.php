@@ -16,6 +16,18 @@ require BASE_PATH . '/app/Core/Autoloader.php';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && !empty($_GET)) {
     \App\Support\OrigemTrafego::capturarDeQuery($_GET);
 }
+
+// Previa do tema publico: ?tema=caderno|v2 so vale para quem tem conteudo.gerenciar.
+// So consulta o banco quando o parametro existe.
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['tema'])) {
+    \App\Support\TemaPublico::aplicarPrevia(
+        is_string($_GET['tema']) ? $_GET['tema'] : null,
+        \App\Core\Session::get('usuario_id'),
+        function ($id) {
+            return $id && (new \App\Services\RbacService())->userHasPermission($id, 'conteudo.gerenciar');
+        }
+    );
+}
 \App\Core\ErrorHandler::register((require BASE_PATH . '/config/app.php')['debug']);
 
 $app = new \App\Core\App(BASE_PATH);

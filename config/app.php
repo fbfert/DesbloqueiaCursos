@@ -15,4 +15,9 @@ return array(
     // Qualquer valor diferente de 'v2' mantém a Home V1. Rotas legadas e V2
     // continuam acessíveis nos seus próprios caminhos independentemente disso.
     'home_version' => strtolower(trim((string) Env::get('HOME_VERSION', 'v1'))) === 'v2' ? 'v2' : 'v1',
+
+    // Tema visual das páginas públicas: 'v2' (atual) ou 'caderno'. Só o valor exato
+    // 'caderno' ativa o tema; qualquer outro valor mantém a V2 (rollback: TEMA_PUBLICO=v2).
+    // Administradores com conteudo.gerenciar podem pré-visualizar com ?tema=caderno.
+    'tema_publico' => strtolower(trim((string) Env::get('TEMA_PUBLICO', 'v2'))) === 'caderno' ? 'caderno' : 'v2',
 );
