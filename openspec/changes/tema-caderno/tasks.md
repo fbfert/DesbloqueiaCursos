@@ -99,10 +99,10 @@
   - `Caderno.pagina(nome, init)` — registra o módulo; executa `init()` só se `body.dataset.pagina === nome` e movimento não reduzido.
   - Revelação automática: todo `.rv` ganha `.visto` ao entrar na tela (desligada no modo leve: `.rv` já visível).
 
-- [ ] 3.1 Implementar `caderno.js` portando `proto.js` para a interface acima; `CSS.registerProperty('--mt')`; ao iniciar, cancelar a trava de 2,5 s do layout; em movimento reduzido remover `.anima` e não registrar nada.
-- [ ] 3.2 `node --check assets/caderno/caderno.js`; `gzip -c assets/caderno/caderno.js | wc -c` — anotar o tamanho (núcleo deve ficar ≤ 5 KB gzip para sobrar orçamento às páginas).
-- [ ] 3.3 Verificação de segurança: num shim temporário de teste, provocar `throw` antes do init e confirmar que em ≤ 2,5 s nenhum elemento `.rv` fica com opacidade 0 (`getComputedStyle`). Remover o shim.
-- [ ] 3.4 Commit "Nucleo de movimento do tema caderno".
+- [x] 3.1 Implementar `caderno.js` portando `proto.js` para a interface acima; `CSS.registerProperty('--mt')`; ao iniciar, cancelar a trava de 2,5 s do layout; em movimento reduzido remover `.anima` e não registrar nada.
+- [x] 3.2 `node --check assets/caderno/caderno.js`; `gzip -c assets/caderno/caderno.js | wc -c` — anotar o tamanho (núcleo deve ficar ≤ 5 KB gzip para sobrar orçamento às páginas).
+- [x] 3.3 Verificação de segurança: num shim temporário de teste, provocar `throw` antes do init e confirmar que em ≤ 2,5 s nenhum elemento `.rv` fica com opacidade 0 (`getComputedStyle`). Remover o shim.
+- [x] 3.4 Commit "Nucleo de movimento do tema caderno".
 
 ## 4. Home
 
