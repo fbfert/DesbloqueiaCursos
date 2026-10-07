@@ -383,3 +383,9 @@ li.alt{cursor:default}
 .quiz-fim{margin-top:38px}
 @media (min-width:480px){ .gab-expl{margin-left:40px} }
 @media (prefers-reduced-motion:reduce){ .alt-circ,.trilho-tinta,.quiz-salvo::before{transition:none} }
+.quiz-instr-dobra>summary{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;list-style:none}
+.quiz-instr-dobra>summary::-webkit-details-marker{display:none}
+.quiz-instr-dobra>summary::after{content:"";width:8px;height:8px;border:solid var(--tinta);border-width:0 2px 2px 0;transform:translateY(-3px) rotate(45deg)}
+.quiz-instr-dobra[open]>summary::after{transform:translateY(2px) rotate(225deg)}
+.quiz-salvo-erro{margin-top:12px;max-width:560px}
+.quiz-salvo-erro .link{min-height:44px;margin-top:4px;font-size:15px}

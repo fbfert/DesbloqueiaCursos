@@ -20,6 +20,14 @@ use App\Core\Helpers;
 
 require_once BASE_PATH . '/resources/views/caderno/partials/checkout-util.php';
 
+if (!function_exists('caderno_plural')) {
+    /** "1 questão" / "4 questões": número + forma no singular ou no plural. */
+    function caderno_plural(int $n, string $um, string $varios): string
+    {
+        return $n . ' ' . ($n === 1 ? $um : $varios);
+    }
+}
+
 $estado = isset($estado) && is_array($estado) ? $estado : null;
 $cabecalho = isset($cabecalho) && is_array($cabecalho) ? $cabecalho : array();
 $quiz = isset($quiz) && is_array($quiz) ? $quiz : null;
@@ -87,7 +95,7 @@ $instrucoes = $quiz ? trim((string) ($quiz['instrucoes'] ?? '')) : '';
     <p class="aula-kicker"><span class="fita"><?= $ehProva || $modoProva ? 'Prova' : 'Quiz' ?></span><?php if (!empty($cabecalho['modulo_nome'])): ?> <span><?= Helpers::e((string) $cabecalho['modulo_nome']) ?></span><?php endif; ?></p>
     <h1 class="aula-tit" id="quiz-titulo"><?= Helpers::e($quizNome) ?></h1>
 
-    <div id="v2-quiz-feedback" class="aula-aviso" tabindex="-1" aria-live="assertive" data-aviso-foco>
+    <div id="v2-quiz-feedback" class="aula-aviso" tabindex="-1" data-aviso-foco>
       <?php if ($successTexto !== ''): ?>
       <p class="aula-ok-msg" role="status"><?= Helpers::e($successTexto) ?></p>
       <?php endif; ?>
@@ -121,7 +129,8 @@ $instrucoes = $quiz ? trim((string) ($quiz['instrucoes'] ?? '')) : '';
     <section class="prova-cab" aria-labelledby="prova-cab-tit">
       <h2 class="mao" id="prova-cab-tit">Antes de começar</h2>
       <ul class="prova-regras">
-        <li><strong><?= (int) ($estrutura['total_questoes'] ?? $quiz['total_perguntas'] ?? 0) ?></strong> questões<?php if (!empty($estrutura['total_discursivas'])): ?> — <?= (int) ($estrutura['total_objetivas'] ?? 0) ?> objetivas e <?= (int) $estrutura['total_discursivas'] ?> discursiva(s)<?php endif; ?></li>
+        <?php $qTotQ = (int) ($estrutura['total_questoes'] ?? $quiz['total_perguntas'] ?? 0); ?>
+        <li><strong><?= $qTotQ ?></strong> <?= $qTotQ === 1 ? 'questão' : 'questões' ?><?php if (!empty($estrutura['total_discursivas'])): ?> — <?= caderno_plural((int) ($estrutura['total_objetivas'] ?? 0), 'objetiva', 'objetivas') ?> e <?= caderno_plural((int) $estrutura['total_discursivas'], 'discursiva', 'discursivas') ?><?php endif; ?></li>
         <?php if ($duracao > 0): ?>
         <li>Duração: <strong><?= Helpers::e($duracaoTexto) ?></strong> (<?= $duracao ?> minutos), a partir do início</li>
         <?php else: ?>
@@ -141,14 +150,14 @@ $instrucoes = $quiz ? trim((string) ($quiz['instrucoes'] ?? '')) : '';
       <h3 class="prova-sub">Estrutura da prova</h3>
       <ol class="prova-blocos">
         <?php foreach ($estrutura['blocos'] as $qBloco): ?>
-        <li><span><?= Helpers::e((string) ($qBloco['titulo'] ?? '')) ?>:</span> <strong><?= (int) ($qBloco['quantidade'] ?? 0) ?></strong> <?= (string) ($qBloco['tipo_questao'] ?? '') === 'discursiva' ? 'questão discursiva' : 'questões objetivas' ?><?php if (empty($qBloco['conta_para_percentual'])): ?> <small>(fora do percentual de aprovação)</small><?php endif; ?></li>
+        <li><span><?= Helpers::e((string) ($qBloco['titulo'] ?? '')) ?>:</span> <?php $qBq = (int) ($qBloco['quantidade'] ?? 0); $qBd = (string) ($qBloco['tipo_questao'] ?? '') === 'discursiva'; ?><strong><?= $qBq ?></strong> <?= $qBq === 1 ? ($qBd ? 'questão discursiva' : 'questão objetiva') : ($qBd ? 'questões discursivas' : 'questões objetivas') ?><?php if (empty($qBloco['conta_para_percentual'])): ?> <small>(fora do percentual de aprovação)</small><?php endif; ?></li>
         <?php endforeach; ?>
       </ol>
       <?php endif; ?>
     </section>
     <?php else: ?>
     <p class="quiz-meta">
-      <?= (int) ($quiz['total_perguntas'] ?? 0) ?> pergunta(s)<?php if (($quiz['tentativas_maximas'] ?? null) !== null): ?> · Tentativas: <?= (int) ($quiz['tentativas_usadas'] ?? 0) ?>/<?= (int) $quiz['tentativas_maximas'] ?><?php elseif ((int) ($quiz['tentativas_usadas'] ?? 0) > 0): ?> · <?= (int) $quiz['tentativas_usadas'] ?> tentativa(s) realizada(s)<?php endif; ?>
+      <?= caderno_plural((int) ($quiz['total_perguntas'] ?? 0), 'pergunta', 'perguntas') ?><?php if (($quiz['tentativas_maximas'] ?? null) !== null): ?> · Tentativas: <?= (int) ($quiz['tentativas_usadas'] ?? 0) ?>/<?= (int) $quiz['tentativas_maximas'] ?><?php elseif ((int) ($quiz['tentativas_usadas'] ?? 0) > 0): ?> · <?= caderno_plural((int) $quiz['tentativas_usadas'], 'tentativa realizada', 'tentativas realizadas') ?><?php endif; ?>
     </p>
     <?php endif; ?>
 
@@ -168,13 +177,18 @@ $instrucoes = $quiz ? trim((string) ($quiz['instrucoes'] ?? '')) : '';
     <?php $tempo = isset($quiz['tempo']) && is_array($quiz['tempo']) ? $quiz['tempo'] : null; ?>
     <p class="quiz-meta">
       <b class="selo tinta">Em andamento — tentativa <?= (int) ($quiz['numero_tentativa'] ?? 1) ?></b>
-      <span><?= count($perguntas) ?> pergunta(s)</span>
+      <span><?= caderno_plural(count($perguntas), 'pergunta', 'perguntas') ?></span>
       <?php if (($quiz['tentativas_maximas'] ?? null) !== null): ?><span>Tentativas usadas: <?= (int) ($quiz['tentativas_usadas'] ?? 0) ?>/<?= (int) $quiz['tentativas_maximas'] ?></span><?php endif; ?>
     </p>
     <?php if ($tempo !== null) { require BASE_PATH . '/resources/views/caderno/partials/quiz-relogio.php'; } ?>
 
-    <?php if ($instrucoes !== ''): ?>
-    <div class="quiz-instr"><p class="atv-rot">Instruções</p><p><?= nl2br(Helpers::e($instrucoes)) ?></p></div>
+    <?php if ($instrucoes !== ''):
+        // Recolhidas no celular depois da primeira resposta (o JS as abre acima de 900 px).
+        $qInstrAberta = true;
+        foreach ($perguntas as $qP) {
+            if ((int) ($qP['alternativa_id_respondida'] ?? 0) > 0 || trim((string) ($qP['texto_resposta'] ?? '')) !== '') { $qInstrAberta = false; break; }
+        } ?>
+    <details class="quiz-instr quiz-instr-dobra"<?= $qInstrAberta ? ' open' : '' ?>><summary class="atv-rot">Instruções</summary><p><?= nl2br(Helpers::e($instrucoes)) ?></p></details>
     <?php endif; ?>
 
     <form method="post" action="<?= Helpers::e($enviarAction) ?>" data-native-submit class="v2-quiz-form quiz-form" id="v2-quiz-answer-form">
@@ -182,6 +196,7 @@ $instrucoes = $quiz ? trim((string) ($quiz['instrucoes'] ?? '')) : '';
       <input type="hidden" name="tentativa_id" value="<?= (int) ($quiz['tentativa_ativa_id'] ?? 0) ?>">
 
       <p class="quiz-salvo" id="v2-quiz-autosave" role="status" aria-live="polite">Suas respostas são salvas automaticamente conforme você responde.</p>
+      <p class="vh" id="quiz-anuncio" role="status" aria-live="polite"></p>
 
       <?php if (count($perguntas) > 1 && !$modoProva): ?>
       <div id="v2-quiz-progress" class="quiz-passos" hidden>
@@ -248,7 +263,7 @@ $instrucoes = $quiz ? trim((string) ($quiz['instrucoes'] ?? '')) : '';
       <div class="carimbo <?= $rCarimbo[0] ?>" aria-hidden="true"><div><?= $rCarimbo[1] ?><span><?= $rCarimbo[2] ?></span><?= $rCarimbo[3] ?></div></div>
       <?php if (!empty($r['mostrar_resultado'])): ?>
       <p class="quiz-placar-n" aria-hidden="true"><?= (int) ($r['total_acertos'] ?? 0) ?><small>/<?= (int) ($r['total_perguntas'] ?? 0) ?></small></p>
-      <p class="quiz-placar">Você acertou <strong><?= (int) ($r['total_acertos'] ?? 0) ?> de <?= (int) ($r['total_perguntas'] ?? 0) ?></strong> questões (<?= number_format($rPct, 1, ',', '.') ?>%).</p>
+      <p class="quiz-placar">Você acertou <strong><?= (int) ($r['total_acertos'] ?? 0) ?> de <?= (int) ($r['total_perguntas'] ?? 0) ?></strong> <?= (int) ($r['total_perguntas'] ?? 0) === 1 ? 'questão' : 'questões' ?> (<?= number_format($rPct, 1, ',', '.') ?>%).</p>
       <?php if ($rAprovado !== null): ?>
       <?php if (!empty($rAprovado)): ?>
       <p class="quiz-status ok"><?= caderno_icone('check') ?> Aprovado</p>

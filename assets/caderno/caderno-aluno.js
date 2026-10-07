@@ -27,7 +27,7 @@
         b = botoes[i];
         if (b.getAttribute('aria-busy') === 'true') continue;
         b.setAttribute('aria-busy', 'true');
-        if (b.getAttribute('data-texto-original') === null) b.setAttribute('data-texto-original', b.textContent);
+        if (b.getAttribute('data-html-original') === null) b.setAttribute('data-html-original', b.innerHTML);
         b.textContent = b.getAttribute('data-loading-label');
       }
       setTimeout(function () {
@@ -50,8 +50,8 @@
     for (var i = 0; i < bs.length; i++) {
       bs[i].disabled = false;
       bs[i].removeAttribute('aria-busy');
-      var t = bs[i].getAttribute('data-texto-original');
-      if (t !== null) bs[i].textContent = t;
+      var t = bs[i].getAttribute('data-html-original');
+      if (t !== null) bs[i].innerHTML = t;
     }
   });
 
@@ -266,17 +266,31 @@ Caderno.pagina('quiz', function () {
   var form = $('v2-quiz-answer-form');
   if (!form) return;
   var feedback = $('v2-quiz-feedback'), ativoNav = false;
+  var instr = d.querySelector('details.quiz-instr-dobra');
+  if (instr && window.matchMedia && matchMedia('(min-width:900px)').matches) instr.open = true;
   var campo = function (n) { var c = form.querySelector('input[name="' + n + '"]'); return c ? c.value : ''; };
   var num = function (n) { return parseInt(campo(n), 10) || 0; };
   var vazio = function (o) { for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) return false; return true; };
-  // POST JSON (contrato V1). modo 1: keepalive (saindo da página); 2: com X-CSRF-TOKEN.
+  // POST JSON (contrato V1). modo 1: keepalive (saindo da página; só até ~60 KB, o
+  // limite do keepalive); 2: com X-CSRF-TOKEN. Falhas saem classificadas em e.tipo:
+  // 'rede' e 'servidor' (5xx) são temporárias; 'sessao' (caiu no login ou 401),
+  // 'pagina' (CSRF/redirect/403/419/resposta que não é JSON) são permanentes.
+  var falha = function (tipo) { var e = new Error(tipo); e.tipo = tipo; return e; };
   var json = function (url, corpo, modo) {
-    var h = { 'Content-Type': 'application/json', Accept: 'application/json' }, op;
+    var h = { 'Content-Type': 'application/json', Accept: 'application/json' }, op, txt = JSON.stringify(corpo);
     if (modo === 2) h['X-CSRF-TOKEN'] = campo('_token');
-    op = { method: 'POST', credentials: 'same-origin', headers: h, body: JSON.stringify(corpo) };
-    if (modo === 1) op.keepalive = true;
-    return fetch(url, op).then(function (r) { return r.json(); });
+    op = { method: 'POST', credentials: 'same-origin', headers: h, body: txt };
+    if (modo === 1 && txt.length < 60000) op.keepalive = true;
+    return fetch(url, op).then(function (r) {
+      if (r.redirected) throw falha(/\/login/.test(r.url) ? 'sessao' : 'pagina');
+      if (r.status === 401) throw falha('sessao');
+      if (r.status >= 500) throw falha('servidor');
+      if (!r.ok || !/json/.test(r.headers.get('Content-Type') || '')) throw falha('pagina');
+      return r.json()['catch'](function () { throw falha('pagina'); });
+    }, function () { throw falha('rede'); });
   };
+  // Motivo do bloqueio do salvamento (sessão/página/tentativa); o relógio também para de consultar.
+  var bloqueio = null;
   var focar = function (el) { try { el.focus({ preventScroll: true }); } catch (e) {} };
   var rolar = function (el) { if (el) el.scrollIntoView({ block: 'start', behavior: C.reduzido ? 'auto' : 'smooth' }); };
   var respondida = function (s) {
@@ -290,7 +304,7 @@ Caderno.pagina('quiz', function () {
       [].forEach.call(form.elements, function (b) {
         if (b.getAttribute('aria-busy') !== 'true') return;
         b.disabled = false; b.removeAttribute('aria-busy');
-        var t = b.getAttribute('data-texto-original'); if (t !== null) b.textContent = t;
+        var t = b.getAttribute('data-html-original'); if (t !== null) b.innerHTML = t;
       });
     }, 0);
   };
@@ -303,88 +317,175 @@ Caderno.pagina('quiz', function () {
 
   /* Salvamento automático: só o que mudou, em POST /aluno/cursos/quiz/rascunho
      (JSON da V2). Radio 600 ms, discursiva 2 s depois da última tecla; ao sair da
-     aba ou fechar, envia na hora com keepalive. Falhou: volta para a fila (sem
-     sobrescrever o que mudou depois) e tenta de novo (3 s, 6 s, … até 30 s).
-     {expirada} recarrega. flush() → Promise: usado antes de trocar de questão e
-     ao zerar o relógio. */
+     aba ou fechar, envia na hora com keepalive. A fila guarda só QUAIS questões
+     mudaram (com um número de sequência); o valor é lido da tela na hora do envio,
+     então um lote antigo que falha nunca reenvia valor velho, e um lote antigo que
+     chega depois de um mais novo provoca novo envio do valor atual.
+     Falha de rede/5xx: tenta de novo (3 s, 6 s, … até 30 s). Sessão expirada,
+     página desatualizada (CSRF) ou tentativa já enviada: para na hora (nada de
+     laço), avisa em texto e oferece "Tentar salvar de novo", que busca um token
+     novo e reenvia tudo o que está na tela. {expirada} recarrega.
+     flush() → Promise: usado antes de trocar de questão e ao zerar o relógio. */
+  var aoBloquear = null;
   var flush = (function () {
-    var tid = num('tentativa_id');
-    if (!tid || !window.fetch || !window.Promise) return function () { return { then: function (f) { return f && f(); } }; };
-    var aviso = $('v2-quiz-autosave'), fila = { respostas: {}, discursivas: {} }, timer = null, voo = 0, falhas = 0, final = false, emCurso = Promise.resolve();
-    var dizer = function (t, erro) { if (!aviso) return; if (aviso.textContent !== t) aviso.textContent = t; aviso.classList.toggle('erro', !!erro); };
-    var devolver = function (dest, orig) { for (var k in orig) if (Object.prototype.hasOwnProperty.call(orig, k) && !Object.prototype.hasOwnProperty.call(dest, k)) dest[k] = orig[k]; };
+    var tid = num('tentativa_id'), aviso = $('v2-quiz-autosave');
+    if (!tid || !aviso || !window.fetch || !window.Promise) return function () { return { then: function (f) { return f && f(); } }; };
+    var sujas = {}, seq = {}, salvo = {}, timer = null, voo = 0, falhas = 0, final = false, emCurso = Promise.resolve(), caixa = null;
+    var MSG = {
+      sessao: 'Sua sessão expirou. Suas últimas respostas podem não ter sido salvas — entre de novo em outra aba e depois toque em “Tentar salvar de novo”.',
+      pagina: 'Esta página ficou desatualizada e suas últimas respostas podem não ter sido salvas. Toque em “Tentar salvar de novo”; se não resolver, recarregue a página.',
+      enviada: 'Esta tentativa já foi enviada — recarregue a página.'
+    };
+    var dizer = function (t, erro) { if (aviso.textContent !== t) aviso.textContent = t; aviso.classList.toggle('erro', !!erro); };
     var dois = function (n) { return (n < 10 ? '0' : '') + n; };
     var agendar = function (ms) { clearTimeout(timer); timer = setTimeout(function () { timer = null; enviar(false); }, ms); };
+    // chave 'r<pid>' (radio) ou 'd<pid>' (discursiva)
+    var valor = function (k) {
+      var c = k.charAt(0) === 'r' ? form.querySelector('input[name="respostas[' + k.slice(1) + ']"]:checked')
+        : form.querySelector('textarea[name="discursivas[' + k.slice(1) + ']"]');
+      return c ? c.value : null;
+    };
+    var tudo = function () {
+      [].forEach.call(form.querySelectorAll('input[type=radio]:checked,textarea'), function (c) {
+        var m = /^(respostas|discursivas)\[(\d+)\]$/.exec(c.name || '');
+        if (m) sujas[m[1].charAt(0) === 'r' ? 'r' + m[2] : 'd' + m[2]] = 1;
+      });
+    };
+    function bloquear(tipo, msg) {
+      if (bloqueio === 'tentativa') return;
+      bloqueio = tipo; clearTimeout(timer); timer = null;
+      dizer('Respostas não salvas', true);
+      if (!caixa) {
+        caixa = d.createElement('div');
+        caixa.className = 'postit erro largo quiz-salvo-erro';
+        caixa.setAttribute('role', 'alert');
+        aviso.parentNode.insertBefore(caixa, aviso.nextSibling);
+      }
+      caixa.innerHTML = '';
+      var p = d.createElement('p'), bt = d.createElement('button');
+      p.textContent = msg || MSG[tipo] || MSG.pagina;
+      bt.type = 'button'; bt.className = 'link';
+      bt.textContent = tipo === 'tentativa' ? 'Recarregar a página' : 'Tentar salvar de novo';
+      bt.addEventListener('click', function () { if (tipo === 'tentativa') location.reload(); else retomar(bt); });
+      caixa.appendChild(p); caixa.appendChild(bt);
+      caixa.hidden = false;
+      caixa.scrollIntoView({ block: 'center', behavior: C.reduzido ? 'auto' : 'smooth' });
+    }
+    aoBloquear = function (tipo) { if (!bloqueio) bloquear(tipo); };
+    // Busca a própria página (GET, sem efeito) para pegar o token da sessão atual.
+    function retomar(bt) {
+      bt.disabled = true;
+      fetch(location.href, { credentials: 'same-origin' }).then(function (r) {
+        if (r.redirected && /\/login/.test(r.url)) throw falha('sessao');
+        return r.text();
+      }).then(function (html) {
+        var m = /name="_token" value="([0-9a-zA-Z]+)"/.exec(html);
+        if (!m) throw falha('pagina');
+        [].forEach.call(d.querySelectorAll('input[name="_token"]'), function (c) { c.value = m[1]; });
+        bloqueio = null; falhas = 0; caixa.hidden = true;
+        tudo(); enviar(false);
+      })['catch'](function (e) {
+        bt.disabled = false;
+        bloqueio = null;
+        bloquear(e && e.tipo === 'sessao' ? 'sessao' : 'pagina');
+      });
+    }
     function enviar(aoSair) {
-      if (final || (vazio(fila.respostas) && vazio(fila.discursivas))) return emCurso;
+      if (final || bloqueio || vazio(sujas)) return emCurso;
       if (voo && !aoSair) return emCurso; // ao terminar, o que sobrou na fila sai em seguida
-      var lote = fila, falhou = false;
-      fila = { respostas: {}, discursivas: {} };
+      var lote = {}, corpo = { respostas: {}, discursivas: {} }, falhou = false, k, v;
+      for (k in sujas) {
+        lote[k] = seq[k] || 0;
+        v = valor(k);
+        if (v !== null) corpo[k.charAt(0) === 'r' ? 'respostas' : 'discursivas'][k.slice(1)] = v;
+      }
+      sujas = {};
       clearTimeout(timer); timer = null;
       voo++;
-      if (aviso) aviso.classList.add('salvando');
+      aviso.classList.add('salvando');
       emCurso = json('/aluno/cursos/quiz/rascunho', {
         tentativa_id: tid, item_id: num('item_id'), inscricao_id: num('inscricao_id'), curso_id: num('curso_id'), turma_id: num('turma_id'),
-        respostas: lote.respostas, discursivas: lote.discursivas, _token: campo('_token')
+        respostas: corpo.respostas, discursivas: corpo.discursivas, _token: campo('_token')
       }, aoSair ? 1 : 0).then(function (r) {
-        if (r && r.ok) { falhas = 0; var h = new Date(); dizer('Salvo às ' + dois(h.getHours()) + ':' + dois(h.getMinutes())); return; }
+        if (r && r.ok) {
+          falhas = 0;
+          // Um lote mais novo já tinha gravado e este (antigo) chegou depois: regrava o atual.
+          for (k in lote) { if (k in salvo && salvo[k] > lote[k]) sujas[k] = 1; else salvo[k] = lote[k]; }
+          var h = new Date();
+          if (!bloqueio) dizer('Salvo às ' + dois(h.getHours()) + ':' + dois(h.getMinutes()));
+          return;
+        }
         if (r && r.expirada) { final = true; location.reload(); return; }
-        throw new Error('rascunho');
-      })['catch'](function () {
         falhou = true;
-        devolver(fila.respostas, lote.respostas);
-        devolver(fila.discursivas, lote.discursivas);
+        if (r && r.message) {
+          bloquear('tentativa', /enviada|encerrada/i.test(r.message) ? MSG.enviada : r.message + ' Recarregue a página.');
+          return;
+        }
+        throw falha('pagina');
+      })['catch'](function (e) {
+        falhou = true;
+        // Volta para a fila só o que nenhum envio mais novo já gravou; o valor será lido da tela.
+        for (k in lote) if (!(k in salvo && salvo[k] >= lote[k])) sujas[k] = 1;
+        if (e && (e.tipo === 'sessao' || e.tipo === 'pagina')) { bloquear(e.tipo); return; }
         falhas++;
         dizer('Não foi possível salvar — tentando de novo', true);
         agendar(Math.min(30000, 3000 * Math.pow(2, falhas - 1)));
       }).then(function () {
         voo--;
-        if (aviso && !voo) aviso.classList.remove('salvando');
-        if (!falhou && !timer && !(vazio(fila.respostas) && vazio(fila.discursivas))) agendar(300);
+        if (!voo) aviso.classList.remove('salvando');
+        if (!falhou && !bloqueio && !timer && !vazio(sujas)) agendar(300);
       });
       return emCurso;
     }
+    var mudou = function (k, ms) { seq[k] = (seq[k] || 0) + 1; sujas[k] = 1; if (!bloqueio) agendar(ms); };
     form.addEventListener('change', function (e) {
       var m = e.target.type === 'radio' && /^respostas\[(\d+)\]$/.exec(e.target.name || '');
-      if (!m) return;
-      fila.respostas[m[1]] = e.target.value;
-      agendar(600);
+      if (m) mudou('r' + m[1], 600);
     });
     form.addEventListener('input', function (e) {
       var m = e.target.tagName === 'TEXTAREA' && /^discursivas\[(\d+)\]$/.exec(e.target.name || '');
-      if (!m) return;
-      fila.discursivas[m[1]] = e.target.value;
-      agendar(2000);
+      if (m) mudou('d' + m[1], 2000);
     });
     d.addEventListener('visibilitychange', function () { if (d.hidden) enviar(true); });
     addEventListener('pagehide', function () { enviar(true); });
-    // Envio final de verdade (não barrado pela revisão): o próprio POST leva tudo.
+    // Voltou pelo histórico: o salvamento continua de onde estava.
+    addEventListener('pageshow', function (e) { if (e.persisted) { final = false; if (!vazio(sujas) && !bloqueio) agendar(300); } });
+    // Envio final de verdade (não barrado pela revisão): grava o pendente sem segurar o
+    // POST (keepalive) — se o servidor recusar o envio, o rascunho já está salvo.
     form.addEventListener('submit', function (e) {
       if (e.defaultPrevented) return;
+      enviar(true);
       final = true; clearTimeout(timer);
-      fila = { respostas: {}, discursivas: {} };
     });
     return function () { clearTimeout(timer); timer = null; return voo ? emCurso.then(function () { return enviar(false); }) : enviar(false); };
   })();
 
   /* Relógio de prova: conta a partir de data-restante contra o relógio do aparelho
      (aba em segundo plano não atrasa), confere POST /aluno/cursos/quiz/tempo a
-     cada 60 s e ao voltar à aba ({tentativa_id,_token} + X-CSRF-TOKEN). Até 5 min:
-     visual de alerta e um único aviso em texto. Zerou: salva o pendente, avisa o
-     servidor, mostra a mensagem e recarrega (o servidor aplica a regra da prova). */
+     cada 60 s e ao voltar à aba ({tentativa_id,_token} + X-CSRF-TOKEN); erro de
+     sessão/página para as consultas (sem laço). Até 5 min: visual de alerta e um
+     único aviso em texto; a 5 s, grava o pendente. Zerou: salva, pergunta ao
+     servidor e só recarrega se ele confirmar o fim (senão, ressincroniza). */
   try { (function () {
     var box = $('v2-quiz-cronometro'), valor = $('v2-quiz-cronometro-valor'), aviso = $('quiz-tempo-aviso');
     if (!box || !valor || !window.fetch) return;
     var fim = Date.now() + (parseInt(box.getAttribute('data-restante'), 10) || 0) * 1000;
-    var tid = parseInt(box.getAttribute('data-tentativa'), 10) || 0, acabou = false, avisou = false, tick;
+    var tid = parseInt(box.getAttribute('data-tentativa'), 10) || 0, acabou = false, avisou = false, antes = false, parado = false, tick;
     var conferir = function () { return json('/aluno/cursos/quiz/tempo', { tentativa_id: tid, _token: campo('_token') }, 2); };
     var dois = function (n) { return (n < 10 ? '0' : '') + n; };
+    // Quantas vezes já recarregou por fim de tempo nesta sessão (sessionStorage; sem ele, window.name).
+    var vezes = function () {
+      var k = 'quizTempo' + tid, n = 0, re = new RegExp(k + '=(\\d+);?');
+      try { n = +sessionStorage.getItem(k) || 0; sessionStorage.setItem(k, n + 1); return n; } catch (e) {}
+      var m = re.exec(window.name || '');
+      n = m ? +m[1] : 0;
+      window.name = (window.name || '').replace(re, '') + k + '=' + (n + 1) + ';';
+      return n;
+    };
     function recarregar() {
       acabou = true; clearInterval(tick);
       if (aviso) aviso.textContent = '';
-      var k = 'quizTempo' + tid, n = 0;
-      try { n = +sessionStorage.getItem(k) || 0; sessionStorage.setItem(k, n + 1); } catch (e) {}
-      var p = d.createElement('p');
+      var n = vezes(), p = d.createElement('p');
       p.className = 'postit erro largo';
       p.setAttribute('role', 'alert');
       // Já recarregou duas vezes e o servidor não encerrou: não entra em laço.
@@ -404,32 +505,46 @@ Caderno.pagina('quiz', function () {
           aviso.textContent = s > 60 ? 'Atenção: faltam ' + Math.ceil(s / 60) + ' minutos para o fim da prova.' : 'Atenção: falta menos de 1 minuto para o fim da prova.';
         }
       } else box.classList.remove('acabando');
+      if (s <= 5 && !antes) { antes = true; flush(); }
       if (s <= 0 && !acabou) {
         acabou = true; clearInterval(tick);
-        var segue = function () { recarregar(); };
-        flush().then(conferir).then(segue, segue);
+        flush().then(conferir).then(function (r) {
+          // O servidor ainda dá tempo (relógio do aparelho adiantado): segue contando.
+          if (r && r.ok && !r.expirada && r.tempo && r.tempo.segundos_restantes > 0) {
+            fim = Date.now() + r.tempo.segundos_restantes * 1000;
+            acabou = false; antes = false; tick = setInterval(mostrar, 1000); mostrar();
+            return;
+          }
+          recarregar();
+        }, recarregar);
       }
     }
     function sincronizar() {
-      if (acabou) return;
+      if (acabou || bloqueio || parado) return;
       conferir().then(function (r) {
         if (!r || !r.ok || acabou) return;
         if (r.encerrada || r.expirada) { recarregar(); return; }
         if (r.tempo && typeof r.tempo.segundos_restantes === 'number') { fim = Date.now() + r.tempo.segundos_restantes * 1000; mostrar(); }
-      })['catch'](function () {});
+      })['catch'](function (e) {
+        if (e && (e.tipo === 'sessao' || e.tipo === 'pagina')) { if (aoBloquear) aoBloquear(e.tipo); else parado = true; }
+      });
     }
     mostrar();
     tick = setInterval(mostrar, 1000);
     setInterval(sincronizar, 60000);
     d.addEventListener('visibilitychange', function () { if (!d.hidden) sincronizar(); });
+    addEventListener('pageshow', function (e) { if (e.persisted) sincronizar(); });
   })(); } catch (e) {}
 
   var wrap = $('v2-quiz-perguntas'), barra = $('quiz-barra'), avisoP = $('quiz-aviso-passo');
   var steps = wrap ? [].slice.call(wrap.querySelectorAll('.v2-quiz-pergunta')) : [];
-  var bAnt = $('quiz-be-ant'), bProx = $('quiz-be-prox'), submit = $('v2-quiz-submit-btn');
+  var bAnt = $('quiz-be-ant'), bProx = $('quiz-be-prox'), submit = $('v2-quiz-submit-btn'), anuncio = $('quiz-anuncio');
+  // Progresso para leitor de tela só quando a questão muda ou a revisão abre.
+  var anunciar = function (t) { if (anuncio) { anuncio.textContent = ''; setTimeout(function () { anuncio.textContent = t; }, 60); } };
   // Nova pergunta: foco no fieldset (o leitor de tela lê o enunciado) e rola se preciso.
-  var ir = function (s, topo) {
+  var ir = function (s, topo, t) {
     focar(s);
+    if (t) anunciar(t);
     var r = s.getBoundingClientRect();
     if (r.top < 60 || r.top > innerHeight * 0.55) rolar(topo || s);
   };
@@ -458,7 +573,7 @@ Caderno.pagina('quiz', function () {
         var b = d.createElement('button');
         b.type = 'button'; b.className = 'passo'; b.textContent = k + 1;
         b.setAttribute('aria-label', 'Ir para a pergunta ' + (k + 1));
-        b.addEventListener('click', function () { if (k <= max) { cur = k; render(); ir(steps[k], prog); } });
+        b.addEventListener('click', function () { if (k <= max) { cur = k; render(); ir(steps[k], prog, txt.textContent); } });
         nums.appendChild(b); bs.push(b);
       });
       function render() {
@@ -487,9 +602,9 @@ Caderno.pagina('quiz', function () {
           }
           return;
         }
-        if (cur < n - 1) { cur++; if (cur > max) max = cur; render(); ir(steps[cur], prog); }
+        if (cur < n - 1) { cur++; if (cur > max) max = cur; render(); ir(steps[cur], prog, txt.textContent); }
       }
-      var voltar = function () { if (cur > 0) { cur--; render(); ir(steps[cur], prog); } };
+      var voltar = function () { if (cur > 0) { cur--; render(); ir(steps[cur], prog, txt.textContent); } };
       prev.addEventListener('click', voltar);
       next.addEventListener('click', avancar);
       if (bAnt) bAnt.addEventListener('click', voltar);
@@ -569,6 +684,7 @@ Caderno.pagina('quiz', function () {
         render();
         rolar(nav);
         focar(steps[k]);
+        anunciar(elPos.textContent + '. ' + elResumo.textContent + '.');
       }
       function abrirRevisao() {
         flush();
@@ -607,6 +723,7 @@ Caderno.pagina('quiz', function () {
         render();
         rolar(painel);
         focar(painel);
+        anunciar('Revisão: ' + c.r + ' de ' + n + ' respondidas.');
       }
       function pedirConf(q) {
         confTxt.textContent = 'Você tem ' + plural(q, 'questão', 'questões') + ' sem resposta. Enviar mesmo assim?';
@@ -647,7 +764,13 @@ Caderno.pagina('quiz', function () {
         });
       });
       form.addEventListener('change', function () { render(); });
-      form.addEventListener('input', function (e) { if (e.target.tagName === 'TEXTAREA') render(); });
+      // Discursiva: só redesenha quando ela passa a contar (ou deixa de contar) como respondida.
+      var jaResp = steps.map(respondida);
+      form.addEventListener('input', function (e) {
+        if (e.target.tagName !== 'TEXTAREA') return;
+        var r = respondida(steps[atual]);
+        if (r !== jaResp[atual]) { jaResp[atual] = r; render(); }
+      });
       var abrirIndice = function (abrir) {
         indice.hidden = !abrir;
         indiceBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
