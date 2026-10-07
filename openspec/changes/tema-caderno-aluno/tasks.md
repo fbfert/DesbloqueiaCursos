@@ -23,9 +23,9 @@ Contexto obrigatório para cada tarefa: `proposal.md`, `specs/tema-publico/spec.
 
 ## 4. Quiz
 
-- [ ] 4.1 `caderno/quiz.php` + `pages/quiz.php`: estados indisponível, antes (com estrutura e blocos), andamento (curto e prova, cronômetro, marcar revisão, sem JS rolável), resultado (com e sem nota, gabarito/explicações quando liberados, nova tentativa); conferir que gabarito e rubrica não aparecem no HTML em andamento.
-- [ ] 4.2 Módulo quiz do `caderno-aluno.js`: autosave, cronômetro, modo curto e modo prova conforme design.md §4, sem `alert`/`confirm`.
-- [ ] 4.3 Verificar em navegador headless (perfil temporário, nunca o do usuário): marcar resposta → rascunho gravado; recarregar → resposta restaurada; modo prova com discursiva vazia bloqueia; envio com pendência pede confirmação inline; cronômetro sincroniza; envio final mostra resultado. Restaurar o banco local.
+- [x] 4.1 `caderno/quiz.php` + `pages/quiz.php`: estados indisponível, antes (com estrutura e blocos), andamento (curto e prova, cronômetro, marcar revisão, sem JS rolável), resultado (com e sem nota, gabarito/explicações quando liberados, nova tentativa); conferir que gabarito e rubrica não aparecem no HTML em andamento.
+- [x] 4.2 Módulo quiz do `caderno-aluno.js`: autosave, cronômetro, modo curto e modo prova conforme design.md §4, sem `alert`/`confirm`.
+- [x] 4.3 Verificar em navegador headless (perfil temporário, nunca o do usuário): marcar resposta → rascunho gravado; recarregar → resposta restaurada; modo prova com discursiva vazia bloqueia; envio com pendência pede confirmação inline; cronômetro sincroniza; envio final mostra resultado. Restaurar o banco local.
 
 ## 5. Fechamento
 

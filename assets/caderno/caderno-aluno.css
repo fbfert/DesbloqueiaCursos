@@ -243,3 +243,143 @@ p.sumario-tit{padding:16px 18px 6px}
 .atv-arquivos::file-selector-button{margin-right:12px;padding:10px 16px;font:600 14px var(--sans);color:var(--violeta);background:#fff;border:1.5px solid var(--violeta);border-radius:999px;cursor:pointer}
 .atv-fechada{margin-top:40px;padding-top:4px;border-top:1.5px dashed var(--linha)}
 .atv-fechada .link,.atv-voltar{display:inline-flex;align-items:center;gap:4px;margin-top:14px}
+
+/* ---------- quiz: folha de prova ----------
+   Questões numeradas à mão, alternativas em letras com o círculo de caneta na
+   escolhida (só CSS: funciona sem JS), discursiva na pauta, relógio de prova
+   fixo no topo, revisão e correção. Navegação e barra começam [hidden]. */
+.quiz{padding:14px 0 40px}
+.quiz-folha{max-width:76ch}
+html:has(.relogio){scroll-padding-top:128px}
+.quiz-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:16px;font-size:14px;color:var(--texto2)}
+.quiz-instr{margin-top:24px;padding-left:16px;border-left:3px solid var(--marca);font-size:16px;line-height:1.6}
+.prova-cab{margin-top:28px;padding:16px 20px 20px;background:#fff;box-shadow:var(--sombra-papel)}
+.prova-cab .mao{font-size:25px}
+.prova-regras,.prova-blocos{list-style:none;margin-top:8px}
+.prova-regras li,.prova-blocos li{position:relative;padding:8px 0 7px 24px;border-bottom:1px solid var(--pauta);line-height:1.45}
+.prova-regras li::before,.prova-blocos li::before{content:"";position:absolute;left:3px;top:19px;width:10px;height:2px;background:var(--tinta);transform:rotate(-8deg)}
+.prova-sub{margin-top:20px;font-size:15px}
+.prova-blocos small{font-size:13px;color:var(--texto2)}
+.quiz-iniciar{margin-top:30px}
+.quiz-nota-rel{display:flex;gap:8px;margin-top:14px;max-width:46ch;font-size:14px;color:var(--texto2)}
+.quiz-nota-rel .ico{width:20px;height:20px}
+.quiz-limite{margin-top:28px;max-width:440px}
+
+/* relógio de prova e salvamento */
+.relogio{position:sticky;top:68px;z-index:15;display:flex;align-items:center;gap:8px;width:fit-content;margin-top:18px;padding:7px 16px 7px 12px;
+  color:var(--tinta);background:#fff;border:2px solid currentColor;border-radius:14px 12px 16px 12px/12px 16px 12px 14px;box-shadow:var(--sombra-papel)}
+.relogio .ico{width:22px;height:22px}
+.relogio-rot{font-size:13px;font-weight:600;color:var(--texto2)}
+.relogio-valor{font:700 20px/1 var(--sans);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.relogio.acabando{color:var(--vermelho);background:#FFF1EE}
+.relogio-aviso{margin-top:8px;font-weight:600;font-size:14px;color:var(--vermelho)}
+.relogio-aviso:empty{margin:0}
+.quiz-salvo{display:flex;align-items:center;gap:8px;margin-top:22px;font-size:13px;color:var(--texto2)}
+.quiz-salvo::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--verde);transition:background .2s}
+.quiz-salvo.salvando::before{background:var(--apagado)}
+.quiz-salvo.erro{color:var(--vermelho);font-weight:600}
+.quiz-salvo.erro::before{background:var(--vermelho)}
+
+/* progresso (curto) e navegação da prova */
+.quiz-passos,.prova-nav{margin-top:16px}
+.quiz-passos-txt,.prova-nav-bloco{font:400 20px/1.3 var(--mao);color:var(--tinta)}
+.trilho{height:4px;margin-top:6px;border-radius:2px;overflow:hidden;background:repeating-linear-gradient(90deg,var(--linha) 0 7px,transparent 7px 11px)}
+.trilho-tinta{width:0;height:100%;border-radius:2px;background:var(--tinta);transition:width .3s var(--ease-out)}
+.quiz-passos-n,.prova-grade{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;list-style:none}
+.passo,.idx{position:relative;min-width:44px;height:44px;padding:0 4px;font:600 15px var(--sans);color:var(--violeta);background:#fff;border:1.5px solid var(--linha);border-radius:50% 46% 52% 48%/48% 52% 46% 50%;cursor:pointer}
+.passo[aria-current],.idx[aria-current]{border:2.5px solid var(--tinta);color:var(--tinta)}
+.passo.feito,.idx.feito{color:#fff;background:var(--tinta);border-color:var(--tinta)}
+.passo:disabled{opacity:.4;cursor:default}
+.idx.marcada::after{content:"";position:absolute;top:-4px;right:-3px;border:6px solid var(--laranja);border-right-color:transparent;border-bottom-color:transparent}
+.prova-nav{padding-bottom:6px;border-bottom:1.5px dashed var(--linha)}
+.prova-nav-topo{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0 12px}
+.prova-nav-topo span{font-size:13.5px;font-weight:600}
+.prova-nav-rodape{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 12px;margin-top:2px;font-size:13.5px;color:var(--texto2)}
+.prova-indice-btn{min-height:44px;font-size:14px}
+.prova-indice{padding-bottom:12px}
+.prova-indice-tit,.prova-lista-tit{margin-top:12px;font-size:14px;font-weight:600}
+.prova-legenda{margin-top:12px;font-size:12.5px;color:var(--texto2)}
+
+/* questões */
+.questao{min-width:0;margin-top:28px;border:0}
+.questao:focus{outline:none}
+legend.questao-enun{float:left;width:100%}
+.questao>legend+*{clear:left}
+.questao-enun{display:flex;gap:12px;font-size:18px;line-height:1.5;font-weight:500}
+.questao-n{flex:none;display:grid;place-items:center;width:36px;height:36px;margin-top:-3px;font:400 21px/1 var(--serif);color:var(--tinta);border:2px solid currentColor;border-radius:52% 48% 50% 46%/48% 53% 47% 52%}
+.questao-txt{min-width:0;overflow-wrap:anywhere}
+.questao-obrig{margin-left:3px;color:var(--vermelho)}
+.questao-flag{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:6px 0 0 42px;padding:0 6px;font:600 14px var(--sans);color:var(--texto2);background:none;border:0;cursor:pointer}
+.questao-flag .ico{width:20px;height:20px}
+.questao-flag[aria-pressed=true]{color:var(--laranja-texto)}
+.questao-flag[aria-pressed=true] path{fill:rgba(255,106,0,.3)}
+.alts{display:grid;gap:6px;margin-top:14px;list-style:none}
+.alt{position:relative;display:flex;align-items:flex-start;gap:12px;min-height:52px;padding:10px 12px 10px 8px;font-size:16.5px;line-height:1.45;border-radius:10px;cursor:pointer}
+.alt input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.alt-letra{position:relative;flex:none;display:grid;place-items:center;width:32px;height:32px;font:700 15px var(--sans);color:var(--texto2)}
+.alt-circ{position:absolute;left:-6px;top:-6px;width:44px;height:44px;max-width:none;overflow:visible;fill:none;stroke:var(--tinta);stroke-width:2.6;stroke-linecap:round;
+  stroke-dasharray:1 2;stroke-dashoffset:1;transition:stroke-dashoffset .4s cubic-bezier(.3,0,.3,1)}
+.alt-txt{min-width:0;padding-top:4px;overflow-wrap:anywhere}
+.alt input:checked~.alt-letra{color:var(--tinta)}
+.alt input:checked~.alt-letra .alt-circ{stroke-dashoffset:0}
+.alt input:checked~.alt-txt{font-weight:600}
+.alt:has(input:checked){background:rgba(31,63,168,.07)}
+.alt input:focus-visible~.alt-letra{outline:3px solid var(--tinta);outline-offset:5px;border-radius:50%}
+.questao-disc{max-width:none;margin-top:16px}
+.questao-disc textarea{min-height:288px;background-color:rgba(255,255,255,.6)}
+@media (hover:hover){ .alt:hover{background:rgba(31,63,168,.05)} .passo:not(:disabled):hover,.idx:hover{border-color:var(--tinta)} }
+@media (min-width:480px){ .alts{padding-left:40px} }
+
+/* revisão, confirmação e ações */
+.prova-revisao{margin-top:24px;padding:20px;background:#fff;box-shadow:var(--sombra-papel)}
+.prova-revisao:focus{outline:none}
+.prova-revisao-lead{margin-top:6px;color:var(--texto2)}
+.prova-revisao-conta{margin-top:16px;font-size:17px}
+.prova-revisao .postit{margin-top:14px}
+.prova-revisao .aula-ok-msg{margin-top:12px}
+.quiz-confirmar{margin-top:22px;font-size:15.5px}
+.quiz-confirmar p{font-weight:600}
+.quiz-confirmar .form-acoes{margin-top:12px}
+.quiz-aviso{margin-top:18px;font-weight:600;color:var(--vermelho)}
+.quiz-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px;margin-top:30px}
+.quiz-nav-pag{display:flex;flex-wrap:wrap;gap:12px}
+.quiz-voltar{display:inline-flex;align-items:center;min-height:44px}
+.quiz-obrig-nota{margin-top:16px;font-size:13px;color:var(--texto2)}
+@media (max-width:899px){ .quiz-nav-pag{display:none} }
+
+/* barra de estudo do quiz */
+button.be-lado{background:none;border:0;cursor:pointer}
+.be-lado:disabled{color:var(--apagado);background:none;box-shadow:none;cursor:default}
+.be-pos{font:400 18px var(--mao);color:var(--tinta)}
+.be-txt{padding:0 14px;color:var(--tinta);border:1.5px solid currentColor;border-radius:999px}
+#quiz-be-revisar{color:#fff;background:var(--violeta);border-color:var(--violeta)}
+
+/* resultado e correção */
+.quiz-res{position:relative;max-width:520px;min-height:132px;margin-top:30px;padding:22px 20px 24px;background:#fff;box-shadow:var(--sombra-papel)}
+.quiz-res .carimbo{position:absolute;right:8px;top:-24px;--d:116px;font-size:10px;background:rgba(255,255,255,.78);transform:rotate(-12deg)}
+.quiz-res .carimbo span{font-size:14.5px}
+.quiz-placar-n{display:inline-block;padding:8px 18px 2px;font:400 58px/1 var(--mao);color:var(--vermelho);border:3px solid currentColor;border-radius:55% 45% 52% 48%/50% 55% 45% 50%;transform:rotate(-4deg)}
+.quiz-placar-n small{font-size:.5em}
+.quiz-placar{margin-top:16px;font-size:17px;padding-right:24px}
+.quiz-status{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:17px;font-weight:700;padding-right:110px}
+.quiz-placar+.quiz-status{padding-right:0}
+.quiz-status.ok{color:var(--verde)}
+.quiz-status.nao{color:var(--vermelho)}
+.gabarito{margin-top:46px}
+.gab-lista{list-style:none}
+.questao-ro{margin-top:28px}
+li.alt{cursor:default}
+.alt.escolhida .alt-letra{color:var(--tinta)}
+.gabarito .alt-circ{stroke-dasharray:none}
+.alt.certa .alt-txt{color:var(--verde);font-weight:600}
+.alt.errada .alt-txt{color:var(--vermelho)}
+.alt.errada .alt-circ{stroke:var(--vermelho)}
+.gab-tag{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:1px 8px;font:600 12px var(--sans);font-style:normal;color:var(--tinta);border:1.5px solid currentColor;border-radius:999px;white-space:nowrap;vertical-align:1px}
+.gab-tag.certa{color:var(--verde)}
+.gab-tag.errada{color:var(--vermelho)}
+.gab-tag .ico{width:14px;height:14px}
+.gab-expl{margin-top:12px;padding:12px 16px 14px;font-size:15px;line-height:1.55;background:var(--postit);box-shadow:0 1px 1px rgba(0,0,0,.08),0 12px 14px -12px rgba(60,40,0,.45);transform:rotate(-.4deg)}
+.gab-expl b{display:block;font:400 18px var(--mao);color:var(--vermelho)}
+.quiz-fim{margin-top:38px}
+@media (min-width:480px){ .gab-expl{margin-left:40px} }
+@media (prefers-reduced-motion:reduce){ .alt-circ,.trilho-tinta,.quiz-salvo::before{transition:none} }

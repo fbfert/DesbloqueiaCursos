@@ -473,7 +473,7 @@ class AulaController extends Controller
                     'atual' => $itemId === (int) $conteudoId,
                     'etiqueta' => $tipo === 'etiqueta',
                     'obrigatorio' => !empty($item['obrigatorio']),
-                    'url' =>$this->urlV2($inscricao, $cursoId, $turmaId, $moduloId, $itemId),
+                    'url' => $this->urlV2($inscricao, $cursoId, $turmaId, $moduloId, $itemId),
                 );
             }
             $arvore[] = array(
