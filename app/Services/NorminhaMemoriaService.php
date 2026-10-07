@@ -40,7 +40,7 @@ class NorminhaMemoriaService
     private $conversaModel;
     private $mensagemModel;
 
-    public function __construct(NorminhaConversa $conversaModel = null, NorminhaMensagem $mensagemModel = null)
+    public function __construct(?NorminhaConversa $conversaModel = null, ?NorminhaMensagem $mensagemModel = null)
     {
         $this->conversaModel = $conversaModel ?: new NorminhaConversa();
         $this->mensagemModel = $mensagemModel ?: new NorminhaMensagem();

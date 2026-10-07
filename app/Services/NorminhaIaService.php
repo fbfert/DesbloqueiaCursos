@@ -55,11 +55,11 @@ class NorminhaIaService
     private $tetoAvaliado = null;
 
     public function __construct(
-        OpenAIService $openai = null,
-        NorminhaToolsService $tools = null,
-        NorminhaKnowledgeService $knowledge = null,
-        NorminhaPromptService $prompt = null,
-        NorminhaCustoService $custo = null
+        ?OpenAIService $openai = null,
+        ?NorminhaToolsService $tools = null,
+        ?NorminhaKnowledgeService $knowledge = null,
+        ?NorminhaPromptService $prompt = null,
+        ?NorminhaCustoService $custo = null
     ) {
         $this->openai = $openai ?: new OpenAIService();
         $this->tools = $tools ?: new NorminhaToolsService();

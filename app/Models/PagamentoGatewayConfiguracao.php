@@ -299,7 +299,7 @@ class PagamentoGatewayConfiguracao
         return Helpers::url('webhooks/abacatepay') . '?webhookSecret=' . rawurlencode($secret);
     }
 
-    private function resolveEncryptedValue($input, array $current = null, $field = null, $canEncrypt = true)
+    private function resolveEncryptedValue($input, ?array $current = null, $field = null, $canEncrypt = true)
     {
         $input = trim((string) $input);
         if ($input !== '') {
@@ -321,7 +321,7 @@ class PagamentoGatewayConfiguracao
         return null;
     }
 
-    private function resolveWebhookUrlPublica($input, array $current = null)
+    private function resolveWebhookUrlPublica($input, ?array $current = null)
     {
         $input = trim((string) $input);
         if ($input !== '') {
@@ -340,7 +340,7 @@ class PagamentoGatewayConfiguracao
         return '';
     }
 
-    private function decryptField(array $current = null, $field = null)
+    private function decryptField(?array $current = null, $field = null)
     {
         if (!$current || !$field || !isset($current[$field])) {
             return null;

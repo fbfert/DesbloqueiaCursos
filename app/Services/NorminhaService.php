@@ -71,8 +71,8 @@ class NorminhaService
     private $configuracoesTutor = null;
 
     public function __construct(
-        NorminhaContextService $contextService = null,
-        NorminhaToolsService $toolsService = null,
+        ?NorminhaContextService $contextService = null,
+        ?NorminhaToolsService $toolsService = null,
         $geradorIA = null
     ) {
         $this->contextService = $contextService ?: new NorminhaContextService();

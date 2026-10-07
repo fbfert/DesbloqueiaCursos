@@ -504,7 +504,7 @@ class AbacatePayService
         return '';
     }
 
-    private function requestJson($method, $endpoint, array $payload = null)
+    private function requestJson($method, $endpoint, ?array $payload = null)
     {
         $runtimeConfig = $this->runtimeConfig();
         $url = rtrim((string) ($runtimeConfig['base_url'] ?? 'https://api.abacatepay.com/v2'), '/') . '/' . ltrim($endpoint, '/');
@@ -686,7 +686,7 @@ class AbacatePayService
         return $runtimeConfig['webhook_hmac_secret'] ?? '';
     }
 
-    private function isProductionLike(array $runtimeConfig = null)
+    private function isProductionLike(?array $runtimeConfig = null)
     {
         $appConfig = require BASE_PATH . '/config/app.php';
         $env = strtolower((string) ($appConfig['env'] ?? Env::get('APP_ENV', 'production')));

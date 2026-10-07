@@ -51,7 +51,7 @@ class NorminhaToolsService
     private $contextService;
     private $elegibilidadeService;
 
-    public function __construct(NorminhaContextService $contextService = null)
+    public function __construct(?NorminhaContextService $contextService = null)
     {
         $this->contextService = $contextService ?: new NorminhaContextService();
         $this->elegibilidadeService = new LmsElegibilidadeService();

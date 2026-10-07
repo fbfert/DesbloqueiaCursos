@@ -42,7 +42,7 @@ class NorminhaPublicoService
 
     private $cursoService;
 
-    public function __construct(CursoService $cursoService = null)
+    public function __construct(?CursoService $cursoService = null)
     {
         $this->cursoService = $cursoService ?: new CursoService();
     }

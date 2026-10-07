@@ -57,7 +57,7 @@ class NorminhaRateLimitService
     private $configuracaoModel;
     private $configuracoes;
 
-    public function __construct(NorminhaUso $usoModel = null, TutorConfiguracao $configuracaoModel = null)
+    public function __construct(?NorminhaUso $usoModel = null, ?TutorConfiguracao $configuracaoModel = null)
     {
         $this->usoModel = $usoModel ?: new NorminhaUso();
         $this->configuracaoModel = $configuracaoModel ?: new TutorConfiguracao();

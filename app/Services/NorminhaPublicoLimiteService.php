@@ -39,7 +39,7 @@ class NorminhaPublicoLimiteService
 
     private $pdo;
 
-    public function __construct(PDO $pdo = null)
+    public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?: Database::connection();
     }

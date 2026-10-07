@@ -169,7 +169,7 @@ function smoke_resolver_url($atual, $destino)
  * Requisita seguindo redirects manualmente, registrando a cadeia.
  * Retorna array(status, tempo_ms, corpo, url_final, cadeia, erro).
  */
-function smoke_requisitar($url, array $opcoes, array $post = null, $cookieJar = null)
+function smoke_requisitar($url, array $opcoes, ?array $post = null, $cookieJar = null)
 {
     $cadeia = array();
     $atual = $url;

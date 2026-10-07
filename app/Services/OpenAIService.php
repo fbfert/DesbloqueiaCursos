@@ -40,7 +40,7 @@ class OpenAIService
 
     private $config;
 
-    public function __construct(array $configOverride = null)
+    public function __construct(?array $configOverride = null)
     {
         $ai = require BASE_PATH . '/config/ai.php';
         $this->config = $configOverride !== null

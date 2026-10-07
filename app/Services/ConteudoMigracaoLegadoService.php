@@ -11,7 +11,7 @@ class ConteudoMigracaoLegadoService
     private $pdo;
     private $storageService;
 
-    public function __construct($pdo = null, FileStorageService $storageService = null)
+    public function __construct($pdo = null, ?FileStorageService $storageService = null)
     {
         $this->pdo = $pdo ?: Database::connection();
         $this->storageService = $storageService ?: new FileStorageService();
@@ -196,7 +196,7 @@ class ConteudoMigracaoLegadoService
         return $resultado;
     }
 
-    public function migrarModulo($moduloAntigo, $usuarioId = null, array &$resultado = null)
+    public function migrarModulo($moduloAntigo, $usuarioId = null, ?array &$resultado = null)
     {
         $origemId = (int) $moduloAntigo['id'];
         if ($this->jaMigrado('modulos', $origemId, 'conteudo_modulos')) {
@@ -240,7 +240,7 @@ class ConteudoMigracaoLegadoService
         return $destinoId;
     }
 
-    public function migrarAula($aulaAntiga, $conteudoModuloId, $usuarioId = null, array &$resultado = null)
+    public function migrarAula($aulaAntiga, $conteudoModuloId, $usuarioId = null, ?array &$resultado = null)
     {
         $origemId = (int) $aulaAntiga['id'];
         if ($this->jaMigrado('aulas', $origemId, 'conteudo_itens')) {
@@ -287,7 +287,7 @@ class ConteudoMigracaoLegadoService
         return $itemId;
     }
 
-    public function migrarMaterial($materialAntigo, $conteudoModuloId, $usuarioId = null, array &$resultado = null)
+    public function migrarMaterial($materialAntigo, $conteudoModuloId, $usuarioId = null, ?array &$resultado = null)
     {
         $origemId = (int) $materialAntigo['id'];
         if ($this->jaMigrado('materiais', $origemId, 'conteudo_itens')) {
@@ -373,7 +373,7 @@ class ConteudoMigracaoLegadoService
         return $itemId;
     }
 
-    public function migrarLinkExterno($linkAntigo, $conteudoModuloId, $usuarioId = null, array &$resultado = null)
+    public function migrarLinkExterno($linkAntigo, $conteudoModuloId, $usuarioId = null, ?array &$resultado = null)
     {
         $origemId = (int) $linkAntigo['id'];
         if ($this->jaMigrado('links_externos', $origemId, 'conteudo_itens')) {
@@ -416,7 +416,7 @@ class ConteudoMigracaoLegadoService
         return $itemId;
     }
 
-    public function migrarAtividade($atividadeAntiga, $conteudoModuloId, $usuarioId = null, array &$resultado = null)
+    public function migrarAtividade($atividadeAntiga, $conteudoModuloId, $usuarioId = null, ?array &$resultado = null)
     {
         $origemId = (int) $atividadeAntiga['id'];
         if ($this->jaMigrado('atividades', $origemId, 'conteudo_itens')) {
