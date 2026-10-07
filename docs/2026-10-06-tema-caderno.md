@@ -354,7 +354,7 @@ Orçamento (`gzip -9`), valendo para as cinco páginas do aluno:
 
 | Recurso | Bruto | gzip | Orçamento | Uso |
 |---|---|---|---|---|
-| `caderno.css` + `caderno-aluno.css` | 64.116 + 29.622 B | 14.951 + 7.891 = **22.842 B** | 25.600 B | 89 % |
+| `caderno.css` + `caderno-aluno.css` | 64.116 + 29.816 B | 14.951 + 7.968 = **22.919 B** | 25.600 B | 90 % |
 | `caderno.js` + `caderno-aluno.js` | 32.641 + 44.960 B | 9.982 + 13.691 = **23.673 B** | 25.600 B | 92 % |
 
 `caderno-aluno.*` só é requisitado nas páginas do aluno (o smoke confere que
