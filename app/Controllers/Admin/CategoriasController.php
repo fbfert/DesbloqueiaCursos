@@ -47,7 +47,7 @@ class CategoriasController extends Controller
         if ($action === 'save_copy') {
             $result = $this->categoriaService->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
             if (empty($result['ok'])) {
-                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar a categoria.'));
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar a categoria.'));
                 Session::flash('old', $input);
                 return $this->redirect('/admin/categorias/criar');
             }
@@ -59,7 +59,7 @@ class CategoriasController extends Controller
         $result = $this->categoriaService->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar a categoria.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar a categoria.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/categorias/criar');
         }
@@ -100,7 +100,7 @@ class CategoriasController extends Controller
         if ($action === 'save_copy') {
             $result = $this->categoriaService->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
             if (empty($result['ok'])) {
-                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel criar a cópia da categoria.'));
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível criar a cópia da categoria.'));
                 Session::flash('old', $input);
                 return $this->redirect('/admin/categorias/editar?categoria_id=' . $categoriaId);
             }
@@ -112,7 +112,7 @@ class CategoriasController extends Controller
         $result = $this->categoriaService->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar a categoria.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar a categoria.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/categorias/editar?categoria_id=' . $categoriaId);
         }
@@ -137,7 +137,7 @@ class CategoriasController extends Controller
         $formData = $this->categoriaService->formData($categoriaId);
 
         if (empty($formData['categoria'])) {
-            Session::flash('errors', array('Categoria nao encontrada.'));
+            Session::flash('errors', array('Categoria não encontrada.'));
             return $this->redirect('/admin/categorias');
         }
 
@@ -159,11 +159,11 @@ class CategoriasController extends Controller
         $result = $this->categoriaService->excluir($categoriaId, $justificativa, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel excluir a categoria.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível excluir a categoria.'));
             return $this->redirect('/admin/categorias/editar?categoria_id=' . $categoriaId);
         }
 
-        Session::flash('success', 'Categoria excluida e enviada para a lixeira.');
+        Session::flash('success', 'Categoria excluída e enviada para a lixeira.');
         return $this->redirect('/admin/categorias');
     }
 }

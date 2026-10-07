@@ -122,23 +122,23 @@ class ProgressoService
         $aula = $this->aulaModel->findById($aulaId);
 
         if (!$inscricao || !$aula) {
-            return array('ok' => false, 'message' => 'Inscricao ou aula nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição ou aula não encontrada.');
         }
 
         if (!$this->inscricaoPertenceAoUsuario($inscricao, $usuarioId)) {
             $this->registrarAcessoNegado('area_curso.aula.negado', $inscricaoId, $usuarioId, $aulaId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para concluir esta aula.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para concluir esta aula.');
         }
 
         if (!$this->aulaPertenceAoContexto($aula, $inscricao)) {
             $this->registrarAcessoNegado('area_curso.aula.contexto_invalido', $inscricaoId, $usuarioId, $aulaId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Aula nao pertence ao contexto desta inscricao.');
+            return array('ok' => false, 'message' => 'Aula não pertence ao contexto desta inscrição.');
         }
 
         $modulo = $this->moduloModel->findById((int) $aula['modulo_id']);
         if (!$modulo || !$this->conteudoPublicado($modulo) || !$this->conteudoPublicado($aula)) {
             $this->registrarAcessoNegado('area_curso.aula.nao_publicada', $inscricaoId, $usuarioId, $aulaId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Aula nao disponivel para conclusao.');
+            return array('ok' => false, 'message' => 'Aula não disponível para conclusão.');
         }
 
         $pdo = Database::connection();
@@ -186,17 +186,17 @@ class ProgressoService
         $modulo = $this->moduloModel->findById($moduloId);
 
         if (!$inscricao || !$modulo) {
-            return array('ok' => false, 'message' => 'Inscricao ou modulo nao encontrado.');
+            return array('ok' => false, 'message' => 'Inscrição ou módulo não encontrado.');
         }
 
         if (!$this->inscricaoPertenceAoUsuario($inscricao, $usuarioId)) {
             $this->registrarAcessoNegado('area_curso.modulo.negado', $inscricaoId, $usuarioId, $moduloId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para concluir este modulo.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para concluir este módulo.');
         }
 
         if (!$this->moduloPertenceAoContexto($modulo, $inscricao)) {
             $this->registrarAcessoNegado('area_curso.modulo.contexto_invalido', $inscricaoId, $usuarioId, $moduloId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Modulo nao pertence ao contexto desta inscricao.');
+            return array('ok' => false, 'message' => 'Módulo não pertence ao contexto desta inscrição.');
         }
 
         $pdo = Database::connection();
@@ -246,7 +246,7 @@ class ProgressoService
     {
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição não encontrada.');
         }
 
         $curso = $this->cursoModel->findById($inscricao['curso_evento_id']);

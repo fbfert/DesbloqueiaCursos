@@ -67,7 +67,7 @@ class ConfiguracoesGlobaisController extends Controller
     public function seguranca(Request $request)
     {
         return $this->view('admin/configuracoes-globais/seguranca', array(
-            'title' => 'Configurações de seguranca',
+            'title' => 'Configurações de segurança',
             'configuracao' => $this->service->seguranca(),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
@@ -121,7 +121,7 @@ class ConfiguracoesGlobaisController extends Controller
             } elseif (!empty($result['message'])) {
                 $errors[] = $result['message'];
             } else {
-                $errors[] = 'Não foi possivel salvar as configuracoes.';
+                $errors[] = 'Não foi possível salvar as configurações.';
             }
 
             Session::flash('errors', $errors);

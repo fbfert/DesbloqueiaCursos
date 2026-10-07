@@ -32,7 +32,7 @@ class AcademicoController extends Controller
 
         return $this->view('admin/academico/index', array_merge(
             array(
-                'title' => 'Area academica',
+                'title' => 'Área acadêmica',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
             ),
@@ -112,7 +112,7 @@ class AcademicoController extends Controller
     private function respondForm(array $resultado, Request $request, $redirectTo, $exitUrl = null)
     {
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível salvar o registro.'));
         } else {
             Session::flash('success', 'Registro salvo com sucesso.');
         }

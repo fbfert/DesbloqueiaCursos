@@ -209,7 +209,7 @@ class TurmasController extends Controller
             return $this->redirect($returnTo !== '' ? $returnTo : $this->turmaFormErrorUrl('edit', $request, (int) $request->input('curso_id', 0), $returnTo, $turmaId));
         }
 
-        Session::flash('success', 'Turma excluida e enviada para a lixeira.');
+        Session::flash('success', 'Turma excluída e enviada para a lixeira.');
         return $this->redirect($returnTo !== '' ? $returnTo : '/admin/turmas');
     }
 

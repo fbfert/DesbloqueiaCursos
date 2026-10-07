@@ -72,7 +72,7 @@ class PresencaService
 
         $inscricao = $this->inscricaoModel->findById(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição não encontrada.');
         }
 
         $payload = array(
@@ -121,7 +121,7 @@ class PresencaService
     {
         $registro = $this->presencaModel->findById($id);
         if (!$registro) {
-            return array('ok' => false, 'message' => 'Presenca nao encontrada.');
+            return array('ok' => false, 'message' => 'Presença não encontrada.');
         }
 
         $pdo = Database::connection();

@@ -234,22 +234,22 @@ class CursoService
 
         $errors = array();
         if ($nome === '') {
-            $errors[] = 'Nome do curso/evento e obrigatorio.';
+            $errors[] = 'Nome do curso/evento é obrigatório.';
         }
         if ($slug === '') {
-            $errors[] = 'Slug do curso/evento e obrigatorio.';
+            $errors[] = 'Slug do curso/evento é obrigatório.';
         }
         if ($valorFoiInformado && $valorNormalizado === null) {
-            $errors[] = 'Valor invalido.';
+            $errors[] = 'Valor inválido.';
         }
         if ($valor < 0) {
-            $errors[] = 'Valor invalido.';
+            $errors[] = 'Valor inválido.';
         }
         if ($valorPromocionalFoiInformado && $valorPromocional === null) {
-            $errors[] = 'Valor promocional invalido.';
+            $errors[] = 'Valor promocional inválido.';
         }
         if ($valorPromocional !== null && $valorPromocional < 0) {
-            $errors[] = 'Valor promocional invalido.';
+            $errors[] = 'Valor promocional inválido.';
         }
         if ($valorPromocional !== null) {
             if ($valor <= 0) {
@@ -259,7 +259,7 @@ class CursoService
             }
         }
         if ($categoriaId !== null && !$this->categoriaModel->findById($categoriaId)) {
-            $errors[] = 'Categoria nao encontrada.';
+            $errors[] = 'Categoria não encontrada.';
         }
         if (!in_array($conteudoProgramaticoTipo, $this->conteudoProgramaticoTipos, true)) {
             $errors[] = 'Tipo de conteúdo programático inválido.';
@@ -269,7 +269,7 @@ class CursoService
         if ($thumbnailSelecionada !== '') {
             $thumbnailNormalizada = $this->normalizarThumbnailSelecionada($thumbnailSelecionada);
             if ($thumbnailNormalizada === null) {
-                $errors[] = 'Thumbnail selecionada nao encontrada na pasta de thumbnails.';
+                $errors[] = 'Thumbnail selecionada não encontrada na pasta de thumbnails.';
             } else {
                 $thumbnail = $thumbnailNormalizada;
             }
@@ -278,7 +278,7 @@ class CursoService
         if (isset($files['thumbnail_upload']) && !empty($files['thumbnail_upload']['tmp_name'])) {
             $resultadoUpload = $this->salvarThumbnailUpload($files['thumbnail_upload']);
             if (empty($resultadoUpload['ok'])) {
-                $errors[] = isset($resultadoUpload['message']) ? $resultadoUpload['message'] : 'Nao foi possivel enviar a thumbnail.';
+                $errors[] = isset($resultadoUpload['message']) ? $resultadoUpload['message'] : 'Não foi possível enviar a thumbnail.';
             } else {
                 $thumbnail = $resultadoUpload['path'];
             }
@@ -294,11 +294,11 @@ class CursoService
 
         $existente = $this->cursoModel->findBySlug($slug);
         if ($existente && (int) $existente['id'] !== $id) {
-            $errors[] = 'Ja existe um curso/evento com este slug.';
+            $errors[] = 'Já existe um curso/evento com este slug.';
         }
 
         if ($id > 0 && !$this->cursoModel->findById($id)) {
-            $errors[] = 'Curso/evento nao encontrado.';
+            $errors[] = 'Curso/evento não encontrado.';
         }
 
         if ($errors) {
@@ -429,20 +429,20 @@ class CursoService
     private function salvarThumbnailUpload(array $arquivo)
     {
         if (!isset($arquivo['error']) || (int) $arquivo['error'] !== UPLOAD_ERR_OK) {
-            return array('ok' => false, 'message' => 'Upload de thumbnail invalido.');
+            return array('ok' => false, 'message' => 'Upload de thumbnail inválido.');
         }
 
         if (empty($arquivo['tmp_name']) || !is_uploaded_file($arquivo['tmp_name'])) {
-            return array('ok' => false, 'message' => 'Arquivo de thumbnail invalido.');
+            return array('ok' => false, 'message' => 'Arquivo de thumbnail inválido.');
         }
 
         $tamanho = isset($arquivo['size']) ? (int) $arquivo['size'] : 0;
         if ($tamanho <= 0) {
-            return array('ok' => false, 'message' => 'O arquivo de thumbnail esta vazio.');
+            return array('ok' => false, 'message' => 'O arquivo de thumbnail está vazio.');
         }
 
         if ($tamanho > 5 * 1024 * 1024) {
-            return array('ok' => false, 'message' => 'A thumbnail deve ter no maximo 5 MB.');
+            return array('ok' => false, 'message' => 'A thumbnail deve ter no máximo 5 MB.');
         }
 
         $nomeOriginal = isset($arquivo['name']) ? (string) $arquivo['name'] : '';
@@ -450,18 +450,18 @@ class CursoService
         $extensoesPermitidas = array('jpg', 'jpeg', 'png', 'webp', 'gif');
 
         if (!in_array($extensao, $extensoesPermitidas, true)) {
-            return array('ok' => false, 'message' => 'Formato de thumbnail nao permitido. Use JPG, PNG, WEBP ou GIF.');
+            return array('ok' => false, 'message' => 'Formato de thumbnail não permitido. Use JPG, PNG, WEBP ou GIF.');
         }
 
         $mime = $this->detectarMimeType($arquivo['tmp_name']);
         $mimesPermitidos = array('image/jpeg', 'image/png', 'image/webp', 'image/gif');
         if (!in_array(strtolower((string) $mime), $mimesPermitidos, true)) {
-            return array('ok' => false, 'message' => 'Tipo de arquivo de thumbnail nao permitido.');
+            return array('ok' => false, 'message' => 'Tipo de arquivo de thumbnail não permitido.');
         }
 
         if (!is_dir($this->thumbnailDirectoryAbsolute)) {
             if (!@mkdir($this->thumbnailDirectoryAbsolute, 0775, true) && !is_dir($this->thumbnailDirectoryAbsolute)) {
-                return array('ok' => false, 'message' => 'Nao foi possivel criar a pasta de thumbnails.');
+                return array('ok' => false, 'message' => 'Não foi possível criar a pasta de thumbnails.');
             }
         }
 
@@ -473,7 +473,7 @@ class CursoService
 
         $destino = $this->thumbnailDirectoryAbsolute . '/' . $nomeSeguro;
         if (!move_uploaded_file($arquivo['tmp_name'], $destino)) {
-            return array('ok' => false, 'message' => 'Nao foi possivel salvar a thumbnail enviada.');
+            return array('ok' => false, 'message' => 'Não foi possível salvar a thumbnail enviada.');
         }
 
         $nomeFinal = OtimizadorImagem::otimizarCapaGravada($destino);
@@ -511,11 +511,11 @@ class CursoService
     {
         $curso = $this->cursoModel->findById($id);
         if (!$curso) {
-            return array('ok' => false, 'message' => 'Curso/evento nao encontrado.');
+            return array('ok' => false, 'message' => 'Curso/evento não encontrado.');
         }
 
         if (!empty($this->turmaModel->forCourse($id))) {
-            return array('ok' => false, 'message' => 'Não e seguro excluir curso/evento com turmas vinculadas.');
+            return array('ok' => false, 'message' => 'Não é seguro excluir curso/evento com turmas vinculadas.');
         }
 
         $pdo = Database::connection();
@@ -707,7 +707,7 @@ class CursoService
     {
         $curso = $this->cursoModel->findPublicById($cursoId);
         if (!$curso) {
-            return array('ok' => false, 'message' => 'Curso nao encontrado.');
+            return array('ok' => false, 'message' => 'Curso não encontrado.');
         }
 
         $usarTurmas = isset($curso['usar_turmas']) ? (int) $curso['usar_turmas'] : 1;
@@ -721,7 +721,7 @@ class CursoService
 
         $turma = $this->turmaModel->findPublicOpenForCourse($cursoId, $turmaId);
         if (!$turma) {
-            return array('ok' => false, 'message' => 'A turma selecionada nao esta aberta para inscricao.');
+            return array('ok' => false, 'message' => 'A turma selecionada não está aberta para inscrição.');
         }
 
         return array('ok' => true, 'curso' => $curso, 'turma' => $turma);
@@ -1133,11 +1133,11 @@ class CursoService
     {
         $curso = $this->cursoModel->findById($id);
         if (!$curso) {
-            return array('ok' => false, 'message' => 'Curso/evento nao encontrado.');
+            return array('ok' => false, 'message' => 'Curso/evento não encontrado.');
         }
 
         if (!in_array($status, array('ativo', 'inativo'), true)) {
-            return array('ok' => false, 'message' => 'Status invalido para o curso/evento.');
+            return array('ok' => false, 'message' => 'Status inválido para o curso/evento.');
         }
 
         try {
@@ -1163,7 +1163,7 @@ class CursoService
                 'message' => $exception->getMessage(),
             ));
 
-            return array('ok' => false, 'message' => 'Nao foi possivel atualizar o status do curso/evento.');
+            return array('ok' => false, 'message' => 'Não foi possível atualizar o status do curso/evento.');
         }
     }
 

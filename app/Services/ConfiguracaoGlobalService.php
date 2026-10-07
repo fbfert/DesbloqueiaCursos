@@ -1019,27 +1019,27 @@ class ConfiguracaoGlobalService
         }
 
         if (!empty($payload['cnpj']) && strlen($payload['cnpj']) !== 14) {
-            $errors['cnpj'] = 'Informe um CNPJ valido.';
+            $errors['cnpj'] = 'Informe um CNPJ válido.';
         }
 
         if (!empty($payload['email_institucional']) && !Validator::email($payload['email_institucional'])) {
-            $errors['email_institucional'] = 'Informe um e-mail institucional valido.';
+            $errors['email_institucional'] = 'Informe um e-mail institucional válido.';
         }
 
         if (!empty($payload['email_financeiro']) && !Validator::email($payload['email_financeiro'])) {
-            $errors['email_financeiro'] = 'Informe um e-mail financeiro valido.';
+            $errors['email_financeiro'] = 'Informe um e-mail financeiro válido.';
         }
 
         if (!empty($payload['email_suporte']) && !Validator::email($payload['email_suporte'])) {
-            $errors['email_suporte'] = 'Informe um e-mail de suporte valido.';
+            $errors['email_suporte'] = 'Informe um e-mail de suporte válido.';
         }
 
         if (!empty($payload['email_certificados']) && !Validator::email($payload['email_certificados'])) {
-            $errors['email_certificados'] = 'Informe um e-mail de certificados valido.';
+            $errors['email_certificados'] = 'Informe um e-mail de certificados válido.';
         }
 
         if (!empty($payload['email_avaliador_pedagogico']) && !Validator::email($payload['email_avaliador_pedagogico'])) {
-            $errors['email_avaliador_pedagogico'] = 'Informe um e-mail de avaliador pedagogico valido.';
+            $errors['email_avaliador_pedagogico'] = 'Informe um e-mail de avaliador pedagogico válido.';
         }
 
         return $errors;
@@ -1054,7 +1054,7 @@ class ConfiguracaoGlobalService
         }
 
         if (strlen($payload['prefixo_certificado']) > 20) {
-            $errors['prefixo_certificado'] = 'O prefixo do certificado deve ter ate 20 caracteres.';
+            $errors['prefixo_certificado'] = 'O prefixo do certificado deve ter até 20 caracteres.';
         }
 
         if ($payload['certificados_percentual_presenca_minima'] < 0 || $payload['certificados_percentual_presenca_minima'] > 100) {
@@ -1093,7 +1093,7 @@ class ConfiguracaoGlobalService
         $errors = array();
 
         if ($payload['percentual_rateio_maximo'] < 0 || $payload['percentual_rateio_maximo'] > 75) {
-            $errors['percentual_rateio_maximo'] = 'O rateio maximo nao pode ultrapassar 75%.';
+            $errors['percentual_rateio_maximo'] = 'O rateio máximo não pode ultrapassar 75%.';
         }
 
         return $errors;
@@ -1124,7 +1124,7 @@ class ConfiguracaoGlobalService
         $allowed = array('email_cpf', 'email', 'cpf');
 
         if (!in_array($payload['politica_login'], $allowed, true)) {
-            $errors['politica_login'] = 'Politica de login invalida.';
+            $errors['politica_login'] = 'Política de login inválida.';
         }
 
         if ($payload['validade_reset_senha_minutos'] <= 0) {
@@ -1132,7 +1132,7 @@ class ConfiguracaoGlobalService
         }
 
         if ($payload['max_tentativas_login'] <= 0) {
-            $errors['max_tentativas_login'] = 'O numero maximo de tentativas deve ser maior que zero.';
+            $errors['max_tentativas_login'] = 'O número máximo de tentativas deve ser maior que zero.';
         }
 
         if ($payload['tempo_bloqueio_login_minutos'] <= 0) {

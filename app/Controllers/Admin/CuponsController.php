@@ -35,7 +35,7 @@ class CuponsController extends Controller
                 'path' => $request->path(),
             ));
 
-            Session::flash('errors', array('Nao foi possivel carregar a listagem de cupons no momento.'));
+            Session::flash('errors', array('Não foi possível carregar a listagem de cupons no momento.'));
 
             return $this->view('admin/cupons/index', array(
                 'title' => 'Cupons',
@@ -71,7 +71,7 @@ class CuponsController extends Controller
                 $request->userAgent()
             );
             if (empty($result['ok'])) {
-                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o cupom.'));
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o cupom.'));
                 Session::flash('old', $input);
                 return $this->redirect('/admin/cupons/criar');
             }
@@ -88,7 +88,7 @@ class CuponsController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o cupom.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o cupom.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/cupons/criar');
         }
@@ -134,7 +134,7 @@ class CuponsController extends Controller
                 $request->userAgent()
             );
             if (empty($result['ok'])) {
-                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel criar a cópia do cupom.'));
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível criar a cópia do cupom.'));
                 Session::flash('old', $input);
                 return $this->redirect('/admin/cupons/editar?cupom_id=' . $cupomId);
             }
@@ -151,7 +151,7 @@ class CuponsController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar o cupom.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar o cupom.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/cupons/editar?cupom_id=' . $cupomId);
         }
@@ -176,7 +176,7 @@ class CuponsController extends Controller
         $formData = $this->cupomService->resumoUso($cupomId);
 
         if (empty($formData['cupom'])) {
-            Session::flash('errors', array('Cupom nao encontrado.'));
+            Session::flash('errors', array('Cupom não encontrado.'));
             return $this->redirect('/admin/cupons');
         }
 
@@ -204,11 +204,11 @@ class CuponsController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel excluir o cupom.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível excluir o cupom.'));
             return $this->redirect('/admin/cupons/editar?cupom_id=' . $cupomId);
         }
 
-        Session::flash('success', 'Cupom excluido e enviado para a lixeira.');
+        Session::flash('success', 'Cupom excluído e enviado para a lixeira.');
         return $this->redirect('/admin/cupons');
     }
 
@@ -226,7 +226,7 @@ class CuponsController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel atualizar o status do cupom.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível atualizar o status do cupom.'));
             return $this->redirect('/admin/cupons');
         }
 

@@ -109,7 +109,7 @@
                                         </select>
                                     </label>
                                     <label>
-                                        Numero
+                                        Número
                                         <input type="text" name="numero_documento" maxlength="80">
                                     </label>
                                     <label>

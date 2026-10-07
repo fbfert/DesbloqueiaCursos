@@ -150,49 +150,49 @@ class TurmaService
 
         $errors = array();
         if ($cursoId <= 0) {
-            $errors[] = 'Curso/evento e obrigatorio.';
+            $errors[] = 'Curso/evento é obrigatório.';
         }
         if ($nome === '') {
-            $errors[] = 'Nome da turma e obrigatorio.';
+            $errors[] = 'Nome da turma é obrigatório.';
         }
         if ($slug === '') {
-            $errors[] = 'Slug da turma e obrigatorio.';
+            $errors[] = 'Slug da turma é obrigatório.';
         }
         if ($codigo === '') {
-            $errors[] = 'Codigo da turma e obrigatorio.';
+            $errors[] = 'Código da turma é obrigatório.';
         }
         if ($local !== '' && (function_exists('mb_strlen') ? mb_strlen($local) : strlen($local)) > 255) {
-            $errors[] = 'O local da turma deve ter no maximo 255 caracteres.';
+            $errors[] = 'O local da turma deve ter no máximo 255 caracteres.';
         }
         if ($dataInicio !== null && $dataInicio !== '' && $dataFim !== null && $dataFim !== '' && $dataFim < $dataInicio) {
-            $errors[] = 'Data fim nao pode ser menor que a data inicio.';
+            $errors[] = 'Data fim não pode ser menor que a data início.';
         }
 
         $curso = $this->cursoModel->findById($cursoId);
         if (!$curso) {
-            $errors[] = 'Curso/evento nao encontrado.';
+            $errors[] = 'Curso/evento não encontrado.';
         }
 
         $professorResponsavel = null;
         if ($professorResponsavelUsuarioId !== null) {
             $professorResponsavel = $this->validarProfessorResponsavel($professorResponsavelUsuarioId);
             if (!$professorResponsavel) {
-                $errors[] = 'Professor responsavel nao encontrado.';
+                $errors[] = 'Professor responsável não encontrado.';
             }
         }
 
         $existenteSlug = $this->turmaModel->findBySlug($slug);
         if ($existenteSlug && (int) $existenteSlug['id'] !== $id) {
-            $errors[] = 'Ja existe uma turma com este slug.';
+            $errors[] = 'Já existe uma turma com este slug.';
         }
 
         $existenteCodigo = $this->turmaModel->findByCodigo($codigo);
         if ($existenteCodigo && (int) $existenteCodigo['id'] !== $id) {
-            $errors[] = 'Ja existe uma turma com este codigo.';
+            $errors[] = 'Já existe uma turma com este código.';
         }
 
         if ($id > 0 && !$this->turmaModel->findById($id)) {
-            $errors[] = 'Turma nao encontrada.';
+            $errors[] = 'Turma não encontrada.';
         }
 
         if ($errors) {
@@ -298,7 +298,7 @@ class TurmaService
     {
         $turma = $this->turmaModel->findById($id);
         if (!$turma) {
-            return array('ok' => false, 'message' => 'Turma nao encontrada.');
+            return array('ok' => false, 'message' => 'Turma não encontrada.');
         }
 
         $stmt = Database::connection()->prepare(
@@ -310,7 +310,7 @@ class TurmaService
         $stmt->execute(array('turma_id' => $id));
         $row = $stmt->fetch();
         if (!empty($row) && (int) $row['total'] > 0) {
-            return array('ok' => false, 'message' => 'Não e seguro excluir turma com inscricoes vinculadas.');
+            return array('ok' => false, 'message' => 'Não é seguro excluir turma com inscrições vinculadas.');
         }
 
         $pdo = Database::connection();
@@ -413,11 +413,11 @@ class TurmaService
     {
         $turma = $this->turmaModel->findById($id);
         if (!$turma) {
-            return array('ok' => false, 'message' => 'Turma nao encontrada.');
+            return array('ok' => false, 'message' => 'Turma não encontrada.');
         }
 
         if (!in_array($status, array('planejada', 'aberta', 'encerrada', 'excluida'), true)) {
-            return array('ok' => false, 'message' => 'Status invalido para a turma.');
+            return array('ok' => false, 'message' => 'Status inválido para a turma.');
         }
 
         $justificativa = trim((string) $justificativa);

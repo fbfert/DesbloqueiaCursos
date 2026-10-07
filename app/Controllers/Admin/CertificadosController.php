@@ -267,12 +267,12 @@ class CertificadosController extends Controller
                 'trace' => $exception->getTraceAsString(),
             ));
 
-            Session::flash('errors', array('Nao foi possivel abrir o certificado.'));
+            Session::flash('errors', array('Não foi possível abrir o certificado.'));
             return $this->redirect('/admin/certificados');
         }
 
         if (empty($detalhe['certificado'])) {
-            Session::flash('errors', array('Certificado nao encontrado.'));
+            Session::flash('errors', array('Certificado não encontrado.'));
             return $this->redirect('/admin/certificados');
         }
 
@@ -314,7 +314,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel emitir o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível emitir o certificado.'));
             return $this->redirect('/admin/certificados/emitir?inscricao_id=' . (int) $request->input('inscricao_id', 0));
         }
 
@@ -333,7 +333,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel reemitir o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível reemitir o certificado.'));
             return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $request->input('certificado_id', 0));
         }
 
@@ -352,7 +352,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel cancelar o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível cancelar o certificado.'));
             return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $request->input('certificado_id', 0));
         }
 
@@ -371,7 +371,7 @@ class CertificadosController extends Controller
         );
 
         if (empty($result['ok'])) {
-            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possivel revogar o certificado.'));
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível revogar o certificado.'));
             return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $request->input('certificado_id', 0));
         }
 
@@ -397,11 +397,11 @@ class CertificadosController extends Controller
                 'trace' => $exception->getTraceAsString(),
             ));
 
-            return new Response('Nao foi possivel gerar o certificado.', 500, array('Content-Type' => 'text/plain; charset=UTF-8'));
+            return new Response('Não foi possível gerar o certificado.', 500, array('Content-Type' => 'text/plain; charset=UTF-8'));
         }
 
         if ($pdf === null) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
         }
 
         return new Response($pdf, 200, array(

@@ -23,7 +23,7 @@ class CatalogoController extends Controller
     {
         return $this->view('professor/catalogo/index', array_merge(
             array(
-                'title' => 'Area do professor',
+                'title' => 'Área do professor',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
             ),

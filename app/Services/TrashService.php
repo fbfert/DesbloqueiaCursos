@@ -14,7 +14,7 @@ class TrashService
         $reason = trim((string) $reason);
 
         if ($reason === '') {
-            throw new InvalidArgumentException('A justificativa da lixeira e obrigatoria.');
+            throw new InvalidArgumentException('A justificativa da lixeira é obrigatória.');
         }
 
         return $reason;

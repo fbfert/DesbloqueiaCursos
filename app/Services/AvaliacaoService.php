@@ -136,7 +136,7 @@ class AvaliacaoService
                 }
             }
         } elseif ($id > 0 && !$this->perguntaModel->findById($id)) {
-            return array('ok' => false, 'message' => 'Pergunta nao encontrada.');
+            return array('ok' => false, 'message' => 'Pergunta não encontrada.');
         }
 
         $validacaoConsistencia = $this->scopeService->validarPerguntaAvaliacaoConsistentes($id, $payload['avaliacao_id'], $cursoId, $turmaId);
@@ -205,7 +205,7 @@ class AvaliacaoService
 
         $inscricao = $this->inscricaoModel->findById(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição não encontrada.');
         }
 
         $payload = array(
@@ -264,7 +264,7 @@ class AvaliacaoService
 
         $inscricao = $this->inscricaoModel->findById(isset($data['inscricao_id']) ? (int) $data['inscricao_id'] : 0);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição não encontrada.');
         }
 
         $payload = array(
@@ -302,7 +302,7 @@ class AvaliacaoService
     {
         $registro = $this->avaliacaoModel->findById($id);
         if (!$registro) {
-            return array('ok' => false, 'message' => 'Avaliacao nao encontrada.');
+            return array('ok' => false, 'message' => 'Avaliação não encontrada.');
         }
 
         $pdo = Database::connection();
@@ -327,7 +327,7 @@ class AvaliacaoService
     {
         $registro = $this->perguntaModel->findById($id);
         if (!$registro) {
-            return array('ok' => false, 'message' => 'Pergunta nao encontrada.');
+            return array('ok' => false, 'message' => 'Pergunta não encontrada.');
         }
 
         $pdo = Database::connection();

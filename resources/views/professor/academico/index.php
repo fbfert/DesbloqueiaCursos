@@ -1,7 +1,7 @@
 <?php use App\Core\Helpers; ?>
 
 <section class="page-header">
-    <h1>Area academica do professor</h1>
+    <h1>Área acadêmica do professor</h1>
     <p>Escopo limitado aos cursos e turmas atribuídos.</p>
 </section>
 
@@ -54,15 +54,15 @@
         <form method="post" action="/professor/academico/configuracao" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label class="checkbox"><input type="checkbox" name="exige_presenca" value="1" <?php echo !empty($configContext['exige_presenca']) ? 'checked' : ''; ?>> Exigir presenca</label>
-            <label>Min. presenca<input type="number" step="0.01" name="percentual_minimo_presenca" value="<?php echo Helpers::e(isset($configContext['percentual_minimo_presenca']) ? $configContext['percentual_minimo_presenca'] : '75.00'); ?>"></label>
-            <label>Min. conclusao<input type="number" step="0.01" name="percentual_minimo_conclusao" value="<?php echo Helpers::e(isset($configContext['percentual_minimo_conclusao']) ? $configContext['percentual_minimo_conclusao'] : '75.00'); ?>"></label>
-            <label class="checkbox"><input type="checkbox" name="exige_avaliacao" value="1" <?php echo !empty($configContext['exige_avaliacao']) ? 'checked' : ''; ?>> Exigir avaliacao</label>
-            <label>Nota minima<input type="number" step="0.01" name="nota_minima" value="<?php echo Helpers::e(isset($configContext['nota_minima']) ? $configContext['nota_minima'] : '70.00'); ?>"></label>
+            <label class="checkbox"><input type="checkbox" name="exige_presenca" value="1" <?php echo !empty($configContext['exige_presenca']) ? 'checked' : ''; ?>> Exigir presença</label>
+            <label>Min. presença<input type="number" step="0.01" name="percentual_minimo_presenca" value="<?php echo Helpers::e(isset($configContext['percentual_minimo_presenca']) ? $configContext['percentual_minimo_presenca'] : '75.00'); ?>"></label>
+            <label>Min. conclusão<input type="number" step="0.01" name="percentual_minimo_conclusao" value="<?php echo Helpers::e(isset($configContext['percentual_minimo_conclusao']) ? $configContext['percentual_minimo_conclusao'] : '75.00'); ?>"></label>
+            <label class="checkbox"><input type="checkbox" name="exige_avaliacao" value="1" <?php echo !empty($configContext['exige_avaliacao']) ? 'checked' : ''; ?>> Exigir avaliação</label>
+            <label>Nota mínima<input type="number" step="0.01" name="nota_minima" value="<?php echo Helpers::e(isset($configContext['nota_minima']) ? $configContext['nota_minima'] : '70.00'); ?>"></label>
             <label>Base do progresso
                 <select name="progresso_base">
                     <option value="aulas" <?php echo empty($configContext['progresso_base']) || $configContext['progresso_base'] === 'aulas' ? 'selected' : ''; ?>>Aulas</option>
-                    <option value="modulos" <?php echo !empty($configContext['progresso_base']) && $configContext['progresso_base'] === 'modulos' ? 'selected' : ''; ?>>Modulos</option>
+                    <option value="modulos" <?php echo !empty($configContext['progresso_base']) && $configContext['progresso_base'] === 'modulos' ? 'selected' : ''; ?>>Módulos</option>
                 </select>
             </label>
             <?php
@@ -77,7 +77,7 @@
         <div class="panel-header"><div><h2>Participantes</h2></div></div>
         <div class="table-wrapper">
             <table class="table">
-                <thead><tr><th>Nome</th><th>Progresso</th><th>Presenca</th><th>Nota</th><th>Apto</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Nome</th><th>Progresso</th><th>Presença</th><th>Nota</th><th>Apto</th><th>Ações</th></tr></thead>
                 <tbody>
                     <?php foreach ($inscricoes as $inscricao): ?>
                                 <tr>
@@ -102,7 +102,7 @@
     </section>
 
     <section class="panel">
-        <div class="panel-header"><div><h2>Presencas</h2></div></div>
+        <div class="panel-header"><div><h2>Presenças</h2></div></div>
         <form method="post" action="/professor/academico/presenca" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
@@ -131,17 +131,17 @@
     </section>
 
     <section class="panel">
-        <div class="panel-header"><div><h2>Avaliacoes</h2></div></div>
+        <div class="panel-header"><div><h2>Avaliações</h2></div></div>
         <form method="post" action="/professor/academico/avaliacao" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Titulo<input type="text" name="titulo"></label>
+            <label>Título<input type="text" name="titulo"></label>
             <label>Descrição<textarea name="descricao" rows="2"></textarea></label>
-            <label>Percentual minimo<input type="number" step="0.01" name="percentual_minimo" value="0"></label>
-            <label>Nota minima<input type="number" step="0.01" name="nota_minima" value="70.00"></label>
+            <label>Percentual mínimo<input type="number" step="0.01" name="percentual_minimo" value="0"></label>
+            <label>Nota mínima<input type="number" step="0.01" name="nota_minima" value="70.00"></label>
             <label>Ordem<input type="number" name="ordem" value="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
-            <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1"> Obrigatoria</label>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visível</label>
+            <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1"> Obrigatória</label>
             <?php
             $cancel_url = $academicoCancelUrl;
             $show_save_as_copy = false;
@@ -162,7 +162,7 @@
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label>Avaliacao
+            <label>Avaliação
                 <select name="avaliacao_id">
                     <?php foreach ($avaliacoes as $avaliacao): ?>
                         <option value="<?php echo (int) $avaliacao['id']; ?>"><?php echo Helpers::e($avaliacao['titulo']); ?></option>

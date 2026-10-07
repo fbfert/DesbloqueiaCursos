@@ -903,7 +903,7 @@ class CertificadoService
         $versao = $existente && $manterCodigo ? ((int) $existente['versao'] + 1) : 1;
         $cpfDigits = Validator::onlyDigits(isset($participante['cpf']) ? $participante['cpf'] : '');
         $cpfMasked = $this->mascararCpf($cpfDigits);
-        $titulo = isset($template['nome']) ? $template['nome'] : 'Certificado de Conclusao';
+        $titulo = isset($template['nome']) ? $template['nome'] : 'Certificado de Conclusão';
         $assinantes = $this->assinantesDoCurso((int) $inscricao['curso_evento_id'], isset($template['id']) ? (int) $template['id'] : null);
 
         $payload = array(
@@ -1102,7 +1102,7 @@ class CertificadoService
         $certificado = $this->certificadoModel->findById($certificadoId);
 
         if (!$certificado) {
-            return array('ok' => false, 'message' => 'Certificado nao encontrado.');
+            return array('ok' => false, 'message' => 'Certificado não encontrado.');
         }
 
         if (!$this->segundaViaPermitida() && !$manterCodigo) {
@@ -1179,18 +1179,18 @@ class CertificadoService
 
         if (!$certificado) {
             $this->certificadoModel->logValidation(null, $codigo, Validator::onlyDigits($cpfInformado), 'nao_encontrado', $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Certificado nao encontrado.');
+            return array('ok' => false, 'message' => 'Certificado não encontrado.');
         }
 
         if ($certificado['status'] !== 'emitido') {
             $this->certificadoModel->logValidation((int) $certificado['id'], $codigo, Validator::onlyDigits($cpfInformado), $certificado['status'], $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Certificado nao esta ativo para validacao.');
+            return array('ok' => false, 'message' => 'Certificado não está ativo para validação.');
         }
 
         $cpfDigits = Validator::onlyDigits($cpfInformado);
         if ($cpfDigits !== '' && $cpfDigits !== $certificado['cpf_participante']) {
             $this->certificadoModel->logValidation((int) $certificado['id'], $codigo, $cpfDigits, 'cpf_invalido', $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'CPF nao confere com o certificado.');
+            return array('ok' => false, 'message' => 'CPF não confere com o certificado.');
         }
 
         $this->certificadoModel->logValidation((int) $certificado['id'], $codigo, $cpfDigits !== '' ? $cpfDigits : null, 'valido', $ipAddress, $userAgent);
@@ -1358,7 +1358,7 @@ class CertificadoService
         $certificado = $this->certificadoModel->findById($certificadoId);
 
         if (!$certificado) {
-            return array('ok' => false, 'message' => 'Certificado nao encontrado.');
+            return array('ok' => false, 'message' => 'Certificado não encontrado.');
         }
 
         $pdo = Database::connection();
@@ -3228,7 +3228,7 @@ class CertificadoService
     {
         $text = (string) $text;
         if (strlen($text) > 17) {
-            throw new Exception('Codigo do certificado muito longo para QR de versao simples.');
+            throw new Exception('Código do certificado muito longo para QR de versão simples.');
         }
 
         $bits = array();

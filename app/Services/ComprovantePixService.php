@@ -39,12 +39,12 @@ class ComprovantePixService
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoAutorizadoParaUpload($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('comprovante_pix.upload_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para enviar comprovante neste pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para enviar comprovante neste pedido.');
         }
 
         if (!$this->pedidoPodeReceberComprovante($pedido)) {
@@ -57,11 +57,11 @@ class ComprovantePixService
                 array('status_atual' => $pedido['status'])
             );
 
-            return array('ok' => false, 'message' => 'Pedido nao aceita comprovante neste status.');
+            return array('ok' => false, 'message' => 'Pedido não aceita comprovante neste status.');
         }
 
         if (empty($arquivo['tmp_name']) || empty($arquivo['name'])) {
-            return array('ok' => false, 'message' => 'Selecione um comprovante valido.');
+            return array('ok' => false, 'message' => 'Selecione um comprovante válido.');
         }
 
         $stored = $this->fileStorage->storeUploadedFile($arquivo, 'comprovantes_pix/' . $pedidoId, 'pix', array(
@@ -175,13 +175,13 @@ class ComprovantePixService
         $comprovante = $this->comprovanteModel->findById($comprovanteId);
 
         if (!$comprovante) {
-            return array('ok' => false, 'message' => 'Comprovante nao encontrado.');
+            return array('ok' => false, 'message' => 'Comprovante não encontrado.');
         }
 
         $pedido = $this->pedidoModel->findById($comprovante['pedido_id']);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido do comprovante nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido do comprovante não encontrado.');
         }
 
         if (!$this->podeGerirFinanceiro($actorUserId)) {
@@ -229,7 +229,7 @@ class ComprovantePixService
                     $inscricaoId,
                     $statusAtualInscricao,
                     'ativa',
-                    'Inscricao ativada automaticamente apos aprovacao do comprovante PIX.',
+                    'Inscrição ativada automaticamente após aprovação do comprovante PIX.',
                     $actorUserId
                 );
 
@@ -281,13 +281,13 @@ class ComprovantePixService
         $comprovante = $this->comprovanteModel->findById($comprovanteId);
 
         if (!$comprovante) {
-            return array('ok' => false, 'message' => 'Comprovante nao encontrado.');
+            return array('ok' => false, 'message' => 'Comprovante não encontrado.');
         }
 
         $pedido = $this->pedidoModel->findById($comprovante['pedido_id']);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido do comprovante nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido do comprovante não encontrado.');
         }
 
         if (!$this->podeGerirFinanceiro($actorUserId)) {

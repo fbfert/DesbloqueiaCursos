@@ -1,6 +1,6 @@
 <section class="hero">
-    <h1>Area do professor</h1>
-    <p>Somente cursos e turmas vinculados a este usuario.</p>
+    <h1>Área do professor</h1>
+    <p>Somente cursos e turmas vinculados a este usuário.</p>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -42,9 +42,9 @@
                 <tr>
                     <th>ID</th>
                     <th>Nome</th>
-                    <th>Codigo</th>
+                    <th>Código</th>
                     <th>Curso</th>
-                    <th>Inicio</th>
+                    <th>Início</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -65,7 +65,7 @@
 </section>
 
 <section class="status-card">
-    <strong>Vinculos de acesso</strong>
+    <strong>Vínculos de acesso</strong>
     <div class="table-wrap">
         <table class="admin-table">
             <thead>

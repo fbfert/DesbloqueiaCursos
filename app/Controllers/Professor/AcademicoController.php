@@ -44,7 +44,7 @@ class AcademicoController extends Controller
 
         return $this->view('professor/academico/index', array_merge(
             array(
-                'title' => 'Area academica do professor',
+                'title' => 'Área acadêmica do professor',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
             ),
@@ -167,7 +167,7 @@ class AcademicoController extends Controller
     private function respondForm(array $resultado, Request $request, $redirectTo, $exitUrl = null)
     {
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível salvar o registro.'));
         } else {
             Session::flash('success', 'Registro salvo com sucesso.');
         }
@@ -201,7 +201,7 @@ class AcademicoController extends Controller
             return true;
         }
 
-        return isset($validacao['message']) && $validacao['message'] === 'Inscricao nao encontrada.';
+        return isset($validacao['message']) && in_array($validacao['message'], array('Inscricao nao encontrada.', 'Inscrição não encontrada.'), true);
     }
 
     private function avaliacaoAutorizada($avaliacaoId, $cursoId, $turmaId)
@@ -219,7 +219,7 @@ class AcademicoController extends Controller
             return true;
         }
 
-        return isset($validacao['message']) && $validacao['message'] === 'Avaliacao nao encontrada.';
+        return isset($validacao['message']) && in_array($validacao['message'], array('Avaliacao nao encontrada.', 'Avaliação não encontrada.'), true);
     }
 
     private function perguntaAutorizada($perguntaId, $cursoId, $turmaId)
@@ -233,7 +233,7 @@ class AcademicoController extends Controller
             return true;
         }
 
-        return isset($validacao['message']) && $validacao['message'] === 'Pergunta nao encontrada.';
+        return isset($validacao['message']) && in_array($validacao['message'], array('Pergunta nao encontrada.', 'Pergunta não encontrada.'), true);
     }
 
     private function aulaAutorizada($aulaId, $cursoId, $turmaId)
@@ -247,7 +247,7 @@ class AcademicoController extends Controller
             return true;
         }
 
-        return isset($validacao['message']) && $validacao['message'] === 'Aula nao encontrada.';
+        return isset($validacao['message']) && in_array($validacao['message'], array('Aula nao encontrada.', 'Aula não encontrada.'), true);
     }
 
     private function forbidden()

@@ -66,7 +66,7 @@ class CheckoutController extends Controller
         }
 
         if (!empty($curso['curso']['usar_turmas']) && empty($curso['curso']['turma_selecionada'])) {
-            Session::flash('errors', array('turma' => 'Selecione uma turma aberta para iniciar a inscricao.'));
+            Session::flash('errors', array('turma' => 'Selecione uma turma aberta para iniciar a inscrição.'));
             return $this->redirect($this->urlCursoDetalheCheckout($request, $cursoId));
         }
 
@@ -107,7 +107,7 @@ class CheckoutController extends Controller
                 : '';
 
             return $this->renderCheckout($request, 'inscricao', array(
-                'title' => 'Inscricao',
+                'title' => 'Inscrição',
                 'curso' => $curso['curso'],
                 'loggedIn' => Session::get('usuario_id') !== null,
                 'usuarioNome' => Session::get('usuario_nome'),
@@ -132,7 +132,7 @@ class CheckoutController extends Controller
         $errors = Session::pullFlash('errors', array());
 
         return $this->renderCheckout($request, 'inscricao', array(
-            'title' => 'Inscricao',
+            'title' => 'Inscrição',
             'curso' => $curso['curso'],
             'loggedIn' => Session::get('usuario_id') !== null,
             'usuarioNome' => Session::get('usuario_nome'),
@@ -176,7 +176,7 @@ class CheckoutController extends Controller
         if ($isCompraPropria) {
             $resultadoCompraPropria = $this->concluirCheckoutCompraPropria($pedidoId, $request, $pedido['pedido']);
             if (empty($resultadoCompraPropria['ok'])) {
-                Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
+                Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possível concluir a compra própria.'));
                 return $this->redirect($this->urlResumo($request, $pedidoId));
             }
 
@@ -454,7 +454,7 @@ class CheckoutController extends Controller
 
         $cupom = $this->cupomModel->findByCodigo($codigo);
         if (!$cupom || ($cupom['status'] ?? '') !== 'ativo') {
-            Session::flash('errors', array('cupom' => 'Cupom promocional indisponivel.'));
+            Session::flash('errors', array('cupom' => 'Cupom promocional indisponível.'));
             return $this->redirect('/cursos');
         }
 
@@ -473,7 +473,7 @@ class CheckoutController extends Controller
 
         $pedidoAcesso = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
         if (empty($pedidoAcesso['pedido'])) {
-            Session::flash('errors', array('pedido' => 'Você nao tem permissao para acessar este pedido.'));
+            Session::flash('errors', array('pedido' => 'Você não tem permissão para acessar este pedido.'));
             return $this->redirect('/cursos');
         }
 
@@ -494,7 +494,7 @@ class CheckoutController extends Controller
         $cupomCodigo = trim((string) $request->input('cupom_codigo', ''));
 
         if ($pedidoId <= 0 || $cupomCodigo === '') {
-            Session::flash('errors', array('cupom_codigo' => 'Informe um cupom valido.'));
+            Session::flash('errors', array('cupom_codigo' => 'Informe um cupom válido.'));
             return $this->redirect('/checkout/resumo?pedido_id=' . $pedidoId);
         }
 
@@ -507,7 +507,7 @@ class CheckoutController extends Controller
         );
 
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array('cupom_codigo' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel aplicar o cupom.'));
+            Session::flash('errors', array('cupom_codigo' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possível aplicar o cupom.'));
         } else {
             Session::flash('success', 'Cupom aplicado com sucesso.');
         }
@@ -933,7 +933,7 @@ class CheckoutController extends Controller
         ), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array('pedido' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel iniciar o checkout.'));
+            Session::flash('errors', array('pedido' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possível iniciar o checkout.'));
             Session::flash('old_input', $request->all());
             return $this->redirect($this->urlInscricao($request, $cursoId, $turmaId));
         }
@@ -943,7 +943,7 @@ class CheckoutController extends Controller
         if ($this->isCompraPropriaPedido($tipoPedido)) {
             $resultadoCompraPropria = $this->concluirCheckoutCompraPropria((int) $resultado['pedido_id'], $request);
             if (empty($resultadoCompraPropria['ok'])) {
-                Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
+                Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possível concluir a compra própria.'));
                 return $this->redirect($this->urlResumo($request, (int) $resultado['pedido_id']));
             }
 
@@ -963,14 +963,14 @@ class CheckoutController extends Controller
 
         $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
         if (empty($pedido['pedido'])) {
-            Session::flash('errors', array('pedido' => 'Você nao tem permissao para alterar este pedido.'));
+            Session::flash('errors', array('pedido' => 'Você não tem permissão para alterar este pedido.'));
             return $this->redirect($this->urlCatalogoCheckout($request));
         }
 
         if ($this->isCompraPropriaPedido(isset($pedido['pedido']['tipo_pedido']) ? $pedido['pedido']['tipo_pedido'] : '')) {
             $resultadoCompraPropria = $this->concluirCheckoutCompraPropria($pedidoId, $request, $pedido['pedido']);
             if (empty($resultadoCompraPropria['ok'])) {
-                Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possivel concluir a compra propria.'));
+                Session::flash('errors', array('pedido' => isset($resultadoCompraPropria['message']) ? $resultadoCompraPropria['message'] : 'Não foi possível concluir a compra própria.'));
                 return $this->redirect($this->urlResumo($request, $pedidoId));
             }
 
@@ -1003,14 +1003,14 @@ class CheckoutController extends Controller
         );
 
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array('participantes' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar os participantes.'));
+            Session::flash('errors', array('participantes' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possível salvar os participantes.'));
             return $this->redirect($this->urlParticipantes($request, $pedidoId));
         }
 
         $this->inscricaoService->gerarDoPedido($pedidoId, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $finalizacao = $this->pedidoService->finalizarCheckout($pedidoId, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($finalizacao['ok'])) {
-            Session::flash('errors', array('pedido' => isset($finalizacao['message']) ? $finalizacao['message'] : 'Não foi possivel finalizar o pedido.'));
+            Session::flash('errors', array('pedido' => isset($finalizacao['message']) ? $finalizacao['message'] : 'Não foi possível finalizar o pedido.'));
             return $this->redirect($this->urlResumo($request, $pedidoId));
         }
 
@@ -1053,7 +1053,7 @@ class CheckoutController extends Controller
 
         $pedido = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
         if (empty($pedido['pedido'])) {
-            Session::flash('errors', array('pedido' => 'Você nao tem permissao para acessar este pedido.'));
+            Session::flash('errors', array('pedido' => 'Você não tem permissão para acessar este pedido.'));
             // Falha de autorização no V2 permanece no namespace /v2/ (Minha Área),
             // nunca catálogo nem V1.
             return $this->redirect($v2 ? '/v2/aluno/?aba=pedidos' : '/cursos');
@@ -1070,7 +1070,7 @@ class CheckoutController extends Controller
         }
 
         if ((int) $_FILES['comprovante']['size'] <= 0) {
-            Session::flash('errors', array('comprovante' => 'O arquivo enviado nao e valido.'));
+            Session::flash('errors', array('comprovante' => 'O arquivo enviado não é válido.'));
             return $this->redirect($comprovanteUrl);
         }
 
@@ -1098,7 +1098,7 @@ class CheckoutController extends Controller
         }
 
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array('comprovante' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel enviar o comprovante.'));
+            Session::flash('errors', array('comprovante' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possível enviar o comprovante.'));
             return $this->redirect($comprovanteUrl);
         }
 
@@ -1123,7 +1123,7 @@ class CheckoutController extends Controller
         $errors = array();
 
         if ((int) $request->input('curso_evento_id', 0) <= 0) {
-            $errors[] = 'Selecione um curso valido.';
+            $errors[] = 'Selecione um curso válido.';
         }
 
         $cursoId = (int) $request->input('curso_evento_id', 0);
@@ -1131,13 +1131,13 @@ class CheckoutController extends Controller
         if ($cursoId > 0) {
             $validacaoTurma = $this->cursoService->validarTurmaPublicaParaInscricao($cursoId, $turmaId ?: null);
             if (empty($validacaoTurma['ok'])) {
-                $errors[] = isset($validacaoTurma['message']) ? $validacaoTurma['message'] : 'A turma selecionada nao esta disponivel para inscricao.';
+                $errors[] = isset($validacaoTurma['message']) ? $validacaoTurma['message'] : 'A turma selecionada não está disponível para inscrição.';
             }
         }
 
         $tipoPedido = (string) $request->input('tipo_pedido', 'propria');
         if ($tipoPedido !== 'propria' && (int) $request->input('quantidade', 0) <= 0) {
-            $errors[] = 'Informe uma quantidade valida de vagas.';
+            $errors[] = 'Informe uma quantidade válida de vagas.';
         }
 
         $pagadorNome = trim((string) $request->input('pagador_nome', ''));
@@ -1150,7 +1150,7 @@ class CheckoutController extends Controller
 
         $pagadorCpf = $request->input('pagador_cpf', '');
         if (!Validator::cpf($pagadorCpf)) {
-            $errors[] = 'Informe um CPF valido do pagador.';
+            $errors[] = 'Informe um CPF válido do pagador.';
         }
 
         $pagadorEmail = trim((string) $request->input('pagador_email', ''));
@@ -1158,7 +1158,7 @@ class CheckoutController extends Controller
             $pagadorEmail = Session::get('usuario_email');
         }
         if (!Validator::email($pagadorEmail)) {
-            $errors[] = 'Informe um e-mail valido do pagador.';
+            $errors[] = 'Informe um e-mail válido do pagador.';
         }
 
         // Telefone do pagador é opcional: `pedidos.pagador_telefone` aceita NULL
@@ -1177,11 +1177,11 @@ class CheckoutController extends Controller
             }
 
             if (!empty($participante['email']) && !Validator::email($participante['email'])) {
-                $errors[] = 'O e-mail do participante #' . ($indice + 1) . ' e invalido.';
+                $errors[] = 'O e-mail do participante #' . ($indice + 1) . ' é inválido.';
             }
 
             if (!empty($participante['cpf']) && !Validator::cpf($participante['cpf'])) {
-                $errors[] = 'O CPF do participante #' . ($indice + 1) . ' e invalido.';
+                $errors[] = 'O CPF do participante #' . ($indice + 1) . ' é inválido.';
             }
         }
 
@@ -1193,7 +1193,7 @@ class CheckoutController extends Controller
         if ($pedido === null) {
             $pedidoDetalhado = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'));
             if (empty($pedidoDetalhado['pedido'])) {
-                return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+                return array('ok' => false, 'message' => 'Pedido não encontrado.');
             }
 
             $pedido = $pedidoDetalhado['pedido'];

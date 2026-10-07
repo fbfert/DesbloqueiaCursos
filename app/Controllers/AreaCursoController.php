@@ -362,16 +362,16 @@ class AreaCursoController extends Controller
                 'entrega_id' => $entregaId,
                 'usuario_id' => Session::get('usuario_id'),
             ));
-            return new Response(View::render('errors/404', array('title' => 'Entrega nao encontrada')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Entrega não encontrada')), 404);
         }
 
         $acesso = $this->atividadeService->prepararAcessoEntrega($entrega);
         if (!$acesso) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo indisponivel')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo indisponível')), 404);
         }
 
         if (!is_file($acesso['absolute_path'])) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         Logger::info('atividade.entrega.download', array(
@@ -803,12 +803,12 @@ class AreaCursoController extends Controller
             !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null
         );
         if (empty($detalhe['ok']) || (string) $detalhe['item']['tipo'] !== 'arquivo') {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         $arquivo = $this->conteudoService->obterArquivoDoItem((int) $detalhe['item']['id'], (int) $inscricao['curso_evento_id']);
         if (empty($arquivo['ok'])) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         $storage = new FileStorageService();
@@ -830,7 +830,7 @@ class AreaCursoController extends Controller
         }
         if (!is_file($absolutePath)) {
             Logger::error('conteudo.arquivo.download_arquivo_ausente', array('contexto' => 'aluno', 'item_id' => (int) $detalhe['item']['id'], 'caminho' => (string) $arquivo['arquivo']['caminho']));
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         $this->conteudoService->registrarDownloadArquivoAluno(array(
@@ -882,12 +882,12 @@ class AreaCursoController extends Controller
             !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null
         );
         if (empty($detalhe['ok']) || (string) $detalhe['item']['tipo'] !== 'link') {
-            return new Response(View::render('errors/404', array('title' => 'Link nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Link não encontrado')), 404);
         }
 
         $url = isset($detalhe['detalhe']['url']) ? trim((string) $detalhe['detalhe']['url']) : '';
         if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
-            return new Response(View::render('errors/404', array('title' => 'Link invalido')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Link inválido')), 404);
         }
 
         $this->conteudoService->registrarAcessoLinkAluno(array(

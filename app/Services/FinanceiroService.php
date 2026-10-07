@@ -998,11 +998,11 @@ class FinanceiroService
 
         $tipoPessoa = isset($data['tipo_pessoa']) ? trim((string) $data['tipo_pessoa']) : 'pf';
         if (!in_array($tipoPessoa, array('pf', 'pj'), true)) {
-            return array('ok' => false, 'message' => 'Tipo fiscal invalido.');
+            return array('ok' => false, 'message' => 'Tipo fiscal inválido.');
         }
 
         if ($tipoPessoa === 'pj' && empty($data['cnpj']) && empty($data['razao_social'])) {
-            return array('ok' => false, 'message' => 'Para PJ informe CNPJ e razao social.');
+            return array('ok' => false, 'message' => 'Para PJ informe CNPJ e razão social.');
         }
 
         return $this->repasseService->salvarProfessorFiscal($data, $actorUserId, $ipAddress, $userAgent);
@@ -1063,7 +1063,7 @@ class FinanceiroService
 
         $perfil = $this->professorFiscalModel->findById($perfilId);
         if (!$perfil) {
-            return array('ok' => false, 'message' => 'Perfil fiscal nao encontrado.');
+            return array('ok' => false, 'message' => 'Perfil fiscal não encontrado.');
         }
 
         $justificativa = trim((string) $justificativa);

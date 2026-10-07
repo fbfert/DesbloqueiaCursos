@@ -131,11 +131,15 @@ class CertificadoValidacaoController extends Controller
     private function mensagemAmigavel($resultado)
     {
         $amigaveis = array(
+            'Certificado não encontrado.' => 'Não localizamos um certificado com os dados informados. Confira o código e tente novamente.',
+            'CPF não confere com o certificado.' => 'O CPF informado não confere com o certificado.',
+            'Certificado não está ativo para validação.' => 'Este certificado ainda não está ativo para validação pública.',
+            'A validação pública está temporariamente indisponível.' => 'A validação pública está temporariamente indisponível.',
+            // Chaves sem acento: mensagens antigas do service de certificados (compatibilidade).
             'Certificado nao encontrado.' => 'Não localizamos um certificado com os dados informados. Confira o código e tente novamente.',
             'CPF nao confere com o certificado.' => 'O CPF informado não confere com o certificado.',
             'Certificado nao esta ativo para validacao.' => 'Este certificado ainda não está ativo para validação pública.',
             'A validacao publica esta temporariamente indisponivel.' => 'A validação pública está temporariamente indisponível.',
-            'A validação pública está temporariamente indisponível.' => 'A validação pública está temporariamente indisponível.',
         );
 
         $original = isset($resultado['message']) ? trim((string) $resultado['message']) : 'Certificado inválido.';

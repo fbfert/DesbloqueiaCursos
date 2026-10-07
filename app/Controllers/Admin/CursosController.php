@@ -75,7 +75,7 @@ class CursosController extends Controller
         if ($action === 'save_copy') {
             $result = $this->cursoService->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
             if (empty($result['ok'])) {
-                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o curso/evento.'));
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o curso/evento.'));
                 Session::flash('old', $input);
                 return $this->redirect('/admin/cursos/criar');
             }
@@ -87,7 +87,7 @@ class CursosController extends Controller
         $result = $this->cursoService->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel salvar o curso/evento.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar o curso/evento.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/cursos/criar');
         }
@@ -129,7 +129,7 @@ class CursosController extends Controller
         if ($action === 'save_copy') {
             $result = $this->cursoService->duplicar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
             if (empty($result['ok'])) {
-                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel criar a cópia do curso/evento.'));
+                Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível criar a cópia do curso/evento.'));
                 Session::flash('old', $input);
                 return $this->redirect('/admin/cursos/editar?curso_id=' . $cursoId);
             }
@@ -141,7 +141,7 @@ class CursosController extends Controller
         $result = $this->cursoService->salvar($input, isset($_FILES) ? $_FILES : array(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possivel atualizar o curso/evento.'));
+            Session::flash('errors', isset($result['errors']) ? $result['errors'] : array('Não foi possível atualizar o curso/evento.'));
             Session::flash('old', $input);
             return $this->redirect('/admin/cursos/editar?curso_id=' . $cursoId);
         }
@@ -166,7 +166,7 @@ class CursosController extends Controller
         $formData = $this->cursoService->formData($cursoId);
 
         if (empty($formData['curso'])) {
-            Session::flash('errors', array('Curso/evento nao encontrado.'));
+            Session::flash('errors', array('Curso/evento não encontrado.'));
             return $this->redirect('/admin/cursos');
         }
 
@@ -189,11 +189,11 @@ class CursosController extends Controller
         $result = $this->cursoService->excluir($cursoId, $justificativa, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Não foi possivel excluir o curso/evento.');
+            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Não foi possível excluir o curso/evento.');
             return $this->redirect('/admin/cursos/editar?curso_id=' . $cursoId);
         }
 
-        Session::flash('success', 'Curso/evento excluido e enviado para a lixeira.');
+        Session::flash('success', 'Curso/evento excluído e enviado para a lixeira.');
         return $this->redirect('/admin/cursos');
     }
 
@@ -205,7 +205,7 @@ class CursosController extends Controller
         $result = $this->cursoService->atualizarStatus($cursoId, $status, Session::get('usuario_id'), $request->ip(), $request->userAgent());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Não foi possivel atualizar o status do curso/evento.');
+            Session::flash('errors', isset($result['message']) ? $result['message'] : 'Não foi possível atualizar o status do curso/evento.');
             return $this->redirect('/admin/cursos');
         }
 

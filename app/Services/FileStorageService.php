@@ -19,16 +19,16 @@ class FileStorageService
     public function storeUploadedFile(array $file, $directory, $prefix = 'arquivo', array $options = array())
     {
         if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            throw new \InvalidArgumentException('Arquivo invalido para upload.');
+            throw new \InvalidArgumentException('Arquivo inválido para upload.');
         }
 
         if (!empty($file['error']) && (int) $file['error'] !== UPLOAD_ERR_OK) {
-            throw new \InvalidArgumentException('Upload invalido.');
+            throw new \InvalidArgumentException('Upload inválido.');
         }
 
         $maxSize = isset($options['max_size_bytes']) ? (int) $options['max_size_bytes'] : 0;
         if ($maxSize > 0 && !empty($file['size']) && (int) $file['size'] > $maxSize) {
-            throw new \InvalidArgumentException('Arquivo excede o tamanho maximo permitido.');
+            throw new \InvalidArgumentException('Arquivo excede o tamanho máximo permitido.');
         }
 
         $originalName = isset($file['name']) ? basename($file['name']) : 'arquivo';
@@ -38,7 +38,7 @@ class FileStorageService
             : array();
 
         if (!empty($allowedExtensions) && !in_array($extension, $allowedExtensions, true)) {
-            throw new \InvalidArgumentException('Extensao de arquivo nao permitida.');
+            throw new \InvalidArgumentException('Extensão de arquivo não permitida.');
         }
 
         $mimeType = $this->detectMimeType($file['tmp_name'], isset($file['type']) ? $file['type'] : null);
@@ -47,7 +47,7 @@ class FileStorageService
             : array();
 
         if (!empty($allowedMimeTypes) && !in_array(strtolower((string) $mimeType), $allowedMimeTypes, true)) {
-            throw new \InvalidArgumentException('Tipo MIME de arquivo nao permitido.');
+            throw new \InvalidArgumentException('Tipo MIME de arquivo não permitido.');
         }
 
         $directory = trim((string) $directory, '/\\');
@@ -55,7 +55,7 @@ class FileStorageService
 
         if (!is_dir($absoluteDirectory)) {
             if (!@mkdir($absoluteDirectory, 0775, true) && !is_dir($absoluteDirectory)) {
-                throw new \RuntimeException('Nao foi possivel criar o diretorio de upload.');
+                throw new \RuntimeException('Não foi possível criar o diretório de upload.');
             }
         }
         $this->writeDirectoryProtection($absoluteDirectory);
@@ -69,7 +69,7 @@ class FileStorageService
         $absolutePath = $this->privatePath($relativePath);
 
         if (!move_uploaded_file($file['tmp_name'], $absolutePath)) {
-            throw new \RuntimeException('Nao foi possivel salvar o arquivo enviado.');
+            throw new \RuntimeException('Não foi possível salvar o arquivo enviado.');
         }
 
         return array(

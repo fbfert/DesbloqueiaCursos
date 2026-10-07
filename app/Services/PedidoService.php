@@ -69,14 +69,14 @@ class PedidoService
 
         $curso = $this->cursoModel->findPublicById($cursoId);
         if (!$curso) {
-            return array('ok' => false, 'message' => 'Curso nao encontrado.');
+            return array('ok' => false, 'message' => 'Curso não encontrado.');
         }
 
         $turma = null;
         if ($turmaId) {
             $turma = $this->turmaModel->findPublicById($turmaId);
             if (!$turma || (int) $turma['curso_evento_id'] !== $cursoId) {
-                return array('ok' => false, 'message' => 'Turma invalida para o curso selecionado.');
+                return array('ok' => false, 'message' => 'Turma inválida para o curso selecionado.');
             }
         }
 
@@ -357,12 +357,12 @@ class PedidoService
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.participantes.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para alterar este pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para alterar este pedido.');
         }
 
         if (!$this->pedidoPodeReceberParticipantes($pedido)) {
@@ -375,7 +375,7 @@ class PedidoService
                 array('status_atual' => $pedido['status'])
             );
 
-            return array('ok' => false, 'message' => 'Pedido nao pode receber participantes neste status.');
+            return array('ok' => false, 'message' => 'Pedido não pode receber participantes neste status.');
         }
 
         $itens = $this->pedidoItemModel->forPedido($pedidoId);
@@ -445,11 +445,11 @@ class PedidoService
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->isCompraPropriaPedido(isset($pedido['tipo_pedido']) ? $pedido['tipo_pedido'] : '')) {
-            return array('ok' => false, 'message' => 'Pedido nao e de compra propria.');
+            return array('ok' => false, 'message' => 'Pedido não é de compra própria.');
         }
 
         $itens = $this->pedidoItemModel->forPedido($pedidoId);
@@ -459,7 +459,7 @@ class PedidoService
 
         $pedidoItemId = isset($itens[0]['id']) ? (int) $itens[0]['id'] : null;
         if ($pedidoItemId <= 0) {
-            return array('ok' => false, 'message' => 'Pedido sem item valido.');
+            return array('ok' => false, 'message' => 'Pedido sem item válido.');
         }
 
         $payload = array(
@@ -475,7 +475,7 @@ class PedidoService
         );
 
         if ($payload['nome'] === '') {
-            return array('ok' => false, 'message' => 'Informe os dados do pagador para gerar o participante automatico.');
+            return array('ok' => false, 'message' => 'Informe os dados do pagador para gerar o participante automático.');
         }
 
         $participantesExistentes = $this->participanteModel->forPedido($pedidoId);
@@ -534,16 +534,16 @@ class PedidoService
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.checkout.finalizar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para finalizar este pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para finalizar este pedido.');
         }
 
         if (in_array((string) $pedido['status'], array('aguardando_pagamento', 'aprovado', 'pago'), true)) {
-            return array('ok' => true, 'message' => 'Pedido ja foi finalizado.');
+            return array('ok' => true, 'message' => 'Pedido já foi finalizado.');
         }
 
         if (!$this->pedidoPodeSerFinalizado($pedido)) {
@@ -556,7 +556,7 @@ class PedidoService
                 array('status_atual' => $pedido['status'])
             );
 
-            return array('ok' => false, 'message' => 'Pedido nao pode ser finalizado neste status.');
+            return array('ok' => false, 'message' => 'Pedido não pode ser finalizado neste status.');
         }
 
         $pdo = Database::connection();
@@ -568,14 +568,14 @@ class PedidoService
                 $pdo->rollBack();
                 return array(
                     'ok' => false,
-                    'message' => isset($revalidacao['message']) ? $revalidacao['message'] : 'Cupom invalido no fechamento do pedido.',
+                    'message' => isset($revalidacao['message']) ? $revalidacao['message'] : 'Cupom inválido no fechamento do pedido.',
                 );
             }
 
             $pedidoAtualizado = $this->pedidoModel->findById($pedidoId);
             if (!$pedidoAtualizado) {
                 $pdo->rollBack();
-                return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+                return array('ok' => false, 'message' => 'Pedido não encontrado.');
             }
 
             $autoAprovadoZeroValor = ((float) $pedidoAtualizado['total'] <= 0.0);
@@ -652,12 +652,12 @@ class PedidoService
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.gateway.checkout_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para iniciar este pagamento.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para iniciar este pagamento.');
         }
 
         $this->pedidoModel->updatePaymentGatewayData($pedidoId, $dadosGateway);
@@ -688,7 +688,7 @@ class PedidoService
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if ((string) $pedido['status'] === 'pago') {
@@ -697,7 +697,7 @@ class PedidoService
 
         $statusAtual = isset($pedido['status']) ? (string) $pedido['status'] : '';
         if (in_array($statusAtual, array('cancelado', 'reembolsado'), true)) {
-            return array('ok' => false, 'message' => 'Pedido nao pode ser confirmado neste status.');
+            return array('ok' => false, 'message' => 'Pedido não pode ser confirmado neste status.');
         }
 
         $pdo = Database::connection();
@@ -707,7 +707,7 @@ class PedidoService
             $pedidoAtualizado = $this->pedidoModel->findById($pedidoId);
             if (!$pedidoAtualizado) {
                 $pdo->rollBack();
-                return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+                return array('ok' => false, 'message' => 'Pedido não encontrado.');
             }
 
             if ((string) $pedidoAtualizado['status'] !== 'pago') {
@@ -842,7 +842,7 @@ class PedidoService
                 $this->participanteModel->create($participante);
             }
 
-            $this->pedidoModel->addStatusHistory($pedidoId, null, isset($pedidoData['status']) ? $pedidoData['status'] : 'rascunho', 'Criacao do pedido', $actorUserId);
+            $this->pedidoModel->addStatusHistory($pedidoId, null, isset($pedidoData['status']) ? $pedidoData['status'] : 'rascunho', 'Criação do pedido', $actorUserId);
 
             $this->auditService->record(
                 'pedido.criado',
@@ -881,12 +881,12 @@ class PedidoService
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.status.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para alterar este pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para alterar este pedido.');
         }
 
         $statusValidos = array(
@@ -904,7 +904,7 @@ class PedidoService
         );
 
         if (!in_array($novoStatus, $statusValidos, true)) {
-            return array('ok' => false, 'message' => 'Status de pedido invalido.');
+            return array('ok' => false, 'message' => 'Status de pedido inválido.');
         }
 
         $pdo = Database::connection();
@@ -961,18 +961,18 @@ class PedidoService
     public function anexarComprovantePix(array $dados, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         if (empty($dados['pedido_id'])) {
-            return array('ok' => false, 'message' => 'Pedido nao informado.');
+            return array('ok' => false, 'message' => 'Pedido não informado.');
         }
 
         $pedidoId = (int) $dados['pedido_id'];
         $pedido = $this->pedidoModel->findById($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.comprovante.negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para anexar comprovante neste pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para anexar comprovante neste pedido.');
         }
 
         if (!$this->pedidoPodeReceberComprovante($pedido)) {
@@ -985,7 +985,7 @@ class PedidoService
                 array('status_atual' => $pedido['status'])
             );
 
-            return array('ok' => false, 'message' => 'Pedido nao aceita comprovante neste status.');
+            return array('ok' => false, 'message' => 'Pedido não aceita comprovante neste status.');
         }
 
         $pdo = Database::connection();
@@ -1047,12 +1047,12 @@ class PedidoService
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
             $this->registrarAcessoNegado('pedido.reverter_cancelamento_sem_permissao', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para reverter este cancelamento.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para reverter este cancelamento.');
         }
 
         $avaliacao = $this->avaliarReversaoCancelamentoPedido($pedidoId, $pedido);
@@ -1142,12 +1142,12 @@ class PedidoService
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
             $this->registrarAcessoNegado('pedido.reabrir_aguardando_pagamento_sem_permissao', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para reabrir este pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para reabrir este pedido.');
         }
 
         if ((string) $pedido['status'] !== 'cancelado') {
@@ -1276,17 +1276,17 @@ class PedidoService
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
             $this->registrarAcessoNegado('pedido.excluir_sem_permissao', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para excluir este pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para excluir este pedido.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.excluir_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para excluir este pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para excluir este pedido.');
         }
 
         $notificacaoEmail = $this->montarNotificacaoExclusaoPedido($pedidoId, $pedido);
@@ -1294,7 +1294,7 @@ class PedidoService
         if (empty($avaliacao['ok'])) {
             $motivo = !empty($avaliacao['motivos'])
                 ? $this->formatarMotivoBloqueioExclusao($avaliacao['motivos'])
-                : 'Este pedido nao pode ser excluido.';
+                : 'Este pedido não pode ser excluído.';
 
             $this->auditService->record(
                 'pedido.exclusao_bloqueada',
@@ -1367,7 +1367,7 @@ class PedidoService
         if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
             return array(
                 'ok' => false,
-                'message' => 'Você nao tem permissao para excluir pedidos.',
+                'message' => 'Você não tem permissão para excluir pedidos.',
             );
         }
 
@@ -1425,7 +1425,7 @@ class PedidoService
                     continue;
                 }
 
-                $justificativa = 'Exclusao em lote de pedido antigo sem pagamento confirmado.';
+                $justificativa = 'Exclusão em lote de pedido antigo sem pagamento confirmado.';
                 $this->trashService->record('pedido', (int) $pedido['id'], $justificativa, $pedido, $actorUserId, $ipAddress, $userAgent);
                 $this->pedidoModel->softDelete((int) $pedido['id']);
 
@@ -1514,12 +1514,12 @@ class PedidoService
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.aprovar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para aprovar este pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para aprovar este pedido.');
         }
 
         $pdo = Database::connection();
@@ -1636,12 +1636,12 @@ class PedidoService
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
             $this->registrarAcessoNegado('pedido.cupom.manual_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para aplicar cupom manualmente neste pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para aplicar cupom manualmente neste pedido.');
         }
 
         $status = isset($pedido['status']) ? (string) $pedido['status'] : '';
@@ -1664,12 +1664,12 @@ class PedidoService
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->usuarioPodeGerenciarPedidos($actorUserId)) {
             $this->registrarAcessoNegado('pedido.cupom.remocao_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para remover cupom deste pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para remover cupom deste pedido.');
         }
 
         if ($this->pedidoStatusBloqueadoParaCupom($pedido)) {
@@ -1683,12 +1683,12 @@ class PedidoService
     {
         $pedido = $this->pedidoModel->findById($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('pedido.cupom.revalidar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para revalidar cupom neste pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para revalidar cupom neste pedido.');
         }
 
         return $this->cupomService->revalidarNoFechamento($pedidoId, $actorUserId, $ipAddress, $userAgent);
@@ -2031,8 +2031,8 @@ class PedidoService
         if (empty($pedido)) {
             return array(
                 'ok' => false,
-                'motivos' => array('Pedido nao encontrado.'),
-                'motivos_texto' => 'Pedido nao encontrado.',
+                'motivos' => array('Pedido não encontrado.'),
+                'motivos_texto' => 'Pedido não encontrado.',
             );
         }
 

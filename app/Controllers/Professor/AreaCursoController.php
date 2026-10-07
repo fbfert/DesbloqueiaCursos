@@ -171,7 +171,7 @@ class AreaCursoController extends Controller
     public function salvarInstrução(Request $request)
     {
         if (!$this->registroAutorizado('instrucao', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -187,7 +187,7 @@ class AreaCursoController extends Controller
     public function salvarModulo(Request $request)
     {
         if (!$this->registroAutorizado('modulo', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -203,7 +203,7 @@ class AreaCursoController extends Controller
     public function salvarAula(Request $request)
     {
         if (!$this->registroAutorizado('aula', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -219,7 +219,7 @@ class AreaCursoController extends Controller
     public function salvarMaterial(Request $request)
     {
         if (!$this->registroAutorizado('material', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -235,7 +235,7 @@ class AreaCursoController extends Controller
     public function salvarAtividade(Request $request)
     {
         if (!$this->registroAutorizado('atividade', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -251,7 +251,7 @@ class AreaCursoController extends Controller
     public function alterarStatusAtividade(Request $request)
     {
         if (!$this->registroAutorizado('atividade', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -262,7 +262,7 @@ class AreaCursoController extends Controller
     public function salvarLink(Request $request)
     {
         if (!$this->registroAutorizado('link', (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -278,7 +278,7 @@ class AreaCursoController extends Controller
     public function excluir(Request $request)
     {
         if (!$this->registroAutorizado((string) $request->input('tipo', ''), (int) $request->input('id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -304,14 +304,14 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if (!$this->contextoAutorizado($cursoId, $turmaId)) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
         $usuarioId = (int) Session::get('usuario_id');
         $id = (int) $request->input('id', 0);
         if ($id > 0 && !$this->conteudoModuloPertenceAoCurso($id, $cursoId)) {
-            Session::flash('errors', array('Modulo fora do contexto autorizado.'));
+            Session::flash('errors', array('Módulo fora do contexto autorizado.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -339,11 +339,11 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if (!$this->contextoAutorizado($cursoId, $turmaId)) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
         if (!$this->conteudoModuloPertenceAoCurso((int) $request->input('id', 0), $cursoId)) {
-            Session::flash('errors', array('Modulo fora do contexto autorizado.'));
+            Session::flash('errors', array('Módulo fora do contexto autorizado.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -361,11 +361,11 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if (!$this->contextoAutorizado($cursoId, $turmaId)) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
         if (!$this->conteudoModuloPertenceAoCurso((int) $request->input('id', 0), $cursoId)) {
-            Session::flash('errors', array('Modulo fora do contexto autorizado.'));
+            Session::flash('errors', array('Módulo fora do contexto autorizado.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -383,7 +383,7 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if (!$this->contextoAutorizado($cursoId, $turmaId)) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -437,7 +437,7 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if (!$this->contextoAutorizado($cursoId, $turmaId)) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -451,7 +451,7 @@ class AreaCursoController extends Controller
             return $this->redirect('/professor/area-curso');
         }
         if ((int) $request->input('modulo_id', 0) > 0 && !$this->conteudoModuloPertenceAoCurso((int) $request->input('modulo_id', 0), $cursoId)) {
-            Session::flash('errors', array('Modulo fora do contexto autorizado.'));
+            Session::flash('errors', array('Módulo fora do contexto autorizado.'));
             return $this->redirect('/professor/area-curso');
         }
         $payload['atualizado_por'] = $usuarioId;
@@ -474,7 +474,7 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if (!$this->contextoAutorizado($cursoId, $turmaId)) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
         if (!$this->conteudoItemPertenceAoCurso((int) $request->input('id', 0), $cursoId)) {
@@ -496,7 +496,7 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if (!$this->contextoAutorizado($cursoId, $turmaId)) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
         if (!$this->conteudoItemPertenceAoCurso((int) $request->input('id', 0), $cursoId)) {
@@ -518,14 +518,14 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if (!$this->contextoAutorizado($cursoId, $turmaId)) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
         if (
             !$this->conteudoItemPertenceAoCurso((int) $request->input('item_id', 0), $cursoId)
             || !$this->conteudoModuloPertenceAoCurso((int) $request->input('novo_modulo_id', 0), $cursoId)
         ) {
-            Session::flash('errors', array('Contexto do item/modulo nao autorizado.'));
+            Session::flash('errors', array('Contexto do item/módulo não autorizado.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -543,11 +543,11 @@ class AreaCursoController extends Controller
         $cursoId = (int) $request->input('curso_evento_id', 0);
         $turmaId = (int) $request->input('turma_id', 0);
         if (!$this->contextoAutorizado($cursoId, $turmaId)) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
         if (!$this->conteudoModuloPertenceAoCurso((int) $request->input('modulo_id', 0), $cursoId)) {
-            Session::flash('errors', array('Modulo fora do contexto autorizado.'));
+            Session::flash('errors', array('Módulo fora do contexto autorizado.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -607,7 +607,7 @@ class AreaCursoController extends Controller
     public function corrigirEntrega(Request $request)
     {
         if (!$this->registroAutorizado('atividade_entrega', (int) $request->input('entrega_id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -623,7 +623,7 @@ class AreaCursoController extends Controller
     public function devolverEntrega(Request $request)
     {
         if (!$this->registroAutorizado('atividade_entrega', (int) $request->input('entrega_id', 0), (int) $request->input('curso_evento_id', 0), (int) $request->input('turma_id', 0))) {
-            Session::flash('errors', array('Contexto nao autorizado para este professor.'));
+            Session::flash('errors', array('Contexto não autorizado para este professor.'));
             return $this->redirect('/professor/area-curso');
         }
 
@@ -639,7 +639,7 @@ class AreaCursoController extends Controller
     public function participantes(Request $request)
     {
         if (!$this->contextoAutorizado((int) $request->query('curso_id', 0), (int) $request->query('turma_id', 0))) {
-            return $this->json(array('ok' => false, 'message' => 'Contexto nao autorizado para este professor.'), 403);
+            return $this->json(array('ok' => false, 'message' => 'Contexto não autorizado para este professor.'), 403);
         }
 
         return $this->json(array(
@@ -654,12 +654,12 @@ class AreaCursoController extends Controller
         $material = $this->areaCursoService->materialAutorizado(Session::get('usuario_id'), $materialId, 'professor');
 
         if (!$material) {
-            return new Response(View::render('errors/404', array('title' => 'Material nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Material não encontrado')), 404);
         }
 
         $acesso = $this->areaCursoService->prepararAcessoMaterial($material);
         if (!$acesso) {
-            return new Response(View::render('errors/404', array('title' => 'Material indisponivel')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Material indisponível')), 404);
         }
 
         if ($acesso['tipo'] === 'url') {
@@ -667,7 +667,7 @@ class AreaCursoController extends Controller
         }
 
         if (!is_file($acesso['absolute_path'])) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         $content = file_get_contents($acesso['absolute_path']);
@@ -688,16 +688,16 @@ class AreaCursoController extends Controller
                 'entrega_id' => $entregaId,
                 'usuario_id' => Session::get('usuario_id'),
             ));
-            return new Response(View::render('errors/404', array('title' => 'Entrega nao encontrada')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Entrega não encontrada')), 404);
         }
 
         $acesso = $this->atividadeService->prepararAcessoEntrega($entrega);
         if (!$acesso) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo indisponivel')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo indisponível')), 404);
         }
 
         if (!is_file($acesso['absolute_path'])) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         Logger::info('atividade.entrega.download', array(
@@ -726,7 +726,7 @@ class AreaCursoController extends Controller
         $arquivo = $this->conteudoService->obterArquivoDoItem($itemId, $cursoId);
         if (empty($arquivo['ok'])) {
             Logger::info('conteudo.arquivo.download_bloqueado', array('contexto' => 'professor', 'item_id' => $itemId, 'usuario_id' => Session::get('usuario_id')));
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         $storage = new \App\Services\FileStorageService();
@@ -747,7 +747,7 @@ class AreaCursoController extends Controller
         }
         if (!is_file($absolutePath)) {
             Logger::error('conteudo.arquivo.download_arquivo_ausente', array('contexto' => 'professor', 'item_id' => $itemId, 'caminho' => $relativePath));
-            return new Response(View::render('errors/404', array('title' => 'Arquivo nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
         $content = file_get_contents($absolutePath);
@@ -921,7 +921,7 @@ class AreaCursoController extends Controller
     private function respondForm(array $resultado, Request $request, $redirectTo, $exitUrl = null)
     {
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possivel salvar o registro.'));
+            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível salvar o registro.'));
         } else {
             Session::flash('success', 'Registro salvo com sucesso.');
         }

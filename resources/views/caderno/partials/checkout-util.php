@@ -9,9 +9,10 @@
  *                                   'lista'  => textos para o aviso do topo,
  *                                   'campos' => array(name do campo => texto) )
  *
- * As mensagens de validação do servidor chegam sem acento ("CPF valido");
- * aqui elas ganham a acentuação correta e, quando apontam um campo conhecido,
- * são repetidas junto dele. Mensagem desconhecida passa como veio.
+ * As mensagens de validação do servidor já chegam acentuadas ("CPF válido"); o mapa
+ * mantém também a grafia antiga, sem acento, por compatibilidade. Quando a mensagem
+ * aponta um campo conhecido, ela é repetida junto dele. Mensagem desconhecida passa
+ * como veio.
  */
 
 if (!function_exists('caderno_ck_dinheiro')) {
@@ -55,11 +56,16 @@ if (!function_exists('caderno_ck_dinheiro')) {
         $m = trim((string) $mensagem);
         $conhecidas = array(
             'Selecione um curso valido.' => array('Selecione um curso válido.', ''),
+            'Selecione um curso válido.' => array('Selecione um curso válido.', ''),
             'A turma selecionada nao esta disponivel para inscricao.' => array('A turma selecionada não está disponível para inscrição.', ''),
+            'A turma selecionada não está disponível para inscrição.' => array('A turma selecionada não está disponível para inscrição.', ''),
             'Informe uma quantidade valida de vagas.' => array('Informe uma quantidade válida de vagas.', 'quantidade'),
+            'Informe uma quantidade válida de vagas.' => array('Informe uma quantidade válida de vagas.', 'quantidade'),
             'Informe o nome do pagador.' => array('Informe o nome do pagador.', 'pagador_nome'),
             'Informe um CPF valido do pagador.' => array('Informe um CPF válido do pagador.', 'pagador_cpf'),
+            'Informe um CPF válido do pagador.' => array('Informe um CPF válido do pagador.', 'pagador_cpf'),
             'Informe um e-mail valido do pagador.' => array('Informe um e-mail válido do pagador.', 'pagador_email'),
+            'Informe um e-mail válido do pagador.' => array('Informe um e-mail válido do pagador.', 'pagador_email'),
         );
         if (isset($conhecidas[$m])) {
             return $conhecidas[$m];
@@ -68,7 +74,7 @@ if (!function_exists('caderno_ck_dinheiro')) {
         if (preg_match('/^O participante #(\d+) precisa de nome\.$/', $m, $r)) {
             return array('O participante ' . (int) $r[1] . ' precisa de nome.', 'participantes[' . ((int) $r[1] - 1) . '][nome]');
         }
-        if (preg_match('/^O (e-mail|CPF) do participante #(\d+) e invalido\.$/', $m, $r)) {
+        if (preg_match('/^O (e-mail|CPF) do participante #(\d+) (?:e invalido|é inválido)\.$/u', $m, $r)) {
             $campo = $r[1] === 'CPF' ? 'cpf' : 'email';
             return array('O ' . $r[1] . ' do participante ' . (int) $r[2] . ' é inválido.', 'participantes[' . ((int) $r[2] - 1) . '][' . $campo . ']');
         }

@@ -87,7 +87,7 @@ class AuthController extends Controller
     {
         $this->authService->logout($request->ip(), $request->userAgent());
         Session::start();
-        Session::flash('success', 'Você saiu da sessao.');
+        Session::flash('success', 'Você saiu da sessão.');
 
         return $this->redirect('/login');
     }

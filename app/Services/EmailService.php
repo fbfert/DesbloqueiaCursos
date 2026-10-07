@@ -1355,7 +1355,7 @@ class EmailService
         }
 
         if (!$socket) {
-            throw new Exception('Falha na conexao SMTP: ' . $erroConexao);
+            throw new Exception('Falha na conexão SMTP: ' . $erroConexao);
         }
 
         $this->smtpRead($socket, array(220));

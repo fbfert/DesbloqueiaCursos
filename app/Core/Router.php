@@ -275,7 +275,7 @@ class Router
         }
 
         if (!$class || !class_exists($class)) {
-            throw new \InvalidArgumentException('Middleware invalido: ' . (is_string($definition) ? $definition : 'objeto'));
+            throw new \InvalidArgumentException('Middleware inválido: ' . (is_string($definition) ? $definition : 'objeto'));
         }
 
         $reflection = new \ReflectionClass($class);

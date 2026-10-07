@@ -205,7 +205,7 @@ class TutorNorminhaController extends Controller
     {
         return $this->view('admin/tutor-norminha/ia', array_merge(
             array(
-                'title' => 'Norminha · Inteligencia artificial',
+                'title' => 'Norminha · Inteligência artificial',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
                 'testeResultado' => Session::pullFlash('teste_ia'),
@@ -219,11 +219,11 @@ class TutorNorminhaController extends Controller
         $result = $this->service->salvarIa($request->all());
 
         if (empty($result['ok'])) {
-            Session::flash('errors', $this->normalizeErrors(isset($result['errors']) ? $result['errors'] : array('Nao foi possivel salvar.')));
+            Session::flash('errors', $this->normalizeErrors(isset($result['errors']) ? $result['errors'] : array('Não foi possível salvar.')));
             return $this->redirect('/admin/tutor-norminha/ia');
         }
 
-        Session::flash('success', 'Configuracoes de IA salvas.');
+        Session::flash('success', 'Configurações de IA salvas.');
         return $this->redirect('/admin/tutor-norminha/ia');
     }
 

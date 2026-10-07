@@ -763,7 +763,7 @@ class RelatorioLmsService
                 } elseif ($filtros['tipo_pendencia'] === 'avaliacao') {
                     $temPendencia = strpos($motivosTexto, 'avaliação') !== false || strpos($motivosTexto, 'avaliacao') !== false;
                 } elseif ($filtros['tipo_pendencia'] === 'aguardando_correcao') {
-                    $temPendencia = (int) ($aluno['entregas_pendentes_correcao'] ?? 0) > 0 || strpos($motivosTexto, 'aguardando correção') !== false || strpos($motivosTexto, 'aguardando correcao') !== false;
+                    $temPendencia = (int) ($aluno['entregas_pendentes_correcao'] ?? 0) > 0 || strpos($motivosTexto, 'aguardando correção') !== false || strpos($motivosTexto, 'aguardando correção') !== false;
                 }
 
                 if ($temPendencia) {

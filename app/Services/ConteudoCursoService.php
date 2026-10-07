@@ -1513,7 +1513,7 @@ class ConteudoCursoService
             $item = $this->itemModel->findById($itemId);
             if (!$item) {
                 $pdo->rollBack();
-                return array('ok' => false, 'message' => 'Item nÃƒ£o encontrado apÃƒ³s salvar.');
+                return array('ok' => false, 'message' => 'Item não encontrado após salvar.');
             }
 
             $detalhes = $this->salvarDetalhesPorTipo($itemId, (string) $item['tipo'], $dados, $arquivoUpload, $usuarioId);
@@ -1564,12 +1564,12 @@ class ConteudoCursoService
         $id = (int) $id;
         $cursoEventoId = (int) $cursoEventoId;
         if ($id <= 0 || $cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'ParÃƒ¢metros invÃƒ¡lidos.');
+            return array('ok' => false, 'message' => 'Parâmetros inválidos.');
         }
 
         $modulo = $this->moduloModel->findById($id);
         if (!$modulo || (int) $modulo['curso_evento_id'] !== $cursoEventoId) {
-            return array('ok' => false, 'message' => 'MÃƒ³dulo nÃƒ£o encontrado.');
+            return array('ok' => false, 'message' => 'Módulo não encontrado.');
         }
 
         return array('ok' => true, 'modulo' => $modulo);
@@ -1580,12 +1580,12 @@ class ConteudoCursoService
         $id = (int) $id;
         $cursoEventoId = (int) $cursoEventoId;
         if ($id <= 0 || $cursoEventoId <= 0) {
-            return array('ok' => false, 'message' => 'ParÃƒ¢metros invÃƒ¡lidos.');
+            return array('ok' => false, 'message' => 'Parâmetros inválidos.');
         }
 
         $item = $this->itemModel->findById($id);
         if (!$item || (int) $item['curso_evento_id'] !== $cursoEventoId) {
-            return array('ok' => false, 'message' => 'Item nÃƒ£o encontrado.');
+            return array('ok' => false, 'message' => 'Item não encontrado.');
         }
 
         $detalhe = $this->carregarDetalhePorTipo((string) $item['tipo'], (int) $item['id']);
@@ -1982,7 +1982,7 @@ class ConteudoCursoService
         if ($tipo === 'link') {
             $url = isset($dados['link_url']) ? trim((string) $dados['link_url']) : '';
             if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
-                return array('ok' => false, 'message' => 'Informe uma URL vÃƒ¡lida para o link.');
+                return array('ok' => false, 'message' => 'Informe uma URL válida para o link.');
             }
 
             $modo = isset($dados['link_modo_abertura']) ? (string) $dados['link_modo_abertura'] : 'nova_aba';
@@ -2003,7 +2003,7 @@ class ConteudoCursoService
         if ($tipo === 'video') {
             $url = isset($dados['video_url']) ? trim((string) $dados['video_url']) : '';
             if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
-                return array('ok' => false, 'message' => 'Informe uma URL vÃƒ¡lida para o vÃƒ­deo.');
+                return array('ok' => false, 'message' => 'Informe uma URL válida para o vídeo.');
             }
 
             $provedor = $this->detectarProvedorUrl($url);
@@ -2019,7 +2019,7 @@ class ConteudoCursoService
         if ($tipo === 'avaliacao_textual') {
             $enunciado = isset($dados['avaliacao_enunciado']) ? HtmlSanitizer::clean((string) $dados['avaliacao_enunciado'], 'full') : '';
             if (trim(strip_tags($enunciado)) === '') {
-                return array('ok' => false, 'message' => 'Informe o enunciado da avaliaÃƒ§Ãƒ£o textual.');
+                return array('ok' => false, 'message' => 'Informe o enunciado da avaliação textual.');
             }
 
             $orientacoes = isset($dados['avaliacao_orientacoes']) ? HtmlSanitizer::clean((string) $dados['avaliacao_orientacoes'], 'basic') : null;
@@ -2036,7 +2036,7 @@ class ConteudoCursoService
             $notaMinima = $notaMinimaNormalizada['value'];
 
             if ($notaMaxima !== null && $notaMinima !== null && $notaMinima > $notaMaxima) {
-                return array('ok' => false, 'message' => 'A nota mÃƒ­nima nÃƒ£o pode ser maior que a nota mÃƒ¡xima.');
+                return array('ok' => false, 'message' => 'A nota mínima não pode ser maior que a nota máxima.');
             }
 
             $pesoNormalizado = $this->normalizarDecimalInput($dados['avaliacao_peso'] ?? 1, 'peso', false);
@@ -2045,7 +2045,7 @@ class ConteudoCursoService
             }
             $peso = $pesoNormalizado['value'];
             if ($peso <= 0) {
-                return array('ok' => false, 'message' => 'O peso da avaliaÃƒ§Ãƒ£o deve ser maior que zero.');
+                return array('ok' => false, 'message' => 'O peso da avaliação deve ser maior que zero.');
             }
 
             $prazo = isset($dados['avaliacao_prazo']) ? trim((string) $dados['avaliacao_prazo']) : '';
@@ -2053,7 +2053,7 @@ class ConteudoCursoService
             if ($prazo === '') {
                 $prazo = null;
             } elseif (!$this->dataHoraValida($prazo)) {
-                return array('ok' => false, 'message' => 'Informe um prazo vÃƒ¡lido (data e hora) para a avaliaÃƒ§Ãƒ£o.');
+                return array('ok' => false, 'message' => 'Informe um prazo válido (data e hora) para a avaliação.');
             }
 
             $permiteReenvio = !empty($dados['avaliacao_permite_reenvio']) ? 1 : 0;
@@ -2267,7 +2267,7 @@ class ConteudoCursoService
         $extension = strtolower((string) pathinfo($originalName, PATHINFO_EXTENSION));
 
         if ($extension === '' || !in_array($extension, self::EXTENSOES_ARQUIVO_VALIDAS, true)) {
-            throw new \InvalidArgumentException('ExtensÃƒ£o de arquivo nÃƒ£o permitida.');
+            throw new \InvalidArgumentException('Extensão de arquivo não permitida.');
         }
 
         if (!empty($arquivoUpload['size']) && (int) $arquivoUpload['size'] > self::LIMITE_ARQUIVO_BYTES) {

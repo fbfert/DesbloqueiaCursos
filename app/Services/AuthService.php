@@ -58,11 +58,11 @@ class AuthService
         $cpf = Validator::onlyDigits($input['cpf']);
 
         if ($this->usuarios->findByEmail($email)) {
-            $errors['email'] = 'Este e-mail ja esta cadastrado.';
+            $errors['email'] = 'Este e-mail já está cadastrado.';
         }
 
         if ($this->usuarios->findByCpf($cpf)) {
-            $errors['cpf'] = 'Este CPF ja esta cadastrado.';
+            $errors['cpf'] = 'Este CPF já está cadastrado.';
         }
 
         if ($errors) {
@@ -139,14 +139,14 @@ class AuthService
         $security = $this->globalConfigService->seguranca();
         if (!$this->loginPermittedByPolicy($login, isset($security['politica_login']) ? $security['politica_login'] : 'email_cpf')) {
             $this->accessLogs->record(null, 'login', 'policy_blocked', $ipAddress, $userAgent, array('login' => $login));
-            return array('ok' => false, 'message' => 'Dados de acesso invalidos.');
+            return array('ok' => false, 'message' => 'Dados de acesso inválidos.');
         }
 
         $usuario = $this->usuarios->findByLogin($login);
 
         if (!$usuario) {
             $this->accessLogs->record(null, 'login', 'user_not_found', $ipAddress, $userAgent, array('login' => $login));
-            return array('ok' => false, 'message' => 'Dados de acesso invalidos.');
+            return array('ok' => false, 'message' => 'Dados de acesso inválidos.');
         }
 
         if ($this->isBlocked($usuario)) {
@@ -156,7 +156,7 @@ class AuthService
 
         if ($usuario['status'] !== 'ativo') {
             $this->accessLogs->record($usuario['id'], 'login', 'inactive_user', $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Usuario sem permissao de acesso.');
+            return array('ok' => false, 'message' => 'Usuário sem permissão de acesso.');
         }
 
         if (!password_verify((string) $senha, $usuario['senha_hash'])) {
@@ -166,7 +166,7 @@ class AuthService
             $result = $attempts >= $maxAttempts ? 'invalid_password_blocked' : 'invalid_password';
             $this->accessLogs->record($usuario['id'], 'login', $result, $ipAddress, $userAgent);
 
-            return array('ok' => false, 'message' => 'Dados de acesso invalidos.');
+            return array('ok' => false, 'message' => 'Dados de acesso inválidos.');
         }
 
         $this->usuarios->resetLoginAttempts($usuario['id']);
@@ -330,13 +330,13 @@ class AuthService
         }
 
         if ($senha !== $senhaConfirmacao) {
-            $errors['senha_confirmacao'] = 'A confirmacao da senha nao confere.';
+            $errors['senha_confirmacao'] = 'A confirmação da senha não confere.';
         }
 
         $usuario = $this->usuarios->findByRecoveryToken($token);
 
         if (!$usuario) {
-            $errors['token'] = 'Token invalido ou expirado.';
+            $errors['token'] = 'Token inválido ou expirado.';
         }
 
         if ($errors) {
@@ -358,11 +358,11 @@ class AuthService
         }
 
         if (!Validator::email(isset($input['email']) ? $input['email'] : '')) {
-            $errors['email'] = 'Informe um e-mail valido.';
+            $errors['email'] = 'Informe um e-mail válido.';
         }
 
         if (!Validator::cpf(isset($input['cpf']) ? $input['cpf'] : '')) {
-            $errors['cpf'] = 'Informe um CPF valido.';
+            $errors['cpf'] = 'Informe um CPF válido.';
         }
 
         if (strlen((string) (isset($input['senha']) ? $input['senha'] : '')) < 8) {
@@ -370,15 +370,15 @@ class AuthService
         }
 
         if ((isset($input['senha']) ? $input['senha'] : '') !== (isset($input['senha_confirmacao']) ? $input['senha_confirmacao'] : '')) {
-            $errors['senha_confirmacao'] = 'A confirmacao da senha nao confere.';
+            $errors['senha_confirmacao'] = 'A confirmação da senha não confere.';
         }
 
         if (empty($input['aceite_termos'])) {
-            $errors['aceite_termos'] = 'O aceite dos termos de uso e obrigatorio.';
+            $errors['aceite_termos'] = 'O aceite dos termos de uso é obrigatório.';
         }
 
         if (empty($input['aceite_privacidade'])) {
-            $errors['aceite_privacidade'] = 'O aceite da politica de privacidade e obrigatorio.';
+            $errors['aceite_privacidade'] = 'O aceite da política de privacidade é obrigatório.';
         }
 
         return $errors;

@@ -75,7 +75,7 @@ class CertificadosController extends Controller
         $certificado = $this->certificadoService->localizarCertificadoPublico($codigo);
 
         if (empty($certificado)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
         }
 
         Logger::info('certificado.visualizacao_online', array(
@@ -98,16 +98,16 @@ class CertificadosController extends Controller
         $config = $this->configCertificados();
 
         if (empty($config['certificados_habilitado']) || empty($config['certificados_validacao_publica_habilitada'])) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
         }
 
         if (!$this->codigoPublicoDoCertificadoEhValido($codigo)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
         }
 
         $versaoOnline = $this->certificadoService->renderizarVersaoOnlinePublicaPorCodigo($codigo);
         if (empty($versaoOnline)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
         }
 
         Logger::info('certificado.visualizacao_online_html', array(
@@ -134,13 +134,13 @@ class CertificadosController extends Controller
         }
 
         if (!$this->codigoPublicoDoCertificadoEhValido($codigo)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
         }
 
         $certificado = $this->certificadoService->localizarCertificadoPublico($codigo);
 
         if (empty($certificado)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
         }
 
         Logger::info('certificado.download_pdf_publico', array(
@@ -160,11 +160,11 @@ class CertificadosController extends Controller
                 'line' => $exception->getLine(),
             ));
 
-            return new Response('Nao foi possivel gerar o certificado.', 500, array('Content-Type' => 'text/plain; charset=UTF-8'));
+            return new Response('Não foi possível gerar o certificado.', 500, array('Content-Type' => 'text/plain; charset=UTF-8'));
         }
 
         if ($pdf === null) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado nao encontrado')), 404);
+            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
         }
 
         return new Response($pdf, 200, array(

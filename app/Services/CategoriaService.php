@@ -66,26 +66,26 @@ class CategoriaService
 
         $errors = array();
         if ($nome === '') {
-            $errors[] = 'Nome da categoria e obrigatorio.';
+            $errors[] = 'Nome da categoria é obrigatório.';
         }
 
         if ($slug === '') {
-            $errors[] = 'Slug da categoria e obrigatorio.';
+            $errors[] = 'Slug da categoria é obrigatório.';
         }
 
         $existente = $this->categoriaModel->findBySlug($slug);
         if ($existente && (int) $existente['id'] !== $id) {
-            $errors[] = 'Ja existe uma categoria com este slug.';
+            $errors[] = 'Já existe uma categoria com este slug.';
         }
 
         if ($parentId && $parentId === $id) {
-            $errors[] = 'Categoria pai nao pode ser a propria categoria.';
+            $errors[] = 'Categoria pai não pode ser a própria categoria.';
         }
 
         if (isset($files['thumbnail_upload']) && !empty($files['thumbnail_upload']['tmp_name'])) {
             $resultadoUpload = $this->salvarThumbnailUpload($files['thumbnail_upload']);
             if (empty($resultadoUpload['ok'])) {
-                $errors[] = isset($resultadoUpload['message']) ? $resultadoUpload['message'] : 'Nao foi possivel salvar a thumbnail da categoria.';
+                $errors[] = isset($resultadoUpload['message']) ? $resultadoUpload['message'] : 'Não foi possível salvar a thumbnail da categoria.';
             } else {
                 $thumbnail = $resultadoUpload['path'];
             }
@@ -168,7 +168,7 @@ class CategoriaService
     {
         $categoria = $this->categoriaModel->findById($id);
         if (!$categoria) {
-            return array('ok' => false, 'message' => 'Categoria nao encontrada.');
+            return array('ok' => false, 'message' => 'Categoria não encontrada.');
         }
 
         $pdo = Database::connection();

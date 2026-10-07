@@ -98,7 +98,7 @@ class AtividadeService
         $id = isset($data['id']) ? (int) $data['id'] : 0;
         $atividadeExistente = $id > 0 ? $this->atividadeModel->findById($id) : null;
         if ($id > 0 && !$atividadeExistente) {
-            return array('ok' => false, 'message' => 'Atividade nao encontrada.');
+            return array('ok' => false, 'message' => 'Atividade não encontrada.');
         }
 
         $cursoId = isset($data['curso_evento_id']) ? (int) $data['curso_evento_id'] : 0;
@@ -106,7 +106,7 @@ class AtividadeService
             $cursoId = (int) $atividadeExistente['curso_evento_id'];
         }
         if ($cursoId <= 0) {
-            return array('ok' => false, 'message' => 'Curso invalido para a atividade.');
+            return array('ok' => false, 'message' => 'Curso inválido para a atividade.');
         }
 
         $aulaId = !empty($data['aula_id']) ? (int) $data['aula_id'] : 0;
@@ -119,11 +119,11 @@ class AtividadeService
 
         $aula = $this->aulaModel->findById($aulaId);
         if (!$aula) {
-            return array('ok' => false, 'message' => 'Aula nao encontrada para a atividade.');
+            return array('ok' => false, 'message' => 'Aula não encontrada para a atividade.');
         }
 
         if ((int) $aula['curso_evento_id'] !== $cursoId) {
-            return array('ok' => false, 'message' => 'A aula informada nao pertence ao curso selecionado.');
+            return array('ok' => false, 'message' => 'A aula informada não pertence ao curso selecionado.');
         }
 
         $moduloId = !empty($data['modulo_id']) ? (int) $data['modulo_id'] : 0;
@@ -134,16 +134,16 @@ class AtividadeService
             $moduloId = (int) $aula['modulo_id'];
         }
         if ($moduloId <= 0) {
-            return array('ok' => false, 'message' => 'Selecione um modulo valido para a atividade.');
+            return array('ok' => false, 'message' => 'Selecione um módulo válido para a atividade.');
         }
 
         $modulo = $this->moduloModel->findById($moduloId);
         if (!$modulo) {
-            return array('ok' => false, 'message' => 'Modulo nao encontrado para a atividade.');
+            return array('ok' => false, 'message' => 'Módulo não encontrado para a atividade.');
         }
 
         if ((int) $modulo['curso_evento_id'] !== $cursoId) {
-            return array('ok' => false, 'message' => 'Modulo informado nao pertence ao curso selecionado.');
+            return array('ok' => false, 'message' => 'Módulo informado não pertence ao curso selecionado.');
         }
 
         $turmaId = array_key_exists('turma_id', $data) && $data['turma_id'] !== '' ? (int) $data['turma_id'] : null;
@@ -160,30 +160,30 @@ class AtividadeService
         }
 
         if ($turmaId !== null && $turmaEsperada === null) {
-            return array('ok' => false, 'message' => 'A atividade nao pertence a turma selecionada.');
+            return array('ok' => false, 'message' => 'A atividade não pertence a turma selecionada.');
         }
 
         if ($turmaId !== null && $turmaEsperada !== null && $turmaId !== $turmaEsperada) {
-            return array('ok' => false, 'message' => 'A atividade nao pertence a turma selecionada.');
+            return array('ok' => false, 'message' => 'A atividade não pertence a turma selecionada.');
         }
 
         if ((int) $aula['modulo_id'] !== $moduloId) {
-            return array('ok' => false, 'message' => 'A aula informada nao pertence ao modulo selecionado.');
+            return array('ok' => false, 'message' => 'A aula informada não pertence ao módulo selecionado.');
         }
 
         $titulo = trim((string) (isset($data['titulo']) ? $data['titulo'] : ''));
         if ($titulo === '') {
-            return array('ok' => false, 'message' => 'Informe o titulo da atividade.');
+            return array('ok' => false, 'message' => 'Informe o título da atividade.');
         }
 
         $tipoEntrega = $this->normalizarTipoEntrega(isset($data['tipo_entrega']) ? $data['tipo_entrega'] : ($atividadeExistente['tipo_entrega'] ?? 'texto'));
         if ($tipoEntrega === null) {
-            return array('ok' => false, 'message' => 'Tipo de entrega invalido.');
+            return array('ok' => false, 'message' => 'Tipo de entrega inválido.');
         }
 
         $statusEntrada = isset($data['status']) ? trim((string) $data['status']) : '';
         if ($statusEntrada !== '' && !in_array($statusEntrada, self::STATUS_VALIDOS, true)) {
-            return array('ok' => false, 'message' => 'Status da atividade invalido.');
+            return array('ok' => false, 'message' => 'Status da atividade inválido.');
         }
 
         $status = $statusEntrada !== '' ? $statusEntrada : (!empty($atividadeExistente['status']) ? (string) $atividadeExistente['status'] : 'publicado');
@@ -240,12 +240,12 @@ class AtividadeService
     {
         $atividade = $this->atividadeModel->findById($id);
         if (!$atividade) {
-            return array('ok' => false, 'message' => 'Atividade nao encontrada.');
+            return array('ok' => false, 'message' => 'Atividade não encontrada.');
         }
 
         $status = $this->normalizarStatus($status, false);
         if ($status === null) {
-            return array('ok' => false, 'message' => 'Status da atividade invalido.');
+            return array('ok' => false, 'message' => 'Status da atividade inválido.');
         }
 
         $payload = array(
@@ -286,7 +286,7 @@ class AtividadeService
     {
         $atividade = $this->atividadeModel->findById($id);
         if (!$atividade) {
-            return array('ok' => false, 'message' => 'Atividade nao encontrada.');
+            return array('ok' => false, 'message' => 'Atividade não encontrada.');
         }
 
         $pdo = Database::connection();
@@ -311,19 +311,19 @@ class AtividadeService
     {
         $atividadeId = isset($data['atividade_id']) ? (int) $data['atividade_id'] : 0;
         if ($atividadeId <= 0) {
-            return array('ok' => false, 'message' => 'Atividade invalida.');
+            return array('ok' => false, 'message' => 'Atividade inválida.');
         }
 
         $atividade = $this->atividadeModel->findById($atividadeId);
         if (!$atividade || !$this->atividadePublicado($atividade)) {
-            return array('ok' => false, 'message' => 'Atividade nao disponivel para entrega.');
+            return array('ok' => false, 'message' => 'Atividade não disponível para entrega.');
         }
 
         $cursoId = (int) $atividade['curso_evento_id'];
         $turmaId = !empty($atividade['turma_id']) ? (int) $atividade['turma_id'] : null;
         $inscricao = $this->selecionarInscricaoUsuario($actorUserId, $cursoId, $turmaId);
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao valida nao encontrada para envio da atividade.');
+            return array('ok' => false, 'message' => 'Inscrição válida não encontrada para envio da atividade.');
         }
 
         $aula = $this->aulaModel->findById((int) $atividade['aula_id']);
@@ -443,28 +443,28 @@ class AtividadeService
     {
         $entregaId = isset($data['entrega_id']) ? (int) $data['entrega_id'] : 0;
         if ($entregaId <= 0) {
-            return array('ok' => false, 'message' => 'Entrega invalida.');
+            return array('ok' => false, 'message' => 'Entrega inválida.');
         }
 
         $entrega = $this->atividadeEntregaModel->findById($entregaId);
         if (!$entrega) {
-            return array('ok' => false, 'message' => 'Entrega nao encontrada.');
+            return array('ok' => false, 'message' => 'Entrega não encontrada.');
         }
 
         $atividade = $this->atividadeModel->findById((int) $entrega['atividade_id']);
         if (!$atividade || !$this->atividadePublicado($atividade)) {
-            return array('ok' => false, 'message' => 'Atividade indisponivel para correção.');
+            return array('ok' => false, 'message' => 'Atividade indisponível para correção.');
         }
 
         $notaMaxima = (float) $atividade['nota_maxima'];
         $status = $this->normalizarStatusEntrega(isset($data['status']) ? $data['status'] : $statusPadrao);
         if ($status === null) {
-            return array('ok' => false, 'message' => 'Status da entrega invalido.');
+            return array('ok' => false, 'message' => 'Status da entrega inválido.');
         }
 
         $nota = isset($data['nota']) && $data['nota'] !== '' ? $data['nota'] : null;
         if ($nota !== null && !is_numeric($nota)) {
-            return array('ok' => false, 'message' => 'Nota da entrega invalida.');
+            return array('ok' => false, 'message' => 'Nota da entrega inválida.');
         }
         $nota = $nota !== null ? (float) $nota : null;
         if ($nota !== null && ($nota < 0 || $nota > $notaMaxima)) {

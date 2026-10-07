@@ -73,7 +73,7 @@ class RbacController extends Controller
             return $this->redirect('/admin/rbac');
         }
 
-        Session::flash('success', 'Perfis do usuario atualizados.');
+        Session::flash('success', 'Perfis do usuário atualizados.');
         return $action === 'save_exit' ? $this->redirect('/admin/rbac') : $this->redirect('/admin/rbac');
     }
 }

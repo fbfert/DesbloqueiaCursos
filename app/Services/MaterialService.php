@@ -61,7 +61,7 @@ class MaterialService
         $id = isset($data['id']) ? (int) $data['id'] : 0;
         $materialExistente = $id > 0 ? $this->materialModel->findById($id) : null;
         if ($id > 0 && !$materialExistente) {
-            return array('ok' => false, 'message' => 'Material nao encontrado.');
+            return array('ok' => false, 'message' => 'Material não encontrado.');
         }
 
         $tipoMaterialInformado = isset($data['tipo_material']) ? (string) $data['tipo_material'] : '';
@@ -77,7 +77,7 @@ class MaterialService
 
         $tipoMaterial = $this->normalizarTipoMaterial($tipoMaterialInformado);
         if ($tipoMaterial === null) {
-            return array('ok' => false, 'message' => 'Tipo de material invalido.');
+            return array('ok' => false, 'message' => 'Tipo de material inválido.');
         }
 
         $status = $this->determinarStatus($data, true);
@@ -90,16 +90,16 @@ class MaterialService
 
         $aula = $this->aulaModel->findById($aulaId);
         if (!$aula) {
-            return array('ok' => false, 'message' => 'Aula nao encontrada para o material.');
+            return array('ok' => false, 'message' => 'Aula não encontrada para o material.');
         }
 
         if ((int) $aula['curso_evento_id'] !== $cursoId) {
-            return array('ok' => false, 'message' => 'A aula informada nao pertence ao curso selecionado.');
+            return array('ok' => false, 'message' => 'A aula informada não pertence ao curso selecionado.');
         }
 
         $turmaAula = !empty($aula['turma_id']) ? (int) $aula['turma_id'] : null;
         if ($turmaAula !== $turmaId) {
-            return array('ok' => false, 'message' => 'A aula informada nao pertence a turma selecionada.');
+            return array('ok' => false, 'message' => 'A aula informada não pertence a turma selecionada.');
         }
 
         $moduloId = !empty($data['modulo_id']) ? (int) $data['modulo_id'] : 0;
@@ -108,30 +108,30 @@ class MaterialService
         }
 
         if ($moduloId <= 0) {
-            return array('ok' => false, 'message' => 'Selecione um modulo valido para o material.');
+            return array('ok' => false, 'message' => 'Selecione um módulo válido para o material.');
         }
 
         $modulo = $this->moduloModel->findById($moduloId);
         if (!$modulo) {
-            return array('ok' => false, 'message' => 'Modulo nao encontrado para o material.');
+            return array('ok' => false, 'message' => 'Módulo não encontrado para o material.');
         }
 
         if ((int) $modulo['curso_evento_id'] !== $cursoId) {
-            return array('ok' => false, 'message' => 'Modulo informado nao pertence ao curso selecionado.');
+            return array('ok' => false, 'message' => 'Módulo informado não pertence ao curso selecionado.');
         }
 
         $turmaModulo = !empty($modulo['turma_id']) ? (int) $modulo['turma_id'] : null;
         if ($turmaModulo !== $turmaId) {
-            return array('ok' => false, 'message' => 'Modulo informado nao pertence a turma selecionada.');
+            return array('ok' => false, 'message' => 'Módulo informado não pertence a turma selecionada.');
         }
 
         if (!empty($aula['modulo_id']) && (int) $aula['modulo_id'] !== $moduloId) {
-            return array('ok' => false, 'message' => 'A aula selecionada nao pertence ao modulo informado.');
+            return array('ok' => false, 'message' => 'A aula selecionada não pertence ao módulo informado.');
         }
 
         $titulo = trim((string) $data['titulo']);
         if ($titulo === '') {
-            return array('ok' => false, 'message' => 'Informe o titulo do material.');
+            return array('ok' => false, 'message' => 'Informe o título do material.');
         }
 
         $descricao = isset($data['descricao']) ? HtmlSanitizer::clean((string) $data['descricao'], 'basic') : null;
@@ -145,7 +145,7 @@ class MaterialService
         }
 
         if ($url !== '' && !filter_var($url, FILTER_VALIDATE_URL)) {
-            return array('ok' => false, 'message' => 'URL do material invalida.');
+            return array('ok' => false, 'message' => 'URL do material inválida.');
         }
 
         if ($tipoMaterial === 'embed_controlado' && !$this->embedUrlPermitida($url)) {
@@ -206,7 +206,7 @@ class MaterialService
                 $payload['arquivo_tamanho_bytes'] = $arquivoAtual['arquivo_tamanho_bytes'];
                 $payload['tipo_arquivo'] = !empty($arquivoAtual['tipo_arquivo']) ? $arquivoAtual['tipo_arquivo'] : $payload['tipo_arquivo'];
             } else {
-                return array('ok' => false, 'message' => 'Arquivo do material nao informado.');
+                return array('ok' => false, 'message' => 'Arquivo do material não informado.');
             }
         }
 
@@ -268,7 +268,7 @@ class MaterialService
     {
         $material = $this->materialModel->findById($id);
         if (!$material) {
-            return array('ok' => false, 'message' => 'Material nao encontrado.');
+            return array('ok' => false, 'message' => 'Material não encontrado.');
         }
 
         $pdo = Database::connection();

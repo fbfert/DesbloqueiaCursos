@@ -75,7 +75,7 @@ class AptidaoCertificadoService
         $turmaId = !empty($data['turma_id']) ? (int) $data['turma_id'] : null;
 
         if ($cursoId <= 0) {
-            return array('ok' => false, 'message' => 'Curso invalido.');
+            return array('ok' => false, 'message' => 'Curso inválido.');
         }
 
         $validacaoContexto = $this->scopeService->validarContexto($cursoId, $turmaId);
@@ -170,7 +170,7 @@ class AptidaoCertificadoService
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
 
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição não encontrada.');
         }
 
         $aptoAntes = !empty($inscricao['apto_certificado']) ? 1 : 0;

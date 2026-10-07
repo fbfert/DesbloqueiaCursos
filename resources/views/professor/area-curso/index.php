@@ -64,10 +64,10 @@
         <form method="post" action="/professor/area-curso/instrucoes" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Titulo<input type="text" name="titulo"></label>
-            <label>Conteudo<textarea name="conteudo" rows="4"></textarea></label>
+            <label>Título<input type="text" name="titulo"></label>
+            <label>Conteúdo<textarea name="conteudo" rows="4"></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visível</label>
             <?php
             $cancel_url = $areaCursoCancelUrl;
             $show_save_as_copy = false;
@@ -77,14 +77,14 @@
     </section>
 
     <section class="panel">
-        <div class="panel-header"><div><h2>Modulos</h2></div></div>
+        <div class="panel-header"><div><h2>Módulos</h2></div></div>
         <form method="post" action="/professor/area-curso/modulos" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Titulo<input type="text" name="titulo"></label>
+            <label>Título<input type="text" name="titulo"></label>
             <label>Descrição<textarea name="descricao" rows="3"></textarea></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visível</label>
             <?php
             $cancel_url = $areaCursoCancelUrl;
             $show_save_as_copy = false;
@@ -93,12 +93,12 @@
         </form>
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">
-                <thead><tr><th>Titulo</th><th>Status</th><th>Delete</th></tr></thead>
+                <thead><tr><th>Título</th><th>Status</th><th>Excluir</th></tr></thead>
                 <tbody>
                     <?php foreach ($modulos as $modulo): ?>
                         <tr>
                             <td><?php echo Helpers::e($modulo['titulo']); ?></td>
-                            <td><?php echo !empty($modulo['visivel']) ? 'visivel' : 'oculto'; ?></td>
+                            <td><?php echo !empty($modulo['visivel']) ? 'visível' : 'oculto'; ?></td>
                             <td>
                                 <form method="post" action="/professor/area-curso/excluir" class="form-grid">
                                     <input type="hidden" name="tipo" value="modulo">
@@ -121,21 +121,21 @@
         <form method="post" action="/professor/area-curso/aulas" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Modulo
+            <label>Módulo
                 <select name="modulo_id">
                     <?php foreach ($modulos as $modulo): ?>
                         <option value="<?php echo (int) $modulo['id']; ?>"><?php echo Helpers::e($modulo['titulo']); ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label>Titulo<input type="text" name="titulo"></label>
-            <label>Conteudo<textarea name="conteudo" rows="3"></textarea></label>
+            <label>Título<input type="text" name="titulo"></label>
+            <label>Conteúdo<textarea name="conteudo" rows="3"></textarea></label>
             <label>Tipo<input type="text" name="tipo" value="texto"></label>
-            <label>URL video<input type="text" name="url_video"></label>
-            <label>Duracao minutos<input type="number" name="duracao_minutos"></label>
+            <label>URL vídeo<input type="text" name="url_video"></label>
+            <label>Duração minutos<input type="number" name="duracao_minutos"></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
-            <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1"> Obrigatoria</label>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visível</label>
+            <label class="checkbox"><input type="checkbox" name="obrigatoria" value="1"> Obrigatória</label>
             <?php
             $cancel_url = $areaCursoCancelUrl;
             $show_save_as_copy = false;
@@ -144,7 +144,7 @@
         </form>
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">
-                <thead><tr><th>Titulo</th><th>Tipo</th><th>Delete</th></tr></thead>
+                <thead><tr><th>Título</th><th>Tipo</th><th>Excluir</th></tr></thead>
                 <tbody>
                     <?php foreach ($modulos as $modulo): ?>
                         <?php foreach ($modulo['aulas'] as $aula): ?>
@@ -174,9 +174,9 @@
         <form method="post" action="/professor/area-curso/materiais" class="form-grid" enctype="multipart/form-data">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Modulo
+            <label>Módulo
                 <select name="modulo_id">
-                    <option value="">Sem modulo</option>
+                    <option value="">Sem módulo</option>
                     <?php foreach ($modulos as $modulo): ?>
                         <option value="<?php echo (int) $modulo['id']; ?>"><?php echo Helpers::e($modulo['titulo']); ?></option>
                     <?php endforeach; ?>
@@ -192,12 +192,12 @@
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label>Titulo<input type="text" name="titulo"></label>
+            <label>Título<input type="text" name="titulo"></label>
             <label>Descrição<textarea name="descricao" rows="3"></textarea></label>
             <label>Tipo arquivo<input type="text" name="tipo_arquivo" value="outro"></label>
             <label>Arquivo<input type="file" name="arquivo"></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visível</label>
             <?php
             $cancel_url = $areaCursoCancelUrl;
             $show_save_as_copy = false;
@@ -206,7 +206,7 @@
         </form>
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">
-                <thead><tr><th>Titulo</th><th>Tipo</th><th>Delete</th></tr></thead>
+                <thead><tr><th>Título</th><th>Tipo</th><th>Excluir</th></tr></thead>
                 <tbody>
                     <?php foreach ($materiais as $material): ?>
                         <tr>
@@ -234,9 +234,9 @@
         <form method="post" action="/professor/area-curso/links" class="form-grid">
             <input type="hidden" name="curso_evento_id" value="<?php echo (int) $curso['id']; ?>">
             <input type="hidden" name="turma_id" value="<?php echo !empty($turma['id']) ? (int) $turma['id'] : ''; ?>">
-            <label>Modulo
+            <label>Módulo
                 <select name="modulo_id">
-                    <option value="">Sem modulo</option>
+                    <option value="">Sem módulo</option>
                     <?php foreach ($modulos as $modulo): ?>
                         <option value="<?php echo (int) $modulo['id']; ?>"><?php echo Helpers::e($modulo['titulo']); ?></option>
                     <?php endforeach; ?>
@@ -252,11 +252,11 @@
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label>Titulo<input type="text" name="titulo"></label>
+            <label>Título<input type="text" name="titulo"></label>
             <label>URL<input type="text" name="url"></label>
             <label>Tipo link<input type="text" name="tipo_link" value="generico"></label>
             <label>Ordem<input type="number" name="ordem" value="1" min="1"></label>
-            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visivel</label>
+            <label class="checkbox"><input type="checkbox" name="visivel" value="1" checked> Visível</label>
             <?php
             $cancel_url = $areaCursoCancelUrl;
             $show_save_as_copy = false;
@@ -265,7 +265,7 @@
         </form>
         <div class="table-wrapper" style="margin-top:12px;">
             <table class="table">
-                <thead><tr><th>Titulo</th><th>Tipo</th><th>Delete</th></tr></thead>
+                <thead><tr><th>Título</th><th>Tipo</th><th>Excluir</th></tr></thead>
                 <tbody>
                     <?php foreach ($links as $link): ?>
                         <tr>

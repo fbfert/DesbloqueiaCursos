@@ -54,25 +54,25 @@ class AulaService
 
         $modulo = $this->moduloModel->findById($payload['modulo_id']);
         if (!$modulo) {
-            return array('ok' => false, 'message' => 'Modulo nao encontrado para a aula.');
+            return array('ok' => false, 'message' => 'Módulo não encontrado para a aula.');
         }
 
         if ((int) $modulo['curso_evento_id'] !== (int) $payload['curso_evento_id']) {
-            return array('ok' => false, 'message' => 'Modulo informado nao pertence ao curso selecionado.');
+            return array('ok' => false, 'message' => 'Módulo informado não pertence ao curso selecionado.');
         }
 
         $turmaModulo = !empty($modulo['turma_id']) ? (int) $modulo['turma_id'] : null;
         $turmaPayload = !empty($payload['turma_id']) ? (int) $payload['turma_id'] : null;
         if ($turmaModulo !== $turmaPayload) {
-            return array('ok' => false, 'message' => 'Modulo informado nao pertence a turma selecionada.');
+            return array('ok' => false, 'message' => 'Módulo informado não pertence à turma selecionada.');
         }
 
         if ($id > 0 && !$this->aulaModel->findById($id)) {
-            return array('ok' => false, 'message' => 'Aula nao encontrada.');
+            return array('ok' => false, 'message' => 'Aula não encontrada.');
         }
 
         if (empty($payload['titulo'])) {
-            return array('ok' => false, 'message' => 'Informe o titulo da aula.');
+            return array('ok' => false, 'message' => 'Informe o título da aula.');
         }
 
         $payload['visivel'] = $payload['status'] === 'publicado' ? 1 : 0;
@@ -139,7 +139,7 @@ class AulaService
     {
         $aula = $this->aulaModel->findById($id);
         if (!$aula) {
-            return array('ok' => false, 'message' => 'Aula nao encontrada.');
+            return array('ok' => false, 'message' => 'Aula não encontrada.');
         }
 
         $pdo = Database::connection();

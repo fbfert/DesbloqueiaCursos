@@ -1284,12 +1284,12 @@ class TutorNorminhaService
 
         $tetoBruto = str_replace(',', '.', trim((string) (isset($input['tutor_ia_teto_mensal_usd']) ? $input['tutor_ia_teto_mensal_usd'] : '')));
         if ($tetoBruto === '' || !is_numeric($tetoBruto)) {
-            $errors[] = 'Informe o teto mensal em dolares (use 0 para nao ter teto).';
+            $errors[] = 'Informe o teto mensal em dólares (use 0 para não ter teto).';
             $teto = null;
         } else {
             $teto = round((float) $tetoBruto, 2);
             if ($teto < 0 || $teto > 100000) {
-                $errors[] = 'O teto mensal deve ficar entre 0 e 100000 dolares.';
+                $errors[] = 'O teto mensal deve ficar entre 0 e 100000 dólares.';
             }
         }
 
@@ -1302,7 +1302,7 @@ class TutorNorminhaService
             if (strlen($chaveNova) < 20 || strpos($chaveNova, 'sk-') !== 0) {
                 $errors[] = 'A chave da OpenAI deve comecar com "sk-" e ser mais longa que isso.';
             } elseif (!\App\Support\NorminhaCredenciais::podeGuardarNoBanco()) {
-                $errors[] = 'APP_KEY nao esta definida no .env, entao a chave nao pode ser guardada cifrada. '
+                $errors[] = 'APP_KEY não está definida no .env, então a chave não pode ser guardada cifrada. '
                     . 'Sem ela o segredo seria descartado em silencio.';
             }
         }
@@ -1323,14 +1323,14 @@ class TutorNorminhaService
             if ($cifrada === null || $cifrada === '') {
                 // Nunca gravar o vazio por cima: seria a falha silenciosa que
                 // engoliu a credencial do gateway de pagamento.
-                return array('ok' => false, 'errors' => array('Nao foi possivel cifrar a chave. Nada foi alterado.'));
+                return array('ok' => false, 'errors' => array('Não foi possível cifrar a chave. Nada foi alterado.'));
             }
             $payload[\App\Support\NorminhaCredenciais::CHAVE_KEY] = $cifrada;
         }
 
         $resultado = $this->configModel->saveMany($payload);
         if (empty($resultado['ok'])) {
-            return array('ok' => false, 'errors' => array('Nao foi possivel salvar. Nada foi alterado.'));
+            return array('ok' => false, 'errors' => array('Não foi possível salvar. Nada foi alterado.'));
         }
 
         return array('ok' => true);
@@ -1354,7 +1354,7 @@ class TutorNorminhaService
             return array('ok' => false, 'mensagem' => 'Escolha um modelo antes de testar.');
         }
         if (empty($d['habilitado'])) {
-            return array('ok' => false, 'mensagem' => 'A integracao esta desligada por OPENAI_ENABLED=false no .env.');
+            return array('ok' => false, 'mensagem' => 'A integração está desligada por OPENAI_ENABLED=false no .env.');
         }
 
         // O input da Responses API e uma LISTA de mensagens, nao um texto.
@@ -1382,8 +1382,8 @@ class TutorNorminhaService
             if (isset($locais[$codigo])) {
                 return array(
                     'ok' => false,
-                    'mensagem' => 'O pedido nem chegou a ser enviado — a falha e da configuracao daqui, '
-                        . 'nao da chave. Detalhe tecnico: ' . $codigo . '.',
+                    'mensagem' => 'O pedido nem chegou a ser enviado — a falha é da configuração daqui, '
+                        . 'não da chave. Detalhe técnico: ' . $codigo . '.',
                     'codigo' => $codigo,
                     'status' => isset($r['status']) ? $r['status'] : null,
                 );
@@ -1396,11 +1396,11 @@ class TutorNorminhaService
                     . 'continua ativa no painel do provedor.',
                 'limite_provedor' => 'A OpenAI respondeu que o limite de uso foi excedido. Pode ser '
                     . 'cota da conta ou excesso de pedidos por minuto.',
-                'provedor_indisponivel' => 'A OpenAI esta fora do ar ou instavel neste momento. '
+                'provedor_indisponivel' => 'A OpenAI está fora do ar ou instável neste momento. '
                     . 'Nada errado com a chave; vale repetir daqui a pouco.',
-                'requisicao_recusada' => 'A OpenAI recusou o pedido. Pode ser um modelo indisponivel '
+                'requisicao_recusada' => 'A OpenAI recusou o pedido. Pode ser um modelo indisponível '
                     . 'para esta conta.',
-                'rede' => 'Nao foi possivel alcancar a OpenAI a partir deste servidor.',
+                'rede' => 'Não foi possível alcançar a OpenAI a partir deste servidor.',
                 'tempo_esgotado' => 'A OpenAI demorou demais para responder.',
             );
 

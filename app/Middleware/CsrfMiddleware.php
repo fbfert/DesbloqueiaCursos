@@ -55,11 +55,11 @@ class CsrfMiddleware implements MiddlewareInterface
             return Response::json(array(
                 'ok' => false,
                 'erro' => 'csrf_invalido',
-                'mensagem' => 'Sua sessao expirou. Recarregue a pagina e tente novamente.',
+                'mensagem' => 'Sua sessão expirou. Recarregue a página e tente novamente.',
             ), 403);
         }
 
-        Session::flash('errors', array('csrf' => 'Sua sessao expirou. Recarregue a pagina e tente novamente.'));
+        Session::flash('errors', array('csrf' => 'Sua sessão expirou. Recarregue a página e tente novamente.'));
 
         $referer = isset($_SERVER['HTTP_REFERER']) ? trim((string) $_SERVER['HTTP_REFERER']) : '';
         $redirectTo = $this->sanitizeRedirect($referer, '/');

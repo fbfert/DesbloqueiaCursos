@@ -71,7 +71,7 @@ class NorminhaController extends Controller
     {
         $payload = $this->corpo($request);
         if ($payload === null) {
-            return $this->erro('corpo_invalido', 'Nao consegui ler os dados enviados.', 422);
+            return $this->erro('corpo_invalido', 'Não consegui ler os dados enviados.', 422);
         }
 
         $limite = (new \App\Services\NorminhaPublicoLimiteService())->registrar($request->ip());

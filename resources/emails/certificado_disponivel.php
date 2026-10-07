@@ -7,7 +7,7 @@
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;">
             <h1 style="margin:0 0 16px;">Certificado disponível</h1>
             <p>Seu certificado de <?php echo Helpers::e(isset($inscricao['curso_nome']) ? $inscricao['curso_nome'] : ''); ?> está disponível.</p>
-            <p>Acesse sua area do aluno para validar e baixar o documento.</p>
+            <p>Acesse sua área do aluno para validar e baixar o documento.</p>
         </div>
     </div>
 </body>

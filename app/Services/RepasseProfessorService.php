@@ -49,12 +49,12 @@ class RepasseProfessorService
     {
         $apuracao = $this->apuracaoModel->findById($apuracaoId);
         if (!$apuracao) {
-            return array('ok' => false, 'message' => 'Apuracao nao encontrada.');
+            return array('ok' => false, 'message' => 'Apuração não encontrada.');
         }
 
         $rateios = $this->rateioModel->findByApuracao($apuracaoId);
         if (empty($rateios)) {
-            return array('ok' => false, 'message' => 'Apuracao sem rateios.');
+            return array('ok' => false, 'message' => 'Apuração sem rateios.');
         }
 
         $participantes = array();
@@ -160,7 +160,7 @@ class RepasseProfessorService
     {
         $repasse = $this->repasseModel->findById($repasseId);
         if (!$repasse) {
-            return array('ok' => false, 'message' => 'Repasse nao encontrado.');
+            return array('ok' => false, 'message' => 'Repasse não encontrado.');
         }
 
         $stored = $this->fileStorageService->storeUploadedFile($file, 'financeiro/documentos', 'documento', array(
@@ -217,7 +217,7 @@ class RepasseProfessorService
     {
         $repasse = $this->repasseModel->findById($repasseId);
         if (!$repasse) {
-            return array('ok' => false, 'message' => 'Repasse nao encontrado.');
+            return array('ok' => false, 'message' => 'Repasse não encontrado.');
         }
 
         $stored = null;

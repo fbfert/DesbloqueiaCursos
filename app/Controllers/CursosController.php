@@ -98,7 +98,7 @@ class CursosController extends Controller
 
         if (empty($contexto['curso'])) {
             return new Response(View::render('errors/404', array(
-                'title' => 'Curso nao encontrado',
+                'title' => 'Curso não encontrado',
             )), 404);
         }
 

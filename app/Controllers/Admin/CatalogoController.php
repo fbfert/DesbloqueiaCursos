@@ -20,7 +20,7 @@ class CatalogoController extends Controller
     {
         return $this->view('admin/catalogo/index', array_merge(
             array(
-                'title' => 'Catalogo',
+                'title' => 'Catálogo',
                 'success' => Session::pullFlash('success'),
                 'errors' => Session::pullFlash('errors', array()),
             ),

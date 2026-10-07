@@ -128,42 +128,42 @@ class DashboardService
                 'subvalue' => $salesWeek['total'] . ' pedidos',
             ),
             array(
-                'label' => 'Vendas do mes',
+                'label' => 'Vendas do mês',
                 'value' => $this->formatCurrency($salesMonth['revenue']),
                 'subvalue' => $salesMonth['total'] . ' pedidos',
             ),
             array(
-                'label' => 'Novos usuarios hoje',
+                'label' => 'Novos usuários hoje',
                 'value' => $this->countUsersByRange('today'),
                 'subvalue' => 'cadastros',
             ),
             array(
-                'label' => 'Novos usuarios na semana',
+                'label' => 'Novos usuários na semana',
                 'value' => $this->countUsersByRange('week'),
                 'subvalue' => 'cadastros',
             ),
             array(
-                'label' => 'Novos usuarios no mes',
+                'label' => 'Novos usuários no mês',
                 'value' => $this->countUsersByRange('month'),
                 'subvalue' => 'cadastros',
             ),
             array(
                 'label' => 'Cursos e eventos cadastrados',
                 'value' => $this->countRecords('cursos_eventos'),
-                'subvalue' => 'itens ativos no catalogo',
+                'subvalue' => 'itens ativos no catálogo',
             ),
             array(
-                'label' => 'Disponiveis para venda',
+                'label' => 'Disponíveis para venda',
                 'value' => $this->countAvailableCourses(),
                 'subvalue' => 'cursos/eventos ativos',
             ),
             array(
                 'label' => 'Pedidos pendentes',
                 'value' => $this->countPendingOrders(),
-                'subvalue' => 'aguardando acao',
+                'subvalue' => 'aguardando ação',
             ),
             array(
-                'label' => 'Comprovantes em analise',
+                'label' => 'Comprovantes em análise',
                 'value' => $this->countPixInAnalysis(),
                 'subvalue' => 'pix atual',
             ),
@@ -180,12 +180,12 @@ class DashboardService
             array(
                 'label' => 'Certificados emitidos',
                 'value' => $this->countCertificatesIssued(),
-                'subvalue' => 'emissao manual',
+                'subvalue' => 'emissão manual',
             ),
             array(
                 'label' => 'Certificados aptos para emissão',
                 'value' => $this->countCertificadosAptosParaEmissao(),
-                'subvalue' => 'aguardando emissao manual',
+                'subvalue' => 'aguardando emissão manual',
             ),
             array(
                 'label' => 'Total a pagar a professores',
@@ -219,20 +219,20 @@ class DashboardService
             array(
                 'label' => 'Inscrições ativas',
                 'value' => $this->countProfessorEnrollments($usuarioId, array('ativa', 'em_andamento'), $range),
-                'subvalue' => 'no periodo',
+                'subvalue' => 'no período',
             ),
             array(
                 'label' => 'Inscrições concluidas',
                 'value' => $this->countProfessorEnrollments($usuarioId, array('concluida', 'concluida_sem_certificado', 'certificado_emitido'), $range),
-                'subvalue' => 'no periodo',
+                'subvalue' => 'no período',
             ),
             array(
                 'label' => 'Certificados emitidos',
                 'value' => $this->countProfessorCertificates($usuarioId, $range),
-                'subvalue' => 'no periodo',
+                'subvalue' => 'no período',
             ),
             array(
-                'label' => 'Repasses no periodo',
+                'label' => 'Repasses no período',
                 'value' => $this->formatCurrency($repassesTotals),
                 'subvalue' => count($repasses) . ' registros',
             ),
@@ -242,9 +242,9 @@ class DashboardService
                 'subvalue' => count($espelhos) . ' registros',
             ),
             array(
-                'label' => 'Pendencias financeiras',
+                'label' => 'Pendências financeiras',
                 'value' => $this->countProfessorRepasseStatus($repasses, array('pendente', 'aguardando_documento')),
-                'subvalue' => 'no periodo',
+                'subvalue' => 'no período',
             ),
         );
     }

@@ -226,12 +226,12 @@ class OpenAIService
         $corpo = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         if ($corpo === false) {
-            return array('erro_curl' => 'nao foi possivel serializar o payload', 'status' => 0, 'corpo' => '');
+            return array('erro_curl' => 'não foi possível serializar o payload', 'status' => 0, 'corpo' => '');
         }
 
         $ch = curl_init($url);
         if ($ch === false) {
-            return array('erro_curl' => 'nao foi possivel iniciar a requisicao', 'status' => 0, 'corpo' => '');
+            return array('erro_curl' => 'não foi possível iniciar a requisição', 'status' => 0, 'corpo' => '');
         }
 
         curl_setopt_array($ch, array(

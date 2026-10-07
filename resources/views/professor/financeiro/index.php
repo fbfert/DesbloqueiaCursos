@@ -1,6 +1,6 @@
 <section class="hero">
     <h1>Meu financeiro</h1>
-    <p>Visualizacao restrita aos cursos e turmas atribuídos ao professor.</p>
+    <p>Visualização restrita aos cursos e turmas atribuídos ao professor.</p>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -26,12 +26,12 @@
             <thead>
                 <tr>
                     <th>Competência</th>
-                    <th>Base liquida</th>
+                    <th>Base líquida</th>
                     <th>Bruto</th>
                     <th>Retido</th>
                     <th>Líquido</th>
                     <th>Status</th>
-                    <th>Apuracao</th>
+                    <th>Apuração</th>
                 </tr>
             </thead>
             <tbody>

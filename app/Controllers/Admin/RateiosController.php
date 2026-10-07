@@ -48,7 +48,7 @@ class RateiosController extends Controller
         $result = $this->rateioService->salvar($request->all(), Session::get('usuario_id'), $request->ip(), $request->userAgent());
         $action = $this->submitAction($request, 'save_exit');
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? (array) $result['errors'] : array('Não foi possivel salvar o rateio.'));
+            Session::flash('errors', isset($result['errors']) ? (array) $result['errors'] : array('Não foi possível salvar o rateio.'));
             Session::flash('old', $request->all());
             return $this->redirect('/admin/rateios/criar?apuracao_id=' . (int) $request->input('apuracao_id', 0));
         }
@@ -70,7 +70,7 @@ class RateiosController extends Controller
         $formData = $this->rateioService->formData($rateioId);
 
         if (empty($formData['rateio'])) {
-            Session::flash('errors', array('Rateio nao encontrado.'));
+            Session::flash('errors', array('Rateio não encontrado.'));
             return $this->redirect('/admin/rateios');
         }
 
@@ -91,7 +91,7 @@ class RateiosController extends Controller
         $action = $this->submitAction($request, 'save_exit');
 
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['errors']) ? (array) $result['errors'] : array('Não foi possivel atualizar o rateio.'));
+            Session::flash('errors', isset($result['errors']) ? (array) $result['errors'] : array('Não foi possível atualizar o rateio.'));
             Session::flash('old', $request->all());
             return $this->redirect('/admin/rateios/editar?rateio_id=' . $rateioId);
         }
@@ -112,18 +112,18 @@ class RateiosController extends Controller
     {
         $rateioId = (int) $request->query('rateio_id', 0);
         if ($rateioId <= 0) {
-            Session::flash('errors', array('Informe um rateio valido.'));
+            Session::flash('errors', array('Informe um rateio válido.'));
             return $this->redirect('/admin/rateios');
         }
 
         $resultado = $this->rateioService->showRateioAdmin($rateioId);
         if (!$resultado) {
-            Session::flash('errors', array('Rateio nao encontrado.'));
+            Session::flash('errors', array('Rateio não encontrado.'));
             return $this->redirect('/admin/rateios');
         }
 
         return $this->view('admin/rateios/show', array(
-            'title' => 'Rateio da apuracao',
+            'title' => 'Rateio da apuração',
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
             'rateio' => $resultado['rateio'],
@@ -138,11 +138,11 @@ class RateiosController extends Controller
 
         $result = $this->rateioService->excluir($rateioId, $justificativa, Session::get('usuario_id'), $request->ip(), $request->userAgent());
         if (empty($result['ok'])) {
-            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possivel excluir o rateio.'));
+            Session::flash('errors', isset($result['message']) ? array($result['message']) : array('Não foi possível excluir o rateio.'));
             return $this->redirect('/admin/rateios/show?rateio_id=' . $rateioId);
         }
 
-        Session::flash('success', 'Rateio excluido e enviado para a lixeira.');
+        Session::flash('success', 'Rateio excluído e enviado para a lixeira.');
         return $this->redirect('/admin/rateios');
     }
 }

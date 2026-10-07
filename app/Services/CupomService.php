@@ -165,28 +165,28 @@ class CupomService
 
         $errors = array();
         if ($codigo === '') {
-            $errors[] = 'Codigo do cupom e obrigatorio.';
+            $errors[] = 'Código do cupom é obrigatório.';
         }
         if ($nome === '') {
-            $errors[] = 'Nome do cupom e obrigatorio.';
+            $errors[] = 'Nome do cupom é obrigatório.';
         }
         if (!in_array($tipo, array('publico', 'privado', 'usuario', 'empresa'), true)) {
-            $errors[] = 'Tipo de cupom invalido.';
+            $errors[] = 'Tipo de cupom inválido.';
         }
         if (!in_array($descontoTipo, array('percentual', 'valor'), true)) {
-            $errors[] = 'Tipo de desconto invalido.';
+            $errors[] = 'Tipo de desconto inválido.';
         }
         if ($valorDesconto < 0) {
-            $errors[] = 'Valor de desconto invalido.';
+            $errors[] = 'Valor de desconto inválido.';
         }
         if ($descontoTipo === 'percentual' && $valorDesconto > 100) {
-            $errors[] = 'Cupom percentual nao pode passar de 100%.';
+            $errors[] = 'Cupom percentual não pode passar de 100%.';
         }
         if (!in_array($status, array('rascunho', 'ativo', 'inativo', 'expirado'), true)) {
-            $errors[] = 'Status do cupom invalido.';
+            $errors[] = 'Status do cupom inválido.';
         }
         if (!in_array($escopo, array('todo_site', 'cursos_especificos'), true)) {
-            $errors[] = 'Validade do cupom invalida.';
+            $errors[] = 'Validade do cupom inválida.';
         }
 
         if ($escopo === 'cursos_especificos') {
@@ -195,7 +195,7 @@ class CupomService
             } else {
                 foreach ($cursosSelecionados as $cursoIdSelecionado) {
                     if (!isset($cursosDisponiveisMap[$cursoIdSelecionado])) {
-                        $errors[] = 'Um dos cursos selecionados nao esta disponivel para este cupom.';
+                        $errors[] = 'Um dos cursos selecionados não está disponível para este cupom.';
                         break;
                     }
                 }
@@ -204,12 +204,12 @@ class CupomService
 
         $cupomExistente = $this->cupomModel->findByCodigo($codigo);
         if ($cupomExistente && (!$cupomId || (int) $cupomExistente['id'] !== $cupomId)) {
-            $errors[] = 'Ja existe um cupom com este codigo.';
+            $errors[] = 'Já existe um cupom com este código.';
         }
 
         $relacoes = $this->buildRelacoes($data);
         if ($tipo !== 'publico' && empty($relacoes)) {
-            $errors[] = 'Cupons nao publicos exigem ao menos uma relacao.';
+            $errors[] = 'Cupons não públicos exigem ao menos uma relação.';
         }
 
         if ($errors) {
@@ -251,7 +251,7 @@ class CupomService
             $this->cupomHistoricoModel->create(
                 $cupomId,
                 $acao,
-                $acao === 'cupom.criado' ? 'Criacao do cupom' : 'Atualizacao do cupom',
+                $acao === 'cupom.criado' ? 'Criação do cupom' : 'Atualização do cupom',
                 array('cupom' => $payload, 'relacoes' => $relacoes, 'cursos' => $cursosSelecionados),
                 $actorUserId
             );
@@ -313,7 +313,7 @@ class CupomService
     {
         $cupom = $this->cupomModel->findById($cupomId);
         if (!$cupom) {
-            return array('ok' => false, 'message' => 'Cupom nao encontrado.');
+            return array('ok' => false, 'message' => 'Cupom não encontrado.');
         }
 
         $pdo = Database::connection();
@@ -364,12 +364,12 @@ class CupomService
     {
         $cupom = $this->cupomModel->findById($cupomId);
         if (!$cupom) {
-            return array('ok' => false, 'message' => 'Cupom nao encontrado.');
+            return array('ok' => false, 'message' => 'Cupom não encontrado.');
         }
 
         $status = trim((string) $status);
         if (!in_array($status, array('ativo', 'inativo'), true)) {
-            return array('ok' => false, 'message' => 'Status invalido.');
+            return array('ok' => false, 'message' => 'Status inválido.');
         }
 
         $statusAnterior = isset($cupom['status']) ? (string) $cupom['status'] : 'rascunho';
@@ -537,7 +537,7 @@ class CupomService
     {
         $pedido = $this->loadPedidoContext($pedidoId);
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (trim((string) $justificativa) === '') {

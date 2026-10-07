@@ -92,11 +92,11 @@ class RateioService
     public function apurarCompetencia($competencia, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         if (!preg_match('/^[0-9]{4}-[0-9]{2}$/', (string) $competencia)) {
-            return array('ok' => false, 'message' => 'Competencia invalida.');
+            return array('ok' => false, 'message' => 'Competência inválida.');
         }
 
         if ($this->apuracaoModel->findByCompetencia($competencia)) {
-            return array('ok' => false, 'message' => 'Ja existe apuracao para esta competencia.');
+            return array('ok' => false, 'message' => 'Já existe apuração para esta competência.');
         }
 
         $dateInicio = $competencia . '-01';
@@ -136,7 +136,7 @@ class RateioService
         }
 
         if (empty($grupos)) {
-            return array('ok' => false, 'message' => 'Nenhum pedido fechado encontrado na competencia informada.');
+            return array('ok' => false, 'message' => 'Nenhum pedido fechado encontrado na competência informada.');
         }
 
         $erroProfessores = array();
@@ -316,12 +316,12 @@ class RateioService
         $baseLiquida = isset($data['base_liquida']) && $data['base_liquida'] !== '' ? (float) $data['base_liquida'] : max(0, $baseBruta - $descontoCupons);
 
         if ($apuracaoId <= 0) {
-            return array('ok' => false, 'errors' => array('Informe a apuracao.'));
+            return array('ok' => false, 'errors' => array('Informe a apuração.'));
         }
 
         $apuracao = $this->apuracaoModel->findById($apuracaoId);
         if (!$apuracao) {
-            return array('ok' => false, 'errors' => array('Apuracao nao encontrada.'));
+            return array('ok' => false, 'errors' => array('Apuração não encontrada.'));
         }
 
         if ($cursoEventoId <= 0) {
@@ -330,24 +330,24 @@ class RateioService
 
         $curso = $this->cursoModel->findById($cursoEventoId);
         if (!$curso) {
-            return array('ok' => false, 'errors' => array('Curso/evento nao encontrado.'));
+            return array('ok' => false, 'errors' => array('Curso/evento não encontrado.'));
         }
 
         if ($turmaId) {
             $turma = $this->turmaModel->findById($turmaId);
             if (!$turma || (int) $turma['curso_evento_id'] !== $cursoEventoId) {
-                return array('ok' => false, 'errors' => array('Turma invalida para este curso/evento.'));
+                return array('ok' => false, 'errors' => array('Turma inválida para este curso/evento.'));
             }
         }
 
         $rateioAtual = $id > 0 ? $this->cursoRateioModel->findById($id) : null;
         if ($id > 0 && !$rateioAtual) {
-            return array('ok' => false, 'errors' => array('Rateio nao encontrado.'));
+            return array('ok' => false, 'errors' => array('Rateio não encontrado.'));
         }
 
         $duplicado = $this->cursoRateioModel->findByContext($apuracaoId, $cursoEventoId, $turmaId, $id > 0 ? $id : null);
         if ($duplicado) {
-            return array('ok' => false, 'errors' => array('Ja existe um rateio para este contexto.'));
+            return array('ok' => false, 'errors' => array('Já existe um rateio para este contexto.'));
         }
 
         $participantes = $this->normalizarParticipantes(isset($data['participantes']) ? $data['participantes'] : array());
@@ -369,14 +369,14 @@ class RateioService
             }
 
             if (isset($usuariosVistos[$usuarioId])) {
-                $errors[] = 'Linha ' . ($indice + 1) . ': o mesmo professor nao pode ser repetido.';
+                $errors[] = 'Linha ' . ($indice + 1) . ': o mesmo professor não pode ser repetido.';
                 continue;
             }
             $usuariosVistos[$usuarioId] = true;
 
             $percentual = isset($participante['percentual']) ? (float) $participante['percentual'] : 0.00;
             if ($percentual <= 0) {
-                $errors[] = 'Linha ' . ($indice + 1) . ': percentual invalido.';
+                $errors[] = 'Linha ' . ($indice + 1) . ': percentual inválido.';
                 continue;
             }
 
@@ -411,7 +411,7 @@ class RateioService
 
         $percentualTotal = round($percentualTotal, 2);
         if ($percentualTotal > $percentualMaximo) {
-            return array('ok' => false, 'errors' => array('A soma dos percentuais nao pode ultrapassar ' . number_format($percentualMaximo, 2, ',', '.') . '%.'));
+            return array('ok' => false, 'errors' => array('A soma dos percentuais não pode ultrapassar ' . number_format($percentualMaximo, 2, ',', '.') . '%.'));
         }
 
         $valorRateioTotal = round($baseLiquida * ($percentualTotal / 100), 2);
@@ -492,7 +492,7 @@ class RateioService
                     $this->trashService->record(
                         'cursos_rateio_participantes',
                         $existente['id'],
-                        'Atualizacao do rateio',
+                        'Atualização do rateio',
                         $existente,
                         $actorUserId,
                         $ipAddress,
@@ -537,7 +537,7 @@ class RateioService
     {
         $rateio = $this->cursoRateioModel->findById($rateioId);
         if (!$rateio) {
-            return array('ok' => false, 'message' => 'Rateio nao encontrado.');
+            return array('ok' => false, 'message' => 'Rateio não encontrado.');
         }
 
         $justificativa = trim((string) $justificativa);

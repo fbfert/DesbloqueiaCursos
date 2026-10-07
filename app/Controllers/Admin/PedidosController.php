@@ -130,7 +130,7 @@ class PedidosController extends Controller
         $detalhe = $this->pedidoService->detalharBackoffice($pedidoId, Session::get('usuario_id'));
 
         if (empty($detalhe['pedido'])) {
-            Session::flash('errors', array('Pedido nao encontrado.'));
+            Session::flash('errors', array('Pedido não encontrado.'));
             return $this->redirect('/admin/pedidos');
         }
 
@@ -398,7 +398,7 @@ class PedidosController extends Controller
             return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId);
         }
 
-        Session::flash('success', 'Pedido marcado com pendencia.');
+        Session::flash('success', 'Pedido marcado com pendência.');
         return $this->redirect('/admin/pedidos/show?pedido_id=' . $pedidoId);
     }
 

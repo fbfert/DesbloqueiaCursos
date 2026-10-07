@@ -366,7 +366,7 @@ class AbacatePayService
 
             if (empty($confirmacao['ok'])) {
                 $mensagemConfirmacao = isset($confirmacao['message']) ? $confirmacao['message'] : 'Falha ao confirmar pagamento.';
-                if (stripos($mensagemConfirmacao, 'nao pode ser confirmado neste status') !== false) {
+                if (stripos($mensagemConfirmacao, 'não pode ser confirmado neste status') !== false) {
                     $this->salvarTransacaoGateway(array(
                         'pedido_id' => (int) $pedido['id'],
                         'gateway' => 'abacatepay',

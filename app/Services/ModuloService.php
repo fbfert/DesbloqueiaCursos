@@ -45,15 +45,15 @@ class ModuloService
         );
 
         if ($payload['curso_evento_id'] <= 0) {
-            return array('ok' => false, 'message' => 'Curso invalido para o modulo.');
+            return array('ok' => false, 'message' => 'Curso inválido para o módulo.');
         }
 
         if (empty($payload['titulo'])) {
-            return array('ok' => false, 'message' => 'Informe o titulo do modulo.');
+            return array('ok' => false, 'message' => 'Informe o título do módulo.');
         }
 
         if ($id > 0 && !$this->moduloModel->findById($id)) {
-            return array('ok' => false, 'message' => 'Modulo nao encontrado.');
+            return array('ok' => false, 'message' => 'Módulo não encontrado.');
         }
 
         $payload['visivel'] = $payload['status'] === 'publicado' ? 1 : 0;
@@ -133,7 +133,7 @@ class ModuloService
     {
         $modulo = $this->moduloModel->findById($id);
         if (!$modulo) {
-            return array('ok' => false, 'message' => 'Modulo nao encontrado.');
+            return array('ok' => false, 'message' => 'Módulo não encontrado.');
         }
 
         $pdo = Database::connection();

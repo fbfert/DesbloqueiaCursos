@@ -44,12 +44,12 @@ class InscricaoService
         $pedido = $this->pedidoModel->findById($pedidoId);
 
         if (!$pedido) {
-            return array('ok' => false, 'message' => 'Pedido nao encontrado.');
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
         }
 
         if (!$this->pedidoPodeSerAcessadoPor($pedido, $actorUserId)) {
             $this->registrarAcessoNegado('inscricao.gerar_negado', $pedidoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para gerar inscricoes deste pedido.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para gerar inscrições deste pedido.');
         }
 
         $itens = $this->pedidoItemModel->forPedido($pedidoId);
@@ -153,7 +153,7 @@ class InscricaoService
 
         try {
             $inscricaoId = $this->inscricaoModel->create($data);
-            $this->inscricaoModel->addStatusHistory($inscricaoId, null, isset($data['status']) ? $data['status'] : 'pendente', 'Criacao da inscricao', $actorUserId);
+            $this->inscricaoModel->addStatusHistory($inscricaoId, null, isset($data['status']) ? $data['status'] : 'pendente', 'Criação da inscrição', $actorUserId);
 
             $this->auditService->record(
                 'inscricao.criada',
@@ -189,12 +189,12 @@ class InscricaoService
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
 
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição não encontrada.');
         }
 
         if (!$this->inscricaoPodeSerAcessadaPor($inscricao, $actorUserId)) {
             $this->registrarAcessoNegado('inscricao.status.negado', $inscricaoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para alterar esta inscricao.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para alterar esta inscrição.');
         }
 
         $statusValidos = array(
@@ -210,7 +210,7 @@ class InscricaoService
         );
 
         if (!in_array($novoStatus, $statusValidos, true)) {
-            return array('ok' => false, 'message' => 'Status de inscricao invalido.');
+            return array('ok' => false, 'message' => 'Status de inscrição inválido.');
         }
 
         $pdo = Database::connection();
@@ -284,12 +284,12 @@ class InscricaoService
         $inscricao = $this->inscricaoModel->findById($inscricaoId);
 
         if (!$inscricao) {
-            return array('ok' => false, 'message' => 'Inscricao nao encontrada.');
+            return array('ok' => false, 'message' => 'Inscrição não encontrada.');
         }
 
         if (!$this->inscricaoPodeSerAcessadaPor($inscricao, $actorUserId)) {
             $this->registrarAcessoNegado('inscricao.excluir_negado', $inscricaoId, $actorUserId, $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Você nao tem permissao para excluir esta inscricao.');
+            return array('ok' => false, 'message' => 'Você não tem permissão para excluir esta inscrição.');
         }
 
         $pdo = Database::connection();

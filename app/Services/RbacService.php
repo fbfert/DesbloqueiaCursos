@@ -41,7 +41,7 @@ class RbacService
     {
         $perfil = $this->perfilModel->findById($perfilId);
         if (!$perfil) {
-            return array('ok' => false, 'errors' => array('perfil_id' => 'Perfil nao encontrado.'));
+            return array('ok' => false, 'errors' => array('perfil_id' => 'Perfil não encontrado.'));
         }
 
         $current = $this->perfilPermissaoModel->forPerfil($perfilId);
@@ -61,7 +61,7 @@ class RbacService
             $this->trashService->record(
                 'perfil_permissao',
                 $perfilId,
-                'Remocao de vinculacao RBAC',
+                'Remoção de vinculação RBAC',
                 $row,
                 $actorUserId,
                 isset($context['ip_address']) ? $context['ip_address'] : null,
@@ -107,7 +107,7 @@ class RbacService
             $this->trashService->record(
                 'usuario_perfil',
                 $usuarioId,
-                'Remocao de vinculacao RBAC',
+                'Remoção de vinculação RBAC',
                 $row,
                 $actorUserId,
                 isset($context['ip_address']) ? $context['ip_address'] : null,

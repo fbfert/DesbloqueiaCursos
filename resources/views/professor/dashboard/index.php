@@ -2,7 +2,7 @@
 
 <section class="hero">
     <h1>Meu dashboard</h1>
-    <p>Visao restrita aos seus cursos, turmas, repasses e espelhos.</p>
+    <p>Visão restrita aos seus cursos, turmas, repasses e espelhos.</p>
 </section>
 
 <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
@@ -63,7 +63,7 @@
                 </thead>
                 <tbody>
                     <?php if (empty($cursos)): ?>
-                        <tr><td colspan="3">Nenhum curso atribuido.</td></tr>
+                        <tr><td colspan="3">Nenhum curso atribuído.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($cursos as $curso): ?>
                         <tr>
@@ -85,12 +85,12 @@
                     <tr>
                         <th>Turma</th>
                         <th>Curso</th>
-                        <th>Codigo</th>
+                        <th>Código</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($turmas)): ?>
-                        <tr><td colspan="3">Nenhuma turma atribuido.</td></tr>
+                        <tr><td colspan="3">Nenhuma turma atribuída.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($turmas as $turma): ?>
                         <tr>
@@ -120,7 +120,7 @@
             </thead>
             <tbody>
                 <?php if (empty($repasses)): ?>
-                    <tr><td colspan="5">Nenhum repasse encontrado no periodo.</td></tr>
+                    <tr><td colspan="5">Nenhum repasse encontrado no período.</td></tr>
                 <?php endif; ?>
                 <?php foreach ($repasses as $repasse): ?>
                     <tr>
@@ -151,7 +151,7 @@
             </thead>
             <tbody>
                 <?php if (empty($espelhos)): ?>
-                    <tr><td colspan="5">Nenhum espelho encontrado no periodo.</td></tr>
+                    <tr><td colspan="5">Nenhum espelho encontrado no período.</td></tr>
                 <?php endif; ?>
                 <?php foreach ($espelhos as $espelho): ?>
                     <tr>
