@@ -35,7 +35,7 @@ Portal de cursos e eventos Polo Rainbow.
 - Separar regras de negócio em Services
 - Controllers finos
 - Validar inputs no backend
-- Preparar tudo para deploy em Linux/cPanel
+- Preparar tudo para deploy em Linux (VPS AlmaLinux com Virtualmin; PHP 8.2/8.3/8.4)
 
 ## Regra editorial obrigatória
 - Todos os textos exibidos ao usuário devem usar português brasileiro com acentuação correta.

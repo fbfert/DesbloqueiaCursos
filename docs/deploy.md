@@ -104,8 +104,8 @@ Relatório completo: `docs/2026-10-06-tema-caderno.md`.
 - **Antes da virada, compressão e cache.** Em 06/10/2026 a produção servia
   CSS, JS e HTML sem `Content-Encoding` e os estáticos sem `Cache-Control`.
   Sem compressão, home, catálogo e curso do tema passam de 2,5 s de LCP na 4G
-  lenta; com gzip, ficam em 2,0–2,2 s. Sugestão a validar no cPanel (os
-  módulos precisam estar habilitados na hospedagem), em duas partes:
+  lenta; com gzip, ficam em 2,0–2,2 s. Sugestão a validar na VPS (Virtualmin com Apache; os
+  módulos `mod_deflate` e `mod_expires` precisam estar carregados — confira com `httpd -M | grep -E "deflate|expires"` — e o `AllowOverride` do domínio no Virtualmin precisa permitir essas diretivas), em duas partes:
 
   1. No `.htaccess` da raiz, só compressão e o cache das fontes. **Não**
      coloque ali cache longo para `text/css` ou `application/javascript`: ele

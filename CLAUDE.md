@@ -135,9 +135,11 @@ Todo texto exibido ao usuário (frontend público, área do aluno, área do prof
 
 ## Deploy
 
-**Versão de PHP em produção: 8.2 ou 8.4** (informado pelo responsável em 06/10/2026). Todo código novo deve rodar nas duas. Atenção ao 8.4: o `App\Core\ErrorHandler` transforma *qualquer* aviso — inclusive `E_DEPRECATED` — em página 500, e o código existente tem parâmetros com default `null` sem tipo nullable explícito (deprecated no 8.4; ~54 ocorrências em 12 arquivos de `app/`). Não escreva `Tipo $x = null`: use `?Tipo $x = null`. Localmente, rode o app pelo Docker (PHP 8.3, ver `docker/local/`, fora do git) ou valide com `php -l` também no 8.4.
+**Versão de PHP em produção: 8.2, 8.3 ou 8.4** (todas disponíveis na VPS; informado pelo responsável em 06/10/2026). Todo código novo deve rodar nas três. Atenção ao 8.4: o `App\Core\ErrorHandler` transforma *qualquer* aviso — inclusive `E_DEPRECATED` — em página 500, e o código existente tem parâmetros com default `null` sem tipo nullable explícito (deprecated no 8.4; ~54 ocorrências em 12 arquivos de `app/`). Não escreva `Tipo $x = null`: use `?Tipo $x = null`. Localmente, rode o app pelo Docker (PHP 8.3, ver `docker/local/`, fora do git) ou valide com `php -l` também no 8.4.
 
-Deploy é manual para Linux/cPanel (sem CI). `public_html/` deve conter apenas `index.php`, `.htaccess` e `assets/`; `app/`, `config/`, `resources/`, `routes/`, `sql/` e `storage/` ficam fora da área pública. Veja `docs/deploy.md`, `docs/go-live-checklist.md` e `docs/rollback.md` para o roteiro completo. Scripts de envio por FTP estão em `scripts/ftp_upload_*.ps1`.
+**Servidor:** VPS com AlmaLinux administrada pelo **Virtualmin** (não é cPanel), com PHP 8.2, 8.3 e 8.4 instalados — a versão usada pelo site é escolhida por domínio no Virtualmin. Configuração de servidor web (compressão, cache, módulos) é feita no Apache do Virtualmin ou nos `.htaccess` do projeto.
+
+Deploy é manual (sem CI). `public_html/` deve conter apenas `index.php`, `.htaccess` e `assets/`; `app/`, `config/`, `resources/`, `routes/`, `sql/` e `storage/` ficam fora da área pública. Veja `docs/deploy.md`, `docs/go-live-checklist.md` e `docs/rollback.md` para o roteiro completo. Scripts de envio por FTP estão em `scripts/ftp_upload_*.ps1`.
 
 ## Cuidados ao editar arquivos
 

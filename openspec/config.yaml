@@ -15,7 +15,7 @@ context: |
   - SQL compatível com MySQL 5.7 (servidor real: MariaDB 10.5). Migrations SQL numeradas e
     aditivas em sql/, aplicadas manualmente — sem runner.
   - Frontend mobile-first, JS sem framework. Admin desktop-first.
-  - Deploy manual via FTP para cPanel. A raiz do repositório é o docroot: todo diretório novo
+  - Deploy manual para VPS AlmaLinux com Virtualmin (PHP 8.2/8.3/8.4, Apache). A raiz do repositório é o docroot: todo diretório novo
     não público precisa ser bloqueado no .htaccess.
   - Todo texto de interface em PT-BR com acentuação correta (docs/padrao-editorial-ptbr.md).
 

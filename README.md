@@ -1,6 +1,6 @@
 # Polo Rainbow
 
-Portal de cursos e eventos em PHP MVC, preparado para Linux/cPanel, MySQL 5.7, checkout, area do curso, certificados, financeiro, dashboard e homologacao.
+Portal de cursos e eventos em PHP MVC, preparado para Linux (VPS AlmaLinux + Virtualmin), MySQL 5.7, checkout, area do curso, certificados, financeiro, dashboard e homologacao.
 
 ## Stack
 
@@ -8,7 +8,7 @@ Portal de cursos e eventos em PHP MVC, preparado para Linux/cPanel, MySQL 5.7, c
 - MySQL 5.7 via PDO
 - Frontend mobile-first
 - Rotas web e base para API
-- Deploy preparado para Linux/cPanel
+- Deploy em VPS AlmaLinux com Virtualmin (PHP 8.2/8.3/8.4)
 - Arquivos privados fora de `public_html`
 - Logs, auditoria e lixeira com justificativa
 
@@ -50,7 +50,7 @@ GET /
 GET /api/health
 ```
 
-## cPanel
+## Servidor (VPS AlmaLinux + Virtualmin)
 
 Configure o document root do dominio ou subdominio para `public_html/`.
 

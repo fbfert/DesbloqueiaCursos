@@ -412,25 +412,27 @@ correção própria:
 
 ## Pendências
 
-Estado em 06/10/2026, com a mudança integrada em `frontend-v4` e **ainda não
-publicada** (deploy manual por FTP). Em ordem:
+Estado em 06/10/2026: mudança integrada em `frontend-v4`, enviada ao GitHub e
+**ainda não publicada** na VPS (AlmaLinux + Virtualmin, PHP 8.2/8.3/8.4). As
+mudanças OpenSpec `fila-revisao-admin` e `tema-caderno` já foram arquivadas
+(`openspec/changes/archive/`), e seus requisitos estão em `openspec/specs/`
+(`revisao-conteudo` e `tema-publico`). Em ordem:
 
-1. **Confirmar a versão exata de PHP no cPanel (8.2 ou 8.4).** Se for 8.4 — ou
-   antes de migrar para ela —, corrigir os ~54 parâmetros `Tipo $x = null` sem
-   `?` em 12 arquivos de `app/` (lista: `php -d error_reporting=E_ALL -l` em
-   `app/`), porque o `ErrorHandler` converte esses avisos em erro 500.
-2. **Deploy com `TEMA_PUBLICO=v2`** (nada muda para o aluno) e validação pela
-   prévia de administrador (`?tema=caderno`), página por página, com os dados
-   reais — em especial o checkout com um pedido de teste e o cupom.
-3. **Ligar compressão e cache** conforme `docs/deploy.md` §3.1 e conferir
-   `Content-Encoding: gzip` com `curl -I`.
-4. **Reexportar as capas dos cursos** em tamanho de web (hoje 1,7–2,0 MB cada).
-5. **Virar a chave** (`TEMA_PUBLICO=caderno`) com aprovação do produto;
-   rollback é voltar para `v2`.
-6. **Arquivar as mudanças OpenSpec** depois de validadas em produção:
-   `openspec archive fila-revisao-admin` e `openspec archive tema-caderno`.
-7. **Próxima fase do redesign:** área do aluno, aula, quiz, atividade e minha
-   conta no tema; depois, remover as views V2 migradas.
+1. **Versão de PHP do domínio no Virtualmin.** Use 8.2 ou 8.3. Antes de usar
+   8.4, corrigir os ~54 parâmetros `Tipo $x = null` sem `?` em 12 arquivos de
+   `app/` (lista: `php -d error_reporting=E_ALL -l` em `app/`), porque o
+   `ErrorHandler` converte esses avisos em erro 500.
+2. **Deploy na VPS com `TEMA_PUBLICO=v2`** (nada muda para o aluno) e validação
+   pela prévia de administrador (`?tema=caderno`), página por página, com os
+   dados reais — em especial o checkout com um pedido de teste e o cupom.
+3. **Ligar compressão e cache no Apache do Virtualmin** conforme
+   `docs/deploy.md` §3.1 e conferir `Content-Encoding: gzip` com `curl -I`.
+4. **Capas dos cursos em tamanho de web** (hoje 1,7–2,0 MB cada).
+5. **Virar a chave** (`TEMA_PUBLICO=caderno`) depois de 2–4 validados, com
+   aprovação do produto; rollback é voltar para `v2`.
+6. **Próxima fase do redesign:** área do aluno, aula, quiz, atividade e minha
+   conta no tema; depois, remover as views V2 migradas. Pode avançar em
+   paralelo aos itens 1–5.
 
 Fora do tema, achados nesta entrega e ainda abertos: validador de CPF aceitando
 dígitos verificadores errados (`tests/Unit/checkout_rapido_fase1.php`, falha
