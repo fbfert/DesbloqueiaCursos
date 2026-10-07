@@ -116,9 +116,15 @@ Movimento reduzido: nada anima e não há view transitions. Modo leve
 (`saveData` ou `hardwareConcurrency <= 2`): só a cena principal, versão curta,
 sem revelações ao rolar.
 
-**PHP 7.1 no código de aplicação (R1).** A versão de PHP da produção não é
-documentada; o código novo evita `fn`, `match`, `?->`, `str_contains` e
-propriedades tipadas, como o restante do projeto.
+**PHP 7.1 no código de aplicação (R1).** Durante a implementação a versão de
+PHP da produção não estava documentada; o código novo evita `fn`, `match`,
+`?->`, `str_contains` e propriedades tipadas, como o restante do projeto.
+Depois da entrega o responsável informou que a produção roda **PHP 8.2 ou
+8.4**: o código do tema é compatível com as duas (nenhum arquivo PHP desta
+mudança emite aviso no 8.4). O código *anterior* ao tema, porém, tem ~54
+parâmetros com default `null` sem tipo nullable em 12 arquivos de `app/`, e o
+`ErrorHandler` transforma esses avisos de depreciação em erro 500 no PHP 8.4 —
+ver "Pendências" abaixo.
 
 ## Arquitetura
 
@@ -403,3 +409,31 @@ correção própria:
    literal.
 4. **Produção sem compressão e sem cache de estáticos**, e **capas de 2 MB**:
    afetam a V2 hoje tanto quanto o tema (ver "Antes de virar a chave").
+
+## Pendências
+
+Estado em 06/10/2026, com a mudança integrada em `frontend-v4` e **ainda não
+publicada** (deploy manual por FTP). Em ordem:
+
+1. **Confirmar a versão exata de PHP no cPanel (8.2 ou 8.4).** Se for 8.4 — ou
+   antes de migrar para ela —, corrigir os ~54 parâmetros `Tipo $x = null` sem
+   `?` em 12 arquivos de `app/` (lista: `php -d error_reporting=E_ALL -l` em
+   `app/`), porque o `ErrorHandler` converte esses avisos em erro 500.
+2. **Deploy com `TEMA_PUBLICO=v2`** (nada muda para o aluno) e validação pela
+   prévia de administrador (`?tema=caderno`), página por página, com os dados
+   reais — em especial o checkout com um pedido de teste e o cupom.
+3. **Ligar compressão e cache** conforme `docs/deploy.md` §3.1 e conferir
+   `Content-Encoding: gzip` com `curl -I`.
+4. **Reexportar as capas dos cursos** em tamanho de web (hoje 1,7–2,0 MB cada).
+5. **Virar a chave** (`TEMA_PUBLICO=caderno`) com aprovação do produto;
+   rollback é voltar para `v2`.
+6. **Arquivar as mudanças OpenSpec** depois de validadas em produção:
+   `openspec archive fila-revisao-admin` e `openspec archive tema-caderno`.
+7. **Próxima fase do redesign:** área do aluno, aula, quiz, atividade e minha
+   conta no tema; depois, remover as views V2 migradas.
+
+Fora do tema, achados nesta entrega e ainda abertos: validador de CPF aceitando
+dígitos verificadores errados (`tests/Unit/checkout_rapido_fase1.php`, falha
+anterior ao tema); testes `norminha_knowledge`, `norminha_tools` e dois casos
+de `quiz_system` que já falhavam com a base local; mensagens do `AuthService`
+sem acento; painel da Norminha aberto por padrão no celular.
