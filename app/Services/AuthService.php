@@ -175,7 +175,9 @@ class AuthService
             return array('ok' => false, 'motivo' => 'conta_inativa', 'message' => 'Usuário sem permissão de acesso.');
         }
 
-        if (!password_verify((string) $senha, $usuario['senha_hash'])) {
+        // senha_hash NULL (cadastro pendente do checkout rápido): o cast evita o
+        // aviso de depreciação do PHP 8.1+, que o ErrorHandler transformava em 500.
+        if (!password_verify((string) $senha, (string) $usuario['senha_hash'])) {
             $lockMinutes = isset($security['tempo_bloqueio_login_minutos']) ? (int) $security['tempo_bloqueio_login_minutos'] : self::LOCK_MINUTES;
             $maxAttempts = isset($security['max_tentativas_login']) ? (int) $security['max_tentativas_login'] : self::MAX_LOGIN_ATTEMPTS;
             $attempts = $this->usuarios->incrementLoginAttempts($usuario['id'], $usuario['tentativas_login'], $lockMinutes, $maxAttempts);

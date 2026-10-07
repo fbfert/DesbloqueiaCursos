@@ -39,8 +39,10 @@ INSERT INTO usuarios (id, nome, email, cpf, telefone, cidade, estado, senha_hash
 VALUES
     (9101, 'ALUNO B DO APP', 'aluno.b@teste.local', '52998224725', '(11) 97777-6655', 'Campinas', 'SP', '$2y$10$so3dNPtguylmlbF7xgeFKOTXpVXYf9gA8ghtweClLmnkcnpibh2bi', 'ativo', 'completo', 'fixture_app', 0, NOW(), NOW()),
     (9102, 'ALUNO INATIVO', 'inativo@teste.local', '11144477735', NULL, NULL, NULL, '$2y$10$so3dNPtguylmlbF7xgeFKOTXpVXYf9gA8ghtweClLmnkcnpibh2bi', 'inativo', 'completo', 'fixture_app', 0, NOW(), NOW()),
-    (9103, 'ALUNO BLOQUEIO', 'bloqueio@teste.local', '39053344705', NULL, NULL, NULL, '$2y$10$so3dNPtguylmlbF7xgeFKOTXpVXYf9gA8ghtweClLmnkcnpibh2bi', 'ativo', 'completo', 'fixture_app', 0, NOW(), NOW());
-INSERT INTO usuario_perfis (usuario_id, perfil_id, created_at) VALUES (9101, 7, NOW()), (9102, 7, NOW()), (9103, 7, NOW());
+    (9103, 'ALUNO BLOQUEIO', 'bloqueio@teste.local', '39053344705', NULL, NULL, NULL, '$2y$10$so3dNPtguylmlbF7xgeFKOTXpVXYf9gA8ghtweClLmnkcnpibh2bi', 'ativo', 'completo', 'fixture_app', 0, NOW(), NOW()),
+    -- cadastro pendente do checkout rápido: sem senha (senha_hash NULL)
+    (9104, 'SEM SENHA', 'semsenha@teste.local', '86288366757', NULL, NULL, NULL, NULL, 'ativo', 'pendente', 'checkout_rapido', 0, NOW(), NOW());
+INSERT INTO usuario_perfis (usuario_id, perfil_id, created_at) VALUES (9101, 7, NOW()), (9102, 7, NOW()), (9103, 7, NOW()), (9104, 7, NOW());
 
 -- Curso do aluno B (pago), com certificado emitido
 INSERT INTO cursos_eventos (id, nome, slug, tipo, modalidade, descricao_curta, descricao_completa, carga_horaria, valor, usar_turmas, certificado_previsto, status, created_at, updated_at)

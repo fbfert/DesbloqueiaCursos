@@ -38,10 +38,22 @@ abstract class AppController extends Controller
         return mb_substr(trim((string) $valor), 0, $limite);
     }
 
-    /** IP do socket (REMOTE_ADDR): o X-Forwarded-For é do cliente e não serve para limite de taxa. */
+    /**
+     * IP usado no limite de taxa. Por padrão o do socket (REMOTE_ADDR): o
+     * X-Forwarded-For vem do cliente e pode ser forjado para escapar do limite.
+     * Atrás de um proxy/CDN confiável (ex.: Cloudflare), defina
+     * APP_MOBILE_CABECALHO_IP=CF-Connecting-IP para contar pelo IP real.
+     */
     protected function ipReal(Request $request)
     {
         $server = $request->server();
+        $cabecalho = trim((string) \App\Core\Env::get('APP_MOBILE_CABECALHO_IP', ''));
+        if ($cabecalho !== '') {
+            $chave = 'HTTP_' . strtoupper(str_replace('-', '_', $cabecalho));
+            if (!empty($server[$chave])) {
+                return trim(explode(',', (string) $server[$chave])[0]);
+            }
+        }
         return isset($server['REMOTE_ADDR']) ? (string) $server['REMOTE_ADDR'] : (string) $request->ip();
     }
 

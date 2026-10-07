@@ -37,6 +37,8 @@ class PushService
     const ESCOPO_FCM = 'https://www.googleapis.com/auth/firebase.messaging';
     const TOKEN_URI_PADRAO = 'https://oauth2.googleapis.com/token';
     const MAX_TENTATIVAS = 5;
+    /** Tempo máximo gasto enviando uma notificação dentro da requisição de origem. */
+    const ORCAMENTO_SEGUNDOS = 5;
 
     private $pdo;
     private $transporte;
@@ -142,6 +144,7 @@ class PushService
                 return 'sem_dispositivo';
             }
 
+            $inicio = microtime(true);
             $accessToken = $this->accessToken();
             if ($accessToken === null) {
                 $this->notificacoes->atualizarEnvio((int) $notificacao['id'], 'falhou', 'oauth_indisponivel', Tempo::sql());
@@ -151,6 +154,13 @@ class PushService
             $enviados = 0;
             $erros = array();
             foreach ($dispositivos as $dispositivo) {
+                // Orçamento de tempo por notificação: quem chamou (ex.: o admin
+                // aprovando um pedido) não pode esperar vários timeouts seguidos.
+                // O que sobrar fica para o cron (status falhou → reenvio).
+                if ((microtime(true) - $inicio) > self::ORCAMENTO_SEGUNDOS) {
+                    $erros[] = 'tempo_esgotado';
+                    break;
+                }
                 $resultado = $this->enviarParaDispositivo($accessToken, $dispositivo, $notificacao);
                 if ($resultado['ok']) {
                     $enviados++;

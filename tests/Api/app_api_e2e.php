@@ -208,6 +208,11 @@ it('senha errada → 401 credenciais_invalidas', function () use ($api) {
     exigirStatus($r, 401, 'credenciais_invalidas');
 });
 
+it('cadastro sem senha (checkout rápido) → 401, não 500', function () use ($api) {
+    $r = http('POST', $api . '/auth/login', array('login' => 'semsenha@teste.local', 'senha' => 'qualquer', 'device_id' => 'dispositivo-e2e-s'));
+    exigirStatus($r, 401, 'credenciais_invalidas');
+});
+
 it('conta inativa → 403 conta_inativa', function () use ($api) {
     $r = http('POST', $api . '/auth/login', array('login' => 'inativo@teste.local', 'senha' => 'Local@12345', 'device_id' => 'dispositivo-e2e-i'));
     exigirStatus($r, 403, 'conta_inativa');
