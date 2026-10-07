@@ -47,7 +47,12 @@ $larguraMax = isset($opcoes['largura']) ? max(100, (int) $opcoes['largura']) : 1
 $pdo = Database::connection();
 
 if (isset($opcoes['reverter'])) {
-    exit(reverter($pdo, (string) $opcoes['reverter']));
+    if (!is_string($opcoes['reverter']) || trim($opcoes['reverter']) === '') {
+        fwrite(STDERR, "Informe o manifesto: --reverter=<arquivo>.
+");
+        exit(1);
+    }
+    exit(reverter($pdo, $opcoes['reverter']));
 }
 
 exit(otimizar($pdo, array_key_exists('aplicar', $opcoes), $larguraMax));
@@ -104,7 +109,17 @@ function otimizar(PDO $pdo, bool $aplicar, int $larguraMax): int
             fwrite(STDERR, "Não foi possível criar {$dirManifesto}.\n");
             return 1;
         }
+        if (!is_writable($dirManifesto)) {
+            fwrite(STDERR, "A pasta do manifesto não tem permissão de escrita: {$dirManifesto}. Nada foi alterado.
+");
+            return 1;
+        }
         $arquivoManifesto = $dirManifesto . '/' . date('Ymd-His') . '.json';
+        if (file_put_contents($arquivoManifesto, '[]') === false) {
+            fwrite(STDERR, "Não foi possível gravar o manifesto em {$arquivoManifesto}. Nada foi alterado.
+");
+            return 1;
+        }
     }
 
     foreach ($caminhos as $publico) {
@@ -120,8 +135,8 @@ function otimizar(PDO $pdo, bool $aplicar, int $larguraMax): int
         }
 
         $tamanho = (int) filesize($absoluto);
-        $info = getimagesize($absoluto);
-        $largura = $info !== false ? (int) $info[0] : 0;
+        $info = @getimagesize($absoluto);
+        $largura = is_array($info) ? (int) $info[0] : 0;
 
         if ($largura <= $larguraMax && $tamanho <= LIMITE_BYTES) {
             continue;
@@ -160,11 +175,24 @@ function otimizar(PDO $pdo, bool $aplicar, int $larguraMax): int
         );
 
         if ($aplicar) {
-            $trocas = atualizarReferencias($pdo, $publico, $novoPublico);
+            try {
+                $trocas = atualizarReferencias($pdo, $publico, $novoPublico, $manifesto, $arquivoManifesto);
+            } catch (RuntimeException $e) {
+                fwrite(STDERR, "
+Falha ao gravar o manifesto ({$e->getMessage()}). A troca de {$publico} foi desfeita; interrompendo.
+");
+                if ($manifesto) {
+                    fwrite(STDERR, "Trocas já aplicadas antes da falha (guarde para --reverter):
+" . json_encode($manifesto, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "
+");
+                    echo json_encode($manifesto, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "
+";
+                }
+                return 1;
+            }
             foreach ($trocas as $troca) {
                 $manifesto[] = $troca;
             }
-            file_put_contents($arquivoManifesto, json_encode($manifesto, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
             echo '    referências atualizadas: ' . count($trocas) . "\n";
         }
     }
@@ -186,6 +214,9 @@ function otimizar(PDO $pdo, bool $aplicar, int $larguraMax): int
             echo '  - ' . $linha . "\n";
         }
     }
+    if ($aplicar && !$manifesto && $arquivoManifesto !== null && is_file($arquivoManifesto)) {
+        unlink($arquivoManifesto);
+    }
     if ($aplicar && $manifesto) {
         echo "\nManifesto: {$arquivoManifesto}\n";
         echo "Para desfazer: php scripts/otimizar_capas.php --reverter={$arquivoManifesto}\n";
@@ -199,7 +230,7 @@ function otimizar(PDO $pdo, bool $aplicar, int $larguraMax): int
  *
  * @return array<int, array{tabela:string,id:int,de:string,para:string}>
  */
-function atualizarReferencias(PDO $pdo, string $de, string $para): array
+function atualizarReferencias(PDO $pdo, string $de, string $para, array $manifestoAnterior, string $arquivoManifesto): array
 {
     $trocas = array();
     $pdo->beginTransaction();
@@ -215,6 +246,11 @@ function atualizarReferencias(PDO $pdo, string $de, string $para): array
                 $upd->execute(array('para' => $para, 'id' => (int) $id, 'de' => $de));
                 $trocas[] = array('tabela' => $tabela, 'id' => (int) $id, 'de' => $de, 'para' => $para);
             }
+        }
+        // Manifesto gravado ANTES do commit: se não der para gravar, a troca é desfeita.
+        $json = json_encode(array_merge($manifestoAnterior, $trocas), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($json === false || file_put_contents($arquivoManifesto, $json) === false) {
+            throw new RuntimeException('escrita recusada em ' . $arquivoManifesto);
         }
         $pdo->commit();
     } catch (Throwable $e) {
@@ -246,7 +282,9 @@ function reverter(PDO $pdo, string $arquivo): int
     $pdo->beginTransaction();
     try {
         foreach ($manifesto as $item) {
-            if (!is_array($item) || !isset($item['tabela'], $item['id'], $item['de'], $item['para']) || !in_array($item['tabela'], TABELAS, true)) {
+            if (!is_array($item) || !isset($item['tabela'], $item['id'], $item['de'], $item['para']) || !in_array($item['tabela'], TABELAS, true)
+                || !is_string($item['de']) || !is_string($item['para'])
+                || !caminhoPublicoValido($item['de']) || !caminhoPublicoValido($item['para'])) {
                 $puladas++;
                 continue;
             }

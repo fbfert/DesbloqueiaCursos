@@ -77,7 +77,7 @@ class OtimizadorImagem
     {
         $arquivoAbsoluto = (string) $arquivoAbsoluto;
         $semExtensao = dirname($arquivoAbsoluto) . '/' . pathinfo($arquivoAbsoluto, PATHINFO_FILENAME);
-        $resultado = self::otimizar($arquivoAbsoluto, $semExtensao);
+        $resultado = self::otimizar($arquivoAbsoluto, $semExtensao, array('exigir_ganho' => true));
 
         if (!$resultado['ok']) {
             Logger::warning('midia.capa.otimizacao_ignorada', array(
@@ -89,7 +89,14 @@ class OtimizadorImagem
         }
 
         if ($resultado['caminho'] !== $arquivoAbsoluto && is_file($arquivoAbsoluto)) {
-            unlink($arquivoAbsoluto);
+            set_error_handler(function () {
+                return true;
+            });
+            $removido = unlink($arquivoAbsoluto);
+            restore_error_handler();
+            if (!$removido) {
+                Logger::warning('midia.capa.original_nao_removido', array('arquivo' => basename($arquivoAbsoluto)));
+            }
         }
 
         return basename($resultado['caminho']);

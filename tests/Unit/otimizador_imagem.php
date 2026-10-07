@@ -133,7 +133,56 @@ try {
     verifica(count(glob($dir . '/mp-otm.*')) === 0, 'Megapixels: nada gravado');
 
     // 7. Nao sobra temporario
-    verifica(count(glob($dir . '/*.tmp*')) === 0, 'Sem arquivos temporarios remanescentes');
+    // 8. exigir_ganho: JPEG pequeno ja otimizado nao e reescrito maior
+    $im = criarRuido(300, 200, false, 50);
+    $jpgPeq = $dir . '/peq.jpg';
+    imagejpeg($im, $jpgPeq, 40);
+    imagedestroy($im);
+    $r = OtimizadorImagem::otimizar($jpgPeq, $dir . '/peq-g', array('exigir_ganho' => true, 'qualidade_jpeg' => 100, 'qualidade_webp' => 100));
+    verifica($r['ok'] === false && $r['motivo'] === 'sem ganho de tamanho', 'exigir_ganho: recusa quando nao reduz');
+    verifica(count(glob($dir . '/peq-g.*')) === 0 && count(glob($dir . '/.otm-*')) === 0, 'exigir_ganho: nada gravado nem temporario');
+    $r = OtimizadorImagem::otimizar($grande, $dir . '/gr-g', array('exigir_ganho' => true));
+    verifica($r['ok'] === true, 'exigir_ganho: aceita quando reduz');
+
+    // 9. otimizarCapaGravada()
+    $cap = $dir . '/capa-1.png';
+    copy($grande, $cap);
+    $nome = OtimizadorImagem::otimizarCapaGravada($cap);
+    verifica($nome === 'capa-1.' . $extEsperada, 'capaGravada: devolve o novo nome');
+    verifica(is_file($dir . '/' . $nome) && !is_file($cap), 'capaGravada: original removido, otimizada existe');
+    $gifCopia = $dir . '/capa-2.gif';
+    copy($dir . '/anim.gif', $gifCopia);
+    $nome = OtimizadorImagem::otimizarCapaGravada($gifCopia);
+    verifica($nome === null && is_file($gifCopia), 'capaGravada: falha devolve null e mantem o original');
+    $jpgIgual = $dir . '/capa-3.jpg';
+    copy($grande, $dir . '/tmp-g.png');
+    $im = imagecreatefrompng($grande);
+    imagejpeg($im, $jpgIgual, 90);
+    imagedestroy($im);
+    $nome = OtimizadorImagem::otimizarCapaGravada($jpgIgual);
+    if ($webp) {
+        verifica($nome === 'capa-3.webp' && !is_file($jpgIgual), 'capaGravada: jpg vira webp e original removido');
+    } else {
+        verifica($nome === 'capa-3.jpg' && is_file($jpgIgual) && getimagesize($jpgIgual)[0] === 1280, 'capaGravada: jpg sobre jpg sobrescrito sem apagar');
+    }
+
+    // 10. EXIF (somente se a extensao existir)
+    if (function_exists('exif_read_data')) {
+        $im = criarRuido(400, 200, false, 50);
+        $orig = $dir . '/exif.jpg';
+        imagejpeg($im, $orig, 90);
+        imagedestroy($im);
+        $dados = file_get_contents($orig);
+        $app1 = "Exif\0\0" . "MM\0\x2A\0\0\0\x08" . "\0\x01" . "\x01\x12\0\x03\0\0\0\x01\0\x06\0\0" . "\0\0\0\0";
+        file_put_contents($orig, substr($dados, 0, 2) . "\xFF\xE1" . pack('n', strlen($app1) + 2) . $app1 . substr($dados, 2));
+        $r = OtimizadorImagem::otimizar($orig, $dir . '/exif-otm');
+        $info = $r['ok'] ? getimagesize($r['caminho']) : false;
+        verifica($info !== false && $info[0] === 200 && $info[1] === 400, 'EXIF orientacao 6: imagem girada (200x400)');
+    } else {
+        echo "pula  - EXIF (extensao exif ausente)\n";
+    }
+
+    verifica(count(glob($dir . '/.otm-*')) === 0, 'Sem arquivos temporarios remanescentes');
 } catch (Throwable $e) {
     $falhas++;
     echo 'FALHA - excecao: ' . get_class($e) . ': ' . $e->getMessage() . "\n";
