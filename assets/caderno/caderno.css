@@ -408,6 +408,17 @@ html.folha-aberta{overflow:hidden}
 .bnav a[aria-current]{color:var(--violeta);font-weight:700}
 .bnav .ico{width:24px;height:24px}
 @media (min-width:900px){ .bnav{display:none} }
+/* Foco por teclado nunca fica sob a bnav nem, no celular, sob o botão da Norminha (64px, 74px acima da base). */
+@media (max-width:899px){ html:has(.bnav){scroll-padding-bottom:calc(var(--bnav-h) + 26px + env(safe-area-inset-bottom,0px))} }
+@media (max-width:640px){ html:has(#norminha-tutor){scroll-padding-bottom:calc(152px + env(safe-area-inset-bottom,0px))}
+  /* Sem bnav na autenticação: o botão desce para o canto e o foco para acima dele. */
+  .auth .norminha-tutor{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  html:has(body.auth #norminha-tutor){scroll-padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+  /* Digitando num formulário (teclado aberto), o botão sai do caminho do "Mostrar senha"; volta ao sair do campo. */
+  body:has(main form :is(input:not([type=radio],[type=checkbox],[type=submit],[type=button],[type=hidden]),textarea,select,.ver-senha):focus) #norminha-tutor .norminha-tutor__launcher{display:none}
+  /* Página do curso: o botão sobe acima da barra de compra (ver [data-pagina=curso] .norminha-tutor). */
+  html:has(body[data-pagina=curso] #norminha-tutor){scroll-padding-bottom:calc(var(--bnav-h) + 152px + env(safe-area-inset-bottom,0px))} }
+@media (max-width:899px){ html:has(body[data-pagina=curso] .barra-compra){scroll-padding-bottom:calc(var(--bnav-h) + 98px + env(safe-area-inset-bottom,0px))} }
 
 /* ---------- autenticação: folha limpa centralizada ---------- */
 .auth-topo .miolo{display:flex;align-items:center;justify-content:space-between;height:64px;gap:12px}

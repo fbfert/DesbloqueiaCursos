@@ -27,10 +27,14 @@ $cssVersao = isset($tutorNorminhaCssVersion) && $tutorNorminhaCssVersion ? (int)
         ttlHours = 24;
     }
     var isMinimized = false;
+    var telaEstreita = !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
 
     try {
         if (window.localStorage) {
-            isMinimized = window.localStorage.getItem(storageKey) === '1';
+            // '1' = minimizada, '0' = aberta pela pessoa. Sem escolha salva, a
+            // Norminha começa minimizada no celular para não cobrir a leitura.
+            var salvo = window.localStorage.getItem(storageKey);
+            isMinimized = salvo === '1' || (salvo === null && telaEstreita);
             for (var i = 0; i < legacyKeys.length; i += 1) {
                 window.localStorage.removeItem(legacyKeys[i]);
             }

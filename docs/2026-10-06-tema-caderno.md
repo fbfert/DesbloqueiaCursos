@@ -551,11 +551,13 @@ código, reenviar as versões anteriores dos controllers, `index.php`,
 - Safari < 16: `.folha` usa `overflow: hidden` e, nessas versões, o topo fixo
   pode deixar de ser fixo; não foi possível testar.
 - O checkout logado (participantes, pagamento) não tem cobertura automatizada.
-- Páginas do aluno: com a barra inferior fixa, o botão "Mostrar senha" de minha
-  conta fica sob o botão flutuante da Norminha a 360 px (componente
-  compartilhado). O mesmo ajuste de `scroll-padding-bottom` que protege o foco
-  nas páginas do aluno não foi aplicado à vitrine (links do rodapé podem ficar
-  sob a barra inferior ao receber foco por teclado no celular).
+- ~~"Mostrar senha" sob o botão da Norminha a 360 px e foco sob a barra
+  inferior na vitrine~~ — corrigidos em 07/10/2026 (`caderno.css`): no
+  celular, `scroll-padding-bottom` mantém o foco acima da bnav e do botão da
+  Norminha em todas as páginas do tema; o botão some enquanto um campo de
+  formulário (ou o "Mostrar senha") está em foco e volta ao sair; na
+  autenticação, sem bnav, ele desce para o canto. Medido a 360 px (login,
+  cadastro, minha conta, home, catálogo): nenhum alvo de foco coberto.
 - Quiz em tela larga (>= 900 px): as instruções são abertas por JS; a abertura
   pode deslocar o conteúdo logo abaixo (CLS medido só no perfil celular).
 
@@ -564,10 +566,11 @@ código, reenviar as versões anteriores dos controllers, `index.php`,
 Encontrados durante a entrega, não causados por ela, e registrados para
 correção própria:
 
-1. **Validador de CPF aceita dígitos verificadores errados.**
-   `tests/Unit/checkout_rapido_fase1.php` "CPF invalido e recusado" já falhava
-   antes do tema (15 passou, 1 falhou, reexecutado em 06/10/2026). Afeta o
-   cadastro e o checkout nas duas versões.
+1. ~~**Validador de CPF aceita dígitos verificadores errados.**~~ Diagnóstico
+   corrigido em 07/10/2026: o cálculo estava certo; o teste falhava porque o
+   `.env` local tem `ALLOW_TEST_CPFS=true`, que aceita CPFs de teste como
+   `11111111111`. Agora a chave é ignorada com `APP_ENV=production` (proteção
+   contra ligá-la por engano) e o teste fixa o ambiente; 17 passou, 0 falhou.
 2. **Mensagens do `AuthService` sem acento**, iguais na V2. No login: "Dados
    de acesso invalidos.", "Usuario sem permissao de acesso."; no cadastro:
    "Informe um e-mail valido.", "Informe um CPF valido.", "A confirmacao da
@@ -610,15 +613,17 @@ mudanças OpenSpec `fila-revisao-admin` e `tema-caderno` já foram arquivadas
 7. **Próxima mudança: remover as views V2 do aluno** (`resources/views/v2/`
    de aluno, conta, aula, atividade e quiz) **depois da virada da chave** e do
    período de confiança; até lá elas são o rollback (`TEMA_PUBLICO=v2`).
-8. **Conferir com dados reais o progresso da área do aluno.** Na fixture a
-   barra mostra 6 % enquanto o curso tem 3 de 17 itens concluídos: as
-   atividades corrigidas não têm linha em `conteudo_progresso_aluno`, então o
-   percentual do service não as conta como a contagem de itens. É dado local,
-   igual na V2; confirmar com dados reais se o número bate com a expectativa
-   do aluno.
+8. ~~**Progresso da área do aluno divergente na fixture.**~~ Resolvido em
+   07/10/2026: era dado de teste. O app grava `concluido` em
+   `conteudo_progresso_aluno` ao corrigir/aprovar uma atividade e ao aprovar
+   um quiz; a fixture não tinha essas linhas. Com elas, percentual e contagem
+   batem (4 de 17 obrigatórios = 23,53 %).
 
-Fora do tema, achados nesta entrega e ainda abertos: validador de CPF aceitando
-dígitos verificadores errados (`tests/Unit/checkout_rapido_fase1.php`, falha
-anterior ao tema); testes `norminha_knowledge`, `norminha_tools` e dois casos
-de `quiz_system` que já falhavam com a base local; mensagens do `AuthService`
-sem acento; painel da Norminha aberto por padrão no celular.
+Fora do tema, achados nesta entrega e ainda abertos: testes
+`norminha_knowledge`, `norminha_tools` e dois casos de `quiz_system` que já
+falhavam com a base local; mensagens sem acento no `AuthService` e em outros
+services (as views do tema traduzem parte delas pelo texto exato, então a
+correção precisa mexer nos dois lados). O painel da Norminha passou a começar
+minimizado no celular (até 640 px) quando a pessoa ainda não escolheu; abrir
+ou minimizar fica salvo (`norminha_tutor_minimized_v1`: `1` minimizada, `0`
+aberta).

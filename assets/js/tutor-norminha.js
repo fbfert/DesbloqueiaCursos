@@ -44,12 +44,20 @@
         }
     }
 
+    function telaEstreita() {
+        return !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
+    }
+
     function readMinimized() {
-        if (!canUseStorage()) { return false; }
+        if (!canUseStorage()) { return telaEstreita(); }
         try {
-            return window.localStorage.getItem(STORAGE_KEY) === '1';
+            // '1' = minimizada, '0' = aberta pela pessoa; sem escolha salva,
+            // começa minimizada no celular (mesma regra do tutor_norminha_head.php).
+            var salvo = window.localStorage.getItem(STORAGE_KEY);
+            if (salvo === null) { return telaEstreita(); }
+            return salvo === '1';
         } catch (error) {
-            return false;
+            return telaEstreita();
         }
     }
 
@@ -59,7 +67,7 @@
             if (valor) {
                 window.localStorage.setItem(STORAGE_KEY, '1');
             } else {
-                window.localStorage.removeItem(STORAGE_KEY);
+                window.localStorage.setItem(STORAGE_KEY, '0');
             }
         } catch (error) {
             // Preferência é conveniência: falhar aqui não pode quebrar o chat.
