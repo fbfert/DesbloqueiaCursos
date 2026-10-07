@@ -211,7 +211,8 @@ if (!$alunoLogado) {
                          diz o que a Norminha faz por quem ainda nao tem conta. */ ?>
                 <?php if ($texto === '' && $saudacaoPublica !== ''): $texto = $saudacaoPublica; endif; ?>
                 <?php if ($texto !== ''): ?>
-                    <p class="norminha-tutor__text"><?php echo nl2br(Helpers::e($texto)); ?></p>
+                    <?php /* Fala cadastrada com <br> no admin aparecia como texto: vira quebra de linha. */ ?>
+                    <p class="norminha-tutor__text"><?php echo nl2br(Helpers::e(preg_replace('/<br\s*\/?>(\r?\n)?/i', "\n", $texto))); ?></p>
                 <?php else: ?>
                     <p class="norminha-tutor__text">Olá! Posso estudar com você.</p>
                 <?php endif; ?>

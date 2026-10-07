@@ -86,7 +86,7 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher {
 
 html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-visible,
 .norminha-tutor__launcher:focus-visible {
-    outline: 3px solid rgba(123, 44, 191, 0.28);
+    outline: 3px solid var(--norminha-purple); /* 7:1 sobre branco; os 28 % de antes ficavam abaixo de 3:1 */
     outline-offset: 3px;
 }
 
@@ -147,7 +147,7 @@ html.norminha-tutor-minimized #norminha-tutor .norminha-tutor__launcher:focus-vi
 
 .norminha-tutor__audio-button:focus-visible,
 .norminha-tutor__close:focus-visible {
-    outline: 3px solid rgba(123, 44, 191, 0.28);
+    outline: 3px solid var(--norminha-purple); /* 7:1 sobre branco; os 28 % de antes ficavam abaixo de 3:1 */
     outline-offset: 2px;
 }
 

@@ -50,4 +50,7 @@ $cssVersao = isset($tutorNorminhaCssVersion) && $tutorNorminhaCssVersion ? (int)
     }
 })();
 </script>
+<?php /* Sem JavaScript o chat não funciona e o painel abria por cima do conteúdo:
+   esconde o componente inteiro. */ ?>
+<noscript><style>#norminha-tutor{display:none !important}</style></noscript>
 <link rel="stylesheet" href="/assets/css/tutor-norminha.css<?php echo $cssVersao ? '?v=' . $cssVersao : ''; ?>">

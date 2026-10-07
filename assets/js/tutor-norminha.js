@@ -241,7 +241,8 @@
 
         function adicionarTexto(bolha, texto) {
             // Quebras de linha viram <br> por criação de nó, não por markup.
-            var partes = String(texto).split('\n');
+            // Fala cadastrada no admin com <br> literal também vira quebra (antes aparecia como texto).
+            var partes = String(texto).replace(/<br\s*\/?>(\r?\n)?/gi, '\n').split('\n');
             var p = document.createElement('p');
             p.className = 'norminha-tutor__text';
             for (var i = 0; i < partes.length; i += 1) {
