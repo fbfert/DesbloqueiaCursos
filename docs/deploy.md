@@ -201,6 +201,21 @@ e deixe os 5 arquivos de entrada por último. A lista vem de
 Depois, abra as cinco páginas pela prévia de administrador (`?tema=caderno`) e
 rode o smoke.
 
+## 3.4 Migrações de 07/10/2026 (acentos e lacunas de schema)
+
+Aplique na VPS, em ordem, **depois** de subir o código (todas são idempotentes e
+podem rodar mais de uma vez; faça o backup do banco antes, como sempre):
+
+1. `sql/080_acentuacao_rbac.sql` — acentua nomes e descrições de perfis e
+   permissões, só nas linhas que ainda têm o texto da semente (o que foi
+   editado no admin não muda).
+2. `sql/081_lacunas_schema_cupom_escopo_menu_regras.sql` — garante
+   `cupons.escopo` e a tabela `frontend_menu_exibicao_regras`. Em produção as
+   duas já existem: é um no-op, aplicado para manter o histórico em dia.
+
+`sql/033` e `sql/058_pedido_recuperacao_automacao_cron.sql` mudaram só para que
+um banco **novo** monte sem erro; não precisam ser reaplicadas em produção.
+
 ## 4. Pós-deploy
 
 - Confira `storage/logs/app-YYYY-MM-DD.log` nos minutos seguintes ao deploy
