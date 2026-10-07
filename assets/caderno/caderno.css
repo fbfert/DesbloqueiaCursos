@@ -46,6 +46,8 @@ input[type=checkbox],input[type=radio]{accent-color:var(--tinta);width:18px;heig
 
 /* ---------- a folha ---------- */
 .folha{background:var(--papel);position:relative;min-height:100vh;overflow:hidden;overflow:clip}
+/* Safari < 16 não tem overflow:clip e caía no hidden, que desliga o topo sticky: lá o corte horizontal vai para o viewport. */
+@supports not (overflow:clip){ .folha{overflow:visible} html{overflow-x:hidden} }
 .folha::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
   background:
     linear-gradient(90deg,transparent 0 var(--margem-x),var(--margem) var(--margem-x) calc(var(--margem-x) + 2px),transparent calc(var(--margem-x) + 2px)),
@@ -253,6 +255,8 @@ button.link{border:0;background:none;cursor:pointer;font-size:inherit}
   transition:transform .3s var(--ease-out),box-shadow .3s var(--ease-out)}
 .lomb:focus-visible{transform:translateY(-24px);box-shadow:inset 3px 0 0 rgba(255,255,255,.13),inset -4px 0 0 rgba(0,0,0,.2),0 18px 22px -14px rgba(0,0,0,.5)}
 .lomb .etq{background:var(--fita);color:#3b2f14;font:700 10.5px var(--sans);padding:3px 6px;transform:rotate(-4deg);box-shadow:0 1px 1px rgba(0,0,0,.15);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lomb .etq-foto{padding:2px;max-width:none}
+.lomb .etq-foto img{display:block;width:36px;height:36px;object-fit:cover}
 .lomb .tit{writing-mode:vertical-rl;transform:rotate(180deg);font:700 14px/1.15 var(--sans);flex:1;display:flex;align-items:center;letter-spacing:.01em;overflow:hidden}
 .lomb small{font-size:10.5px}
 .lomb.elastico::before{content:"";position:absolute;right:9px;top:0;bottom:0;width:4px;background:rgba(0,0,0,.28)}
@@ -414,8 +418,9 @@ html.folha-aberta{overflow:hidden}
   /* Sem bnav na autenticação: o botão desce para o canto e o foco para acima dele. */
   .auth .norminha-tutor{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
   html:has(body.auth #norminha-tutor){scroll-padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
-  /* Digitando num formulário (teclado aberto), o botão sai do caminho do "Mostrar senha"; volta ao sair do campo. */
-  body:has(main form :is(input:not([type=radio],[type=checkbox],[type=submit],[type=button],[type=hidden]),textarea,select,.ver-senha):focus) #norminha-tutor .norminha-tutor__launcher{display:none}
+  /* Digitando num formulário (campo em foco JÁ com texto, ou o "Mostrar senha"), o botão sai do caminho; volta ao sair.
+     Campo vazio em foco (o autofocus do login) não esconde: senão a Norminha sumia ao abrir a página. */
+  body:has(main form :is(input:not([type=radio],[type=checkbox],[type=submit],[type=button],[type=hidden]):not(:placeholder-shown),textarea:not(:placeholder-shown),select,.ver-senha):focus) #norminha-tutor .norminha-tutor__launcher{display:none}
   /* Página do curso: o botão sobe acima da barra de compra (ver [data-pagina=curso] .norminha-tutor). */
   html:has(body[data-pagina=curso] #norminha-tutor){scroll-padding-bottom:calc(var(--bnav-h) + 152px + env(safe-area-inset-bottom,0px))} }
 @media (max-width:899px){ html:has(body[data-pagina=curso] .barra-compra){scroll-padding-bottom:calc(var(--bnav-h) + 98px + env(safe-area-inset-bottom,0px))} }
@@ -606,6 +611,10 @@ html:not(.js) .campo-senha input{padding-right:2px}
 .mod-tit{font-weight:600;font-size:17.5px;line-height:1.3;padding-top:8px;text-wrap:balance}
 .mod-qt{font-size:13px;color:var(--texto2);margin-top:2px}
 .mod-itens{list-style:none;margin-top:8px}
+.mod-dobra>summary{display:inline-flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;list-style:none;font-weight:600;font-size:14.5px;color:var(--violeta);text-decoration:underline;text-underline-offset:3px}
+.mod-dobra>summary::-webkit-details-marker{display:none}
+.mod-dobra>summary::after{content:"";width:7px;height:7px;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg)}
+.mod-dobra[open]>summary::after{transform:translateY(2px) rotate(225deg)}
 .mod-itens li{position:relative;padding:6px 0 6px 20px;font-size:15.5px;line-height:1.45;border-bottom:1px dashed rgba(34,16,74,.12)}
 .mod-itens li::before{content:"";position:absolute;left:2px;top:17px;width:9px;height:2px;border-radius:2px;background:var(--tinta);transform:rotate(-8deg)}
 .anima .rolando .mod-traco{clip-path:inset(0 0 100% 0)}

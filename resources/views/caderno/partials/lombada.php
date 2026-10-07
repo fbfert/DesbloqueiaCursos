@@ -60,5 +60,8 @@ if (isset($alturaLomb) && (int) $alturaLomb > 0) {
 }
 $lombElastico = in_array($lombPos % 7, array(0, 2, 5), true);
 $lombSigla = caderno_etiqueta($lombNome);
+// Imagem própria da categoria (a V2 a mostrava): só com $lombComFoto, porque são capas
+// grandes desenhadas a 36 px — na home, com várias lombadas, pesaria demais.
+$lombFoto = !empty($lombComFoto) && isset($lombCat['thumbnail']) ? trim((string) $lombCat['thumbnail']) : '';
 ?>
-<li><a class="lomb<?= $lombElastico ? ' elastico' : '' ?>" href="<?= Helpers::e($lombUrl) ?>" style="--cor:<?= Helpers::e($lombCor) ?>;--h:<?= (int) $lombAltura ?>px"><?php if ($lombSigla !== ''): ?><span class="etq" aria-hidden="true"><?= Helpers::e($lombSigla) ?></span><?php endif; ?><span class="tit"><?= Helpers::e($lombNome) ?></span><small><?= number_format($lombTotal, 0, ',', '.') ?> <?= $lombTotal === 1 ? 'curso' : 'cursos' ?></small></a></li>
+<li><a class="lomb<?= $lombElastico ? ' elastico' : '' ?>" href="<?= Helpers::e($lombUrl) ?>" style="--cor:<?= Helpers::e($lombCor) ?>;--h:<?= (int) $lombAltura ?>px"><?php if ($lombFoto !== ''): ?><span class="etq etq-foto" aria-hidden="true"><img src="<?= Helpers::e($lombFoto) ?>" alt="" width="36" height="36" loading="lazy" decoding="async"></span><?php elseif ($lombSigla !== ''): ?><span class="etq" aria-hidden="true"><?= Helpers::e($lombSigla) ?></span><?php endif; ?><span class="tit"><?= Helpers::e($lombNome) ?></span><small><?= number_format($lombTotal, 0, ',', '.') ?> <?= $lombTotal === 1 ? 'curso' : 'cursos' ?></small></a></li>

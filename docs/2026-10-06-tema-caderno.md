@@ -522,13 +522,13 @@ código, reenviar as versões anteriores dos controllers, `index.php`,
 
 ## Limitações conhecidas
 
-- **Norminha aberta cobre metade da tela no primeiro acesso.** Sem a
-  preferência "minimizada" salva, o painel abre por cima de cerca de 40 % da
-  tela do celular (e do canto inferior direito no desktop), e o foco do teclado
-  passa por links que ficam atrás dele. É o comportamento atual do componente,
-  igual na V2; sem JS o painel também abre por cima e mostra `<br>` literal.
-  O anel de foco do botão da Norminha é violeta a 28 % de opacidade, abaixo
-  de 3:1.
+- ~~**Norminha aberta cobre metade da tela no primeiro acesso**, sem JS abre
+  por cima e mostra `<br>` literal, anel de foco abaixo de 3:1~~ — corrigidos
+  em 07/10/2026: no celular (até 640 px) começa minimizada sem escolha salva;
+  sem JS o componente inteiro fica oculto (`<noscript>` no
+  `tutor_norminha_head.php`, o chat depende de JS); `<br>` cadastrado na fala
+  vira quebra de linha (PHP e JS); anel de foco violeta sólido (7:1). No
+  desktop o painel continua abrindo por padrão.
 - Títulos dos cards do catálogo em `h3` sem `h2` antes (Lighthouse
   `heading-order`, acessibilidade 98).
 - Erros de login sem campo associado vão para o campo "E-mail ou CPF"; o campo
@@ -546,20 +546,29 @@ código, reenviar as versões anteriores dos controllers, `index.php`,
   chave PIX e o envio do comprovante.
 - No modo leve, os números da home ainda contam (versão curta) e as animações
   do checkout não consultam o modo leve.
-- Módulos do curso sempre expandidos: cursos longos ficam extensos.
-- Imagens e ícones próprios das categorias da V2 não aparecem nas lombadas.
-- Safari < 16: `.folha` usa `overflow: hidden` e, nessas versões, o topo fixo
-  pode deixar de ser fixo; não foi possível testar.
+- ~~Módulos do curso sempre expandidos~~ — 07/10/2026: com mais de 4 módulos,
+  os tópicos de cada um ficam num `<details>` nativo (o primeiro aberto);
+  títulos e contagem seguem visíveis e o texto continua no HTML.
+- ~~Imagens das categorias fora das lombadas~~ — 07/10/2026: na página de
+  categorias, a imagem cadastrada vira a etiqueta da lombada (36 px, carga
+  preguiçosa). Na home continua a sigla: as imagens são capas grandes e várias
+  lombadas pesariam no LCP.
+- Safari < 16: `.folha` usava `overflow: hidden` (sem `clip`), que desliga o
+  topo sticky. Desde 07/10/2026 há fallback com `@supports not
+  (overflow:clip)` que move o corte horizontal para o `html`; **ainda não
+  testado em aparelho real**.
 - O checkout logado (participantes, pagamento) não tem cobertura automatizada.
 - ~~"Mostrar senha" sob o botão da Norminha a 360 px e foco sob a barra
   inferior na vitrine~~ — corrigidos em 07/10/2026 (`caderno.css`): no
   celular, `scroll-padding-bottom` mantém o foco acima da bnav e do botão da
   Norminha em todas as páginas do tema; o botão some enquanto um campo de
-  formulário (ou o "Mostrar senha") está em foco e volta ao sair; na
+  formulário já com texto (ou o "Mostrar senha") está em foco e volta ao sair
+  — campo vazio em foco, como o autofocus do login, não esconde; na
   autenticação, sem bnav, ele desce para o canto. Medido a 360 px (login,
   cadastro, minha conta, home, catálogo): nenhum alvo de foco coberto.
-- Quiz em tela larga (>= 900 px): as instruções são abertas por JS; a abertura
-  pode deslocar o conteúdo logo abaixo (CLS medido só no perfil celular).
+- ~~Quiz em tela larga: instruções abertas por JS deslocavam o conteúdo~~ —
+  07/10/2026: acima de 900 px o servidor já entrega a versão fixa
+  (`.quiz-instr-larga`, escolhida por CSS) e o JS não abre mais nada.
 
 ## Achados anteriores ao tema
 
@@ -571,15 +580,13 @@ correção própria:
    `.env` local tem `ALLOW_TEST_CPFS=true`, que aceita CPFs de teste como
    `11111111111`. Agora a chave é ignorada com `APP_ENV=production` (proteção
    contra ligá-la por engano) e o teste fixa o ambiente; 17 passou, 0 falhou.
-2. **Mensagens do `AuthService` sem acento**, iguais na V2. No login: "Dados
-   de acesso invalidos.", "Usuario sem permissao de acesso."; no cadastro:
-   "Informe um e-mail valido.", "Informe um CPF valido.", "A confirmacao da
-   senha nao confere.", "O aceite dos termos de uso e obrigatorio.", "O aceite
-   da politica de privacidade e obrigatorio.", "Este e-mail ja esta
-   cadastrado.", "Este CPF ja esta cadastrado."; na redefinição de senha:
-   "A confirmacao da senha nao confere.", "Token invalido ou expirado."
-3. **Painel da Norminha sem JS** abre por cima do conteúdo e mostra `<br>`
-   literal.
+2. ~~**Mensagens sem acento**~~ — corrigidas em 07/10/2026 (commit
+   `436ace9`): cerca de 470 strings em 71 arquivos (services, controllers,
+   views do professor, páginas de erro, e-mails), inclusive 24 com encoding
+   duplicado ("nÃƒ£o"). Comparações por texto aceitam as duas grafias; a
+   `sql/080` acentua perfis e permissões semeados.
+3. ~~**Painel da Norminha sem JS**~~ — corrigido em 07/10/2026 (ver
+   "Limitações conhecidas").
 4. **Produção sem compressão e sem cache de estáticos**, e **capas de 2 MB**:
    afetam a V2 hoje tanto quanto o tema (ver "Antes de virar a chave").
 
@@ -619,11 +626,13 @@ mudanças OpenSpec `fila-revisao-admin` e `tema-caderno` já foram arquivadas
    um quiz; a fixture não tinha essas linhas. Com elas, percentual e contagem
    batem (4 de 17 obrigatórios = 23,53 %).
 
-Fora do tema, achados nesta entrega e ainda abertos: testes
-`norminha_knowledge`, `norminha_tools` e dois casos de `quiz_system` que já
-falhavam com a base local; mensagens sem acento no `AuthService` e em outros
-services (as views do tema traduzem parte delas pelo texto exato, então a
-correção precisa mexer nos dois lados). O painel da Norminha passou a começar
+Fora do tema, achados desta entrega resolvidos em 07/10/2026: os testes
+`norminha_tools` e `quiz_system` falhavam por dados (flag velha da semente de
+homologação; CPFs fixos iguais aos dos usuários de homologação) e passam; todo
+`tests/Unit` passa, e `norminha_api` passa 21/21 com as credenciais locais
+documentadas no arquivo. As 82 migrações montam um banco vazio sem erro
+(`033`, `058` e a nova `081`). O sitemap e o rodapé do tema só anunciam
+institucionais publicadas. O painel da Norminha passou a começar
 minimizado no celular (até 640 px) quando a pessoa ainda não escolheu; abrir
 ou minimizar fica salvo (`norminha_tutor_minimized_v1`: `1` minimizada, `0`
 aberta).

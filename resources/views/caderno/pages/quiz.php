@@ -183,12 +183,15 @@ $instrucoes = $quiz ? trim((string) ($quiz['instrucoes'] ?? '')) : '';
     <?php if ($tempo !== null) { require BASE_PATH . '/resources/views/caderno/partials/quiz-relogio.php'; } ?>
 
     <?php if ($instrucoes !== ''):
-        // Recolhidas no celular depois da primeira resposta (o JS as abre acima de 900 px).
+        // Recolhidas no celular depois da primeira resposta. Acima de 900 px o CSS
+        // mostra a versão fixa (.quiz-instr-larga) no lugar da dobra: abrir por JS
+        // depois da carga empurrava o conteúdo (CLS) em tela larga.
         $qInstrAberta = true;
         foreach ($perguntas as $qP) {
             if ((int) ($qP['alternativa_id_respondida'] ?? 0) > 0 || trim((string) ($qP['texto_resposta'] ?? '')) !== '') { $qInstrAberta = false; break; }
         } ?>
     <details class="quiz-instr quiz-instr-dobra"<?= $qInstrAberta ? ' open' : '' ?>><summary class="atv-rot">Instruções</summary><p><?= nl2br(Helpers::e($instrucoes)) ?></p></details>
+    <div class="quiz-instr quiz-instr-larga"><p class="atv-rot">Instruções</p><p><?= nl2br(Helpers::e($instrucoes)) ?></p></div>
     <?php endif; ?>
 
     <form method="post" action="<?= Helpers::e($enviarAction) ?>" data-native-submit class="v2-quiz-form quiz-form" id="v2-quiz-answer-form"<?= count($perguntas) > 1 ? ' data-multi' : '' ?>>

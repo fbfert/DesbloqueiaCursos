@@ -33,6 +33,7 @@ foreach ($categorias as $catItem) {
       <?php foreach ($categorias as $indice => $categoria): ?>
       <?php
       $alturaLomb = 230 + ($catMax > 0 ? (int) round(((int) $categoria['total_cursos']) / $catMax * 150) : 0);
+      $lombComFoto = true; // a imagem da categoria cadastrada no admin vira a etiqueta (só nesta página, preguiçosa)
       require BASE_PATH . '/resources/views/caderno/partials/lombada.php';
       ?>
       <?php endforeach; ?>

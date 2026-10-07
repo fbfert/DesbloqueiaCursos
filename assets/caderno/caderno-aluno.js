@@ -266,8 +266,6 @@ Caderno.pagina('quiz', function () {
   var form = $('v2-quiz-answer-form');
   if (!form) return;
   var feedback = $('v2-quiz-feedback'), ativoNav = false;
-  var instr = d.querySelector('details.quiz-instr-dobra');
-  if (instr && window.matchMedia && matchMedia('(min-width:900px)').matches) instr.open = true;
   var campo = function (n) { var c = form.querySelector('input[name="' + n + '"]'); return c ? c.value : ''; };
   var num = function (n) { return parseInt(campo(n), 10) || 0; };
   var vazio = function (o) { for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) return false; return true; };

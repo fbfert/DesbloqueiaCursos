@@ -2,7 +2,10 @@
 /**
  * Conteúdo programático em módulos como trilha vertical à caneta.
  *
- * Títulos e tópicos de todos os módulos ficam sempre visíveis (sem sanfona).
+ * Títulos e contagem de tópicos ficam sempre visíveis. Até 4 módulos os tópicos
+ * também; acima disso (cursos longos ficavam extensos demais), os tópicos de cada
+ * módulo vão para um <details> nativo, o primeiro aberto — sem JS, e o texto
+ * continua no HTML (indexável).
  * Só a decoração anima: o traço de tinta entre um módulo e o seguinte e o
  * ✓ ao lado de cada número. Sem JS, em movimento reduzido ou no modo leve a
  * trilha já aparece desenhada; o módulo `curso` de caderno.js marca
@@ -21,6 +24,7 @@ foreach ((isset($modulos) && is_array($modulos) ? $modulos : array()) as $tmModu
     }
 }
 $tmTotal = count($tmModulos);
+$tmDobra = $tmTotal > 4;
 ?>
 <div class="trilha-mod" data-trilha-mod>
   <ol class="modulos">
@@ -48,11 +52,13 @@ $tmTotal = count($tmModulos);
       <h3 class="mod-tit"><?= Helpers::e($tmTitulo) ?></h3>
       <p class="mod-qt"><?= $tmQt ?> <?= $tmQt === 1 ? 'tópico' : 'tópicos' ?></p>
       <?php if (!empty($tmItens)): ?>
+      <?php if ($tmDobra): ?><details class="mod-dobra"<?= $tmIdx === 0 ? ' open' : '' ?>><summary>Ver os tópicos<span class="vh"> de <?= Helpers::e($tmTitulo) ?></span></summary><?php endif; ?>
       <ul class="mod-itens">
         <?php foreach ($tmItens as $tmItem): ?>
         <li><?= Helpers::e($tmItem) ?></li>
         <?php endforeach; ?>
       </ul>
+      <?php if ($tmDobra): ?></details><?php endif; ?>
       <?php endif; ?>
     </li>
     <?php endforeach; ?>

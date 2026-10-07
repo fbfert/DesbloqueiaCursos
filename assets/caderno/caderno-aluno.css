@@ -401,5 +401,8 @@ li.alt{cursor:default}
 .quiz-instr-dobra>summary::-webkit-details-marker{display:none}
 .quiz-instr-dobra>summary::after{content:"";width:8px;height:8px;border:solid var(--tinta);border-width:0 2px 2px 0;transform:translateY(-3px) rotate(45deg)}
 .quiz-instr-dobra[open]>summary::after{transform:translateY(2px) rotate(225deg)}
+/* Tela larga: instruções sempre abertas, já na carga (sem JS e sem deslocamento). */
+.quiz-instr-larga{display:none}
+@media (min-width:900px){ .quiz-instr-larga{display:block} .quiz-instr-dobra{display:none} }
 .quiz-salvo-erro{margin-top:12px;max-width:560px}
 .quiz-salvo-erro .link{min-height:44px;margin-top:4px;font-size:15px}
