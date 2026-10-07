@@ -324,6 +324,38 @@ class AuthService
         return array('ok' => true);
     }
 
+    /**
+     * Troca de senha pelo próprio usuário (app): confere a senha atual e aplica
+     * a mesma regra de tamanho/confirmação do site.
+     */
+    public function alterarSenha($usuarioId, $senhaAtual, $senhaNova, $senhaNovaConfirmacao, $ipAddress, $userAgent)
+    {
+        $usuario = $this->usuarios->findById((int) $usuarioId);
+        if (!$usuario) {
+            return array('ok' => false, 'errors' => array('conta' => 'Usuário não encontrado.'));
+        }
+
+        $errors = array();
+        if ((string) $senhaAtual === '' || empty($usuario['senha_hash']) || !password_verify((string) $senhaAtual, (string) $usuario['senha_hash'])) {
+            $errors['senha_atual'] = 'A senha atual não confere.';
+        }
+        if (strlen((string) $senhaNova) < 8) {
+            $errors['senha_nova'] = 'A nova senha deve ter pelo menos 8 caracteres.';
+        }
+        if ((string) $senhaNova !== (string) $senhaNovaConfirmacao) {
+            $errors['senha_nova_confirmacao'] = 'A confirmação da nova senha não confere.';
+        }
+        if ($errors) {
+            $this->accessLogs->record((int) $usuarioId, 'password_change', 'invalid', $ipAddress, $userAgent);
+            return array('ok' => false, 'errors' => $errors);
+        }
+
+        $this->usuarios->updatePassword((int) $usuarioId, password_hash((string) $senhaNova, PASSWORD_DEFAULT));
+        $this->accessLogs->record((int) $usuarioId, 'password_change', 'success', $ipAddress, $userAgent);
+
+        return array('ok' => true);
+    }
+
     public function requestPasswordReset($login, $ipAddress, $userAgent)
     {
         $security = $this->globalConfigService->seguranca();
