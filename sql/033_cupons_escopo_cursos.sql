@@ -29,6 +29,23 @@ WHERE cr.tipo_relacao = 'curso_evento'
   AND cr.valor_relacao REGEXP '^[0-9]+$'
   AND c.deleted_at IS NULL;
 
+-- A coluna cupons.escopo não era criada por nenhuma migração (existia só em
+-- produção); num banco novo este UPDATE falhava. Criada aqui de forma condicional
+-- (07/10/2026) — no-op onde já existe. A 081 repete a garantia para bancos em que
+-- esta migração já rodou e falhou.
+SET @has_cupons_escopo_033 := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cupons' AND COLUMN_NAME = 'escopo'
+);
+SET @sql_cupons_escopo_033 := IF(
+    @has_cupons_escopo_033 = 0,
+    'ALTER TABLE cupons ADD COLUMN escopo VARCHAR(40) NOT NULL DEFAULT ''todo_site'' AFTER descricao',
+    'SELECT 1'
+);
+PREPARE stmt_cupons_escopo_033 FROM @sql_cupons_escopo_033;
+EXECUTE stmt_cupons_escopo_033;
+DEALLOCATE PREPARE stmt_cupons_escopo_033;
+
 UPDATE cupons c
 INNER JOIN (
     SELECT DISTINCT cupom_id
