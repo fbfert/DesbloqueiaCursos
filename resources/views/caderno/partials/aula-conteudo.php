@@ -16,6 +16,8 @@
 use App\Core\Helpers;
 use App\Support\HtmlEmbedRenderer;
 
+require_once BASE_PATH . '/resources/views/caderno/partials/aula-tabelas.php';
+
 $acTipo = (string) $item['tipo'];
 $acTitulo = (string) $item['titulo'];
 ?>
@@ -61,7 +63,7 @@ $acTitulo = (string) $item['titulo'];
   <?php endif; ?>
 
 <?php elseif ($acTipo === 'texto' && trim((string) $item['texto_html']) !== ''): ?>
-  <div class="aula-texto"><?= Helpers::renderSafeHtml((string) $item['texto_html'], 'reading') ?></div>
+  <div class="aula-texto"><?= caderno_tabelas_rolaveis(Helpers::renderSafeHtml((string) $item['texto_html'], 'reading')) ?></div>
 
 <?php elseif ($acTipo === 'html' && trim((string) $item['texto_html']) !== ''): ?>
   <?php $acFrameId = 'conteudo-html-frame-' . (int) $item['id']; ?>
@@ -78,7 +80,7 @@ $acTitulo = (string) $item['titulo'];
 
 <?php elseif ($acTipo === 'arquivo'): ?>
   <?php if (trim((string) $item['texto_html']) !== ''): ?>
-  <div class="aula-texto"><?= Helpers::renderSafeHtml((string) $item['texto_html'], 'basic') ?></div>
+  <div class="aula-texto"><?= caderno_tabelas_rolaveis(Helpers::renderSafeHtml((string) $item['texto_html'], 'basic')) ?></div>
   <?php endif; ?>
   <?php if (trim((string) $item['acao_url']) !== ''): ?>
   <div class="aula-anexo">
@@ -97,7 +99,7 @@ $acTitulo = (string) $item['titulo'];
 <?php elseif ($acTipo === 'link'): ?>
   <?php $acDesc = trim((string) $item['texto_html']) !== '' ? (string) $item['texto_html'] : (string) $item['descricao_curta']; ?>
   <?php if (trim($acDesc) !== ''): ?>
-  <div class="aula-texto"><?= Helpers::renderSafeHtml($acDesc, 'basic') ?></div>
+  <div class="aula-texto"><?= caderno_tabelas_rolaveis(Helpers::renderSafeHtml($acDesc, 'basic')) ?></div>
   <?php endif; ?>
   <?php if (trim((string) $item['acao_url']) !== ''): ?>
   <div class="aula-anexo">

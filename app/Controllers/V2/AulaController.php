@@ -114,6 +114,13 @@ class AulaController extends Controller
             'turma_nome' => isset($turma['nome']) ? (string) $turma['nome'] : '',
             'progresso' => $this->progressoPercentual($inscricao, $resumo),
         );
+        // Contagens na MESMA base do percentual (service: obrigatórios quando o
+        // curso tem algum, senão todos os itens). Chaves só exibidas pelo tema
+        // caderno; a V2 continua usando total_itens/concluidos_itens.
+        $progressoObrigatorios = (string) ($resumo['modo_calculo'] ?? '') === 'obrigatorios';
+        $cabecalho['progresso_base'] = $progressoObrigatorios ? 'obrigatorios' : 'todos';
+        $cabecalho['progresso_total'] = (int) ($resumo[$progressoObrigatorios ? 'total_obrigatorios' : 'total_itens'] ?? 0);
+        $cabecalho['progresso_feitos'] = (int) ($resumo[$progressoObrigatorios ? 'concluidos_obrigatorios' : 'concluidos_itens'] ?? 0);
 
         // --- Item atual (validado pelo backend) ---
         $itemAtual = null;
@@ -465,7 +472,8 @@ class AulaController extends Controller
                     'concluido' => !empty($item['concluido_aluno']),
                     'atual' => $itemId === (int) $conteudoId,
                     'etiqueta' => $tipo === 'etiqueta',
-                    'url' => $this->urlV2($inscricao, $cursoId, $turmaId, $moduloId, $itemId),
+                    'obrigatorio' => !empty($item['obrigatorio']),
+                    'url' =>$this->urlV2($inscricao, $cursoId, $turmaId, $moduloId, $itemId),
                 );
             }
             $arvore[] = array(
@@ -474,6 +482,8 @@ class AulaController extends Controller
                 'status_label' => (string) ($modulo['status_label'] ?? ''),
                 'total_itens' => (int) ($modulo['total_itens'] ?? count($itensView)),
                 'concluidos_itens' => (int) ($modulo['concluidos_itens'] ?? 0),
+                'total_obrigatorios' => (int) ($modulo['total_obrigatorios'] ?? 0),
+                'concluidos_obrigatorios' => (int) ($modulo['concluidos_obrigatorios'] ?? 0),
                 'aberto' => $moduloId === (int) $moduloAtualId,
                 'itens' => $itensView,
             );

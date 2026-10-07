@@ -123,8 +123,7 @@
 .sumario>summary::after{content:"";flex:none;width:9px;height:9px;border:solid var(--violeta);border-width:0 2px 2px 0;transform:translateY(-3px) rotate(45deg);transition:transform .2s var(--ease-out)}
 .sumario[open]>summary::after{transform:translateY(2px) rotate(225deg)}
 .sumario-tit{font:400 25px/1.1 var(--serif)}
-.sumario-tit span{font:500 13px var(--sans);color:var(--texto2);margin-left:4px;white-space:nowrap}
-.sumario-tit span::before{content:"· "}
+.sumario-tit span{display:block;margin-top:3px;font:500 13px var(--sans);color:var(--texto2)}
 p.sumario-tit{padding:16px 18px 6px}
 .sm-mods{list-style:none;padding:0 8px 8px}
 .sm-mod{border-top:1px dashed var(--linha)}
@@ -156,7 +155,8 @@ p.sumario-tit{padding:16px 18px 6px}
 .aula-texto li+li{margin-top:6px}
 .aula-texto a{color:var(--tinta);font-weight:600;text-underline-offset:4px}
 .aula-texto blockquote{border-left:3px solid var(--margem);padding-left:16px;font-style:italic}
-.aula-texto table{display:block;overflow-x:auto;border-collapse:collapse;font-size:15px;line-height:1.5}
+.aula-tabela{overflow-x:auto}
+.aula-texto table{border-collapse:collapse;font-size:15px;line-height:1.5}
 .aula-texto :is(th,td){border:1px solid var(--linha);padding:8px 10px;text-align:left;vertical-align:top}
 .aula-texto pre{overflow-x:auto;white-space:pre-wrap;font-size:14.5px}
 .aula-texto hr{border:0;border-top:1.5px dashed var(--linha)}
@@ -184,7 +184,7 @@ p.sumario-tit{padding:16px 18px 6px}
 .aula-desmarcar .link{min-height:44px;font-size:14px;color:var(--texto2)}
 .aula-nav{display:none}
 .aula-estado{margin-top:44px}
-.aula-estado .mao{display:flex;align-items:center;gap:8px}
+.aula-estado .mao{display:flex;align-items:center;gap:8px;font-weight:400}
 .aula-estado .btn{margin-top:20px}
 .aula-geral{padding-top:26px}
 .aula-geral .al-ola{margin-bottom:6px}

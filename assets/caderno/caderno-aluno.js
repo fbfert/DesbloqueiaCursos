@@ -220,7 +220,8 @@ Caderno.pagina('aula', function () {
   if (s && window.matchMedia) {
     var mq = matchMedia('(min-width:900px)');
     if (mq.matches) s.open = true;
-    if (mq.addEventListener) mq.addEventListener('change', function () { s.open = mq.matches; });
+    var segue = function () { s.open = mq.matches; };
+    if (mq.addEventListener) mq.addEventListener('change', segue); else if (mq.addListener) mq.addListener(segue);
   }
   var auto = document.querySelector('form[data-autoconcluir]');
   if (auto) setTimeout(function () { if (auto.requestSubmit) auto.requestSubmit(); else auto.submit(); }, 150);

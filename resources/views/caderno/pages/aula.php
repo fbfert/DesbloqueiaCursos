@@ -37,7 +37,7 @@ $successTexto = !empty($success) ? (is_array($success) ? (string) ($success['mes
 if ($estado): ?>
 <div class="aula">
   <div class="vazio aula-estado">
-    <p class="mao"><?= Helpers::e((string) $estado['titulo']) ?></p>
+    <h1 class="mao"><?= Helpers::e((string) $estado['titulo']) ?></h1>
     <p class="lead"><?= Helpers::e((string) $estado['mensagem']) ?></p>
     <a class="btn" href="<?= Helpers::e($alunoHref) ?>"><?= caderno_icone('seta-esq') ?> Voltar à minha área</a>
   </div>
@@ -47,26 +47,32 @@ if ($estado): ?>
 $cursoNome = (string) ($cabecalho['curso_nome'] ?? '');
 $progresso = max(0, min(100, (int) ($cabecalho['progresso'] ?? 0)));
 
-// Contagem do sumário e o primeiro item ainda não concluído (atalho da visão geral).
-$smTotalItens = 0;
-$smFeitosItens = 0;
+// Sumário e percentual na MESMA base (AulaController: progresso_base). Quando o
+// curso tem itens obrigatórios, o percentual e as contagens só consideram eles.
+$aulaBase = (string) ($cabecalho['progresso_base'] ?? 'todos') === 'obrigatorios' ? 'obrigatorios' : 'todos';
+$smTotalBase = (int) ($cabecalho['progresso_total'] ?? 0);
+$smFeitosBase = (int) ($cabecalho['progresso_feitos'] ?? 0);
+$smResumo = $smFeitosBase . ' de ' . $smTotalBase . ($aulaBase === 'obrigatorios' ? ' obrigatórios' : '')
+    . ($smFeitosBase === 1 ? ' concluído' : ' concluídos');
+
+// Primeiro item ainda não concluído (atalho da visão geral).
+$algumConcluido = false;
 $proximoPendente = null;
 foreach ($arvore as $smModulo) {
     foreach ((isset($smModulo['itens']) && is_array($smModulo['itens']) ? $smModulo['itens'] : array()) as $smItem) {
         if (!empty($smItem['etiqueta'])) {
             continue;
         }
-        $smTotalItens++;
         if (!empty($smItem['concluido'])) {
-            $smFeitosItens++;
+            $algumConcluido = true;
         } elseif ($proximoPendente === null) {
             $proximoPendente = $smItem;
         }
     }
 }
-$smResumo = $smFeitosItens . ' de ' . $smTotalItens . ($smTotalItens === 1 ? ' concluído' : ' concluídos');
-// ✓ à caneta: só logo depois de concluir com sucesso (redirect com flash).
-$abConcluiu = $item && !empty($item['concluido']) && $successTexto !== '' && empty($errors);
+// ✓ à caneta: só logo depois de marcar este item (o flash de sucesso de
+// /v2/aula/concluir com acao=marcar é exatamente esta frase no AulaController).
+$abConcluiu = $item && !empty($item['concluido']) && $successTexto === 'Item marcado como concluído.' && empty($errors);
 ?>
 <div class="aula<?= $item || $itemInacessivel ? ' aula-com-item' : '' ?>">
   <header class="aula-cab">
@@ -94,7 +100,7 @@ $abConcluiu = $item && !empty($item['concluido']) && $successTexto !== '' && emp
     <h1 class="t2" id="aula-titulo"><?= Helpers::e($cursoNome !== '' ? $cursoNome : 'Conteúdo do curso') ?></h1>
     <p class="lead">Escolha um módulo para continuar seus estudos.</p>
     <?php if ($proximoPendente): ?>
-    <p class="aula-continuar"><a class="btn" href="<?= Helpers::e((string) $proximoPendente['url']) ?>"><?= $smFeitosItens > 0 ? 'Continuar' : 'Começar' ?>: <?= Helpers::e((string) $proximoPendente['titulo']) ?> <?= caderno_icone('seta-dir') ?></a></p>
+    <p class="aula-continuar"><a class="btn" href="<?= Helpers::e((string) $proximoPendente['url']) ?>"><?= $algumConcluido ? 'Continuar' : 'Começar' ?>: <?= Helpers::e((string) $proximoPendente['titulo']) ?> <?= caderno_icone('seta-dir') ?></a></p>
     <?php endif; ?>
     <div class="sumario aula-indice">
       <p class="sumario-tit">Sumário <span><?= Helpers::e($smResumo) ?></span></p>
@@ -103,7 +109,7 @@ $abConcluiu = $item && !empty($item['concluido']) && $successTexto !== '' && emp
   </section>
   <?php else: ?>
   <div class="vazio aula-estado">
-    <p class="mao">Conteúdo a caminho</p>
+    <h1 class="mao">Conteúdo a caminho</h1>
     <p class="lead">Este curso ainda não tem conteúdo publicado disponível para você.</p>
     <a class="btn-sec" href="<?= Helpers::e($alunoHref) ?>"><?= caderno_icone('seta-esq') ?> Voltar à minha área<?= caderno_ck_contorno() ?></a>
   </div>
@@ -118,7 +124,7 @@ $abConcluiu = $item && !empty($item['concluido']) && $successTexto !== '' && emp
 
     <?php if ($itemInacessivel): ?>
     <div class="vazio aula-estado">
-      <p class="mao"><?= caderno_icone('cadeado') ?> Conteúdo indisponível</p>
+      <h1 class="mao"><?= caderno_icone('cadeado') ?> Conteúdo indisponível</h1>
       <p class="lead">Este conteúdo não está disponível para você no momento.</p>
       <a class="btn-sec" href="<?= Helpers::e($alunoHref) ?>"><?= caderno_icone('seta-esq') ?> Voltar à minha área<?= caderno_ck_contorno() ?></a>
     </div>
@@ -155,7 +161,7 @@ $abConcluiu = $item && !empty($item['concluido']) && $successTexto !== '' && emp
         <form method="post" action="<?= Helpers::e($concluirAction) ?>" data-native-submit class="aula-desmarcar">
           <?= $auHidden ?>
           <input type="hidden" name="acao" value="desmarcar">
-          <button type="submit" class="link" data-complete-btn>Desmarcar conclusão</button>
+          <button type="submit" class="link" data-complete-btn data-loading-label="Desmarcando…">Desmarcar conclusão</button>
         </form>
         <?php endif; ?>
       </div>

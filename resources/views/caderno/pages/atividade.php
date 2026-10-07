@@ -18,6 +18,7 @@
 use App\Core\Helpers;
 
 require_once BASE_PATH . '/resources/views/caderno/partials/checkout-util.php';
+require_once BASE_PATH . '/resources/views/caderno/partials/aula-tabelas.php';
 
 $estado = isset($estado) && is_array($estado) ? $estado : null;
 $cabecalho = isset($cabecalho) && is_array($cabecalho) ? $cabecalho : array();
@@ -32,7 +33,7 @@ $enviarAction = isset($formCtx['enviar_action']) ? (string) $formCtx['enviar_act
 if ($estado): ?>
 <div class="atv">
   <div class="vazio aula-estado">
-    <p class="mao"><?= Helpers::e((string) $estado['titulo']) ?></p>
+    <h1 class="mao"><?= Helpers::e((string) $estado['titulo']) ?></h1>
     <p class="lead"><?= Helpers::e((string) $estado['mensagem']) ?></p>
     <a class="btn" href="<?= Helpers::e($alunoHref) ?>"><?= caderno_icone('seta-esq') ?> Voltar à minha área</a>
   </div>
@@ -101,12 +102,12 @@ $atvData = function ($valor) {
     <?php if (trim((string) ($atividade['enunciado_html'] ?? '')) !== '' || trim((string) ($atividade['orientacoes_html'] ?? '')) !== ''): ?>
     <section id="v2-atv-enunciado" aria-label="Enunciado da atividade">
       <?php if (trim((string) ($atividade['enunciado_html'] ?? '')) !== ''): ?>
-      <div class="aula-texto"><?= Helpers::renderSafeHtml((string) $atividade['enunciado_html'], 'full') ?></div>
+      <div class="aula-texto"><?= caderno_tabelas_rolaveis(Helpers::renderSafeHtml((string) $atividade['enunciado_html'], 'full')) ?></div>
       <?php endif; ?>
       <?php if (trim((string) ($atividade['orientacoes_html'] ?? '')) !== ''): ?>
       <div class="atv-orient">
         <p class="atv-rot">Orientações</p>
-        <div class="aula-texto"><?= Helpers::renderSafeHtml((string) $atividade['orientacoes_html'], 'basic') ?></div>
+        <div class="aula-texto"><?= caderno_tabelas_rolaveis(Helpers::renderSafeHtml((string) $atividade['orientacoes_html'], 'basic')) ?></div>
       </div>
       <?php endif; ?>
     </section>
@@ -170,4 +171,14 @@ $atvData = function ($valor) {
     <?php endif; ?>
     <?php endif; ?>
   </article>
+
+  <?php // Barra de estudo (só abaixo de 900 px): volta à aula e a ação da folha. ?>
+  <nav class="barra-estudo aula-barra" aria-label="Navegação da atividade">
+    <a class="be-lado" href="<?= Helpers::e($voltarAulaUrl) ?>"><?= caderno_icone('seta-esq') ?><span>Voltar à aula</span></a>
+    <?php if ($atividade && ($atividade['estado'] ?? '') === 'avaliacao' && !empty($atividade['pode_enviar'])): ?>
+    <button class="btn be-meio" type="submit" form="v2-atividade-form" data-loading-label="Enviando…"><?= !empty($atividade['ultima']) ? 'Reenviar' : 'Enviar' ?></button>
+    <?php elseif ($atividade && ($atividade['estado'] ?? '') === 'externo'): ?>
+    <a class="btn be-meio" href="<?= Helpers::e((string) ($atividade['oficial_url'] ?? '#')) ?>">Abrir atividade</a>
+    <?php endif; ?>
+  </nav>
 </div>
