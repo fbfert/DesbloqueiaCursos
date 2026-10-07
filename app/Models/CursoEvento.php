@@ -465,13 +465,13 @@ class CursoEvento
     {
         $stmt = Database::connection()->prepare(
             'INSERT INTO cursos_eventos
-             (categoria_id, nome, slug, tipo, modalidade, thumbnail, descricao_curta, descricao_completa, carga_horaria, valor, valor_promocional,
+             (categoria_id, nome, slug, tipo, modalidade, thumbnail, descricao_curta, descricao_completa, carga_horaria, valor, valor_promocional, usar_turmas,
               objetivo_geral, objetivos_especificos, publico_alvo, pre_requisitos_texto, pre_requisitos_itens, ementa,
               conteudo_programatico_tipo, conteudo_programatico_texto, conteudo_programatico_modulos,
               metodologia, produto_final, avaliacao,
               em_promocao, destaque, ordem, status, created_at, updated_at, deleted_at)
              VALUES
-             (:categoria_id, :nome, :slug, :tipo, :modalidade, :thumbnail, :descricao_curta, :descricao_completa, :carga_horaria, :valor, :valor_promocional,
+             (:categoria_id, :nome, :slug, :tipo, :modalidade, :thumbnail, :descricao_curta, :descricao_completa, :carga_horaria, :valor, :valor_promocional, :usar_turmas,
               :objetivo_geral, :objetivos_especificos, :publico_alvo, :pre_requisitos_texto, :pre_requisitos_itens, :ementa,
               :conteudo_programatico_tipo, :conteudo_programatico_texto, :conteudo_programatico_modulos,
               :metodologia, :produto_final, :avaliacao,
