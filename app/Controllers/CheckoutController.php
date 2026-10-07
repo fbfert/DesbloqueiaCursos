@@ -16,6 +16,7 @@ use App\Models\Cupom;
 use App\Models\Usuario;
 use App\Services\ComprovantePixService;
 use App\Services\InscricaoService;
+use App\Services\PagamentoAbacatepayService;
 use App\Services\PedidoService;
 use App\Services\CursoService;
 use App\Services\Payments\AbacatePayService;
@@ -356,93 +357,48 @@ class CheckoutController extends Controller
         }
 
         $pedidoId = (int) $request->input('pedido_id', 0);
-        if ($pedidoId <= 0) {
-            Session::flash('errors', array('pedido' => 'Pedido inválido.'));
-            return $this->redirect($emV2 ? '/v2/aluno/' : '/meus-cursos');
-        }
 
-        if (!$this->abacatePayService->isEnabled()) {
-            Session::flash('errors', array('pagamento' => 'O pagamento online está desativado no momento.'));
-            return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
-        }
-
-        $detalhe = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'), true);
-        if (empty($detalhe['pedido'])) {
-            Session::flash('errors', array('pedido' => 'Você não tem permissão para acessar este pedido.'));
-            return $this->redirect($emV2 ? '/v2/aluno/' : '/meus-cursos');
-        }
-
-        $pedido = $detalhe['pedido'];
-        if (strtolower(trim((string) ($pedido['payment_gateway'] ?? ''))) === 'abacatepay' && !empty($pedido['payment_provider_payment_url'])) {
-            Logger::info('checkout.abacatepay.reaproveitando_checkout', array(
-                'pedido_id' => $pedidoId,
-                'payment_provider_checkout_id' => isset($pedido['payment_provider_checkout_id']) ? $pedido['payment_provider_checkout_id'] : null,
-                'payment_provider_payment_url' => $pedido['payment_provider_payment_url'],
-            ));
-
-            return $this->redirect((string) $pedido['payment_provider_payment_url']);
-        }
-        if (in_array((string) $pedido['status'], array('pago', 'aprovado'), true)) {
-            Session::flash('success', 'Este pedido já está pago.');
-            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
-        }
-
-        if ((float) $pedido['total'] <= 0.0) {
-            Session::flash('success', 'Este pedido não possui cobrança. A liberação segue o fluxo gratuito.');
-            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
-        }
-
-        if ((string) $pedido['status'] === 'rascunho') {
-            $finalizacao = $this->pedidoService->finalizarCheckout($pedidoId, Session::get('usuario_id'), $request->ip(), $request->userAgent());
-            if (empty($finalizacao['ok'])) {
-                Session::flash('errors', array('pedido' => isset($finalizacao['message']) ? $finalizacao['message'] : 'Não foi possível preparar o pedido para pagamento.'));
-                return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
-            }
-
-            $detalhe = $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'), true);
-            if (empty($detalhe['pedido'])) {
-                Session::flash('errors', array('pedido' => 'Não foi possível recarregar o pedido.'));
-                return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
-            }
-
-            $pedido = $detalhe['pedido'];
-        }
-
-        $aluno = array(
-            'id' => Session::get('usuario_id'),
-            'nome' => isset($pedido['pagador_nome']) && trim((string) $pedido['pagador_nome']) !== '' ? (string) $pedido['pagador_nome'] : (string) Session::get('usuario_nome'),
-            'email' => isset($pedido['pagador_email']) ? (string) $pedido['pagador_email'] : (string) Session::get('usuario_email'),
-            'cpf' => isset($pedido['pagador_cpf']) ? (string) $pedido['pagador_cpf'] : (string) Session::get('usuario_cpf'),
-            'telefone' => isset($pedido['pagador_telefone']) ? (string) $pedido['pagador_telefone'] : (string) Session::get('usuario_telefone'),
-            'cidade' => isset($pedido['pagador_cidade']) ? (string) $pedido['pagador_cidade'] : '',
-            'estado' => isset($pedido['pagador_estado']) ? (string) $pedido['pagador_estado'] : '',
-        );
-
-        $checkout = $this->abacatePayService->createCheckout($pedido, $aluno, isset($pedido['itens']) && is_array($pedido['itens']) ? $pedido['itens'] : array());
-        if (empty($checkout['ok'])) {
-            Session::flash('errors', array('pagamento' => isset($checkout['message']) ? $checkout['message'] : 'Não foi possível iniciar o checkout da AbacatePay.'));
-            return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
-        }
-
-        $registrado = $this->abacatePayService->registrarCheckoutNoPedido(
-            $pedido,
-            $checkout,
+        // Orquestração do pagamento (reaproveitar checkout, finalizar rascunho,
+        // criar e registrar no gateway): PagamentoAbacatepayService, também usado
+        // pela API do app. Aqui só se traduz o resultado em flash/redirect.
+        $resultado = (new PagamentoAbacatepayService($this->pedidoService, $this->abacatePayService))->iniciarParaPedido(
+            $pedidoId,
             Session::get('usuario_id'),
+            array(
+                'nome' => (string) Session::get('usuario_nome'),
+                'email' => (string) Session::get('usuario_email'),
+                'cpf' => (string) Session::get('usuario_cpf'),
+                'telefone' => (string) Session::get('usuario_telefone'),
+            ),
             $request->ip(),
             $request->userAgent()
         );
 
-        if (empty($registrado['ok'])) {
-            Session::flash('errors', array('pagamento' => isset($registrado['message']) ? $registrado['message'] : 'Não foi possível registrar o checkout.'));
+        if (!empty($resultado['ok'])) {
+            return $this->redirect($resultado['url']);
+        }
+
+        $motivo = isset($resultado['motivo']) ? (string) $resultado['motivo'] : '';
+        $mensagem = isset($resultado['message']) ? (string) $resultado['message'] : '';
+
+        if ($motivo === 'pedido_invalido' || $motivo === 'sem_acesso') {
+            Session::flash('errors', array('pedido' => $mensagem));
+            return $this->redirect($emV2 ? '/v2/aluno/' : '/meus-cursos');
+        }
+
+        if ($motivo === 'ja_pago' || $motivo === 'sem_cobranca') {
+            Session::flash('success', $mensagem);
+            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
+        }
+
+        if ($motivo === 'falha_finalizacao' || $motivo === 'falha_recarregar') {
+            Session::flash('errors', array('pedido' => $mensagem));
             return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
         }
 
-        if (empty($checkout['checkout']['url'])) {
-            Session::flash('errors', array('pagamento' => 'A URL de pagamento não foi retornada pela AbacatePay.'));
-            return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
-        }
-
-        return $this->redirect($checkout['checkout']['url']);
+        // desativado, falha_checkout, falha_registro, sem_url
+        Session::flash('errors', array('pagamento' => $mensagem));
+        return $this->redirect($this->urlPagamento($request, $pedidoId, $emV2));
     }
 
     public function cupomPromocional(Request $request)
@@ -686,7 +642,7 @@ class CheckoutController extends Controller
 
         // Instrução PIX real já presente no fluxo legado (mesma chave). Exibida só
         // quando o envio é possível e o usuário tem acesso ao pedido.
-        $pixKey = 'cpeducacursos@gmail.com';
+        $pixKey = PedidoService::chavePix();
 
         return array(
             'title' => 'Enviar comprovante PIX',

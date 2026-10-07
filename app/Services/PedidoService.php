@@ -2232,6 +2232,106 @@ class PedidoService
         return '';
     }
 
+    /**
+     * Status em que o aluno ainda pode cancelar o próprio pedido.
+     *
+     * Fonte única: antes a lista estava duplicada em MeusCursosController (V1) e
+     * em V2\AlunoController; agora os dois e a API do app usam esta.
+     */
+    const STATUS_CANCELAVEIS_PELO_ALUNO = array(
+        'rascunho',
+        'aguardando_pagamento',
+        'pendencia',
+        'aguardando_reenvio',
+        'comprovante_enviado',
+        'em_analise',
+    );
+
+    /** Status em que o pedido aceita comprovante PIX (mesma regra de ComprovantePixService). */
+    const STATUS_ACEITAM_COMPROVANTE = array('aguardando_pagamento', 'comprovante_enviado', 'pendencia', 'aguardando_reenvio');
+
+    /**
+     * Chave PIX exibida ao pagador (PIX manual). Era um literal em
+     * CheckoutController::dadosComprovante; agora o site e o app leem daqui.
+     */
+    const CHAVE_PIX = 'cpeducacursos@gmail.com';
+
+    public static function pedidoPodeSerCanceladoPeloAluno($status)
+    {
+        return in_array((string) $status, self::STATUS_CANCELAVEIS_PELO_ALUNO, true);
+    }
+
+    public static function pedidoAceitaComprovante($status)
+    {
+        return in_array((string) $status, self::STATUS_ACEITAM_COMPROVANTE, true);
+    }
+
+    public static function chavePix()
+    {
+        return self::CHAVE_PIX;
+    }
+
+    /** Comprador ou pagador do pedido (sem as permissões administrativas). */
+    public static function usuarioEhDonoDoPedido(array $pedido, $usuarioId)
+    {
+        $usuarioId = (int) $usuarioId;
+        return $usuarioId > 0
+            && (((int) ($pedido['comprador_usuario_id'] ?? 0) === $usuarioId)
+                || ((int) ($pedido['pagador_usuario_id'] ?? 0) === $usuarioId));
+    }
+
+    /**
+     * Cancelamento do pedido pelo próprio aluno (área do aluno V1, V2 e app).
+     *
+     * Mesmas validações e mensagens que os controllers do site faziam. A
+     * permissão final continua em registrarStatus(). Com $exigirDono (API do app),
+     * o pedido precisa ser do usuário — sem o atalho das permissões de admin.
+     *
+     * @return array ok, message, motivo (pedido_invalido|motivo_obrigatorio|nao_encontrado|nao_cancelavel|falhou)
+     */
+    public function cancelarPeloAluno($pedidoId, $usuarioId, $motivoCancelamento, $ipAddress = null, $userAgent = null, $exigirDono = false)
+    {
+        $pedidoId = (int) $pedidoId;
+        $motivoCancelamento = trim((string) $motivoCancelamento);
+
+        if ($pedidoId <= 0) {
+            return array('ok' => false, 'motivo' => 'pedido_invalido', 'message' => 'Pedido inválido para cancelamento.');
+        }
+
+        if ($motivoCancelamento === '') {
+            return array('ok' => false, 'motivo' => 'motivo_obrigatorio', 'message' => 'Informe o motivo do cancelamento do pedido.');
+        }
+
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido || ($exigirDono && !self::usuarioEhDonoDoPedido($pedido, $usuarioId))) {
+            return array('ok' => false, 'motivo' => 'nao_encontrado', 'message' => 'Pedido não encontrado.');
+        }
+
+        if (!self::pedidoPodeSerCanceladoPeloAluno((string) $pedido['status'])) {
+            return array('ok' => false, 'motivo' => 'nao_cancelavel', 'message' => 'Este pedido não pode mais ser cancelado pelo aluno.');
+        }
+
+        $observacao = 'Cancelamento solicitado pelo aluno. Motivo: ' . $motivoCancelamento;
+        $resultado = $this->registrarStatus(
+            $pedidoId,
+            'cancelado',
+            $observacao,
+            $usuarioId,
+            $ipAddress,
+            $userAgent
+        );
+
+        if (empty($resultado['ok'])) {
+            return array(
+                'ok' => false,
+                'motivo' => 'falhou',
+                'message' => isset($resultado['message']) ? $resultado['message'] : 'Não foi possível cancelar o pedido.',
+            );
+        }
+
+        return array('ok' => true);
+    }
+
     private function pedidoPodeSerAcessadoPor(array $pedido, $usuarioId)
     {
         if (!$usuarioId) {
