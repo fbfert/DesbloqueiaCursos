@@ -44,6 +44,11 @@ class Validator
 
     private static function allowTestCpfs()
     {
+        // CPFs de teste nunca valem em produção, mesmo com a chave ligada por engano.
+        if (strtolower(trim((string) Env::get('APP_ENV', 'production'))) === 'production') {
+            return false;
+        }
+
         $value = strtolower(trim((string) Env::get('ALLOW_TEST_CPFS', 'false')));
         return in_array($value, array('1', 'true', 'yes', 'on'), true);
     }

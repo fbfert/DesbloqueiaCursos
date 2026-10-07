@@ -71,9 +71,37 @@ it('WhatsApp invalido e recusado no servidor, nao so no cliente', function () us
     expect(count($errors))->toBe(1);
 });
 
+/** Roda $fn com APP_ENV e ALLOW_TEST_CPFS fixados, restaurando os valores depois. */
+function com_ambiente_cpf($appEnv, $allowTest, callable $fn) {
+    $antes = array('APP_ENV' => getenv('APP_ENV'), 'ALLOW_TEST_CPFS' => getenv('ALLOW_TEST_CPFS'));
+    putenv('APP_ENV=' . $appEnv);
+    putenv('ALLOW_TEST_CPFS=' . $allowTest);
+    try {
+        $fn();
+    } finally {
+        foreach ($antes as $k => $v) {
+            putenv($v === false ? $k : $k . '=' . $v);
+        }
+    }
+}
+
 it('CPF invalido e recusado', function () use ($svc) {
-    $errors = $svc->validar(array('email' => 'a@b.com', 'whatsapp' => '11988887777', 'cpf' => '11111111111'));
-    expect($errors)->toHaveKey('cpf');
+    com_ambiente_cpf('local', 'false', function () use ($svc) {
+        $errors = $svc->validar(array('email' => 'a@b.com', 'whatsapp' => '11988887777', 'cpf' => '11111111111'));
+        expect($errors)->toHaveKey('cpf');
+        $errors = $svc->validar(array('email' => 'a@b.com', 'whatsapp' => '11988887777', 'cpf' => '11144477736'));
+        expect($errors)->toHaveKey('cpf');
+    });
+});
+
+it('CPF de teste so vale fora de producao e com a chave ligada', function () {
+    com_ambiente_cpf('local', 'true', function () {
+        expect(\App\Core\Validator::cpf('12345678900'))->toBe(true);
+    });
+    com_ambiente_cpf('production', 'true', function () {
+        expect(\App\Core\Validator::cpf('12345678900'))->toBe(false);
+        expect(\App\Core\Validator::cpf('11111111111'))->toBe(false);
+    });
 });
 
 it('entrada boa nao gera erro', function () use ($svc) {
