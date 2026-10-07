@@ -262,6 +262,9 @@ class ComprovantePixService
 
             $pdo->commit();
 
+            // Push para o app do aluno (nunca lança; falha só vai para o log).
+            (new PushEventosService())->pedidoAprovado((int) $pedido['id']);
+
             $this->emailService->pedidoAprovado($this->pedidoModel->findById($pedido['id']), $observacao, $actorUserId, $ipAddress, $userAgent);
 
             return array('ok' => true);
@@ -342,6 +345,9 @@ class ComprovantePixService
             ));
 
             $pdo->commit();
+
+            // Push para o app do aluno (nunca lança; falha só vai para o log).
+            (new PushEventosService())->comprovanteReprovado((int) $pedido['id']);
 
             $this->emailService->pendencia($this->pedidoModel->findById($pedido['id']), $observacao, $actorUserId, $ipAddress, $userAgent);
 

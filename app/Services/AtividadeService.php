@@ -519,6 +519,11 @@ class AtividadeService
             Logger::info($acao, array('atividade_entrega_id' => $entregaId));
             $pdo->commit();
 
+            if (in_array($status, array('corrigida', 'devolvida'), true)) {
+                // Push para o app do aluno (nunca lança; falha só vai para o log).
+                (new PushEventosService())->atividadeCorrigida($entregaId, $status);
+            }
+
             return array('ok' => true, 'id' => $entregaId);
         } catch (Exception $exception) {
             $pdo->rollBack();

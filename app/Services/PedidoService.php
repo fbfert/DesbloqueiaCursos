@@ -746,6 +746,9 @@ class PedidoService
 
             $pdo->commit();
 
+            // Push para o app do aluno (nunca lança; falha só vai para o log).
+            (new PushEventosService())->pedidoAprovado((int) $pedidoId);
+
             $pedidoFinal = $this->pedidoModel->findById($pedidoId);
             if ($pedidoFinal) {
                 $observacao = isset($dados['observacao']) ? $dados['observacao'] : 'Pagamento confirmado por gateway.';
@@ -934,6 +937,11 @@ class PedidoService
             ));
 
             $pdo->commit();
+
+            if (in_array($novoStatus, array('aprovado', 'pago'), true) && !in_array((string) $pedido['status'], array('aprovado', 'pago'), true)) {
+                // Push para o app do aluno (nunca lança; falha só vai para o log).
+                (new PushEventosService())->pedidoAprovado((int) $pedidoId);
+            }
 
             if (in_array($novoStatus, array('pendencia', 'aguardando_reenvio', 'aprovado'), true)) {
                 $pedidoAtualizado = $this->pedidoModel->findById($pedidoId);
@@ -1570,6 +1578,9 @@ class PedidoService
             ));
 
             $pdo->commit();
+
+            // Push para o app do aluno (nunca lança; falha só vai para o log).
+            (new PushEventosService())->pedidoAprovado((int) $pedidoId);
 
             $this->emailService->pedidoAprovado($this->pedidoModel->findById($pedidoId), $observacao, $actorUserId, $ipAddress, $userAgent);
 

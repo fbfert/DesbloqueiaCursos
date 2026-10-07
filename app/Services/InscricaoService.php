@@ -241,6 +241,11 @@ class InscricaoService
 
             $pdo->commit();
 
+            if ($novoStatus === 'certificado_emitido' && (string) $inscricao['status'] !== 'certificado_emitido') {
+                // Push para o app do aluno (nunca lança; falha só vai para o log).
+                (new PushEventosService())->certificadoEmitido((int) $inscricaoId);
+            }
+
             $inscricaoAtualizada = $this->inscricaoModel->findById($inscricaoId);
             $resultadoEmail = null;
             if ($novoStatus === 'com_pendencia') {
