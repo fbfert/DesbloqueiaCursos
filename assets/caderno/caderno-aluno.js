@@ -615,6 +615,7 @@ Caderno.pagina('quiz', function () {
         if (!ativoNav || cur >= n - 1) return;
         e.preventDefault(); liberar(); avancar();
       }, true);
+      form.classList.add('pronto');
       prog.hidden = false;
       if (barra) barra.hidden = false;
       render();
@@ -803,6 +804,7 @@ Caderno.pagina('quiz', function () {
       for (var k = 0; k < hs.length; k++) hs[k].hidden = true;
       // Abre na primeira pendente: quem volta reencontra a prova onde parou.
       for (k = 0; k < n; k++) if (!respondida(steps[k])) { atual = k; break; }
+      form.classList.add('pronto');
       nav.hidden = false;
       if (barra) barra.hidden = false;
       render();

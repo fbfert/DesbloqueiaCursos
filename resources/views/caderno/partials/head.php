@@ -27,6 +27,10 @@ use App\Core\Helpers;
   <meta name="theme-color" content="#FCFCFA">
   <link rel="preload" href="/assets/caderno/fontes/geist-vf.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/caderno/fontes/instrument-serif-400.woff2" as="font" type="font/woff2" crossorigin>
+  <?php if ($paginaTema === 'quiz'): ?>
+  <?php // O quiz escreve progresso e navegação em letra de mão; sem o preload a troca de fonte reflui essas linhas (CLS). ?>
+  <link rel="preload" href="/assets/caderno/fontes/kalam-400.woff2" as="font" type="font/woff2" crossorigin>
+  <?php endif; ?>
   <script>(function(h){h.classList.add('js');if(!matchMedia('(prefers-reduced-motion: reduce)').matches)h.classList.add('anima');window.CADERNO_TRAVA=setTimeout(function(){h.classList.remove('anima','js')},2500)})(document.documentElement)</script>
   <link rel="stylesheet" href="/assets/caderno/caderno.css<?= $cadernoCssVersion ? '?v=' . $cadernoCssVersion : '' ?>">
   <?php if ($cadernoJsVersion): ?>

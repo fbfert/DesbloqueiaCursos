@@ -107,6 +107,8 @@
 .barra-estudo{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:8px var(--gutter) calc(8px + env(safe-area-inset-bottom,0px));background:var(--papel);border-top:1px solid var(--linha)}
 @media (min-width:900px){ .barra-estudo{display:none} }
+/* Foco por teclado nunca fica sob a barra fixa de baixo (bnav ou barra de estudo): o navegador rola o campo até acima dela. */
+@media (max-width:899px){ html{scroll-padding-bottom:calc(var(--bnav-h) + 26px + env(safe-area-inset-bottom,0px))} }
 
 /* ---------- aula: página do caderno ----------
    Celular: sumário em <details> no topo e barra de estudo fixa; >= 900 px:
@@ -136,7 +138,7 @@ p.sumario-tit{padding:16px 18px 6px}
 .sm-itens a{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 10px 8px 14px;text-decoration:none;font-size:14.5px;line-height:1.35}
 .sm-itens a[aria-current]{font-weight:600;background:linear-gradient(transparent 10%,var(--marca) 10% 90%,transparent 90%)}
 .sm-ok{flex:none;width:18px;height:18px;fill:none;stroke:var(--tinta);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
-.sm-bola{flex:none;width:15px;height:15px;margin:2px 1.5px 0;border:1.5px solid var(--apagado);border-radius:50% 46% 52% 48%}
+.sm-bola{flex:none;width:15px;height:15px;margin:2px 1.5px 0;border:1.5px solid var(--texto2);border-radius:50% 46% 52% 48%}
 .sm-etq{padding:10px 10px 0 14px;font:400 16px/1.25 var(--mao);color:var(--tinta)}
 .sm-vazio{padding:12px 18px 16px;color:var(--texto2)}
 @media (hover:hover){ .sm-itens a:hover{background-color:rgba(31,63,168,.06)} }
@@ -282,6 +284,16 @@ html:has(.relogio){scroll-padding-top:128px}
 
 /* progresso (curto) e navegação da prova */
 .quiz-passos,.prova-nav{margin-top:16px}
+/* Reserva o espaço do progresso/navegação (ligados por JS) até o módulo iniciar: evita o salto do layout (CLS) quando o script chega. */
+html.js form:not(.pronto) .quiz-passos[hidden],html.js form:not(.pronto) .prova-nav[hidden]{display:block!important;visibility:hidden}
+html.js form:not(.pronto) .quiz-passos[hidden]{min-height:92px}
+html.js form:not(.pronto) .prova-nav[hidden]{min-height:110px}
+@media (min-width:700px){ html.js form:not(.pronto) .prova-nav[hidden]{min-height:90px} }
+/* As perguntas ficam invisíveis até o módulo escolher a pergunta atual (evita o salto de layout quando o script esconde as demais). Sem o script, a animação abaixo revela tudo em 4 s (a regra de movimento reduzido usa !important; esta, mais específica, vence). */
+html.js form:not(.pronto) #v2-quiz-perguntas{visibility:hidden;animation:quiz-revela 0s 4s forwards!important}
+@keyframes quiz-revela{to{visibility:visible}}
+/* A margem da primeira pergunta visível não pode "vazar" para fora do contêiner (o salto de 28 px quando o script esconde as demais conta como CLS). */
+#v2-quiz-perguntas{display:flow-root}
 .quiz-passos-txt,.prova-nav-bloco{font:400 20px/1.3 var(--mao);color:var(--tinta)}
 .trilho{height:4px;margin-top:6px;border-radius:2px;overflow:hidden;background:repeating-linear-gradient(90deg,var(--linha) 0 7px,transparent 7px 11px)}
 .trilho-tinta{width:0;height:100%;border-radius:2px;background:var(--tinta);transition:width .3s var(--ease-out)}
@@ -379,7 +391,7 @@ li.alt{cursor:default}
 .gab-tag.errada{color:var(--vermelho)}
 .gab-tag .ico{width:14px;height:14px}
 .gab-expl{margin-top:12px;padding:12px 16px 14px;font-size:15px;line-height:1.55;background:var(--postit);box-shadow:0 1px 1px rgba(0,0,0,.08),0 12px 14px -12px rgba(60,40,0,.45);transform:rotate(-.4deg)}
-.gab-expl b{display:block;font:400 18px var(--mao);color:var(--vermelho)}
+.gab-expl b{display:block;font:400 18px var(--mao);color:#B83228}
 .quiz-fim{margin-top:38px}
 @media (min-width:480px){ .gab-expl{margin-left:40px} }
 @media (prefers-reduced-motion:reduce){ .alt-circ,.trilho-tinta,.quiz-salvo::before{transition:none} }
