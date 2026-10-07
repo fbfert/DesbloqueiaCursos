@@ -64,5 +64,7 @@ $cadernoNavPorPagina = array(
     'cadastro' => 'entrar',
     'recuperar-senha' => 'entrar',
     'recuperar-senha-redefinir' => 'entrar',
+    'aluno' => 'area',
+    'conta' => 'area',
 );
 $navAtual = isset($cadernoNavPorPagina[$paginaTema]) ? $cadernoNavPorPagina[$paginaTema] : '';

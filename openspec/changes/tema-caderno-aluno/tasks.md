@@ -10,9 +10,9 @@ Contexto obrigatório para cada tarefa: `proposal.md`, `specs/tema-publico/spec.
 
 ## 2. Área do aluno e minha conta
 
-- [ ] 2.1 `caderno/aluno.php` + `caderno/pages/aluno.php`: abas, cursos, pedidos (retomar e cancelar), certificados, perfil, vazios, flash — design.md §3.
-- [ ] 2.2 `caderno/conta.php` + `caderno/pages/conta.php` + módulo conta do `caderno-aluno.js` (máscara de CPF, cidades por UF com cache e fallback): mesmos campos, erros por campo e `old`.
-- [ ] 2.3 Verificar por HTTP: as quatro abas, aba inválida → cursos, cancelamento de pedido (com e sem motivo), salvar conta com e-mail inválido e com dados válidos; restaurar o banco local.
+- [x] 2.1 `caderno/aluno.php` + `caderno/pages/aluno.php`: abas, cursos, pedidos (retomar e cancelar), certificados, perfil, vazios, flash — design.md §3.
+- [x] 2.2 `caderno/conta.php` + `caderno/pages/conta.php` + módulo conta do `caderno-aluno.js` (máscara de CPF, cidades por UF com cache e fallback): mesmos campos, erros por campo e `old`.
+- [x] 2.3 Verificar por HTTP: as quatro abas, aba inválida → cursos, cancelamento de pedido (com e sem motivo), salvar conta com e-mail inválido e com dados válidos; restaurar o banco local.
 
 ## 3. Aula e atividade
 
