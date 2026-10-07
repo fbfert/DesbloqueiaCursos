@@ -95,9 +95,22 @@ foreach ($altData2 as $idx => $texto) {
     $altIds2[] = (int) $pdo->lastInsertId();
 }
 
+/**
+ * CPF único por execução. CPFs fixos (11111111111, 22222222222) colidiam com os
+ * usuários de homologação do sql/017 e derrubavam dois casos com "Duplicate entry".
+ */
+function quiz_cpf_teste($n)
+{
+    static $prefixo = null;
+    if ($prefixo === null) {
+        $prefixo = substr((string) (time() . mt_rand(100, 999)), -7);
+    }
+    return '8' . $prefixo . sprintf('%03d', (int) $n);
+}
+
 // Criar aluno e inscrição de teste
 $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at)
-               VALUES (\'__TestAluno__\', \'testquiz@quiz.test\', :pass, \'00000000001\', \'ativo\', NOW(), NOW())')
+               VALUES (\'__TestAluno__\', \'testquiz@quiz.test\', :pass, ' . $pdo->quote(quiz_cpf_teste(1)) . ', \'ativo\', NOW(), NOW())')
     ->execute(array('pass' => password_hash('test123', PASSWORD_DEFAULT)));
 $alunoId = (int) $pdo->lastInsertId();
 
@@ -105,7 +118,7 @@ $inscricaoId = criarInscricaoTeste($pdo, $alunoId, $cursoId);
 
 // Criar segundo aluno para teste de isolamento
 $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at)
-               VALUES (\'__TestAluno2__\', \'testquiz2@quiz.test\', :pass, \'00000000002\', \'ativo\', NOW(), NOW())')
+               VALUES (\'__TestAluno2__\', \'testquiz2@quiz.test\', :pass, ' . $pdo->quote(quiz_cpf_teste(2)) . ', \'ativo\', NOW(), NOW())')
     ->execute(array('pass' => password_hash('test123', PASSWORD_DEFAULT)));
 $aluno2Id = (int) $pdo->lastInsertId();
 
@@ -338,7 +351,7 @@ it('bloqueia nova tentativa quando limite atingido', function () use ($pdo, $qui
     $altLId = (int) $pdo->lastInsertId();
 
     // Aluno e inscrição temporários (as chaves estrangeiras exigem registros reais)
-    $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at) VALUES (\'__LimitAluno__\', \'limitquiz@quiz.test\', \'x\', \'99999999999\', \'ativo\', NOW(), NOW())')
+    $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at) VALUES (\'__LimitAluno__\', \'limitquiz@quiz.test\', \'x\', ' . $pdo->quote(quiz_cpf_teste(3)) . ', \'ativo\', NOW(), NOW())')
         ->execute(array());
     $limitAlunoId = (int) $pdo->lastInsertId();
     $limitInscId  = criarInscricaoTeste($pdo, $limitAlunoId, $cursoId);
@@ -406,7 +419,7 @@ it('quiz obrigatório SEM exige_aprovacao: envio marca concluido', function () u
     $altCorretaP = $pdo->query("SELECT id FROM conteudo_quiz_alternativas WHERE pergunta_id = {$pidP} AND correta = 1 LIMIT 1")->fetchColumn();
 
     // Criar aluno e inscrição
-    $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at) VALUES (\'__ProgAluno__\', \'progquiz@quiz.test\', \'x\', \'11111111111\', \'ativo\', NOW(), NOW())')
+    $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at) VALUES (\'__ProgAluno__\', \'progquiz@quiz.test\', \'x\', ' . $pdo->quote(quiz_cpf_teste(4)) . ', \'ativo\', NOW(), NOW())')
         ->execute(array());
     $progAlunoId = (int) $pdo->lastInsertId();
     $progInscId = criarInscricaoTeste($pdo, $progAlunoId, $cursoId);
@@ -449,7 +462,7 @@ it('quiz obrigatório COM exige_aprovacao: reprovado quando abaixo do mínimo', 
         ->execute(array('p' => $pidR, 'p2' => $pidR));
     $altErrada = (int) $pdo->query("SELECT id FROM conteudo_quiz_alternativas WHERE pergunta_id = {$pidR} AND correta = 0 LIMIT 1")->fetchColumn();
 
-    $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at) VALUES (\'__ReprovaAluno__\', \'reprova@quiz.test\', \'x\', \'22222222222\', \'ativo\', NOW(), NOW())')
+    $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, cpf, status, created_at, updated_at) VALUES (\'__ReprovaAluno__\', \'reprova@quiz.test\', \'x\', ' . $pdo->quote(quiz_cpf_teste(5)) . ', \'ativo\', NOW(), NOW())')
         ->execute(array());
     $raId = (int) $pdo->lastInsertId();
     $riId = criarInscricaoTeste($pdo, $raId, $cursoId);

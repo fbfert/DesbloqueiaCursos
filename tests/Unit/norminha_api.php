@@ -16,6 +16,14 @@
  *   1. servidor local:  php -S 127.0.0.1:8000 -t . tests/Smoke/router.php
  *   2. credenciais de teste em NORMINHA_API_CREDS (arquivo JSON) ou as
  *      variáveis NORMINHA_URL / NORMINHA_USER / NORMINHA_PASS
+ *      Arquivo JSON: {"e1": e-mail do aluno A, "u1": id do aluno A (o teste de
+ *      429 zera o contador dele), "e2": e-mail do aluno B (teste de invasão),
+ *      "senha": senha comum, "inscricao": id de uma inscrição do aluno A}.
+ *      Sem "inscricao", aluno com mais de um curso recebe 422 (ambíguo); sem
+ *      "u1", sobras de execuções anteriores fazem o corte sair antes da 21ª.
+ *      No ambiente Docker local: NORMINHA_URL=http://127.0.0.1:8010, aluno A =
+ *      aluno.caderno@teste.local (id 9001, fixture), aluno B =
+ *      aluno.homologacao@polorainbow.com.br, inscrição 9001.
  *
  * Execução: php tests/Unit/norminha_api.php
  */

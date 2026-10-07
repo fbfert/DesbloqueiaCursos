@@ -74,7 +74,11 @@ foreach ($candidatos as $uid) {
         if ($semProgresso === null && (int) $temProgresso === 0 && (int) $temItens > 0) {
             $semProgresso = array('usuario_id' => (int) $uid, 'inscricao_id' => (int) $ins['id']);
         }
-        if ($aptoCert === null && !empty($ins['apto_certificado'])) {
+        // Apta de verdade: flag gravada E inscrição concluída. A semente de homologação
+        // (sql/017) grava apto_certificado=1 numa inscrição em andamento com 45 % — flag
+        // velha, que o cálculo ao vivo corretamente recusa; ela não serve de exemplo.
+        if ($aptoCert === null && !empty($ins['apto_certificado'])
+            && in_array((string) ($ins['status'] ?? ''), array('concluida', 'concluida_sem_certificado', 'certificado_emitido'), true)) {
             $aptoCert = array('usuario_id' => (int) $uid, 'inscricao_id' => (int) $ins['id']);
         }
         if ($naoAptoCert === null && empty($ins['apto_certificado'])) {
