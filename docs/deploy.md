@@ -57,6 +57,36 @@ com extensão diferente de `.php` dentro dessas pastas (ex.: `.bak`, `.tmp`,
    preparação para o go-live da V2 — scripts assim já causaram uma exposição
    real de credencial de banco em produção).
 
+## 2.1 Deploy com `scripts/deploy_vps.sh`
+
+Roteiro automatizado dos passos acima, para rodar **na VPS como o usuário do
+domínio** (nunca root). Instruções completas no cabeçalho do script.
+
+```bash
+# na sua máquina, na raiz do repositório
+git -c core.autocrlf=false archive --format=tar.gz --prefix=pacote/ \
+    -o deploy-$(git rev-parse --short HEAD).tar.gz HEAD
+# envie o .tar.gz e scripts/deploy_vps.sh para ~/deploy/ na VPS; lá:
+bash ~/deploy/deploy_vps.sh --pacote ~/deploy/deploy-<commit>.tar.gz --simular
+bash ~/deploy/deploy_vps.sh --pacote ~/deploy/deploy-<commit>.tar.gz \
+     --migracoes "080 081" --url https://desbloqueiacursos.com.br
+```
+
+- Aborta antes de mexer em qualquer coisa se o `.env` não tiver
+  `APP_ENV=production` ou se o lint de algum `.php` do pacote falhar.
+- Backup do código e dump do banco em `~/backups/deploy-<data-hora>/` antes de
+  alterar algo; `--reverter <essa pasta>` restaura o código (o banco, só à mão,
+  com o comando que o script imprime).
+- Migrações só as listadas em `--migracoes`, antes da cópia do código, com
+  `utf8mb4`. Cada deploy e cada migração ficam em `~/deploy-historico.log`; é
+  ali que se descobre, no próximo deploy, o que já foi aplicado.
+- Nunca sobrescreve `.env`, `storage/`, uploads nem `backups/`; não envia
+  `tests/` (onde mora a fixture de teste). Arquivos que saíram do repositório
+  **não** são apagados do servidor.
+- Ao final confere `/`, `/cursos`, `/login`, `/sitemap.xml`, `/v2/catalogo`,
+  que `/admin/dashboard` sem login não dá 200, que `/.env` não abre e os erros
+  novos no log do dia. `--capas` roda `otimizar_capas.php --aplicar`.
+
 ## 3. Variáveis de ambiente relevantes ao V2
 
 - `HOME_VERSION` (`v1` padrão, `v2` para tornar a Home V2 a página inicial).
