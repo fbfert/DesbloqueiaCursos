@@ -30,7 +30,7 @@ Contexto obrigatório para cada tarefa: `proposal.md`, `specs/tema-publico/spec.
 ## 5. Fechamento
 
 - [x] 5.1 Smoke (`tests/Smoke/rotas.php`): páginas do aluno no tema quando `TEMA_PUBLICO=caderno` (folha `caderno.css` + `caderno-aluno.css`), anônimo → `/v2/login`; aula, quiz e atividade autenticados com a fixture quando disponível (SKIP sem ela).
-- [ ] 5.2 Orçamento: medir gz de `caderno.js` + `caderno-aluno.js` (≤ 25 KB) e `caderno.css` + `caderno-aluno.css` (≤ 25 KB); Lighthouse celular na área do aluno e numa aula (LCP ≤ 2,5 s, CLS ≤ 0,1); registrar no doc.
-- [ ] 5.3 Acessibilidade: foco visível, navegação por teclado no sumário, abas e quiz; `prefers-reduced-motion`; contraste dos estados (concluído, atual, erro, tempo acabando); 360 px sem rolagem horizontal.
-- [ ] 5.4 `php -l` (container) e lint sem `Deprecated` no PHP 8.4 do host em todos os PHP tocados; testes `tema_publico`, `norminha_arquitetura`, `quiz_rascunho` e smoke passam.
-- [ ] 5.5 Atualizar `docs/2026-10-06-tema-caderno.md` (escopo, fase 2 entregue, orçamento medido, pendências) e o README do tema se houver.
+- [x] 5.2 Orçamento: medir gz de `caderno.js` + `caderno-aluno.js` (≤ 25 KB) e `caderno.css` + `caderno-aluno.css` (≤ 25 KB); Lighthouse celular na área do aluno e numa aula (LCP ≤ 2,5 s, CLS ≤ 0,1); registrar no doc.
+- [x] 5.3 Acessibilidade: foco visível, navegação por teclado no sumário, abas e quiz; `prefers-reduced-motion`; contraste dos estados (concluído, atual, erro, tempo acabando); 360 px sem rolagem horizontal.
+- [x] 5.4 `php -l` (container) e lint sem `Deprecated` no PHP 8.4 do host em todos os PHP tocados; testes `tema_publico`, `norminha_arquitetura`, `quiz_rascunho` e smoke passam.
+- [x] 5.5 Atualizar `docs/2026-10-06-tema-caderno.md` (escopo, fase 2 entregue, orçamento medido, pendências) e o README do tema se houver.
