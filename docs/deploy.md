@@ -142,8 +142,31 @@ Relatório completo: `docs/2026-10-06-tema-caderno.md`.
   `/assets/caderno/caderno.css?v=...` traz `Expires` de um ano e
   `/assets/css/app.css` não.
 - **Capas dos cursos:** as atuais têm 1,7–2,0 MB cada. Na página do curso a
-  capa é o maior elemento da tela; reexportá-las em tamanho e formato menores
-  (a mesma arte) é o que permite o LCP de 2,5 s também ali.
+  capa é o maior elemento da tela; otimizá-las (a mesma arte, menor peso) é o
+  que permite o LCP de 2,5 s também ali. Ver §3.2 (`scripts/otimizar_capas.php`).
+
+## 3.2 Capas otimizadas
+
+Capas novas de cursos e categorias são redimensionadas (máx. 1280 px) e
+recodificadas no upload (WebP q80 se o PHP tiver suporte, senão JPEG q82; PNG
+se houver transparência). Se a otimização falhar, o upload segue com o arquivo
+original e o motivo vai para o log (`midia.capa.otimizacao_ignorada`).
+
+Para as capas **já existentes**, depois do deploy, na raiz do projeto:
+
+```bash
+php scripts/otimizar_capas.php                 # simulação: lista candidatas e ganho; não altera nada
+php scripts/otimizar_capas.php --aplicar       # cria <nome>-otm.<ext> ao lado, atualiza o banco, grava o manifesto
+php scripts/otimizar_capas.php --reverter=storage/app/otimizar_capas/<data-hora>.json
+```
+
+- Candidata: capa com largura acima de 1280 px ou arquivo acima de 300 KB.
+- Os originais **nunca** são apagados nem movidos; guarde o caminho do manifesto
+  impresso no final do `--aplicar`.
+- Capa referenciada no banco mas ausente no disco aparece no relatório e o
+  registro não é alterado.
+- Conferir `php -r 'var_dump(gd_info()["WebP Support"]);'`: sem WebP o script
+  usa JPEG, que já reduz ~2 MB para ~300 KB.
 
 ## 4. Pós-deploy
 

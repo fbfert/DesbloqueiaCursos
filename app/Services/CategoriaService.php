@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Categoria;
+use App\Support\OtimizadorImagem;
 use Exception;
 
 class CategoriaService
@@ -302,9 +303,14 @@ class CategoriaService
             return array('ok' => false, 'message' => 'Não foi possível salvar a thumbnail enviada.');
         }
 
+        $nomeFinal = OtimizadorImagem::otimizarCapaGravada($destino);
+        if ($nomeFinal === null) {
+            $nomeFinal = $nomeSeguro;
+        }
+
         return array(
             'ok' => true,
-            'path' => $diretorioPublico . '/' . $nomeSeguro,
+            'path' => $diretorioPublico . '/' . $nomeFinal,
         );
     }
 

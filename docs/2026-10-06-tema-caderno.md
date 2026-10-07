@@ -321,8 +321,10 @@ aparece em `/v2/`.
    `assets/caderno/`, que já usa `?v=filemtime`). Sem isso, home, catálogo e
    curso ficam acima de 2,5 s de LCP na 4G lenta. Ver `docs/deploy.md`.
 2. **Reduzir o peso das capas atuais** (1,7–2,0 MB por PNG). Não é trocar a
-   arte, decisão que segue fora do escopo: é reexportar as mesmas imagens em
-   640–1280 px e formato comprimido. Sem isso a página do curso não cumpre o
+   arte, decisão que segue fora do escopo. **Implementado** (mudança
+   `capas-otimizadas`): uploads novos já são otimizados e o script
+   `scripts/otimizar_capas.php` trata as existentes — falta **rodá-lo na VPS**
+   (simulação, conferir, `--aplicar`; ver `docs/deploy.md` §3.2). Sem isso a página do curso não cumpre o
    LCP, e a home e o catálogo gastam dezenas de MB de dados pré-pagos de quem
    rolar a página — problema que a V2 já tem hoje.
 3. Validar pela prévia, com dados reais, cada página do escopo e uma compra de
@@ -427,7 +429,9 @@ mudanças OpenSpec `fila-revisao-admin` e `tema-caderno` já foram arquivadas
    dados reais — em especial o checkout com um pedido de teste e o cupom.
 3. **Ligar compressão e cache no Apache do Virtualmin** conforme
    `docs/deploy.md` §3.1 e conferir `Content-Encoding: gzip` com `curl -I`.
-4. **Capas dos cursos em tamanho de web** (hoje 1,7–2,0 MB cada).
+4. **Capas dos cursos em tamanho de web** (hoje 1,7–2,0 MB cada): código
+   pronto (upload otimiza sozinho); rodar `scripts/otimizar_capas.php` na VPS
+   (`docs/deploy.md` §3.2).
 5. **Virar a chave** (`TEMA_PUBLICO=caderno`) depois de 2–4 validados, com
    aprovação do produto; rollback é voltar para `v2`.
 6. **Próxima fase do redesign:** área do aluno, aula, quiz, atividade e minha

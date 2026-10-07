@@ -11,6 +11,7 @@ use App\Models\CursoPessoaVinculada;
 use App\Models\Turma;
 use App\Models\Usuario;
 use App\Models\UsuarioCurso;
+use App\Support\OtimizadorImagem;
 use Exception;
 
 class CursoService
@@ -475,9 +476,14 @@ class CursoService
             return array('ok' => false, 'message' => 'Nao foi possivel salvar a thumbnail enviada.');
         }
 
+        $nomeFinal = OtimizadorImagem::otimizarCapaGravada($destino);
+        if ($nomeFinal === null) {
+            $nomeFinal = $nomeSeguro;
+        }
+
         return array(
             'ok' => true,
-            'path' => $this->thumbnailDirectoryPublic . '/' . $nomeSeguro,
+            'path' => $this->thumbnailDirectoryPublic . '/' . $nomeFinal,
         );
     }
 
