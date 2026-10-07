@@ -34,6 +34,9 @@
  * Credenciais do modo autenticado (NUNCA hard-coded):
  *   SMOKE_USER=... SMOKE_PASS=... php tests/Smoke/smoke.php <url> --modo=todos
  *   Ausentes, o modo autenticado é PULADO com aviso, sem falhar a suíte.
+ *   Opcionais (cada uma pulada com SKIP quando ausente): SMOKE_AULA_URL,
+ *   SMOKE_QUIZ_URL, SMOKE_ATIVIDADE_URL — caminho com query, ex.:
+ *   /v2/aula?inscricao_id=1&curso_id=1&turma_id=1&modulo_id=2&conteudo_id=3
  *   Use sempre um usuário de teste dedicado, jamais a conta de um aluno real.
  *
  * Saída: 0 se tudo passou, 1 se qualquer verificação falhou.
@@ -419,6 +422,25 @@ $verificar = function ($grupo, array $rota, array $contexto) use (
         }
     }
 
+    // Folhas do tema. 'proibe': trechos que NÃO podem aparecer (ex.: caderno-aluno.*
+    // na vitrine). 'tema_exige': trechos obrigatórios, mas só quando a página foi
+    // servida no tema caderno (detectado por caderno.css), para a mesma rota valer
+    // com TEMA_PUBLICO=v2 e =caderno.
+    if (isset($rota['proibe'])) {
+        foreach ((array) $rota['proibe'] as $trecho) {
+            if (strpos($resposta['corpo'], $trecho) !== false) {
+                $falhas[] = 'trecho proibido presente: ' . $trecho;
+            }
+        }
+    }
+    if (isset($rota['tema_exige']) && strpos($resposta['corpo'], 'assets/caderno/caderno.css') !== false) {
+        foreach ((array) $rota['tema_exige'] as $trecho) {
+            if (strpos($resposta['corpo'], $trecho) === false) {
+                $falhas[] = 'tema caderno sem: ' . $trecho;
+            }
+        }
+    }
+
     $guardaAtiva = !isset($rota['guarda']) || $rota['guarda'] !== false;
     $guarda = array('componente' => null, 'css' => null, 'js' => null);
     if ($guardaAtiva) {
@@ -556,6 +578,11 @@ if (!$abortado && ($opcoes['modo'] === 'autenticado' || $opcoes['modo'] === 'tod
                 $falhasTotais++;
             } else {
                 echo smoke_cor("      login OK — sessão estabelecida", 'cinza', $cor) . "\n";
+                // Rotas opcionais (aula, quiz, atividade): só entram com a variável definida.
+                $pulados = isset($rotas['autenticado_pulados']) ? $rotas['autenticado_pulados'] : array();
+                foreach ($pulados as $ausente) {
+                    echo smoke_cor("SKIP  {$ausente['nome']} — {$ausente['env']} não definida.", 'amarelo', $cor) . "\n";
+                }
                 foreach ($rotas['autenticado'] as $rota) {
                     if ($excedeuTempo()) { $abortado = true; break; }
                     $verificar('autenticado', $rota, array('cookies' => $cookies));

@@ -57,6 +57,38 @@ namespace V2, `/login` para o legado.
 `SMOKE_USER` / `SMOKE_PASS` — **nunca hard-coded**. Ausentes, o modo é pulado com aviso, sem falhar
 a suíte.
 
+### Páginas do aluno no tema caderno (aula, quiz, atividade)
+
+Com `TEMA_PUBLICO=caderno`, as páginas do aluno carregam `caderno.css` **e** `caderno-aluno.css`
+(mais `caderno-aluno.js`); home e catálogo **não** podem referenciar `caderno-aluno.*` (campo
+`proibe`). A exigência das duas folhas só vale quando a página veio no tema (campo `tema_exige`,
+detectado por `assets/caderno/caderno.css` no HTML), então as mesmas rotas passam com
+`TEMA_PUBLICO=v2`.
+
+`/v2/aluno` e `/v2/minha-conta` já entram no modo autenticado. Aula, quiz e atividade dependem de
+ids de matrícula e conteúdo, que não existem de forma fixa em produção; por isso o caminho (com
+query) vem de variáveis opcionais, e cada uma é **pulada com `SKIP`** quando ausente:
+
+| Variável | Verifica |
+|---|---|
+| `SMOKE_AULA_URL` | aula (ex.: `/v2/aula?inscricao_id=..&curso_id=..&turma_id=..&modulo_id=..&conteudo_id=..`) |
+| `SMOKE_QUIZ_URL` | quiz, de preferência em andamento ou "antes de começar" (só GET) |
+| `SMOKE_ATIVIDADE_URL` | atividade |
+
+Em produção, use os ids de um curso de teste da conta de teste dedicada. A fixture local
+(`tests/Fixtures/tema_caderno_aluno.sql`, **somente local**) nunca é exigida. Com ela:
+
+```bash
+docker compose -f docker/local/compose.yml exec -T \
+  -e SMOKE_USER=aluno.caderno@teste.local -e SMOKE_PASS='Local@12345' \
+  -e 'SMOKE_AULA_URL=/v2/aula?inscricao_id=9001&curso_id=9001&turma_id=9001&modulo_id=9002&conteudo_id=9002' \
+  -e 'SMOKE_QUIZ_URL=/v2/quiz?inscricao_id=9001&curso_id=9001&turma_id=9001&modulo_id=9002&conteudo_id=9016' \
+  -e 'SMOKE_ATIVIDADE_URL=/v2/atividade?inscricao_id=9001&curso_id=9001&turma_id=9001&modulo_id=9003&conteudo_id=9021' \
+  app php tests/Smoke/smoke.php http://127.0.0.1:8010 --modo=todos
+```
+
+Resultado de referência: 49 verificações, 49 PASS (anônimo + aluno + aula/quiz/atividade).
+
 ## Guarda do layout global
 
 É o motivo principal desta suíte existir.
@@ -132,7 +164,9 @@ array('path' => '/nova-rota', 'nome' => 'Nome legível'),
 ```
 
 Campos disponíveis: `path`, `nome`, `status` (padrão 200), `marcador` (padrão: marcador global),
-`guarda` (`false` para respostas não-HTML), `destino` (só em `protegidas`) e `defeito`.
+`guarda` (`false` para respostas não-HTML), `destino` (só em `protegidas`), `proibe` (trechos que
+não podem aparecer no corpo), `tema_exige` (trechos obrigatórios quando a página veio no tema
+caderno) e `defeito`.
 
 `defeito` documenta um problema conhecido do portal: a rota conta como PASS, para o baseline não
 ficar vermelho, mas o runner avisa em toda execução. Use sempre com um comentário explicando o

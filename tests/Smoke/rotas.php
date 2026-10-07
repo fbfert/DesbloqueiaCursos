@@ -15,6 +15,9 @@
  *   guarda     true  -> aplica a guarda de layout global (Norminha, erros de PHP)
  *              false -> pula (usar em respostas não-HTML: XML, texto puro)
  *   destino    somente em 'protegidas': trecho que o URL final precisa conter
+ *   proibe     trechos que NÃO podem aparecer no corpo (string ou lista)
+ *   tema_exige trechos obrigatórios, só se a página veio no tema caderno
+ *              (detectado por assets/caderno/caderno.css); vale nos dois temas
  *   defeito    descreve um defeito conhecido do portal. A rota conta como PASS
  *              (para o baseline não ficar vermelho), mas o runner avisa sempre.
  *              Use só com um comentário explicando o defeito e como corrigi-lo.
@@ -31,9 +34,9 @@ $rotas = array(
     // MODO ANÔNIMO — devem responder 200 para visitante sem sessão.
     // ---------------------------------------------------------------------
     'anonimo' => array(
-        array('path' => '/',                            'nome' => 'Home'),
-        array('path' => '/v2',                          'nome' => 'Home V2'),
-        array('path' => '/v2/catalogo',                 'nome' => 'Catálogo V2'),
+        array('path' => '/',                            'nome' => 'Home', 'proibe' => 'caderno-aluno'),
+        array('path' => '/v2',                          'nome' => 'Home V2', 'proibe' => 'caderno-aluno'),
+        array('path' => '/v2/catalogo',                 'nome' => 'Catálogo V2', 'proibe' => 'caderno-aluno'),
         array('path' => '/v2/categorias',               'nome' => 'Categorias V2'),
         array('path' => '/v2/curso',                    'nome' => 'Curso V2'),
         array('path' => '/v2/catalogo/?q=caderno',      'nome' => 'Catálogo V2 com busca'),
@@ -99,8 +102,11 @@ $rotas = array(
     // Use SEMPRE um usuário de teste dedicado, nunca a conta de um aluno real.
     // ---------------------------------------------------------------------
     'autenticado' => array(
-        array('path' => '/v2/aluno',       'nome' => 'Área do aluno V2'),
-        array('path' => '/v2/minha-conta', 'nome' => 'Minha conta V2'),
+        // No tema caderno, as páginas do aluno trazem as duas folhas (base + aluno).
+        array('path' => '/v2/aluno',       'nome' => 'Área do aluno V2',
+              'tema_exige' => array('assets/caderno/caderno-aluno.css', 'assets/caderno/caderno-aluno.js')),
+        array('path' => '/v2/minha-conta', 'nome' => 'Minha conta V2',
+              'tema_exige' => array('assets/caderno/caderno-aluno.css', 'assets/caderno/caderno-aluno.js')),
         array('path' => '/meus-cursos',    'nome' => 'Meus cursos (legado)'),
         array('path' => '/area-curso',     'nome' => 'Área do curso (legado)'),
     ),
@@ -129,6 +135,29 @@ if ($smokeCursoId > 0) {
         'path' => '/v2/curso/?curso_id=' . $smokeCursoId,
         'nome' => 'Curso V2 com curso_id=' . $smokeCursoId . ' (SMOKE_CURSO_ID)',
     );
+}
+
+// Aula, quiz e atividade autenticados: o caminho (com query) vem de variáveis de
+// ambiente, porque ids de matrícula/conteúdo não existem de forma fixa em produção.
+// Sem a variável, a verificação é pulada com SKIP. A fixture local
+// tests/Fixtures/tema_caderno_aluno.sql nunca é exigida (ver README, "Páginas do aluno").
+$rotas['autenticado_pulados'] = array();
+$opcionaisAluno = array(
+    'SMOKE_AULA_URL'      => 'Aula V2',
+    'SMOKE_QUIZ_URL'      => 'Quiz V2',
+    'SMOKE_ATIVIDADE_URL' => 'Atividade V2',
+);
+foreach ($opcionaisAluno as $env => $nome) {
+    $caminho = (string) getenv($env);
+    if ($caminho !== '' && $caminho[0] === '/') {
+        $rotas['autenticado'][] = array(
+            'path'       => $caminho,
+            'nome'       => $nome . ' (' . $env . ')',
+            'tema_exige' => array('assets/caderno/caderno-aluno.css', 'assets/caderno/caderno-aluno.js'),
+        );
+    } else {
+        $rotas['autenticado_pulados'][] = array('env' => $env, 'nome' => $nome);
+    }
 }
 
 return $rotas;
