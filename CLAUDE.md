@@ -135,7 +135,7 @@ Todo texto exibido ao usuário (frontend público, área do aluno, área do prof
 
 ## Deploy
 
-**Versão de PHP em produção: 8.2, 8.3 ou 8.4** (todas disponíveis na VPS; informado pelo responsável em 06/10/2026). Todo código novo deve rodar nas três. Atenção ao 8.4: o `App\Core\ErrorHandler` transforma *qualquer* aviso — inclusive `E_DEPRECATED` — em página 500, e o código existente tem parâmetros com default `null` sem tipo nullable explícito (deprecated no 8.4; ~54 ocorrências em 12 arquivos de `app/`). Não escreva `Tipo $x = null`: use `?Tipo $x = null`. Localmente, rode o app pelo Docker (PHP 8.3, ver `docker/local/`, fora do git) ou valide com `php -l` também no 8.4.
+**Versão de PHP em produção: 8.2, 8.3 ou 8.4** (todas disponíveis na VPS; informado pelo responsável em 06/10/2026). Todo código novo deve rodar nas três. Atenção ao 8.4: o `App\Core\ErrorHandler` transforma *qualquer* aviso — inclusive `E_DEPRECATED` — em página 500, Os parâmetros com default `null` sem tipo nullable explícito (deprecated no 8.4) foram corrigidos na mudança `compat-php84` — as 28 ocorrências reais; o lint 8.4 de todos os arquivos versionados dá zero `Deprecated` —, então 8.2, 8.3 e 8.4 podem ser usados. Em código novo, continue sem escrever `Tipo $x = null`: use `?Tipo $x = null`. Localmente, rode o app pelo Docker (PHP 8.3, ver `docker/local/`, fora do git) ou valide com `php -l` também no 8.4.
 
 **Servidor:** VPS com AlmaLinux administrada pelo **Virtualmin** (não é cPanel), com PHP 8.2, 8.3 e 8.4 instalados — a versão usada pelo site é escolhida por domínio no Virtualmin. Configuração de servidor web (compressão, cache, módulos) é feita no Apache do Virtualmin ou nos `.htaccess` do projeto.
 

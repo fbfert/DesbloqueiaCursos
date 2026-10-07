@@ -127,10 +127,11 @@ PHP da produção não estava documentada; o código novo evita `fn`, `match`,
 `?->`, `str_contains` e propriedades tipadas, como o restante do projeto.
 Depois da entrega o responsável informou que a produção roda **PHP 8.2 ou
 8.4**: o código do tema é compatível com as duas (nenhum arquivo PHP desta
-mudança emite aviso no 8.4). O código *anterior* ao tema, porém, tem ~54
-parâmetros com default `null` sem tipo nullable em 12 arquivos de `app/`, e o
-`ErrorHandler` transforma esses avisos de depreciação em erro 500 no PHP 8.4 —
-ver "Pendências" abaixo.
+mudança emite aviso no 8.4). Os parâmetros com default `null` sem tipo
+nullable do código anterior (que o `ErrorHandler` transformaria em erro 500 no
+8.4) foram corrigidos na mudança `compat-php84`: as 28 ocorrências reais, e o
+lint 8.4 de todos os arquivos versionados dá zero `Deprecated`. Com isso, PHP
+8.2, 8.3 e 8.4 podem ser usados; em código novo, use `?Tipo $x = null`.
 
 ## Arquitetura
 
@@ -173,7 +174,7 @@ rota ou migration foi alterado.
 | Flag `$cadernoEstudo` | aula, atividade, quiz | `<body data-estudo>`, sem a barra inferior geral (`bnav`); no celular entra a `barra-estudo` fixa (anterior · posição · próxima, ou as ações da atividade/quiz) |
 | CSS | `assets/caderno/caderno-aluno.css` | somente as páginas do aluno; usa os tokens de `caderno.css` |
 | JS | `assets/caderno/caderno-aluno.js` | módulos `aluno`, `conta`, `aula`, `atividade` e `quiz`, com `Caderno.pagina('nome', init[, sempre])`; o que é função (envio protegido, rascunho do quiz, cronômetro, cidades do IBGE) roda também com movimento reduzido |
-| Fixture | `tests/Fixtures/tema_caderno_aluno.sql` | **somente local**: aluna 9001 com cursos, pedidos, aula de todos os tipos, 8 quizzes (inclusive prova com cronômetro e tentativa em andamento) e 8 estados de atividade. Login `aluno.caderno@teste.local` / `Local@12345` (também por CPF `987.654.321-00`). Idempotente (ids 9001–9999): reaplicar zera os estados. O cabeçalho do arquivo tem o mapa estado → URL |
+| Fixture | `tests/Fixtures/tema_caderno_aluno.sql` | **somente local**: aluna 9001 com cursos, pedidos, aula de todos os tipos, 9 quizzes (inclusive prova com cronômetro, tentativa em andamento e um quiz de uma pergunta só) e 8 estados de atividade. Login `aluno.caderno@teste.local` / `Local@12345` (também por CPF `987.654.321-00`). Idempotente (ids 9001–9999): reaplicar zera os estados. O cabeçalho do arquivo tem o mapa estado → URL |
 | Testes | `tests/Unit/tema_publico.php` (8), `tests/Smoke/rotas.php` | seletor com fallback para a V2; smoke com as duas folhas nas páginas do aluno e `SMOKE_AULA_URL`, `SMOKE_QUIZ_URL`, `SMOKE_ATIVIDADE_URL` opcionais (ver `tests/Smoke/README.md`) |
 
 Os ids, nomes de campo, rotas de POST e contratos JSON da V2 foram
@@ -587,10 +588,11 @@ mudanças OpenSpec `fila-revisao-admin` e `tema-caderno` já foram arquivadas
 (`openspec/changes/archive/`), e seus requisitos estão em `openspec/specs/`
 (`revisao-conteudo` e `tema-publico`). Em ordem:
 
-1. **Versão de PHP do domínio no Virtualmin.** Use 8.2 ou 8.3. Antes de usar
-   8.4, corrigir os ~54 parâmetros `Tipo $x = null` sem `?` em 12 arquivos de
-   `app/` (lista: `php -d error_reporting=E_ALL -l` em `app/`), porque o
-   `ErrorHandler` converte esses avisos em erro 500.
+1. **Versão de PHP do domínio no Virtualmin.** 8.2, 8.3 ou 8.4: a mudança
+   `compat-php84` corrigiu as 28 ocorrências reais de `Tipo $x = null` sem `?`
+   (lint 8.4 de todos os arquivos versionados: zero `Deprecated`). A ressalva do
+   `ErrorHandler` (qualquer aviso vira erro 500) continua valendo para código
+   novo: use `?Tipo $x = null` e rode `php -l` também no 8.4.
 2. **Deploy na VPS com `TEMA_PUBLICO=v2`** (nada muda para o aluno) e validação
    pela prévia de administrador (`?tema=caderno`), página por página, com os
    dados reais — em especial o checkout com um pedido de teste e o cupom.

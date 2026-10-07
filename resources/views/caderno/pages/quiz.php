@@ -191,7 +191,7 @@ $instrucoes = $quiz ? trim((string) ($quiz['instrucoes'] ?? '')) : '';
     <details class="quiz-instr quiz-instr-dobra"<?= $qInstrAberta ? ' open' : '' ?>><summary class="atv-rot">Instruções</summary><p><?= nl2br(Helpers::e($instrucoes)) ?></p></details>
     <?php endif; ?>
 
-    <form method="post" action="<?= Helpers::e($enviarAction) ?>" data-native-submit class="v2-quiz-form quiz-form" id="v2-quiz-answer-form">
+    <form method="post" action="<?= Helpers::e($enviarAction) ?>" data-native-submit class="v2-quiz-form quiz-form" id="v2-quiz-answer-form"<?= count($perguntas) > 1 ? ' data-multi' : '' ?>>
       <?= $hidden ?>
       <input type="hidden" name="tentativa_id" value="<?= (int) ($quiz['tentativa_ativa_id'] ?? 0) ?>">
 

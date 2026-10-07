@@ -285,12 +285,14 @@ html:has(.relogio){scroll-padding-top:128px}
 /* progresso (curto) e navegação da prova */
 .quiz-passos,.prova-nav{margin-top:16px}
 /* Reserva o espaço do progresso/navegação (ligados por JS) até o módulo iniciar: evita o salto do layout (CLS) quando o script chega. */
-html.js form:not(.pronto) .quiz-passos[hidden],html.js form:not(.pronto) .prova-nav[hidden]{display:block!important;visibility:hidden}
-html.js form:not(.pronto) .quiz-passos[hidden]{min-height:92px}
-html.js form:not(.pronto) .prova-nav[hidden]{min-height:110px}
-@media (min-width:700px){ html.js form:not(.pronto) .prova-nav[hidden]{min-height:90px} }
+/* Só quiz com mais de uma pergunta (data-multi). Se o script do aluno não chegar, a reserva some em 4 s (quiz-solta). */
+html.js form[data-multi]:not(.pronto) .quiz-passos[hidden],html.js form[data-multi]:not(.pronto) .prova-nav[hidden]{display:block!important;visibility:hidden;animation:quiz-solta 0s 4s forwards!important}
+@keyframes quiz-solta{to{height:0;min-height:0;margin:0;padding:0;border-width:0;overflow:hidden}}
+html.js form[data-multi]:not(.pronto) .quiz-passos[hidden]{min-height:92px}
+html.js form[data-multi]:not(.pronto) .prova-nav[hidden]{min-height:110px}
+@media (min-width:700px){ html.js form[data-multi]:not(.pronto) .prova-nav[hidden]{min-height:90px} }
 /* As perguntas ficam invisíveis até o módulo escolher a pergunta atual (evita o salto de layout quando o script esconde as demais). Sem o script, a animação abaixo revela tudo em 4 s (a regra de movimento reduzido usa !important; esta, mais específica, vence). */
-html.js form:not(.pronto) #v2-quiz-perguntas{visibility:hidden;animation:quiz-revela 0s 4s forwards!important}
+html.js form[data-multi]:not(.pronto) #v2-quiz-perguntas{visibility:hidden;animation:quiz-revela 0s 4s forwards!important}
 @keyframes quiz-revela{to{visibility:visible}}
 /* A margem da primeira pergunta visível não pode "vazar" para fora do contêiner (o salto de 28 px quando o script esconde as demais conta como CLS). */
 #v2-quiz-perguntas{display:flow-root}

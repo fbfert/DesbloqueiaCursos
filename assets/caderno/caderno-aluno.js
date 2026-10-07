@@ -557,6 +557,7 @@ Caderno.pagina('quiz', function () {
     var hs = form.querySelectorAll('.v2-quiz-bloco-titulo, [data-flag-pergunta]');
     for (k = 0; k < hs.length; k++) hs[k].hidden = !hs[k].classList.contains('v2-quiz-bloco-titulo');
     if (submit) submit.hidden = false;
+    form.classList.add('pronto');
   };
 
   try {
@@ -810,5 +811,8 @@ Caderno.pagina('quiz', function () {
       render();
       ativoNav = true;
     })();
-  } catch (e) { semNav(); }
+  } catch (e) { semNav(); } finally {
+    // Sempre: pergunta única, retorno antecipado ou erro nunca deixam as perguntas ocultas.
+    form.classList.add('pronto');
+  }
 }, true);

@@ -79,8 +79,8 @@ Relatório completo: `docs/2026-10-06-tema-caderno.md`.
   nem espaços nas pontas (`Caderno` também vale); qualquer outro valor, ou a
   ausência da chave, mantém a V2. Vale para home, catálogo, categorias,
   curso, institucionais, validar certificado, erro, login, pós-login, cadastro,
-  recuperar e redefinir senha e as etapas do checkout. Área do aluno, aula,
-  quiz, atividade e minha conta continuam sempre na V2. A raiz `/` só mostra a
+  recuperar e redefinir senha, as etapas do checkout e, desde a fase 2, a área
+  do aluno, a aula, o quiz, a atividade e minha conta (ver §3.3). A raiz `/` só mostra a
   home do tema com `HOME_VERSION=v2`; com `v1`, a home do tema fica em `/v2/`.
 - **Deploy:** suba com `TEMA_PUBLICO=v2`. Nada muda para o aluno.
 - **Prévia:** logado com um usuário que tenha `conteudo.gerenciar`, abra
@@ -165,8 +165,41 @@ php scripts/otimizar_capas.php --reverter=storage/app/otimizar_capas/<data-hora>
   impresso no final do `--aplicar`.
 - Capa referenciada no banco mas ausente no disco aparece no relatório e o
   registro não é alterado.
+- Rode o script como o usuário do domínio no Virtualmin (por exemplo
+  `sudo -u <usuario-do-dominio> php scripts/otimizar_capas.php --aplicar`), nunca como
+  root: assim os arquivos `-otm.*` e o manifesto ficam com o dono certo e o
+  servidor web consegue substituí-los ou apagá-los depois.
 - Conferir `php -r 'var_dump(gd_info()["WebP Support"]);'`: sem WebP o script
   usa JPEG, que já reduz ~2 MB para ~300 KB.
+
+## 3.3 Arquivos da fase 2 do tema (páginas do aluno)
+
+`TemaPublico::caminhoView()` só confere o arquivo de **entrada**
+(`resources/views/caderno/<nome>.php`). Se ele subir sem a página e os
+partials, a prévia (ou o tema ligado) dá erro fatal. Envie o conjunto inteiro
+e deixe os 5 arquivos de entrada por último. A lista vem de
+`git diff --name-only 1063dda <commit da fase 2>`, sem `tests/`, `openspec/` e
+`docs/`. A fixture `tests/Fixtures/tema_caderno_aluno.sql` **nunca** vai para a VPS.
+
+- Páginas e partials (enviar primeiro):
+  - `resources/views/caderno/pages/{aluno,conta,aula,quiz,atividade}.php`
+  - `resources/views/caderno/partials/aula-{barra,conteudo,sumario,tabelas}.php`
+  - `resources/views/caderno/partials/quiz-{barra,prova-nav,questao,relogio,revisao}.php`
+  - alterados: `resources/views/caderno/layout.php` e
+    `resources/views/caderno/partials/{head,layout-dados,topo,bnav}.php`
+- Assets: `assets/caderno/caderno-aluno.css` e `assets/caderno/caderno-aluno.js`.
+- Código:
+  - controllers V2: `app/Controllers/V2/{Aluno,Atividade,Aula,Conta,Quiz}Controller.php`;
+  - capas: `app/Support/OtimizadorImagem.php`, `scripts/otimizar_capas.php`,
+    `app/Services/CategoriaService.php` e `app/Services/CursoService.php`;
+  - compatibilidade com PHP 8.4 (nullable explícito):
+    - `app/Models/PagamentoGatewayConfiguracao.php`;
+    - em `app/Services/`: `ConteudoMigracaoLegadoService`, `NorminhaCustoService`, `NorminhaIaService`, `NorminhaMemoriaService`, `NorminhaPublicoLimiteService`, `NorminhaPublicoService`, `NorminhaRateLimitService`, `NorminhaService`, `NorminhaToolsService` e `OpenAIService` (todos `.php`);
+    - `app/Services/Payments/AbacatePayService.php`.
+- Entrada (enviar por último): `resources/views/caderno/{aluno,conta,aula,quiz,atividade}.php`.
+
+Depois, abra as cinco páginas pela prévia de administrador (`?tema=caderno`) e
+rode o smoke.
 
 ## 4. Pós-deploy
 

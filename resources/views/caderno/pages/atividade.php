@@ -81,7 +81,7 @@ $atvData = function ($valor) {
       <a class="btn-sec" href="<?= Helpers::e($voltarAulaUrl) ?>"><?= caderno_icone('seta-esq') ?> Voltar à aula<?= caderno_ck_contorno() ?></a>
     </div>
 
-    <?php elseif ($atividade['estado'] === 'externo'): ?>
+    <?php elseif (($atividade['estado'] ?? '') === 'externo'): ?>
     <div class="postit largo aula-tarefa">
       <p>Esta atividade depende de um envio que ainda não é feito por aqui (por exemplo, anexo de arquivo). Abra a atividade no ambiente de aprendizagem para concluí-la.</p>
       <a class="btn" href="<?= Helpers::e((string) ($atividade['oficial_url'] ?? '#')) ?>">Abrir atividade <?= caderno_icone('seta-dir') ?></a>
