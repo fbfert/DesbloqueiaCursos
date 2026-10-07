@@ -50,15 +50,14 @@ $rotas = array(
         array('path' => '/v2/termos-de-uso',            'nome' => 'Termos de uso V2'),
         array('path' => '/v2/politica-de-privacidade',  'nome' => 'Política de privacidade V2'),
         array('path' => '/v2/onde-estamos',             'nome' => 'Onde estamos V2'),
-        // DEFEITO CONHECIDO (encontrado pelo smoke em 22/08/2026): a rota está
-        // registrada em routes/web.php:118 e listada no sitemap.xml, mas a página
-        // correspondente foi excluída (paginas.deleted_at preenchido para
-        // /como-funciona-a-sala-virtual). Resultado: 404 anunciado ao Google.
-        // Declarado como 404 para o baseline ficar verde; o campo 'defeito' faz o
-        // runner avisar em toda execução. Ao corrigir, volte para status 200.
+        // A página /como-funciona-a-sala-virtual foi excluída no admin
+        // (paginas.deleted_at), então a rota responde 404. Desde 07/10/2026 o
+        // sitemap e o rodapé do tema caderno só anunciam institucionais
+        // publicadas (PaginaService::institucionaisV2Publicadas,
+        // tests/Unit/paginas_institucionais.php), e o 404 deixou de ser anunciado.
+        // Se a página for republicada, volte este status para 200.
         array('path' => '/v2/como-funciona-a-sala-virtual', 'nome' => 'Sala virtual V2',
-              'status' => 404, 'marcador' => '', 'guarda' => false,
-              'defeito' => 'rota viva e no sitemap, mas a página está excluída em `paginas`'),
+              'status' => 404, 'marcador' => '', 'guarda' => false),
         array('path' => '/categorias',                  'nome' => 'Categorias (legado)'),
         array('path' => '/cursos',                      'nome' => 'Cursos (legado)'),
         array('path' => '/como-funciona',               'nome' => 'Como funciona (legado)'),

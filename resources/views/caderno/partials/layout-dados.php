@@ -43,6 +43,8 @@ $ondeEstamosHref = $cadernoNav['ondeEstamosHref'];
 $termosHref = $cadernoNav['termosHref'];
 $privacidadeHref = $cadernoNav['privacidadeHref'];
 $removaMeHref = $cadernoNav['removaMeHref'];
+// Rodapé só aponta para institucionais publicadas (uma consulta por requisição).
+$institucionaisPublicadas = (new \App\Services\PaginaService())->institucionaisV2Publicadas();
 $pedidosHref = $cadernoNav['pedidosHref'];
 $contaHref = $cadernoNav['contaHref'];
 $usuarioPrimeiroNome = isset($usuarioPrimeiroNome) ? (string) $usuarioPrimeiroNome : '';

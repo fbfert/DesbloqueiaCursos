@@ -8,6 +8,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Services\CategoriaService;
 use App\Services\CursoService;
+use App\Services\PaginaService;
+use App\Support\V2Nav;
 
 /**
  * Sitemap XML dinâmico (V2): gerado a partir dos mesmos dados públicos reais
@@ -33,9 +35,13 @@ class SitemapController extends Controller
         $urls[] = array('loc' => '/v2/', 'priority' => '1.0', 'changefreq' => 'daily');
         $urls[] = array('loc' => '/v2/catalogo/', 'priority' => '0.9', 'changefreq' => 'daily');
         $urls[] = array('loc' => '/v2/categorias/', 'priority' => '0.7', 'changefreq' => 'weekly');
-        $urls[] = array('loc' => '/v2/quem-somos', 'priority' => '0.4', 'changefreq' => 'monthly');
-        $urls[] = array('loc' => '/v2/como-funciona-a-sala-virtual', 'priority' => '0.4', 'changefreq' => 'monthly');
-        $urls[] = array('loc' => '/v2/onde-estamos', 'priority' => '0.3', 'changefreq' => 'monthly');
+        // Institucionais só entram publicadas: página excluída no admin dava 404 anunciado ao Google.
+        $publicadas = (new PaginaService())->institucionaisV2Publicadas();
+        foreach (array(V2Nav::QUEM_SOMOS => '0.4', V2Nav::COMO_FUNCIONA_SALA => '0.4', V2Nav::ONDE_ESTAMOS => '0.3') as $loc => $prioridade) {
+            if (in_array($loc, $publicadas, true)) {
+                $urls[] = array('loc' => $loc, 'priority' => $prioridade, 'changefreq' => 'monthly');
+            }
+        }
         $urls[] = array('loc' => '/v2/certificados/validar', 'priority' => '0.3', 'changefreq' => 'monthly');
         $urls[] = array('loc' => '/v2/login', 'priority' => '0.2', 'changefreq' => 'yearly');
         $urls[] = array('loc' => '/v2/cadastro', 'priority' => '0.2', 'changefreq' => 'yearly');

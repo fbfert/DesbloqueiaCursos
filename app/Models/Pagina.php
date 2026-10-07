@@ -96,6 +96,29 @@ class Pagina
         return $row ?: null;
     }
 
+    /**
+     * Das rotas informadas, devolve as que têm página publicada (uma consulta só).
+     */
+    public function listarRotasPublicadas(array $rotas)
+    {
+        $rotas = array_values(array_unique(array_filter(array_map('strval', $rotas), 'strlen')));
+        if (empty($rotas)) {
+            return array();
+        }
+
+        $marcadores = implode(', ', array_fill(0, count($rotas), '?'));
+        $stmt = Database::connection()->prepare(
+            'SELECT DISTINCT rota
+             FROM paginas
+             WHERE rota IN (' . $marcadores . ')
+               AND status = "publicada"
+               AND deleted_at IS NULL'
+        );
+        $stmt->execute($rotas);
+
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
     public function create(array $data)
     {
         $stmt = Database::connection()->prepare(

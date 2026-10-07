@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Pagina;
+use App\Support\V2Nav;
 use Exception;
 
 class PaginaService
@@ -196,6 +197,40 @@ class PaginaService
     public function buscarPublicaPorRota($rota)
     {
         return $this->paginaModel->findPublicByRota($this->normalizarRota($rota));
+    }
+
+    /** @var array|null Cache por requisição de institucionaisV2Publicadas(). */
+    private static $institucionaisPublicadas = null;
+
+    /**
+     * Das URLs institucionais V2 (`/v2/quem-somos` → página de rota `/quem-somos`),
+     * devolve as que têm página publicada. Usada pelo sitemap e pelo rodapé para não
+     * anunciar link que daria 404. Uma consulta por requisição; se o banco falhar,
+     * devolve todas (mesmo comportamento de antes, sem derrubar o rodapé).
+     */
+    public function institucionaisV2Publicadas()
+    {
+        if (self::$institucionaisPublicadas === null) {
+            $urlsV2 = V2Nav::institucionais();
+            self::$institucionaisPublicadas = array();
+            $porRota = array();
+            foreach ($urlsV2 as $url) {
+                $porRota[$this->normalizarRota(preg_replace('#^/v2#', '', (string) $url))] = (string) $url;
+            }
+            try {
+                foreach ($this->paginaModel->listarRotasPublicadas(array_keys($porRota)) as $rota) {
+                    $rota = $this->normalizarRota($rota);
+                    if (isset($porRota[$rota])) {
+                        self::$institucionaisPublicadas[] = $porRota[$rota];
+                    }
+                }
+            } catch (\Throwable $erro) {
+                Logger::warning('conteudo.pagina.institucionais_falhou', array('message' => $erro->getMessage()));
+                self::$institucionaisPublicadas = array_values($urlsV2);
+            }
+        }
+
+        return self::$institucionaisPublicadas;
     }
 
     private function slugify($value)

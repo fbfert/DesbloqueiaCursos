@@ -41,6 +41,12 @@ class V2Nav
      * quaisquer valores herdados que apontariam para o V1, exceto `areaHref`
      * (papel-dependente) e `homeHref`, preservados quando já informados.
      */
+    /** URLs institucionais V2 cujo conteúdo vem da tabela `paginas` (podem não estar publicadas). */
+    public static function institucionais()
+    {
+        return array(self::QUEM_SOMOS, self::COMO_FUNCIONA_SALA, self::ONDE_ESTAMOS, self::TERMOS, self::PRIVACIDADE, self::REMOVA_ME);
+    }
+
     public static function links($areaHref = null, $loggedIn = false)
     {
         $area = is_string($areaHref) && $areaHref !== '' ? $areaHref : self::ALUNO;
