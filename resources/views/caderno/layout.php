@@ -14,13 +14,17 @@ require __DIR__ . '/partials/layout-dados.php';
 
 $contentView = isset($contentView) ? (string) $contentView : '';
 $cadernoEmbedConteudo = true;
+// Páginas do aluno: $cadernoAluno carrega caderno-aluno.css/js; $cadernoEstudo
+// (aula, quiz, atividade) também tira a bnav geral e marca <body data-estudo>.
+$cadernoEstudo = !empty($cadernoEstudo);
+$cadernoAluno = !empty($cadernoAluno) || $cadernoEstudo;
 ?>
 <!doctype html>
 <html lang="pt-BR">
 <head>
 <?php require __DIR__ . '/partials/head.php'; ?>
 </head>
-<body data-pagina="<?= Helpers::e($paginaTema) ?>">
+<body data-pagina="<?= Helpers::e($paginaTema) ?>"<?= $cadernoEstudo ? ' data-estudo' : '' ?>>
   <a class="pular" href="#conteudo">Pular para o conteúdo</a>
   <?php require __DIR__ . '/partials/icones.php'; ?>
   <?php require __DIR__ . '/partials/aviso-previa.php'; ?>
@@ -32,7 +36,7 @@ $cadernoEmbedConteudo = true;
     </main>
     <?php require __DIR__ . '/partials/rodape.php'; ?>
   </div>
-  <?php require __DIR__ . '/partials/bnav.php'; ?>
+  <?php if (!$cadernoEstudo) { require __DIR__ . '/partials/bnav.php'; } ?>
 
   <script src="/assets/js/conteudo-html-embed.js?v=20260717" defer></script>
   <?php if ($tutorNorminha): ?>

@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Support\TemaPublico;
 use App\Models\Pedido;
 use App\Services\AuthService;
 use App\Services\InscricaoService;
@@ -106,7 +107,7 @@ class AlunoController extends Controller
             'coursePalette' => $this->coursePalette(),
         ));
 
-        return new Response(View::render('v2/aluno', $data, false));
+        return new Response(View::render(TemaPublico::view('aluno'), $data, false));
     }
 
     /**

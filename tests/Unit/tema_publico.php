@@ -69,6 +69,12 @@ it('v2 remove a prévia', function () {
     expect(isset($_SESSION['tema_previa']))->toBeFalse();
 });
 
+it('páginas do aluno caem na V2 enquanto o tema não tem a view', function () use ($dirTmp) {
+    foreach (array('aluno', 'conta', 'aula', 'quiz', 'atividade') as $nome) {
+        expect(TemaPublico::caminhoView('caderno', $nome, $dirTmp))->toBe('v2/' . $nome);
+    }
+});
+
 @unlink($dirTmp . '/caderno/home.php');
 @rmdir($dirTmp . '/caderno');
 @rmdir($dirTmp);

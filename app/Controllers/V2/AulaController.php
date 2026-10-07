@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Support\TemaPublico;
 use App\Core\Helpers;
 use App\Services\AreaCursoService;
 use App\Services\ConteudoCursoService;
@@ -206,7 +207,7 @@ class AulaController extends Controller
             'errors' => Session::pullFlash('errors', array()),
         ));
 
-        return new Response(View::render('v2/aula', $data, false));
+        return new Response(View::render(TemaPublico::view('aula'), $data, false));
     }
 
     /**
@@ -569,7 +570,7 @@ class AulaController extends Controller
             'temConteudo' => false,
         ));
 
-        return new Response(View::render('v2/aula', $data, false), (int) $status);
+        return new Response(View::render(TemaPublico::view('aula'), $data, false), (int) $status);
     }
 
     private function dadosLayout($usuarioId)

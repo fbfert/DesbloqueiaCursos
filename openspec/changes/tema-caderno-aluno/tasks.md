@@ -4,9 +4,9 @@ Contexto obrigatório para cada tarefa: `proposal.md`, `specs/tema-publico/spec.
 
 ## 1. Base
 
-- [ ] 1.1 Fixture `tests/Fixtures/tema_caderno_aluno.sql` conforme design.md §6; aplicar no banco local e conferir abrindo `/v2/aluno`, `/v2/aula`, `/v2/quiz` (curto e prova) e `/v2/atividade` da V2 com o aluno de teste (todos os estados alcançáveis listados no arquivo).
-- [ ] 1.2 Trocar todos os `View::render('v2/<x>'…)` de `AlunoController`, `ContaController`, `AulaController`, `QuizController` e `AtividadeController` (inclusive `estado()`) por `TemaPublico::view('<x>')`; teste em `tests/Unit/tema_publico.php` (ou novo) confirmando o fallback para V2 enquanto a view do tema não existe.
-- [ ] 1.3 Layout: `$cadernoAluno` / `$cadernoEstudo` conforme design.md §2; criar `assets/caderno/caderno-aluno.css` e `assets/caderno/caderno-aluno.js` (envio protegido de §4 + registro por página), com versão por `filemtime`; conferir que home e catálogo não requisitam esses arquivos.
+- [x] 1.1 Fixture `tests/Fixtures/tema_caderno_aluno.sql` conforme design.md §6; aplicar no banco local e conferir abrindo `/v2/aluno`, `/v2/aula`, `/v2/quiz` (curto e prova) e `/v2/atividade` da V2 com o aluno de teste (todos os estados alcançáveis listados no arquivo).
+- [x] 1.2 Trocar todos os `View::render('v2/<x>'…)` de `AlunoController`, `ContaController`, `AulaController`, `QuizController` e `AtividadeController` (inclusive `estado()`) por `TemaPublico::view('<x>')`; teste em `tests/Unit/tema_publico.php` (ou novo) confirmando o fallback para V2 enquanto a view do tema não existe.
+- [x] 1.3 Layout: `$cadernoAluno` / `$cadernoEstudo` conforme design.md §2; criar `assets/caderno/caderno-aluno.css` e `assets/caderno/caderno-aluno.js` (envio protegido de §4 + registro por página), com versão por `filemtime`; conferir que home e catálogo não requisitam esses arquivos.
 
 ## 2. Área do aluno e minha conta
 

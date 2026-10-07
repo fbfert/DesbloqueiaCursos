@@ -1,0 +1,10 @@
+/* Tema caderno: estilos das páginas do aluno (área do aluno, minha conta, aula,
+   quiz e atividade). Carregado só quando o layout recebe $cadernoAluno (ver
+   resources/views/caderno/layout.php), depois de caderno.css: usa os mesmos
+   tokens e partials. Orçamento: caderno.css + este arquivo <= 25 KB gz.
+   As seções de cada página entram nas tarefas 2 a 4 da mudança tema-caderno-aluno. */
+
+/* Barra de estudo (aula, quiz, atividade): fixa embaixo só no celular; o layout
+   com $cadernoEstudo omite a bnav geral e marca <body data-estudo>. */
+.barra-estudo { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 16px; background: #FCFCFA; border-top: 1px solid rgba(0, 0, 0, .15); }
+@media (min-width: 900px) { .barra-estudo { display: none; } }

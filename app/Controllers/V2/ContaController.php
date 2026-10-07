@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Support\TemaPublico;
 use App\Services\AuthService;
 
 /**
@@ -52,7 +53,7 @@ class ContaController extends Controller
             'errors' => Session::pullFlash('errors', array()),
         ));
 
-        return new Response(View::render('v2/conta', $data, false));
+        return new Response(View::render(TemaPublico::view('conta'), $data, false));
     }
 
     public function atualizar(Request $request)

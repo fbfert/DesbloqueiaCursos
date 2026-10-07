@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Support\TemaPublico;
 use App\Services\AreaCursoService;
 use App\Services\ConteudoCursoService;
 use App\Services\ConteudoAvaliacaoTextualService;
@@ -311,7 +312,7 @@ class AtividadeController extends Controller
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
         ));
-        return new Response(View::render('v2/atividade', $data, false), (int) $status);
+        return new Response(View::render(TemaPublico::view('atividade'), $data, false), (int) $status);
     }
 
     private function urlAtividadeV2(array $inscricao, $cursoId, $turmaId, $moduloId, $itemId)
@@ -363,7 +364,7 @@ class AtividadeController extends Controller
             'formCtx' => array(),
             'voltarAulaUrl' => '/v2/aluno/',
         ));
-        return new Response(View::render('v2/atividade', $data, false), (int) $status);
+        return new Response(View::render(TemaPublico::view('atividade'), $data, false), (int) $status);
     }
 
     private function dadosLayout($usuarioId)

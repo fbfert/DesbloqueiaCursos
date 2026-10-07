@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Support\TemaPublico;
 use App\Models\ConteudoQuizTentativa;
 use App\Services\AreaCursoService;
 use App\Services\ConteudoCursoService;
@@ -168,7 +169,7 @@ class QuizController extends Controller
             'errors' => Session::pullFlash('errors', array()),
         ));
 
-        return new Response(View::render('v2/quiz', $data, false));
+        return new Response(View::render(TemaPublico::view('quiz'), $data, false));
     }
 
     /**
@@ -502,7 +503,7 @@ class QuizController extends Controller
             'voltarAulaUrl' => '/v2/aluno/',
         ));
 
-        return new Response(View::render('v2/quiz', $data, false), (int) $status);
+        return new Response(View::render(TemaPublico::view('quiz'), $data, false), (int) $status);
     }
 
     private function dadosLayout($usuarioId)

@@ -32,6 +32,18 @@ use App\Core\Helpers;
   <?php if ($cadernoJsVersion): ?>
   <script src="/assets/caderno/caderno.js?v=<?= $cadernoJsVersion ?>" defer></script>
   <?php endif; ?>
+  <?php if (!empty($cadernoAluno)): ?>
+  <?php
+  $cadernoAlunoCssPath = BASE_PATH . '/assets/caderno/caderno-aluno.css';
+  $cadernoAlunoJsPath = BASE_PATH . '/assets/caderno/caderno-aluno.js';
+  ?>
+  <?php if (is_file($cadernoAlunoCssPath)): ?>
+  <link rel="stylesheet" href="/assets/caderno/caderno-aluno.css?v=<?= (int) filemtime($cadernoAlunoCssPath) ?>">
+  <?php endif; ?>
+  <?php if (is_file($cadernoAlunoJsPath)): ?>
+  <script src="/assets/caderno/caderno-aluno.js?v=<?= (int) filemtime($cadernoAlunoJsPath) ?>" defer></script>
+  <?php endif; ?>
+  <?php endif; ?>
   <?php if (!empty($cadernoEmbedConteudo)): ?>
   <link rel="stylesheet" href="/assets/css/conteudo-html-embed.css?v=20260717">
   <?php endif; ?>
