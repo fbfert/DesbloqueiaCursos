@@ -94,7 +94,7 @@ class CursoPresenter
             'ordem' => (int) ($item['ordem'] ?? 0),
             'obrigatorio' => !empty($item['obrigatorio']),
             'status' => self::statusItem($statusPublico),
-            'concluido_em' => $progresso ? Tempo::iso($progresso['concluido_em'] ?? null) : null,
+            'concluido_em' => $progresso ? Tempo::isoPhp($progresso['concluido_em'] ?? null) : null,
         );
     }
 

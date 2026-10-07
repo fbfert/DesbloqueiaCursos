@@ -28,7 +28,7 @@ class QuizPresenter
                 'status' => self::statusTentativa($tentativa),
                 'percentual' => self::mostraResultado($quiz) ? self::percentual($tentativa['percentual'] ?? null) : null,
                 'aprovado' => self::mostraResultado($quiz) && isset($tentativa['aprovado']) && $tentativa['aprovado'] !== null ? (bool) $tentativa['aprovado'] : null,
-                'enviada_em' => Tempo::iso($tentativa['enviada_em'] ?? null),
+                'enviada_em' => Tempo::isoPhp($tentativa['enviada_em'] ?? null),
             );
         }
 
@@ -44,7 +44,7 @@ class QuizPresenter
             ),
             'tentativa_em_andamento' => $emAndamento ? array(
                 'id' => (int) $emAndamento['id'],
-                'expira_em' => Tempo::iso($emAndamento['expira_em'] ?? null),
+                'expira_em' => Tempo::isoPhp($emAndamento['expira_em'] ?? null),
             ) : null,
             'tentativas' => $lista,
             'pode_iniciar' => (bool) $podeIniciar,
@@ -67,7 +67,7 @@ class QuizPresenter
         return array(
             'tentativa' => array(
                 'id' => (int) $tentativa['id'],
-                'expira_em' => Tempo::iso($tentativa['expira_em'] ?? null),
+                'expira_em' => Tempo::isoPhp($tentativa['expira_em'] ?? null),
                 'segundos_restantes' => $tempo !== null ? (int) $tempo['segundos_restantes'] : null,
             ),
             'perguntas' => $saidaPerguntas,
@@ -113,8 +113,8 @@ class QuizPresenter
                 'id' => (int) $tentativa['id'],
                 'numero' => (int) ($tentativa['numero_tentativa'] ?? 0),
                 'status' => self::statusTentativa($tentativa),
-                'enviada_em' => Tempo::iso($tentativa['enviada_em'] ?? null),
-                'corrigida_em' => Tempo::iso($tentativa['corrigida_em'] ?? null),
+                'enviada_em' => Tempo::isoPhp($tentativa['enviada_em'] ?? null),
+                'corrigida_em' => Tempo::isoPhp($tentativa['corrigida_em'] ?? null),
                 'encerrada_por_tempo' => !empty($tentativa['encerrada_por_tempo']),
             ),
             'percentual' => $mostraResultado ? self::percentual($tentativa['percentual'] ?? null) : null,

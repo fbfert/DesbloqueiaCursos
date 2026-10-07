@@ -25,6 +25,8 @@ use App\Support\AppApi\UsuarioPresenter;
 use App\Support\AppApi\Versao;
 
 putenv('APP_TIMEZONE=America/Sao_Paulo');
+// Como na VPS: PHP sem fuso configurado (UTC) e MySQL em horário de Brasília.
+date_default_timezone_set('UTC');
 putenv('APP_URL=https://desbloqueiacursos.com.br');
 
 describe('Formato e tempo');
@@ -47,6 +49,11 @@ it('datas do banco viram ISO-8601 com o fuso da aplicação', function () {
     expect(Tempo::iso('0000-00-00 00:00:00'))->toBeNull();
     $ts = Tempo::timestamp('2026-10-07 18:30:00');
     expect(Tempo::sql($ts))->toBe('2026-10-07 18:30:00');
+});
+
+it('coluna gravada pelo PHP (UTC) sai no instante certo, com fuso de Brasília', function () {
+    expect(Tempo::isoPhp('2026-10-07 21:30:00'))->toBe('2026-10-07T18:30:00-03:00');
+    expect(Tempo::isoPhp(''))->toBeNull();
 });
 
 it('URL absoluta para caminho público e mantém URL externa', function () {
@@ -246,7 +253,8 @@ it('certificado com URLs da API e da validação pública', function () {
     $c = CatalogoPresenter::certificado(array('codigo' => 'ABC123', 'curso_nome' => 'Curso', 'emitido_em' => '2026-10-01 10:00:00', 'curso_carga_horaria' => '40', 'validacao_url' => 'https://site/certificados/validar?codigo=ABC123'));
     expect($c['pdf_url'])->toBe('/api/app/v1/certificados/ABC123/pdf');
     expect($c['carga_horaria'])->toBe(40);
-    expect($c['emitido_em'])->toBe('2026-10-01T10:00:00-03:00');
+    // emitido_em é gravado pelo PHP (date()), em UTC na VPS: 10:00 UTC = 07:00 em Brasília
+    expect($c['emitido_em'])->toBe('2026-10-01T07:00:00-03:00');
 });
 
 it('notificação: dados como objeto e lida como booleano', function () {

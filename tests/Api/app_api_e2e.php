@@ -538,6 +538,9 @@ it('enviar: resultado com percentual, aprovação e gabarito liberados pelo quiz
     $g = http('GET', $api . '/inscricoes/9001/itens/9011/quiz/tentativas/' . $tentativaId, null, bearer($sessao['access_token']));
     exigirStatus($g, 200);
     expect($g['json']['data']['percentual'])->toBe(100);
+    // enviada_em é gravado pelo PHP (UTC) e o banco está em -03:00: o instante no JSON tem de ser "agora".
+    $enviada = strtotime($g['json']['data']['tentativa']['enviada_em']);
+    exigir(abs($enviada - time()) < 120, 'enviada_em fora do instante real: ' . $g['json']['data']['tentativa']['enviada_em']);
     $e = http('GET', $api . '/inscricoes/9001/itens/9011/quiz', null, bearer($sessao['access_token']));
     expect(count($e['json']['data']['tentativas']))->toBe(1);
     expect($e['json']['data']['tentativas'][0]['status'])->toBe('corrigida');

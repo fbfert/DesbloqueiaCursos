@@ -68,6 +68,30 @@ class Tempo
         return $ts === null ? null : self::isoDeTimestamp($ts);
     }
 
+    /**
+     * Data/hora GRAVADA PELO PHP (date('Y-m-d H:i:s')) → ISO-8601 com fuso.
+     *
+     * O site grava parte das colunas com NOW() do MySQL (horário de Brasília) e
+     * parte com date() do PHP, que na VPS roda sem fuso configurado (UTC) — ver
+     * docs/2026-08-15-fuso-horario-php-mysql.md. Colunas do segundo grupo
+     * (concluido_em do progresso, horários do quiz, envio/correção de avaliação,
+     * emissão de certificado) são lidas no fuso do PHP e apresentadas no fuso da
+     * aplicação, para que o instante saia certo no app.
+     */
+    public static function isoPhp($valor)
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '' || strpos($valor, '0000-00-00') === 0) {
+            return null;
+        }
+        try {
+            $data = new DateTimeImmutable($valor, new DateTimeZone(date_default_timezone_get()));
+            return $data->setTimezone(self::fuso())->format('c');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
     public static function isoDeTimestamp($timestamp)
     {
         if ($timestamp === null) {

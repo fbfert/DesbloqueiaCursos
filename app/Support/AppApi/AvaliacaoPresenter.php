@@ -54,8 +54,8 @@ class AvaliacaoPresenter
             'imagens' => $imagens,
             'nota' => $corrigida && isset($entrega['nota']) && $entrega['nota'] !== null && $entrega['nota'] !== '' ? (float) $entrega['nota'] : null,
             'feedback_html' => $corrigida ? Formato::htmlSeguro($entrega['feedback'] ?? '', 'basic') : null,
-            'enviada_em' => Tempo::iso($entrega['enviado_em'] ?? ($entrega['created_at'] ?? null)),
-            'corrigida_em' => Tempo::iso($entrega['corrigido_em'] ?? null),
+            'enviada_em' => !empty($entrega['enviado_em']) ? Tempo::isoPhp($entrega['enviado_em']) : Tempo::iso($entrega['created_at'] ?? null),
+            'corrigida_em' => Tempo::isoPhp($entrega['corrigido_em'] ?? null),
         );
     }
 }
