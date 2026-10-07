@@ -24,8 +24,8 @@ $navAtual = isset($navAtual) ? (string) $navAtual : '';
       <span>Desbloqueia Cursos</span>
     </a>
     <nav class="nav" aria-label="Principal">
-      <?php foreach ($navItens as $chave => $item): ?>
-      <a href="<?= Helpers::e($item[0]) ?>"<?= $navAtual === $chave ? ' aria-current="page"' : '' ?>><?= Helpers::e($item[1]) ?></a>
+      <?php foreach ($navItens as $chave => $topoItem): ?>
+      <a href="<?= Helpers::e($topoItem[0]) ?>"<?= $navAtual === $chave ? ' aria-current="page"' : '' ?>><?= Helpers::e($topoItem[1]) ?></a>
       <?php endforeach; ?>
     </nav>
     <div class="topo-acoes">
@@ -41,8 +41,8 @@ $navAtual = isset($navAtual) ? (string) $navAtual : '';
         <summary aria-label="Menu"><?= caderno_icone('menu', 'i-menu') ?><?= caderno_icone('fechar', 'i-fechar') ?></summary>
         <div class="menu-painel">
           <nav aria-label="Menu">
-            <?php foreach ($navItens as $chave => $item): ?>
-            <a href="<?= Helpers::e($item[0]) ?>"<?= $navAtual === $chave ? ' aria-current="page"' : '' ?>><?= Helpers::e($item[1]) ?></a>
+            <?php foreach ($navItens as $chave => $topoItem): ?>
+            <a href="<?= Helpers::e($topoItem[0]) ?>"<?= $navAtual === $chave ? ' aria-current="page"' : '' ?>><?= Helpers::e($topoItem[1]) ?></a>
             <?php endforeach; ?>
             <a href="<?= Helpers::e($sobreHref) ?>">Quem somos</a>
             <?php if ($loggedIn): ?>

@@ -16,7 +16,7 @@ $bnavItens = array(
 );
 ?>
 <nav class="bnav" aria-label="Navegação rápida">
-  <?php foreach ($bnavItens as $item): ?>
-  <a href="<?= Helpers::e($item[1]) ?>"<?= $navAtual === $item[0] ? ' aria-current="page"' : '' ?>><?= caderno_icone($item[2]) ?><span><?= Helpers::e($item[3]) ?></span></a>
+  <?php foreach ($bnavItens as $bnavItem): ?>
+  <a href="<?= Helpers::e($bnavItem[1]) ?>"<?= $navAtual === $bnavItem[0] ? ' aria-current="page"' : '' ?>><?= caderno_icone($bnavItem[2]) ?><span><?= Helpers::e($bnavItem[3]) ?></span></a>
   <?php endforeach; ?>
 </nav>

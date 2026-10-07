@@ -97,3 +97,139 @@
 .barra-estudo{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:8px var(--gutter) calc(8px + env(safe-area-inset-bottom,0px));background:var(--papel);border-top:1px solid var(--linha)}
 @media (min-width:900px){ .barra-estudo{display:none} }
+
+/* ---------- aula: página do caderno ----------
+   Celular: sumário em <details> no topo e barra de estudo fixa; >= 900 px:
+   sumário na coluna lateral (fixo ao rolar) e a página com medida de leitura. */
+.aula,.atv{padding:14px 0 40px}
+.aula-cab{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 24px}
+.aula-cab .migalha{min-width:0}
+.aula-cab .migalha a{overflow-wrap:anywhere}
+.aula-prog{margin:0;padding:0;width:min(100%,250px)}
+.aula-prog b{font-size:19px}
+.sumario{margin-top:14px;background:#fff;box-shadow:var(--sombra-papel)}
+.sumario>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:54px;padding:8px 18px;cursor:pointer;list-style:none}
+.sumario>summary::-webkit-details-marker,.sm-mod>summary::-webkit-details-marker{display:none}
+.sumario>summary::after{content:"";flex:none;width:9px;height:9px;border:solid var(--violeta);border-width:0 2px 2px 0;transform:translateY(-3px) rotate(45deg);transition:transform .2s var(--ease-out)}
+.sumario[open]>summary::after{transform:translateY(2px) rotate(225deg)}
+.sumario-tit{font:400 25px/1.1 var(--serif)}
+.sumario-tit span{font:500 13px var(--sans);color:var(--texto2);margin-left:4px;white-space:nowrap}
+.sumario-tit span::before{content:"· "}
+p.sumario-tit{padding:16px 18px 6px}
+.sm-mods{list-style:none;padding:0 8px 8px}
+.sm-mod{border-top:1px dashed var(--linha)}
+.sm-mod>summary{display:flex;gap:12px;align-items:flex-start;padding:12px 10px;cursor:pointer;list-style:none}
+.sm-n{flex:none;width:30px;height:30px;display:grid;place-items:center;border:2px solid var(--tinta);border-radius:52% 48% 50% 46%/48% 53% 47% 52%;font:400 18px/1 var(--serif);color:var(--tinta)}
+.sm-mod.feito .sm-n{background:var(--tinta);color:#fff}
+.sm-mod-tit{font-weight:600;font-size:15px;line-height:1.3;padding-top:4px}
+.sm-mod-tit small,.sm-it small{display:block;font-weight:400;font-size:12.5px;color:var(--texto2);margin-top:1px}
+.sm-itens{list-style:none;padding:0 0 10px}
+.sm-itens a{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 10px 8px 14px;text-decoration:none;font-size:14.5px;line-height:1.35}
+.sm-itens a[aria-current]{font-weight:600;background:linear-gradient(transparent 10%,var(--marca) 10% 90%,transparent 90%)}
+.sm-ok{flex:none;width:18px;height:18px;fill:none;stroke:var(--tinta);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.sm-bola{flex:none;width:15px;height:15px;margin:2px 1.5px 0;border:1.5px solid var(--apagado);border-radius:50% 46% 52% 48%}
+.sm-etq{padding:10px 10px 0 14px;font:400 16px/1.25 var(--mao);color:var(--tinta)}
+.sm-vazio{padding:12px 18px 16px;color:var(--texto2)}
+@media (hover:hover){ .sm-itens a:hover{background-color:rgba(31,63,168,.06)} }
+
+.aula-pag{min-width:0;padding-top:30px}
+.aula-kicker{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:13.5px;color:var(--texto2)}
+.aula-tit{font:400 clamp(32px,7.6vw,46px)/1.04 var(--serif);letter-spacing:-.01em;margin-top:14px;max-width:24ch;text-wrap:balance}
+.aula-aviso>*{margin-top:16px}
+.aula-aviso:focus{outline:none}
+.aula-ok-msg{font:400 19px var(--mao);color:var(--verde)}
+.aula-texto{margin-top:24px;max-width:68ch;font-size:clamp(17px,calc(1rem + .25vw),18.5px);line-height:1.75;overflow-wrap:break-word}
+.aula-texto>*+*{margin-top:18px}
+.aula-texto :is(h1,h2,h3,h4){font-family:var(--serif);font-weight:400;font-size:1.65em;line-height:1.15;margin-top:36px}
+.aula-texto :is(h3,h4){font-size:1.35em}
+.aula-texto :is(ul,ol){padding-left:1.4em}
+.aula-texto li+li{margin-top:6px}
+.aula-texto a{color:var(--tinta);font-weight:600;text-underline-offset:4px}
+.aula-texto blockquote{border-left:3px solid var(--margem);padding-left:16px;font-style:italic}
+.aula-texto table{display:block;overflow-x:auto;border-collapse:collapse;font-size:15px;line-height:1.5}
+.aula-texto :is(th,td){border:1px solid var(--linha);padding:8px 10px;text-align:left;vertical-align:top}
+.aula-texto pre{overflow-x:auto;white-space:pre-wrap;font-size:14.5px}
+.aula-texto hr{border:0;border-top:1.5px dashed var(--linha)}
+.aula-texto :is(.card-pratica,.card-resumo,.alerta-educacional){background:#fff;box-shadow:var(--sombra-papel);padding:16px 18px}
+.aula-texto .alerta-educacional{background:var(--postit)}
+.aula-video{position:relative;margin-top:30px;max-width:780px;background:#fff;padding:8px 8px 10px;box-shadow:var(--sombra-papel)}
+.aula-video::before{content:"";position:absolute;top:-11px;left:50%;width:86px;height:24px;margin-left:-43px;background:var(--fita);transform:rotate(-3deg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.aula-video iframe{display:block;width:100%;height:auto;aspect-ratio:16/9;border:0;background:#1d1733}
+.aula-pag .conteudo-item-html{margin-top:26px}
+.aula-pag .conteudo-item-html__frame{border:0;border-radius:0;box-shadow:var(--sombra-papel)}
+.aula-nota{margin-top:20px;color:var(--texto2)}
+.aula-acao,.aula-tarefa .btn{margin-top:22px}
+.aula-tarefa{margin-top:28px;max-width:520px}
+.aula-anexo{display:flex;flex-wrap:wrap;align-items:center;gap:14px 16px;margin-top:28px;max-width:580px;background:#fff;padding:16px;box-shadow:var(--sombra-papel)}
+.aula-anexo-folha{flex:none;width:48px;height:58px;display:grid;place-content:center;justify-items:center;gap:3px;font-size:21px;line-height:1;background:linear-gradient(225deg,var(--linha) 11px,var(--papel) 11px);border:1.5px solid var(--linha)}
+.aula-anexo-folha small{font:700 10px var(--sans);letter-spacing:.05em;color:var(--texto2)}
+.aula-anexo-info{flex:1;min-width:150px}
+.aula-anexo-info b{display:block;font-weight:600;overflow-wrap:anywhere}
+.aula-anexo-info span{font-size:13px;color:var(--texto2)}
+.aula-anexo .btn{flex:1 0 100%}
+.aula-fim{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;max-width:68ch;margin-top:44px;padding-top:24px;border-top:1.5px dashed var(--linha)}
+.aula-feito,.be-ok{display:inline-flex;align-items:center;gap:6px;font:400 26px/1 var(--mao);color:var(--tinta)}
+.aula-feito{transform:rotate(-2deg)}
+.aula-feito svg,.be-ok svg{width:34px;height:30px;fill:none;stroke:var(--tinta);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.aula-desmarcar .link{min-height:44px;font-size:14px;color:var(--texto2)}
+.aula-nav{display:none}
+.aula-estado{margin-top:44px}
+.aula-estado .mao{display:flex;align-items:center;gap:8px}
+.aula-estado .btn{margin-top:20px}
+.aula-geral{padding-top:26px}
+.aula-geral .al-ola{margin-bottom:6px}
+.aula-geral .lead{margin-top:10px}
+.aula-continuar{margin-top:24px}
+.aula-indice{max-width:640px;margin-top:32px}
+/* barra de estudo da aula: anterior · ação do item · próxima */
+.be-lado{display:inline-flex;align-items:center;gap:4px;min-width:48px;min-height:48px;padding:0 6px;font-weight:600;font-size:14.5px;text-decoration:none}
+.be-off{color:var(--apagado)}
+.be-meio{min-height:44px;padding:10px 20px;font-size:15px}
+.be-prox.forte{padding:0 14px 0 18px;border-radius:999px;background:var(--violeta);color:#fff;box-shadow:0 3px 0 #0e0524}
+.be-ok{font-size:20px}
+.be-ok svg{width:26px;height:22px}
+/* a barra mora no <main>: ele sobe acima do rodapé (mesmo z-index 1 da folha) */
+[data-estudo] #conteudo{z-index:2}
+@media (max-width:899px){ body:has(.aula-barra) .norminha-tutor{bottom:calc(78px + env(safe-area-inset-bottom,0px))} }
+@media (min-width:640px){ .aula-anexo .btn{flex:none} }
+@media (min-width:900px){
+  .aula-grade{display:grid;grid-template-columns:286px minmax(0,1fr);gap:0 56px;align-items:start}
+  .aula-grade>.sumario{position:sticky;top:76px;max-height:calc(100vh - 96px);overflow:auto;margin-top:30px}
+  .aula-nav{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:68ch;margin-top:34px}
+  .aula-nav a{display:block;padding:14px 18px;background:#fff;border:1.5px solid var(--linha);text-decoration:none}
+  .aula-nav small{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--texto2)}
+  .aula-nav small .ico{width:18px;height:18px}
+  .aula-nav span{display:block;margin-top:4px;font-weight:600;line-height:1.35}
+  .aula-nav .aula-nav-prox{grid-column:2;text-align:right;border-color:var(--tinta)}
+  .aula-nav-prox small{justify-content:flex-end;color:var(--tinta)}
+}
+
+/* ---------- atividade: folha de resposta ---------- */
+.atv-pag{max-width:72ch}
+.selo.vermelho{color:var(--vermelho)}
+.atv-situacao{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:18px;font-size:14px;color:var(--texto2)}
+.atv-prazo{display:inline-flex;align-items:center;gap:6px}
+.atv-prazo .ico{width:18px;height:18px}
+.atv-orient{margin-top:30px;padding-left:16px;border-left:3px solid var(--marca)}
+.atv-rot{font:400 20px var(--mao);color:var(--tinta)}
+.atv-orient .aula-texto{margin-top:4px;font-size:16px}
+.atv-entrega{margin-top:48px}
+.atv-entrega .sec-tit small{font:400 15px var(--sans);color:var(--texto2)}
+.atv-quando{margin-top:6px;font-size:13.5px;color:var(--texto2)}
+.atv-nota{display:flex;align-items:center;gap:12px;margin-top:20px;color:var(--vermelho)}
+.atv-nota span{font:700 12px var(--sans);letter-spacing:.08em;text-transform:uppercase}
+.atv-nota b{font:400 38px/1 var(--mao);padding:8px 16px 4px;border:2.5px solid currentColor;border-radius:55% 45% 52% 48%/50% 55% 45% 50%;transform:rotate(-4deg)}
+.atv-resposta{margin-top:20px;background:#fff;padding:16px 18px;box-shadow:var(--sombra-papel);font-size:16px;line-height:1.7;overflow-wrap:anywhere}
+.atv-imagens{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:28px 18px;margin-top:32px;max-width:600px}
+.atv-imagens .foto{--r:-1deg;padding:6px 6px 10px}
+.atv-imagens li:nth-child(even) .foto{--r:1.2deg}
+.atv-imagens .foto::before{top:-8px;width:54px;height:18px;margin-left:-27px}
+.atv-imagens img{aspect-ratio:1}
+.atv-devolutiva{margin-top:32px;max-width:480px}
+.atv-form{margin-top:40px}
+.atv-campo{max-width:68ch}
+.atv-campo textarea{min-height:224px}
+.campo .atv-arquivos{border:0;padding:8px 0;font-size:15px}
+.atv-arquivos::file-selector-button{margin-right:12px;padding:10px 16px;font:600 14px var(--sans);color:var(--violeta);background:#fff;border:1.5px solid var(--violeta);border-radius:999px;cursor:pointer}
+.atv-fechada{margin-top:40px;padding-top:4px;border-top:1.5px dashed var(--linha)}
+.atv-fechada .link,.atv-voltar{display:inline-flex;align-items:center;gap:4px;margin-top:14px}

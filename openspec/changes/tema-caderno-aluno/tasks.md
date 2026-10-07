@@ -16,10 +16,10 @@ Contexto obrigatório para cada tarefa: `proposal.md`, `specs/tema-publico/spec.
 
 ## 3. Aula e atividade
 
-- [ ] 3.1 `caderno/aula.php` + `pages/aula.php` + partials do sumário e do conteúdo por tipo: todos os tipos, item inacessível, estado sem curso (404/200), concluído/desmarcar, auto-conclusão, anterior/próxima, sumário no celular e barra de estudo.
-- [ ] 3.2 Módulo aula do `caderno-aluno.js`: foco no feedback, auto-conclusão em 150 ms, ✓ à caneta após concluir.
-- [ ] 3.3 `caderno/atividade.php` + `pages/atividade.php` + módulo atividade (contador, limite de 5 imagens): externo, avaliação, todos os `status_code`, `pode_enviar` falso, última entrega com imagens.
-- [ ] 3.4 Verificar por HTTP: cada tipo de conteúdo da fixture, iframes com `sandbox="allow-scripts allow-popups"`, concluir e desmarcar, enviar atividade com texto e uma imagem; restaurar o banco local.
+- [x] 3.1 `caderno/aula.php` + `pages/aula.php` + partials do sumário e do conteúdo por tipo: todos os tipos, item inacessível, estado sem curso (404/200), concluído/desmarcar, auto-conclusão, anterior/próxima, sumário no celular e barra de estudo.
+- [x] 3.2 Módulo aula do `caderno-aluno.js`: foco no feedback, auto-conclusão em 150 ms, ✓ à caneta após concluir.
+- [x] 3.3 `caderno/atividade.php` + `pages/atividade.php` + módulo atividade (contador, limite de 5 imagens): externo, avaliação, todos os `status_code`, `pode_enviar` falso, última entrega com imagens.
+- [x] 3.4 Verificar por HTTP: cada tipo de conteúdo da fixture, iframes com `sandbox="allow-scripts allow-popups"`, concluir e desmarcar, enviar atividade com texto e uma imagem; restaurar o banco local.
 
 ## 4. Quiz
 

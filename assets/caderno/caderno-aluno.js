@@ -19,7 +19,8 @@
   function protegerEnvio(form) {
     form.addEventListener('submit', function (ev) {
       if (ev.defaultPrevented) return;
-      var botoes = form.querySelectorAll('[data-loading-label]');
+      // form.elements inclui botões ligados por form= fora do form (barra de estudo).
+      var botoes = [].filter.call(form.elements, function (el) { return el.hasAttribute('data-loading-label'); });
       if (!botoes.length) return;
       var i, b;
       for (i = 0; i < botoes.length; i++) {
@@ -54,8 +55,15 @@
     }
   });
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarEnvioProtegido);
-  else iniciarEnvioProtegido();
+  // Aviso pós-redirect ([data-aviso-foco] com texto): recebe o foco, sem rolar a página.
+  function iniciar() {
+    iniciarEnvioProtegido();
+    var av = document.querySelector('[data-aviso-foco]');
+    if (av && av.textContent.trim()) try { av.focus({ preventScroll: true }); } catch (e) {}
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
+  else iniciar();
 
   /* Módulos por página entram abaixo (tarefas 2.2, 3.2, 3.3 e 4.2). */
 })();
@@ -163,5 +171,41 @@ Caderno.pagina('conta', function () {
   form.addEventListener('submit', function () {
     var bs = form.querySelectorAll('[data-ver-senha][aria-pressed=true]');
     for (var k = 0; k < bs.length; k++) bs[k].click();
+  });
+}, true);
+
+/* Aula: sumário aberto na coluna lateral (>= 900 px) e recolhido no celular;
+   conclusão automática de texto/HTML (form[data-autoconcluir] → requestSubmit
+   após 150 ms, como a V2; o servidor é idempotente e o form some depois de
+   concluído); logo após concluir, a caneta traça o ✓. Função: roda com
+   movimento reduzido (o ✓ já aparece desenhado; tracar não anima). */
+Caderno.pagina('aula', function () {
+  var C = window.Caderno, s = document.querySelector('[data-sumario]'), i;
+  if (s && window.matchMedia) {
+    var mq = matchMedia('(min-width:900px)');
+    if (mq.matches) s.open = true;
+    if (mq.addEventListener) mq.addEventListener('change', function () { s.open = mq.matches; });
+  }
+  var auto = document.querySelector('form[data-autoconcluir]');
+  if (auto) setTimeout(function () { if (auto.requestSubmit) auto.requestSubmit(); else auto.submit(); }, 150);
+  var oks = document.querySelectorAll('[data-ok]');
+  for (i = 0; i < oks.length; i++) C.tracar(oks[i], { duration: 420, delay: 250, easing: 'cubic-bezier(.3,0,.3,1)' });
+}, true);
+
+/* Atividade: contador de caracteres e no máximo 5 imagens (mensagem em texto,
+   sem alert; o servidor valida de novo). Função: roda com movimento reduzido. */
+Caderno.pagina('atividade', function () {
+  var ta = document.getElementById('v2-atv-resposta'), qt = document.querySelector('[data-char-count]');
+  if (ta && qt) {
+    var contar = function () { qt.textContent = ta.value.length.toLocaleString('pt-BR'); };
+    contar();
+    ta.addEventListener('input', contar);
+  }
+  var arq = document.getElementById('v2-atv-imagens'), erro = document.getElementById('v2-atv-imagens-erro');
+  if (arq && erro) arq.addEventListener('change', function () {
+    var demais = arq.files && arq.files.length > 5;
+    erro.textContent = demais ? 'Selecione no máximo 5 imagens. Escolha de novo.' : '';
+    erro.hidden = !demais;
+    if (demais) arq.value = '';
   });
 }, true);
