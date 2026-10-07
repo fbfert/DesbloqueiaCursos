@@ -71,3 +71,20 @@ Princípios:
   contra MySQL 5.7 em Docker com as migrations aplicadas e dados de fixture; `php -l` em tudo.
 - App: testes unitários do `:shared` (repositórios com Ktor MockEngine), testes de ViewModel,
   `assembleDebug` e `lint`; teste de ponta a ponta contra o backend local em Docker.
+
+## Decisões do backend na implementação (2026-10-07)
+
+| Decisão | Por quê |
+|---|---|
+| Sem `session_start` em `/api/app/*`; `$_SESSION` vazio só em memória | Nada de cookie/arquivo de sessão por chamada; um `Session::get()` esquecido em código compartilhado devolve `null` em vez de quebrar. Os Services recebem o usuário por parâmetro (nenhum Service novo lê sessão) |
+| `ConteudoAcessoAlunoService::carregarContexto(..., $exigirInscricaoExata)` | `AreaCursoService::carregarAluno` cai na primeira inscrição acessível quando o id não confere; o site mantém isso, a API exige a inscrição do caminho (senão 403) |
+| Lista `GET /inscricoes` = `forUsuarioAprovadas` + a regra de acesso de `carregarAluno` | Todo item listado abre sem 403 |
+| `multipla_escolha` do banco → `"unica"` no contrato | O quiz do site só aceita uma alternativa por questão |
+| Status do item: `devolvida` → `em_andamento`, `aguardando_envio`/`pendente`/`cancelada` → `nao_iniciado` | O enum do contrato não tem esses estados; o aluno precisa agir de novo |
+| `pode_concluir_manualmente` só para arquivo, link, vídeo e vídeo incorporado | Texto/HTML/etiqueta concluem ao abrir; quiz/avaliação pela correção |
+| Item `html` sai sanitizado | Contrato pede HTML sanitizado; scripts do item não rodam no app |
+| `POST /pedidos/{id}/cancelar` aceita `motivo` opcional; comprovante aceita `motivo_reenvio` opcional | O site exige motivo; o contrato não define corpo |
+| Erros específicos fora da lista transversal: `nao_concluivel`, `quiz_indisponivel`, `tentativa_encerrada`, `comprovante_nao_aceito`, `pagamento_indisponivel` (422), `pagamento_falhou` (502), `credenciais_invalidas`, `conta_bloqueada`, `conta_inativa`, `sessao_revogada` | Mesmo formato `{"erro": {...}}`; o app trata pelo status HTTP quando não conhece o código |
+| Datas: colunas gravadas pelo PHP (UTC) x pelo MySQL (Brasília) lidas cada uma no seu fuso | Divergência de fuso documentada em `docs/2026-08-15-fuso-horario-php-mysql.md` |
+| Limite de taxa em tabela própria com chave = hash(APP_KEY + escopo + valor), janela fixa no PHP, falha abrindo | Mesmo desenho do limite da Norminha pública; não guarda IP nem login em claro |
+| Push com orçamento de 5 s por notificação e `conteudo_novo` só enfileirado | Sem worker no servidor; a ação do admin não pode esperar o Google |
