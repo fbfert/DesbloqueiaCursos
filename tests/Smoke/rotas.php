@@ -70,6 +70,10 @@ $rotas = array(
         // Respostas não-HTML: sem marcador de layout e sem guarda.
         array('path' => '/sitemap.xml', 'nome' => 'Sitemap', 'marcador' => '<urlset', 'guarda' => false),
         array('path' => '/robots.txt',  'nome' => 'robots.txt', 'marcador' => 'User-agent', 'guarda' => false),
+        // API do app do aluno (JSON, sem sessão): configuração pública e o 401 em
+        // JSON de uma rota autenticada — nunca HTML nem redirect para o login.
+        array('path' => '/api/app/v1/config', 'nome' => 'API do app: config', 'marcador' => '"versao_minima_android"', 'guarda' => false),
+        array('path' => '/api/app/v1/me', 'nome' => 'API do app: 401 JSON', 'status' => 401, 'marcador' => '"nao_autenticado"', 'guarda' => false),
     ),
 
     // ---------------------------------------------------------------------
