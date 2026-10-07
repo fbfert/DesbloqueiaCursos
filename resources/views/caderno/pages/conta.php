@@ -139,7 +139,7 @@ $temErros = !empty($ctErros) || !empty($ctGerais);
               <option value="">Selecione o estado primeiro</option>
               <?php endif; ?>
             </select>
-            <p class="ajuda" id="conta-cidade-status" data-cidade-status aria-live="polite" hidden></p>
+            <p class="ajuda ct-status" id="conta-cidade-status" data-cidade-status aria-live="polite"></p>
             <?= $ct['cidade']['msg'] ?>
           </div>
         </div>

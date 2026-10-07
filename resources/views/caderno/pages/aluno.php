@@ -25,8 +25,6 @@ $perfil = isset($perfil) && is_array($perfil) ? $perfil : array();
 $primeiroNome = isset($usuarioPrimeiroNome) && $usuarioPrimeiroNome !== '' ? (string) $usuarioPrimeiroNome : '';
 $errosPagina = isset($errors) && is_array($errors) ? array_values(array_filter($errors, 'is_scalar')) : array();
 
-// Cor de cada divisória (texto branco AA, mesma família das divisórias do catálogo).
-$alCoresAba = array('cursos' => '#22104A', 'pedidos' => '#2F5D50', 'certificados' => '#A33B2B', 'perfil' => '#1F3FA8');
 // Classe de situação da V2 → selo do tema.
 $alSelo = function ($classe, $padrao) {
     $mapa = array('v2-badge-novo' => 'verde', 'v2-badge-gratis' => $padrao, 'v2-badge-destaque' => 'apagado');
@@ -59,9 +57,14 @@ $alPainel = 'al-painel-' . preg_replace('/[^a-z]/', '', $abaAtiva);
         $alChave = (string) ($aba['chave'] ?? '');
         $alAtiva = $alChave === $abaAtiva;
         $alTotal = isset($aba['total']) && $aba['total'] !== null ? (int) $aba['total'] : null;
+        // No celular estreito "Meus " some só da vista (o nome acessível continua o mesmo), para as 4 abas caberem.
+        $alRotulo = Helpers::e((string) ($aba['label'] ?? ''));
+        if (strpos($alRotulo, 'Meus ') === 0) {
+            $alRotulo = '<span class="al-aba-pre">Meus </span><span class="al-aba-nome">' . substr($alRotulo, 5) . '</span>';
+        }
     ?>
-    <a class="aba" role="tab" aria-selected="<?= $alAtiva ? 'true' : 'false' ?>"<?= $alAtiva ? ' aria-controls="' . $alPainel . '"' : '' ?>
-       href="<?= Helpers::e((string) $aba['href']) ?>" style="--cor:<?= Helpers::e($alCoresAba[$alChave] ?? '#22104A') ?>"><?= Helpers::e((string) $aba['label']) ?><?php if ($alTotal !== null): ?><span class="qt"><span class="vh"> (</span><?= $alTotal ?><span class="vh">)</span></span><?php endif; ?></a>
+    <a class="aba aba-<?= Helpers::e(preg_replace('/[^a-z]/', '', $alChave)) ?>" role="tab" aria-selected="<?= $alAtiva ? 'true' : 'false' ?>"<?= $alAtiva ? ' aria-controls="' . $alPainel . '"' : '' ?>
+       href="<?= Helpers::e((string) $aba['href']) ?>"><?= $alRotulo ?><?php if ($alTotal !== null): ?><span class="qt"><span class="vh"> (</span><?= $alTotal ?><span class="vh">)</span></span><?php endif; ?></a>
     <?php endforeach; ?>
   </div>
   <div class="abas-base" aria-hidden="true"></div>
@@ -130,7 +133,7 @@ $alPainel = 'al-painel-' . preg_replace('/[^a-z]/', '', $abaAtiva);
           $alStatus = (string) ($pedido['status'] ?? '');
           $alItens = (int) ($pedido['total_itens'] ?? 0);
           $alNomes = !empty($pedido['multiplos_cursos']) && !empty($pedido['cursos_nomes']) && is_array($pedido['cursos_nomes']) ? $pedido['cursos_nomes'] : array();
-          $alCarimbo = in_array($alStatus, array('aprovado', 'pago'), true) ? array('PAGO', 'verde') : (in_array($alStatus, array('cancelado', 'expirado'), true) ? array(mb_strtoupper((string) $pedido['status_label'], 'UTF-8'), 'vermelho') : null);
+          $alCarimbo = in_array($alStatus, array('aprovado', 'pago'), true) ? array('PAGO', 'verde') : (in_array($alStatus, array('cancelado', 'expirado'), true) ? array(mb_strtoupper((string) ($pedido['status_label'] ?? ''), 'UTF-8'), 'vermelho') : null);
       ?>
       <li>
         <article class="recibo al-recibo" aria-labelledby="al-ped-<?= $alPid ?>">

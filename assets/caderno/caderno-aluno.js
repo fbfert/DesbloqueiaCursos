@@ -74,11 +74,27 @@
    (os estados ocultos existem só sob html.anima, e a trava do layout os desfaz). */
 Caderno.pagina('aluno', function () {
   var C = window.Caderno, i;
-  // No celular as divisórias rolam: a aba aberta começa à vista (vale com movimento reduzido).
+  // No celular as divisórias rolam (vale com movimento reduzido): a aba aberta começa
+  // à vista, medida depois das fontes (a largura das abas muda quando elas chegam), e
+  // a borda que ainda tem abas escondidas esmaece (.mais-dir/.mais-esq), como dica.
   var abas = document.querySelector('.al-abas'), ativa = abas && abas.querySelector('[aria-selected=true]');
-  if (ativa && abas.scrollWidth > abas.clientWidth) {
-    var ra = ativa.getBoundingClientRect(), rb = abas.getBoundingClientRect();
-    if (ra.right > rb.right) abas.scrollLeft += ra.left - rb.left - 24;
+  if (abas) {
+    var bordas = function () {
+      var resto = abas.scrollWidth - abas.clientWidth - abas.scrollLeft;
+      abas.classList.toggle('mais-dir', resto > 18); // o respiro final da faixa (gutter) não conta
+      abas.classList.toggle('mais-esq', abas.scrollLeft > 2);
+    };
+    var mostrar = function () {
+      if (ativa && abas.scrollWidth > abas.clientWidth) {
+        var ra = ativa.getBoundingClientRect(), rb = abas.getBoundingClientRect();
+        if (ra.right > rb.right + 1) abas.scrollLeft += ra.right - rb.right + 40;
+      }
+      bordas();
+    };
+    abas.addEventListener('scroll', bordas, { passive: true });
+    addEventListener('resize', bordas);
+    mostrar();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(mostrar);
   }
   if (C.reduzido || !document.documentElement.classList.contains('anima')) return;
   var cena = function (el) { el.classList.add('em-cena'); };
@@ -108,7 +124,8 @@ Caderno.pagina('conta', function () {
   var IBGE = { AC: 12, AL: 27, AP: 16, AM: 13, BA: 29, CE: 23, DF: 53, ES: 32, GO: 52, MA: 21, MT: 51, MS: 50, MG: 31, PA: 15, PB: 25,
     PR: 41, PE: 26, PI: 22, RJ: 33, RN: 24, RS: 43, RO: 11, RR: 14, SC: 42, SP: 35, SE: 28, TO: 17 };
 
-  var dizer = function (t) { if (status) { status.textContent = t; status.hidden = !t; } };
+  // Região viva sempre presente (vazia quando não há aviso): só o texto muda.
+  var dizer = function (t) { if (status && status.textContent !== t) status.textContent = t; };
   // Põe `el` no lugar do controle atual de cidade, levando o estado de erro.
   var usar = function (el) {
     var atual = document.getElementById('conta-cidade');
@@ -143,25 +160,44 @@ Caderno.pagina('conta', function () {
     usar(texto);
     dizer('Não foi possível carregar a lista de cidades. Digite o nome da sua cidade.');
   };
+  // Durante a busca o select continua habilitado com a cidade atual escolhida: um
+  // envio nesse meio-tempo leva a cidade gravada (select desabilitado não vai no POST).
+  // Sem resposta em 8 s, cai no campo de texto. Resposta de uma UF anterior é ignorada.
   var carregar = function (sigla, escolhida) {
     var n = ++vez;
     dizer('');
     if (!sigla || !IBGE[sigla]) { opcoes([], ''); return; }
     if (cache[sigla]) { opcoes(cache[sigla], escolhida); return; }
     usar(select);
-    select.disabled = true;
+    select.disabled = false;
     select.innerHTML = '';
-    select.add(new Option('Carregando cidades…', ''));
-    fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/' + IBGE[sigla] + '/municipios?orderBy=nome')
-      .then(function (r) { if (!r.ok) throw new Error('ibge'); return r.json(); })
-      .then(function (d) {
-        var lista = [];
-        for (var k = 0; k < d.length; k++) if (d[k] && d[k].nome) lista.push(d[k].nome);
-        if (!lista.length) throw new Error('vazio');
-        cache[sigla] = lista;
-        if (n === vez) opcoes(lista, escolhida);
-      })
-      .catch(function () { if (n === vez) falhou(escolhida); });
+    if (escolhida) select.add(new Option(escolhida, escolhida, true, true));
+    else select.add(new Option('Carregando cidades…', ''));
+    dizer('Carregando cidades…');
+    if (!window.fetch) { falhou(escolhida); return; }
+    var fim = false, ctl = window.AbortController ? new AbortController() : null;
+    var desistir = function () {
+      if (fim) return;
+      fim = true;
+      clearTimeout(relogio);
+      if (n === vez) falhou(escolhida);
+    };
+    var relogio = setTimeout(function () { if (ctl) ctl.abort(); desistir(); }, 8000);
+    try {
+      fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/' + IBGE[sigla] + '/municipios?orderBy=nome', ctl ? { signal: ctl.signal } : {})
+        .then(function (r) { if (!r.ok) throw new Error('ibge'); return r.json(); })
+        .then(function (d) {
+          var lista = [];
+          for (var k = 0; k < d.length; k++) if (d[k] && d[k].nome) lista.push(d[k].nome);
+          if (!lista.length) throw new Error('vazio');
+          cache[sigla] = lista;
+          if (fim) return;
+          fim = true;
+          clearTimeout(relogio);
+          if (n === vez) { dizer(''); opcoes(lista, escolhida); }
+        })
+        .catch(desistir);
+    } catch (e) { desistir(); }
   };
 
   uf.addEventListener('change', function () { carregar(uf.value, ''); });

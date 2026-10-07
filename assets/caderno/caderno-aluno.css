@@ -12,6 +12,14 @@
 .al-avisos{display:grid;gap:14px;max-width:640px;margin-top:22px}
 /* abas: as divisórias do catálogo, com aria-selected (papel de aba, como a V2) */
 .aba[aria-selected=true]{filter:none;transform:none;box-shadow:none}
+.aba-cursos{--cor:var(--violeta)} .aba-pedidos{--cor:var(--verde)} .aba-certificados{--cor:var(--vermelho)} .aba-perfil{--cor:var(--tinta)}
+/* celular: a faixa rola; a borda com abas escondidas esmaece (o módulo aluno põe .mais-dir/.mais-esq) */
+@media (max-width:1099px){
+  .al-abas.mais-dir{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+  .al-abas.mais-esq{-webkit-mask-image:linear-gradient(90deg,transparent,#000 40px);mask-image:linear-gradient(90deg,transparent,#000 40px)}
+  .al-abas.mais-esq.mais-dir{-webkit-mask-image:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 28px),transparent)}
+}
+@media (max-width:419px){ .al-aba-pre{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} .al-aba-nome{display:inline-block;text-transform:capitalize} .al-abas{gap:4px} .al-abas .aba{padding:10px 9px 9px;font-size:12.5px} .al-abas .qt{margin-inline-start:4px} }
 .al-painel{padding-top:34px}
 .al-vazio{margin-top:6px}
 .al-vazio p{margin-bottom:14px}
@@ -54,7 +62,8 @@
 .al-cancelar form{border-top:1px dashed var(--linha);padding-top:2px}
 .al-cancelar .campo{margin-top:12px}
 .al-cancelar .form-acoes{margin-top:16px}
-.al-btn-cancelar{background:var(--vermelho);box-shadow:0 3px 0 #7d1f17}
+.al-btn-cancelar{background:var(--vermelho);box-shadow:0 3px 0 color-mix(in srgb,var(--vermelho),var(--violeta) 55%)}
+.al-btn-cancelar:active{box-shadow:none}
 
 /* certificados: folha com carimbo */
 .al-certs{display:grid;gap:34px 30px}
@@ -88,6 +97,7 @@
 .ct-avisos{margin-top:22px}
 .ct-local{display:grid;grid-template-columns:96px minmax(0,1fr);gap:0 18px;max-width:420px}
 .ct-local .campo{max-width:none}
+.ct-status:empty{margin:0}
 .ct-ajuda{font-size:13px;color:var(--texto2);margin-top:6px;max-width:420px}
 .ct-lado{display:none}
 @media (min-width:900px){ .ct-lado{display:block} .ct-lado .postit{margin-top:40px} }
