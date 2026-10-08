@@ -1200,6 +1200,23 @@ class AreaCursoService
         return null;
     }
 
+    /**
+     * Inscrições que a área do aluno de fato abre (forUsuarioAprovadas filtrada
+     * pela mesma regra de carregarAluno). Usado pela lista "Meus cursos" do app,
+     * para que todo item listado abra sem 403.
+     */
+    public function inscricoesAcessiveisDoAluno($usuarioId)
+    {
+        $acessiveis = array();
+        foreach ($this->inscricaoModel->forUsuarioAprovadas($usuarioId) as $inscricao) {
+            if ($this->inscricaoAlunoPodeAcessar($inscricao)) {
+                $acessiveis[] = $inscricao;
+            }
+        }
+
+        return $acessiveis;
+    }
+
     private function inscricaoAlunoPodeAcessar(array $inscricao)
     {
         $status = isset($inscricao['status']) ? (string) $inscricao['status'] : '';

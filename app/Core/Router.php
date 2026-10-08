@@ -27,9 +27,36 @@ class Router
         $this->add('POST', $path, $handler, $middleware);
     }
 
+    /** Caminhos da API do app: JSON sempre, sem sessão (ver index.php). */
+    const PREFIXO_APP = '/api/app/';
+
+    /**
+     * POST da API do app (/api/app/*): sem o middleware `csrf`.
+     *
+     * O app autentica por Bearer (`auth.app`), sem cookie e sem sessão — não há
+     * token CSRF a conferir e não há credencial ambiente que um site de terceiro
+     * consiga reaproveitar. Separado de postWithoutCsrf, que continua reservado
+     * a webhook externo, para que a exceção fique explícita e restrita ao prefixo.
+     */
+    public function postApp($path, $handler, array $middleware = array())
+    {
+        if (!self::ehRotaApp('/' . trim($path, '/'))) {
+            throw new \InvalidArgumentException('postApp só aceita rotas sob ' . self::PREFIXO_APP);
+        }
+        $this->add('POST', $path, $handler, $middleware);
+    }
+
+    public static function ehRotaApp($path)
+    {
+        $path = (string) $path;
+        return $path === '/api/app' || strpos($path, self::PREFIXO_APP) === 0;
+    }
+
     public function dispatch(Request $request)
     {
-        if ($request->method() === 'GET') {
+        $rotaApp = self::ehRotaApp($request->path());
+
+        if ($request->method() === 'GET' && !$rotaApp) {
             $cupom = trim((string) $request->query('cupom', ''));
             if ($cupom !== '') {
                 return Response::redirect('/cupom?codigo=' . urlencode($cupom));
@@ -70,6 +97,11 @@ class Router
                 } catch (\Throwable $exception) {
                     return $this->handleAdminException($request, $exception);
                 }
+            }
+
+            if ($rotaApp) {
+                // API do app: 404 em JSON, nunca a página dinâmica/HTML do site.
+                return \App\Support\AppApi\Resposta::erro('nao_encontrado', 'Recurso não encontrado.', 404);
             }
 
             if ($request->method() === 'GET') {
@@ -114,6 +146,13 @@ class Router
             'file' => $exception->getFile(),
             'line' => $exception->getLine(),
         );
+
+        if (self::ehRotaApp($request->path())) {
+            // API do app: nunca vaza mensagem, arquivo ou pilha do PHP.
+            $context['exception'] = get_class($exception);
+            Logger::error('app_api.erro_interno', $context);
+            return \App\Support\AppApi\Resposta::erro('erro_interno', null, 500);
+        }
 
         Logger::error('admin.route.error', $context);
 
@@ -264,6 +303,8 @@ class Router
                 // Um fetch() que segue um 302 recebe o HTML do login com 200 e
                 // conclui que deu certo — ver ApiAuthenticateMiddleware.
                 'auth.api' => '\\App\\Middleware\\ApiAuthenticateMiddleware',
+                // App do aluno (/api/app/*): Bearer opaco, sem sessão; 401/426 em JSON.
+                'auth.app' => '\\App\\Middleware\\AppAuthenticateMiddleware',
                 'csrf' => '\\App\\Middleware\\CsrfMiddleware',
                 'permission' => '\\App\\Middleware\\PermissionMiddleware',
             );

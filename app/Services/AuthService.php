@@ -134,50 +134,79 @@ class AuthService
         return array('ok' => true, 'usuario_id' => $usuarioId);
     }
 
-    public function login($login, $senha, $ipAddress, $userAgent)
+    /**
+     * Núcleo do login, sem tocar em sessão: política de login, bloqueio por
+     * tentativas, status `ativo` e senha. Usado pelo login do site (login(), que
+     * em seguida grava a sessão) e pelo login do app (que emite tokens).
+     *
+     * Em caso de falha devolve `motivo`: credenciais_invalidas | conta_bloqueada |
+     * conta_inativa — e a MESMA `message` que o site sempre mostrou.
+     *
+     * @param string $evento evento gravado em acessos_logs ('login' no site, 'app_login' no app)
+     */
+    public function autenticarCredenciais($login, $senha, $ipAddress, $userAgent, $evento = 'login')
     {
         $security = $this->globalConfigService->seguranca();
         if (!$this->loginPermittedByPolicy($login, isset($security['politica_login']) ? $security['politica_login'] : 'email_cpf')) {
-            $this->accessLogs->record(null, 'login', 'policy_blocked', $ipAddress, $userAgent, array('login' => $login));
-            return array('ok' => false, 'message' => 'Dados de acesso inválidos.');
+            $this->accessLogs->record(null, $evento, 'policy_blocked', $ipAddress, $userAgent, array('login' => $login));
+            return array('ok' => false, 'motivo' => 'credenciais_invalidas', 'message' => 'Dados de acesso inválidos.');
         }
 
         $usuario = $this->usuarios->findByLogin($login);
 
         if (!$usuario) {
-            $this->accessLogs->record(null, 'login', 'user_not_found', $ipAddress, $userAgent, array('login' => $login));
-            return array('ok' => false, 'message' => 'Dados de acesso inválidos.');
+            $this->accessLogs->record(null, $evento, 'user_not_found', $ipAddress, $userAgent, array('login' => $login));
+            return array('ok' => false, 'motivo' => 'credenciais_invalidas', 'message' => 'Dados de acesso inválidos.');
         }
 
         if ($this->isBlocked($usuario)) {
-            $this->accessLogs->record($usuario['id'], 'login', 'temporarily_blocked', $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Acesso temporariamente bloqueado. Tente novamente mais tarde.');
+            $this->accessLogs->record($usuario['id'], $evento, 'temporarily_blocked', $ipAddress, $userAgent);
+            return array(
+                'ok' => false,
+                'motivo' => 'conta_bloqueada',
+                'message' => 'Acesso temporariamente bloqueado. Tente novamente mais tarde.',
+                'bloqueado_ate' => $usuario['bloqueado_ate'],
+                'minutos_restantes' => max(1, (int) ceil((strtotime($usuario['bloqueado_ate']) - time()) / 60)),
+            );
         }
 
         if ($usuario['status'] !== 'ativo') {
-            $this->accessLogs->record($usuario['id'], 'login', 'inactive_user', $ipAddress, $userAgent);
-            return array('ok' => false, 'message' => 'Usuário sem permissão de acesso.');
+            $this->accessLogs->record($usuario['id'], $evento, 'inactive_user', $ipAddress, $userAgent);
+            return array('ok' => false, 'motivo' => 'conta_inativa', 'message' => 'Usuário sem permissão de acesso.');
         }
 
-        if (!password_verify((string) $senha, $usuario['senha_hash'])) {
+        // senha_hash NULL (cadastro pendente do checkout rápido): o cast evita o
+        // aviso de depreciação do PHP 8.1+, que o ErrorHandler transformava em 500.
+        if (!password_verify((string) $senha, (string) $usuario['senha_hash'])) {
             $lockMinutes = isset($security['tempo_bloqueio_login_minutos']) ? (int) $security['tempo_bloqueio_login_minutos'] : self::LOCK_MINUTES;
             $maxAttempts = isset($security['max_tentativas_login']) ? (int) $security['max_tentativas_login'] : self::MAX_LOGIN_ATTEMPTS;
             $attempts = $this->usuarios->incrementLoginAttempts($usuario['id'], $usuario['tentativas_login'], $lockMinutes, $maxAttempts);
             $result = $attempts >= $maxAttempts ? 'invalid_password_blocked' : 'invalid_password';
-            $this->accessLogs->record($usuario['id'], 'login', $result, $ipAddress, $userAgent);
+            $this->accessLogs->record($usuario['id'], $evento, $result, $ipAddress, $userAgent);
 
-            return array('ok' => false, 'message' => 'Dados de acesso inválidos.');
+            return array('ok' => false, 'motivo' => 'credenciais_invalidas', 'message' => 'Dados de acesso inválidos.');
         }
 
         $this->usuarios->resetLoginAttempts($usuario['id']);
+        $this->accessLogs->record($usuario['id'], $evento, 'success', $ipAddress, $userAgent);
+
+        return array('ok' => true, 'usuario' => $usuario);
+    }
+
+    public function login($login, $senha, $ipAddress, $userAgent)
+    {
+        $autenticacao = $this->autenticarCredenciais($login, $senha, $ipAddress, $userAgent, 'login');
+        if (empty($autenticacao['ok'])) {
+            return array('ok' => false, 'message' => $autenticacao['message']);
+        }
+
+        $usuario = $autenticacao['usuario'];
         Session::regenerate();
         Session::put('usuario_id', $usuario['id']);
         Session::put('usuario_nome', $usuario['nome']);
         Session::put('usuario_email', $usuario['email']);
         Session::put('usuario_cpf', isset($usuario['cpf']) ? (string) $usuario['cpf'] : '');
         Session::put('usuario_telefone', isset($usuario['telefone']) ? (string) $usuario['telefone'] : '');
-
-        $this->accessLogs->record($usuario['id'], 'login', 'success', $ipAddress, $userAgent);
 
         return array(
             'ok' => true,
@@ -293,6 +322,38 @@ class AuthService
         Session::put('usuario_cpf', $cpf);
         Session::put('usuario_telefone', $telefone);
         $this->accessLogs->record($usuarioId, 'account_update', 'success', $ipAddress, $userAgent);
+
+        return array('ok' => true);
+    }
+
+    /**
+     * Troca de senha pelo próprio usuário (app): confere a senha atual e aplica
+     * a mesma regra de tamanho/confirmação do site.
+     */
+    public function alterarSenha($usuarioId, $senhaAtual, $senhaNova, $senhaNovaConfirmacao, $ipAddress, $userAgent)
+    {
+        $usuario = $this->usuarios->findById((int) $usuarioId);
+        if (!$usuario) {
+            return array('ok' => false, 'errors' => array('conta' => 'Usuário não encontrado.'));
+        }
+
+        $errors = array();
+        if ((string) $senhaAtual === '' || empty($usuario['senha_hash']) || !password_verify((string) $senhaAtual, (string) $usuario['senha_hash'])) {
+            $errors['senha_atual'] = 'A senha atual não confere.';
+        }
+        if (strlen((string) $senhaNova) < 8) {
+            $errors['senha_nova'] = 'A nova senha deve ter pelo menos 8 caracteres.';
+        }
+        if ((string) $senhaNova !== (string) $senhaNovaConfirmacao) {
+            $errors['senha_nova_confirmacao'] = 'A confirmação da nova senha não confere.';
+        }
+        if ($errors) {
+            $this->accessLogs->record((int) $usuarioId, 'password_change', 'invalid', $ipAddress, $userAgent);
+            return array('ok' => false, 'errors' => $errors);
+        }
+
+        $this->usuarios->updatePassword((int) $usuarioId, password_hash((string) $senhaNova, PASSWORD_DEFAULT));
+        $this->accessLogs->record((int) $usuarioId, 'password_change', 'success', $ipAddress, $userAgent);
 
         return array('ok' => true);
     }

@@ -1490,6 +1490,11 @@ class ConteudoCursoService
             $dados['criado_por'] = $usuarioId ? (int) $usuarioId : null;
         }
 
+        // Status antes de salvar: a notificação de conteúdo novo do app só sai
+        // quando o item PASSA a ser publicado (criado publicado ou publicado agora).
+        $existenteAntes = $id > 0 ? $this->itemModel->findById($id) : null;
+        $estavaPublicado = $existenteAntes && (string) ($existenteAntes['status'] ?? '') === 'publicado';
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
 
@@ -1523,6 +1528,12 @@ class ConteudoCursoService
             }
 
             $pdo->commit();
+
+            if (!$estavaPublicado && (string) ($item['status'] ?? '') === 'publicado') {
+                // Push para o app: só enfileira (o cron envia); nunca lança.
+                (new PushEventosService())->conteudoNovo($itemId);
+            }
+
             return array('ok' => true, 'id' => $itemId);
         } catch (\InvalidArgumentException $exception) {
             $pdo->rollBack();

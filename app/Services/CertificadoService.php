@@ -3527,8 +3527,68 @@ class CertificadoService
 
         return Helpers::url('certificados/validar?codigo=' . urlencode($codigo));
     }
+
+    /**
+     * API do app: certificados emitidos do próprio aluno.
+     */
+    public function certificadosEmitidosDoAluno($usuarioId)
+    {
+        $lista = $this->certificadoModel->emitidosDoUsuario((int) $usuarioId);
+        foreach ($lista as &$certificado) {
+            $certificado['validacao_url'] = $this->urlValidacaoCertificado($certificado['codigo']);
+        }
+        unset($certificado);
+
+        return $lista;
+    }
+
+    /**
+     * API do app: PDF de um certificado SÓ quando ele é do usuário (titular ou
+     * participante da inscrição) — sem o atalho de permissão administrativa e sem
+     * alterar a rota pública /certificados/pdf do site.
+     *
+     * @return array ok=true: pdf, codigo | ok=false: motivo (indisponivel|nao_encontrado|sem_acesso|falhou)
+     */
+    public function pdfDoAluno($codigo, $usuarioId)
+    {
+        $config = $this->globalConfigService->certificados();
+        if (empty($config['certificados_habilitado']) || empty($config['certificados_permitir_download'])) {
+            return array('ok' => false, 'motivo' => 'indisponivel');
+        }
+
+        $codigo = strtoupper(trim((string) $codigo));
+        if ($codigo === '' || !preg_match('/^[A-Z0-9-]{4,80}$/', $codigo)) {
+            return array('ok' => false, 'motivo' => 'nao_encontrado');
+        }
+
+        $certificado = $this->certificadoModel->findByCodigo($codigo);
+        if (!$certificado || ($certificado['status'] ?? '') !== 'emitido') {
+            return array('ok' => false, 'motivo' => 'nao_encontrado');
+        }
+
+        $dono = !empty($certificado['usuario_id']) && (int) $certificado['usuario_id'] === (int) $usuarioId;
+        if (!$dono && !empty($certificado['inscricao_id'])) {
+            $inscricao = $this->inscricaoModel->findById((int) $certificado['inscricao_id']);
+            $dono = $inscricao && !empty($inscricao['usuario_id']) && (int) $inscricao['usuario_id'] === (int) $usuarioId;
+        }
+        if (!$dono) {
+            return array('ok' => false, 'motivo' => 'sem_acesso');
+        }
+
+        try {
+            $pdf = $this->pdfBytesByCodigo($codigo);
+        } catch (\Throwable $exception) {
+            Logger::error('certificado.app.pdf_falhou', array(
+                'certificado_id' => (int) $certificado['id'],
+                'message' => $exception->getMessage(),
+            ));
+            return array('ok' => false, 'motivo' => 'falhou');
+        }
+
+        if ($pdf === null || $pdf === '') {
+            return array('ok' => false, 'motivo' => 'falhou');
+        }
+
+        return array('ok' => true, 'pdf' => $pdf, 'codigo' => $codigo, 'certificado' => $certificado);
+    }
 }
-
-
-
-

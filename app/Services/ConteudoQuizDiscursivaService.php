@@ -187,6 +187,12 @@ class ConteudoQuizDiscursivaService
                 isset($dados['user_agent']) ? $dados['user_agent'] : null
             );
 
+            if ($transacaoPropia && (string) $correcao['status'] === 'pendente') {
+                // Push para o app quando a última discursiva pendente foi corrigida
+                // (o serviço confere o status; nunca lança).
+                (new PushEventosService())->quizCorrigido((int) $correcao['tentativa_id']);
+            }
+
             return array('ok' => true, 'nota' => $avaliacao['nota']);
         } catch (Exception $e) {
             if ($transacaoPropia && $pdo->inTransaction()) {

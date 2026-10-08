@@ -58,48 +58,18 @@ class MeusCursosController extends Controller
         $pedidoId = (int) $request->input('pedido_id', 0);
         $motivo = trim((string) $request->input('motivo_cancelamento', ''));
 
-        if ($pedidoId <= 0) {
-            Session::flash('errors', array('Pedido inválido para cancelamento.'));
-            return $this->redirect('/aluno/meus-cursos');
-        }
-
-        if ($motivo === '') {
-            Session::flash('errors', array('Informe o motivo do cancelamento do pedido.'));
-            return $this->redirect('/aluno/meus-cursos');
-        }
-
-        $pedido = $this->pedidoModel->findById($pedidoId);
-        if (!$pedido) {
-            Session::flash('errors', array('Pedido não encontrado.'));
-            return $this->redirect('/aluno/meus-cursos');
-        }
-
-        $statusCancelaveis = array(
-            'rascunho',
-            'aguardando_pagamento',
-            'pendencia',
-            'aguardando_reenvio',
-            'comprovante_enviado',
-            'em_analise',
-        );
-
-        if (!in_array((string) $pedido['status'], $statusCancelaveis, true)) {
-            Session::flash('errors', array('Este pedido não pode mais ser cancelado pelo aluno.'));
-            return $this->redirect('/aluno/meus-cursos');
-        }
-
-        $observacao = 'Cancelamento solicitado pelo aluno. Motivo: ' . $motivo;
-        $resultado = $this->pedidoService->registrarStatus(
+        // Validações, status canceláveis e registro: PedidoService (fonte única,
+        // também usada pela V2 e pela API do app).
+        $resultado = $this->pedidoService->cancelarPeloAluno(
             $pedidoId,
-            'cancelado',
-            $observacao,
             $usuarioId,
+            $motivo,
             $request->ip(),
             $request->userAgent()
         );
 
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível cancelar o pedido.'));
+            Session::flash('errors', array($resultado['message']));
             return $this->redirect('/aluno/meus-cursos');
         }
 

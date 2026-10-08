@@ -420,4 +420,27 @@ class Certificado
             'user_agent' => $userAgent,
         ));
     }
+
+    /**
+     * Certificados emitidos do aluno (como participante da inscrição ou titular
+     * do certificado), com nome e carga horária do curso. Usado pela API do app.
+     */
+    public function emitidosDoUsuario($usuarioId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT c.*,
+                    ce.nome AS curso_nome,
+                    ce.carga_horaria AS curso_carga_horaria
+             FROM certificados c
+             LEFT JOIN inscricoes i ON i.id = c.inscricao_id
+             LEFT JOIN cursos_eventos ce ON ce.id = c.curso_evento_id
+             WHERE c.deleted_at IS NULL
+               AND c.status = "emitido"
+               AND (c.usuario_id = :usuario_id OR i.usuario_id = :usuario_id_inscricao)
+             ORDER BY c.emitido_em DESC, c.id DESC'
+        );
+        $stmt->execute(array('usuario_id' => (int) $usuarioId, 'usuario_id_inscricao' => (int) $usuarioId));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
