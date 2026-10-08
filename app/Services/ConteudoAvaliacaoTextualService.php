@@ -55,6 +55,17 @@ class ConteudoAvaliacaoTextualService
         $this->fileStorageService = new FileStorageService();
     }
 
+    /** Limites de envio (mesmas constantes da validação), expostos para a API do app. */
+    public static function limitesEnvio()
+    {
+        return array(
+            'max_caracteres' => 50000,
+            'max_imagens' => self::MAX_IMAGENS_POR_ENTREGA,
+            'max_bytes_imagem' => self::LIMITE_IMAGEM_BYTES,
+            'mimes' => self::MIME_IMAGEM_VALIDOS,
+        );
+    }
+
     public function enviarResposta($dados)
     {
         $dados = (array) $dados;
@@ -311,6 +322,11 @@ class ConteudoAvaliacaoTextualService
 
         if ((int) $entrega['inscricao_id'] > 0) {
             (new ConteudoCursoService())->recalcularProgressoInscricao((int) $entrega['inscricao_id']);
+        }
+
+        if (in_array($status, array('corrigida', 'aprovada', 'reprovada', 'devolvida'), true)) {
+            // Push para o app do aluno (nunca lança; falha só vai para o log).
+            (new PushEventosService())->avaliacaoCorrigida($entregaId, $status);
         }
 
         return array('ok' => true, 'status' => $status);

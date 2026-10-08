@@ -10,6 +10,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Services\AtividadeService;
 use App\Services\AreaCursoService;
+use App\Services\ConteudoAcessoAlunoService;
 use App\Services\ConteudoAvaliacaoTextualService;
 use App\Services\ConteudoCursoService;
 use App\Services\FileStorageService;
@@ -23,6 +24,7 @@ class AreaCursoController extends Controller
     private $progressoService;
     private $conteudoService;
     private $conteudoAvaliacaoTextualService;
+    private $conteudoAcessoService;
 
     public function __construct()
     {
@@ -31,6 +33,12 @@ class AreaCursoController extends Controller
         $this->progressoService = new ProgressoService();
         $this->conteudoService = new ConteudoCursoService();
         $this->conteudoAvaliacaoTextualService = new ConteudoAvaliacaoTextualService();
+        // Regras de acesso ao conteúdo compartilhadas com a API do app.
+        $this->conteudoAcessoService = new ConteudoAcessoAlunoService(
+            $this->areaCursoService,
+            $this->conteudoService,
+            $this->conteudoAvaliacaoTextualService
+        );
     }
 
     private function parametrosConteudoAluno(Request $request)
@@ -61,47 +69,14 @@ class AreaCursoController extends Controller
 
     private function carregarContextoAlunoConteudo(array $parametros)
     {
-        $inscricaoId = (int) ($parametros['inscricao_id'] ?? 0);
-        $cursoId = (int) ($parametros['curso_id'] ?? 0);
-        $turmaId = (int) ($parametros['turma_id'] ?? 0);
+        $resultado = $this->conteudoAcessoService->carregarContexto(Session::get('usuario_id'), $parametros);
 
-        if ($inscricaoId <= 0) {
-            return array('ok' => false, 'message' => 'Inscrição inválida.');
+        if (empty($resultado['ok']) && !empty($resultado['redirecionar'])) {
+            $destino = $resultado['redirecionar'];
+            $resultado['redirect'] = $this->urlCursoAluno($destino['inscricao_id'], $destino['curso_id'], $destino['turma_id']);
         }
 
-        $contexto = $this->areaCursoService->carregarAluno(
-            Session::get('usuario_id'),
-            $inscricaoId,
-            0,
-            0,
-            $cursoId > 0 ? $cursoId : null,
-            $turmaId > 0 ? $turmaId : null,
-            null
-        );
-
-        if (empty($contexto['inscricao'])) {
-            return array('ok' => false, 'message' => 'Nenhuma inscrição válida foi encontrada para este usuário.');
-        }
-
-        $inscricao = $contexto['inscricao'];
-        $cursoInscricaoId = (int) $inscricao['curso_evento_id'];
-        $turmaInscricaoId = !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : 0;
-
-        if ($cursoId > 0 && $cursoId !== $cursoInscricaoId) {
-            return array('ok' => false, 'message' => 'O curso informado não corresponde à inscrição selecionada.', 'redirect' => $this->urlCursoAluno($inscricaoId, $cursoInscricaoId, $turmaInscricaoId));
-        }
-
-        if ($turmaId > 0 && ($turmaInscricaoId <= 0 || $turmaId !== $turmaInscricaoId)) {
-            return array('ok' => false, 'message' => 'A turma informada não corresponde à inscrição selecionada.', 'redirect' => $this->urlCursoAluno($inscricaoId, $cursoInscricaoId, $turmaInscricaoId));
-        }
-
-        return array(
-            'ok' => true,
-            'contexto' => $contexto,
-            'inscricao' => $inscricao,
-            'curso_id' => $cursoInscricaoId,
-            'turma_id' => $turmaInscricaoId,
-        );
+        return $resultado;
     }
 
     private function localizarModuloConteudo(array $modulos, $moduloId)
@@ -116,51 +91,17 @@ class AreaCursoController extends Controller
         return null;
     }
 
-    private function montarSequenciaConteudosAluno(array $modulos)
-    {
-        $sequencia = array();
-        foreach ($modulos as $modulo) {
-            $itens = !empty($modulo['itens']) && is_array($modulo['itens']) ? $modulo['itens'] : array();
-            foreach ($itens as $item) {
-                $sequencia[] = array(
-                    'modulo' => $modulo,
-                    'item' => $item,
-                );
-            }
-        }
-
-        return $sequencia;
-    }
-
     private function montarNavegacaoConteudoAluno(array $modulos, $inscricaoId, $cursoId, $turmaId, $moduloId, $conteudoId)
     {
-        $sequencia = $this->montarSequenciaConteudosAluno($modulos);
-        $indiceAtual = null;
-
-        foreach ($sequencia as $indice => $registro) {
-            if ((int) ($registro['item']['id'] ?? 0) === (int) $conteudoId) {
-                $indiceAtual = $indice;
-                break;
-            }
-        }
-
-        if ($indiceAtual === null) {
-            return array(
-                'anterior_url' => null,
-                'anterior_label' => null,
-                'proximo_url' => null,
-                'proximo_label' => null,
-            );
-        }
-
-        $anterior = isset($sequencia[$indiceAtual - 1]) ? $sequencia[$indiceAtual - 1] : null;
-        $proximo = isset($sequencia[$indiceAtual + 1]) ? $sequencia[$indiceAtual + 1] : null;
+        $navegacao = $this->conteudoAcessoService->navegacao($modulos, $conteudoId, $moduloId);
+        $anterior = $navegacao['anterior'];
+        $proximo = $navegacao['proximo'];
 
         return array(
-            'anterior_url' => $anterior !== null ? $this->urlConteudoAluno($inscricaoId, $cursoId, $turmaId, (int) ($anterior['modulo']['id'] ?? $moduloId), (int) ($anterior['item']['id'] ?? 0)) : null,
-            'anterior_label' => $anterior !== null ? (string) ($anterior['item']['titulo'] ?? 'Conteúdo anterior') : null,
-            'proximo_url' => $proximo !== null ? $this->urlConteudoAluno($inscricaoId, $cursoId, $turmaId, (int) ($proximo['modulo']['id'] ?? $moduloId), (int) ($proximo['item']['id'] ?? 0)) : null,
-            'proximo_label' => $proximo !== null ? (string) ($proximo['item']['titulo'] ?? 'Próximo conteúdo') : null,
+            'anterior_url' => $anterior !== null ? $this->urlConteudoAluno($inscricaoId, $cursoId, $turmaId, $anterior['modulo_id'], $anterior['item_id']) : null,
+            'anterior_label' => $anterior !== null ? $anterior['titulo'] : null,
+            'proximo_url' => $proximo !== null ? $this->urlConteudoAluno($inscricaoId, $cursoId, $turmaId, $proximo['modulo_id'], $proximo['item_id']) : null,
+            'proximo_label' => $proximo !== null ? $proximo['titulo'] : null,
         );
     }
 
@@ -495,15 +436,6 @@ class AreaCursoController extends Controller
             return $this->redirect($this->urlConteudoAluno((int) $inscricao['id'], $cursoId, $turmaId, $moduloId, $itemId));
         }
 
-        $item = $detalhe['item'];
-        $progressoItem = isset($detalhe['progresso']) && is_array($detalhe['progresso']) ? $detalhe['progresso'] : null;
-        $itemJaConcluido = !empty($progressoItem) && in_array((string) ($progressoItem['status'] ?? ''), array('concluido', 'aprovada', 'corrigida'), true);
-        $resumo = $this->conteudoService->obterResumoProgressoAluno(
-            $cursoId,
-            (int) Session::get('usuario_id'),
-            (int) $inscricao['id'],
-            $turmaId > 0 ? $turmaId : null
-        );
         $navegacao = $this->montarNavegacaoConteudoAluno(
             !empty($conteudoAluno['modulos']) ? $conteudoAluno['modulos'] : array(),
             (int) $inscricao['id'],
@@ -513,107 +445,24 @@ class AreaCursoController extends Controller
             $itemId
         );
 
-        $acao = 'visualizou_item';
-        if ((string) $item['tipo'] === 'texto') {
-            $acao = 'abriu_texto';
-        } elseif ((string) $item['tipo'] === 'html') {
-            $acao = 'abriu_html';
-        } elseif ((string) $item['tipo'] === 'video') {
-            $acao = 'abriu_video';
-        } elseif ((string) $item['tipo'] === 'video_incorporado') {
-            $acao = 'abriu_video_incorporado';
-        } elseif ((string) $item['tipo'] === 'avaliacao_textual') {
-            $acao = 'visualizou_avaliacao_textual';
-        }
-
-        $this->conteudoService->registrarAcessoItem(array(
-            'curso_evento_id' => $cursoId,
-            'turma_id' => $turmaId > 0 ? $turmaId : null,
-            'inscricao_id' => (int) $inscricao['id'],
-            'aluno_id' => (int) Session::get('usuario_id'),
-            'modulo_id' => $moduloId,
-            'item_id' => (int) $item['id'],
-            'obrigatorio' => !empty($item['obrigatorio']) ? 1 : 0,
-            'acao' => $acao,
-            'status' => (string) $item['tipo'] === 'etiqueta' ? 'concluido' : 'em_andamento',
-            'percentual' => (string) $item['tipo'] === 'etiqueta' ? 100 : 10,
-            'concluido_em' => (string) $item['tipo'] === 'etiqueta' ? date('Y-m-d H:i:s') : null,
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ));
-
-        if (in_array((string) ($item['tipo'] ?? ''), array('texto', 'html'), true) && !$itemJaConcluido) {
-            try {
-                $resultadoConclusao = $this->conteudoService->concluirItemAluno(array(
-                    'curso_evento_id' => $cursoId,
-                    'turma_id' => $turmaId > 0 ? $turmaId : null,
-                    'inscricao_id' => (int) $inscricao['id'],
-                    'aluno_id' => (int) Session::get('usuario_id'),
-                    'item_id' => (int) $item['id'],
-                    'modulo_id' => $moduloId,
-                    'ip' => $request->ip(),
-                    'user_agent' => $request->userAgent(),
-                ));
-
-                if (empty($resultadoConclusao['ok'])) {
-                    Logger::warning('conteudo.texto.auto_conclusao_nao_aplicada', array(
-                        'inscricao_id' => (int) $inscricao['id'],
-                        'item_id' => (int) $item['id'],
-                        'message' => isset($resultadoConclusao['message']) ? $resultadoConclusao['message'] : null,
-                    ));
-                } else {
-                    $detalhe = $this->conteudoService->buscarItemPublicadoParaAluno(
-                        $itemId,
-                        (int) Session::get('usuario_id'),
-                        (int) $inscricao['id'],
-                        $cursoId,
-                        $turmaId > 0 ? $turmaId : null
-                    );
-                    if (!empty($detalhe['ok'])) {
-                        $item = $detalhe['item'];
-                        $progressoItem = isset($detalhe['progresso']) && is_array($detalhe['progresso']) ? $detalhe['progresso'] : null;
-                        $itemJaConcluido = !empty($progressoItem) && in_array((string) ($progressoItem['status'] ?? ''), array('concluido', 'aprovada', 'corrigida'), true);
-                    }
-                    $resumo = $this->conteudoService->obterResumoProgressoAluno(
-                        $cursoId,
-                        (int) Session::get('usuario_id'),
-                        (int) $inscricao['id'],
-                        $turmaId > 0 ? $turmaId : null
-                    );
-                }
-            } catch (\Exception $exception) {
-                Logger::warning('conteudo.texto.auto_conclusao_falhou', array(
-                    'inscricao_id' => (int) $inscricao['id'],
-                    'item_id' => (int) $item['id'],
-                    'message' => $exception->getMessage(),
-                ));
-            }
-        }
-
-        $entregasAvaliacao = array();
-        $avaliacaoPodeEnviar = null;
-        if ((string) ($item['tipo'] ?? '') === 'avaliacao_textual') {
-            $entregasAvaliacao = $this->conteudoAvaliacaoTextualService->listarEntregasAluno((int) ($detalhe['detalhe']['id'] ?? 0), (int) Session::get('usuario_id'), (int) $inscricao['id']);
-            $ultimaEntrega = !empty($entregasAvaliacao) ? $entregasAvaliacao[0] : null;
-            if ($ultimaEntrega) {
-                $ultimaEntrega['imagens'] = $this->conteudoAvaliacaoTextualService->imagensEntrega((int) $ultimaEntrega['id']);
-                $entregasAvaliacao[0] = $ultimaEntrega;
-            }
-            $avaliacaoPodeEnviar = $this->conteudoAvaliacaoTextualService->podeReenviar((int) ($detalhe['detalhe']['id'] ?? 0), (int) Session::get('usuario_id'), (int) $inscricao['id']);
-            if (!empty($ultimaEntrega['status']) && in_array((string) $ultimaEntrega['status'], array('corrigida', 'aprovada', 'reprovada'), true)) {
-                $this->conteudoService->registrarLogAluno(array(
-                    'curso_evento_id' => $cursoId,
-                    'turma_id' => $turmaId > 0 ? $turmaId : null,
-                    'inscricao_id' => (int) $inscricao['id'],
-                    'aluno_id' => (int) Session::get('usuario_id'),
-                    'modulo_id' => $moduloId,
-                    'item_id' => (int) $item['id'],
-                    'acao' => 'visualizou_feedback',
-                    'ip' => $request->ip(),
-                    'user_agent' => $request->userAgent(),
-                ));
-            }
-        }
+        // Registro de acesso, auto-conclusão de texto/HTML e entregas da avaliação
+        // (regra compartilhada com a API do app).
+        $abertura = $this->conteudoAcessoService->abrirItem(
+            (int) Session::get('usuario_id'),
+            $inscricao,
+            $cursoId,
+            $turmaId,
+            $moduloId,
+            $itemId,
+            $detalhe,
+            $request->ip(),
+            $request->userAgent()
+        );
+        $detalhe = $abertura['detalhe'];
+        $item = $abertura['item'];
+        $resumo = $abertura['resumo'];
+        $entregasAvaliacao = $abertura['entregas_avaliacao'];
+        $avaliacaoPodeEnviar = $abertura['avaliacao_pode_enviar'];
 
         return $this->view('aluno/curso/conteudo', array(
             'title' => 'Conteúdo do módulo',
@@ -795,60 +644,23 @@ class AreaCursoController extends Controller
         }
 
         $inscricao = $contexto['inscricao'];
-        $detalhe = $this->conteudoService->buscarItemPublicadoParaAluno(
-            $itemId,
+        // Posse do item, resolução do arquivo físico e registro do download
+        // (regra compartilhada com a API do app).
+        $arquivo = $this->conteudoAcessoService->arquivoDoItem(
             (int) Session::get('usuario_id'),
-            (int) $inscricao['id'],
-            (int) $inscricao['curso_evento_id'],
-            !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null
+            $inscricao,
+            $itemId,
+            $request->ip(),
+            $request->userAgent()
         );
-        if (empty($detalhe['ok']) || (string) $detalhe['item']['tipo'] !== 'arquivo') {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
-        }
-
-        $arquivo = $this->conteudoService->obterArquivoDoItem((int) $detalhe['item']['id'], (int) $inscricao['curso_evento_id']);
         if (empty($arquivo['ok'])) {
             return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
         }
 
-        $storage = new FileStorageService();
-        $absolutePath = $storage->privatePath((string) $arquivo['arquivo']['caminho']);
-        if (!is_file($absolutePath)) {
-            $relativePath = ltrim((string) $arquivo['arquivo']['caminho'], '/\\');
-            $alternativos = array(
-                BASE_PATH . '/storage/private_uploads/' . $relativePath,
-                dirname(BASE_PATH) . '/storage/private_uploads/' . $relativePath,
-                BASE_PATH . '/public_html/storage/private_uploads/' . $relativePath,
-            );
-
-            foreach ($alternativos as $caminhoAlternativo) {
-                if (is_file($caminhoAlternativo)) {
-                    $absolutePath = $caminhoAlternativo;
-                    break;
-                }
-            }
-        }
-        if (!is_file($absolutePath)) {
-            Logger::error('conteudo.arquivo.download_arquivo_ausente', array('contexto' => 'aluno', 'item_id' => (int) $detalhe['item']['id'], 'caminho' => (string) $arquivo['arquivo']['caminho']));
-            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
-        }
-
-        $this->conteudoService->registrarDownloadArquivoAluno(array(
-            'curso_evento_id' => (int) $inscricao['curso_evento_id'],
-            'turma_id' => !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null,
-            'inscricao_id' => (int) $inscricao['id'],
-            'aluno_id' => (int) Session::get('usuario_id'),
-            'modulo_id' => (int) $detalhe['modulo']['id'],
-            'item_id' => (int) $detalhe['item']['id'],
-            'obrigatorio' => !empty($detalhe['item']['obrigatorio']) ? 1 : 0,
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ));
-
-        $content = file_get_contents($absolutePath);
-        $fileName = !empty($arquivo['arquivo']['nome_original']) ? (string) $arquivo['arquivo']['nome_original'] : basename($absolutePath);
+        $content = file_get_contents($arquivo['caminho']);
+        $fileName = $arquivo['nome'];
         return new Response($content, 200, array(
-            'Content-Type' => !empty($arquivo['arquivo']['mime_type']) ? (string) $arquivo['arquivo']['mime_type'] : 'application/octet-stream',
+            'Content-Type' => $arquivo['mime'],
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
         ));
     }

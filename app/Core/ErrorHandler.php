@@ -5,6 +5,17 @@ namespace App\Core;
 class ErrorHandler
 {
     private static $debug = false;
+    private static $json = false;
+
+    /**
+     * API do app (/api/app/*): erro do PHP vira `500 {"erro": {"codigo": "erro_interno"}}`,
+     * sem mensagem, arquivo nem pilha — mesmo com APP_DEBUG ligado. O detalhe vai
+     * só para o log.
+     */
+    public static function usarRespostaJson($json = true)
+    {
+        self::$json = (bool) $json;
+    }
 
     public static function register($debug = false)
     {
@@ -39,6 +50,11 @@ class ErrorHandler
             'file' => $file,
             'line' => $line,
         ));
+
+        if (self::$json) {
+            \App\Support\AppApi\Resposta::enviarErroInterno();
+            exit;
+        }
 
         while (ob_get_level() > 0) {
             ob_end_clean();

@@ -464,4 +464,26 @@ class Turma
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Vagas ainda livres na turma (null = sem limite). Conta inscrições que
+     * ocupam vaga (não excluídas, não canceladas/reprovadas). Usado pelo
+     * catálogo do app; o checkout continua com as próprias validações.
+     */
+    public function vagasRestantes(array $turma)
+    {
+        if (!isset($turma['vagas']) || $turma['vagas'] === null || $turma['vagas'] === '') {
+            return null;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) FROM inscricoes
+             WHERE turma_id = :turma_id
+               AND deleted_at IS NULL
+               AND status NOT IN ("cancelada", "reprovada")'
+        );
+        $stmt->execute(array('turma_id' => (int) $turma['id']));
+
+        return max(0, (int) $turma['vagas'] - (int) $stmt->fetchColumn());
+    }
 }

@@ -30,6 +30,12 @@ class App
         $this->router->postWithoutCsrf($path, $handler, $middleware);
     }
 
+    /** POST da API do app (/api/app/*), sem csrf — ver Router::postApp. */
+    public function postApp($path, $handler, array $middleware = array())
+    {
+        $this->router->postApp($path, $handler, $middleware);
+    }
+
     public function run()
     {
         $request = Request::capture();

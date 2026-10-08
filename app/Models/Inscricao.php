@@ -785,4 +785,50 @@ class Inscricao
 
         return $row ?: null;
     }
+
+    /**
+     * Alunos com acesso ao conteúdo de um curso (mesmas regras de
+     * forUsuarioAprovadas + status que a área do aluno aceita). Usado pela
+     * notificação de conteúdo novo do app.
+     *
+     * @return array usuario_id => inscricao_id (a mais recente com acesso)
+     */
+    public function usuariosComAcessoAoCurso($cursoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT i.usuario_id, MAX(i.id) AS inscricao_id
+             FROM inscricoes i
+             INNER JOIN pedidos p ON p.id = i.pedido_id
+             LEFT JOIN comprovantes_pix cp ON cp.pedido_id = i.pedido_id AND cp.is_atual = 1 AND cp.deleted_at IS NULL
+             WHERE i.deleted_at IS NULL
+               AND i.usuario_id IS NOT NULL
+               AND i.curso_evento_id = :curso_evento_id
+               AND i.status IN ("ativa", "em_andamento", "concluida", "concluida_sem_certificado", "certificado_emitido")
+               AND (p.status IN ("aprovado", "pago") OR cp.status = "aprovado")
+               AND (i.acesso_expira_em IS NULL OR i.acesso_expira_em >= NOW())
+             GROUP BY i.usuario_id'
+        );
+        $stmt->execute(array('curso_evento_id' => (int) $cursoId));
+
+        $mapa = array();
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $linha) {
+            $mapa[(int) $linha['usuario_id']] = (int) $linha['inscricao_id'];
+        }
+
+        return $mapa;
+    }
+
+    /** Inscrição mais recente do aluno num curso (para o deep link de notificações). */
+    public function idMaisRecenteDoUsuarioNoCurso($usuarioId, $cursoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT id FROM inscricoes
+             WHERE deleted_at IS NULL AND usuario_id = :usuario_id AND curso_evento_id = :curso_evento_id
+             ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute(array('usuario_id' => (int) $usuarioId, 'curso_evento_id' => (int) $cursoId));
+        $id = $stmt->fetchColumn();
+
+        return $id ? (int) $id : null;
+    }
 }

@@ -37,12 +37,33 @@ RedirectMatch 404 /\.git
     Require all denied
 </FilesMatch>
 
+# API do app (/api/app/*): Apache com PHP-FPM/CGI descarta o cabeçalho
+# Authorization por padrão; sem isto o "Bearer <token>" nunca chega ao PHP e
+# toda chamada autenticada do app vira 401. As duas formas abaixo são
+# equivalentes; a segunda vale quando mod_rewrite não repassa a variável.
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    RewriteCond %{HTTP:Authorization} .+
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
     RewriteRule ^assets/(.*)$ assets/$1 [L]
 
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Compressão e cache das fontes (docs/deploy.md §3.1, 2026-10-07).
+# Cache longo de CSS/JS só em assets/caderno/.htaccess (links com ?v=).
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript application/json image/svg+xml
+</IfModule>
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType font/woff2 "access plus 1 year"
 </IfModule>

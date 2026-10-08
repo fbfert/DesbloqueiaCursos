@@ -127,39 +127,18 @@ class AlunoController extends Controller
         $motivo = trim((string) $request->input('motivo_cancelamento', ''));
         $voltar = '/v2/aluno/?aba=pedidos';
 
-        if ($pedidoId <= 0) {
-            Session::flash('errors', array('Pedido inválido para cancelamento.'));
-            return Response::redirect($voltar);
-        }
-
-        if ($motivo === '') {
-            Session::flash('errors', array('Informe o motivo do cancelamento do pedido.'));
-            return Response::redirect($voltar);
-        }
-
-        $pedido = $this->pedidoModel->findById($pedidoId);
-        if (!$pedido) {
-            Session::flash('errors', array('Pedido não encontrado.'));
-            return Response::redirect($voltar);
-        }
-
-        if (!$this->pedidoPodeSerCanceladoPeloAluno((string) $pedido['status'])) {
-            Session::flash('errors', array('Este pedido não pode mais ser cancelado pelo aluno.'));
-            return Response::redirect($voltar);
-        }
-
-        $observacao = 'Cancelamento solicitado pelo aluno. Motivo: ' . $motivo;
-        $resultado = $this->pedidoService->registrarStatus(
+        // Validações, status canceláveis e registro: PedidoService (fonte única,
+        // também usada pela V1 e pela API do app).
+        $resultado = $this->pedidoService->cancelarPeloAluno(
             $pedidoId,
-            'cancelado',
-            $observacao,
             $usuarioId,
+            $motivo,
             $request->ip(),
             $request->userAgent()
         );
 
         if (empty($resultado['ok'])) {
-            Session::flash('errors', array(isset($resultado['message']) ? $resultado['message'] : 'Não foi possível cancelar o pedido.'));
+            Session::flash('errors', array($resultado['message']));
             return Response::redirect($voltar);
         }
 
@@ -319,11 +298,7 @@ class AlunoController extends Controller
      */
     private function pedidoPodeSerCanceladoPeloAluno($status)
     {
-        return in_array(
-            (string) $status,
-            array('rascunho', 'aguardando_pagamento', 'pendencia', 'aguardando_reenvio', 'comprovante_enviado', 'em_analise'),
-            true
-        );
+        return PedidoService::pedidoPodeSerCanceladoPeloAluno($status);
     }
 
     private function pedidoPodeRetomarCheckout($status)
