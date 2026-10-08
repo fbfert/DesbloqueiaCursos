@@ -38,15 +38,28 @@ iniciar nem persistir sessão PHP, e os POST do app MUST NOT exigir CSRF.
 ### Requirement: Refresh rotativo com detecção de reuso
 `POST /auth/refresh` SHALL invalidar o refresh usado e emitir um novo par. Se um refresh já consumido
 for apresentado de novo, todos os tokens daquele `device_id` MUST ser revogados e a resposta MUST
-ser `401 sessao_revogada`.
+ser `401 sessao_revogada`, salvo na janela de tolerância do requisito seguinte.
 
 #### Scenario: Rotação normal
 - **WHEN** o app troca um refresh válido
 - **THEN** recebe novo access e novo refresh, e o refresh antigo deixa de valer
 
 #### Scenario: Reuso
-- **WHEN** um refresh já trocado é reapresentado
+- **WHEN** um refresh já trocado é reapresentado depois de o par novo ter sido usado, ou mais de 60 s após o consumo
 - **THEN** a resposta é `401 sessao_revogada` e o access token mais recente do dispositivo também para de funcionar
+
+### Requirement: Janela de tolerância do refresh
+Se um refresh consumido há no máximo 60 segundos for reapresentado pelo mesmo `device_id` e o par
+que ele gerou ainda não tiver sido usado (nem o access, nem o refresh), a API MUST revogar esse par
+não usado e responder `200` com um par novo da mesma família.
+
+#### Scenario: Resposta do refresh perdida
+- **WHEN** o app reapresenta, pelo mesmo `device_id` e em até 60 s, o refresh que acabou de trocar, sem ter usado o par recebido
+- **THEN** a resposta é `200` com um par novo e o par não usado deixa de valer
+
+#### Scenario: Outro aparelho dentro da janela
+- **WHEN** o refresh recém-consumido é apresentado por outro `device_id`
+- **THEN** a resposta é `401 sessao_revogada` e a família é revogada
 
 ### Requirement: Mesma política de login do site
 O login do app SHALL reaproveitar a regra do site: `politica_login`, bloqueio após o número máximo de

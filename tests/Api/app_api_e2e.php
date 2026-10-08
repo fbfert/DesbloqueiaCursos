@@ -295,6 +295,22 @@ it('refresh rotativo: par novo, access antigo revogado; reuso → 401 sessao_rev
     exigirStatus(http('POST', $api . '/auth/refresh', array('refresh_token' => $d2['refresh_token'], 'device_id' => 'dispositivo-e2e-rot')), 401, 'sessao_revogada');
 });
 
+it('resposta do refresh perdida: reapresentar o refresh em até 60 s, sem usar o par novo → 200; depois de usar → 401 sessao_revogada', function () use ($api) {
+    $d1 = login('aluno.caderno@teste.local', 'dispositivo-e2e-janela');
+    $perdido = http('POST', $api . '/auth/refresh', array('refresh_token' => $d1['refresh_token'], 'device_id' => 'dispositivo-e2e-janela'));
+    exigirStatus($perdido, 200);
+    // o app não recebeu a resposta e repete com o mesmo refresh
+    $r = http('POST', $api . '/auth/refresh', array('refresh_token' => $d1['refresh_token'], 'device_id' => 'dispositivo-e2e-janela'));
+    exigirStatus($r, 200);
+    $novo = $r['json']['data'];
+    exigir($novo['refresh_token'] !== $perdido['json']['data']['refresh_token'], 'não reemitiu um par novo');
+    exigirStatus(http('GET', $api . '/me', null, bearer($perdido['json']['data']['access_token'])), 401, 'nao_autenticado');
+    exigirStatus(http('GET', $api . '/me', null, bearer($novo['access_token'])), 200);
+    // par novo já usado: reapresentar o refresh antigo agora é roubo
+    exigirStatus(http('POST', $api . '/auth/refresh', array('refresh_token' => $d1['refresh_token'], 'device_id' => 'dispositivo-e2e-janela')), 401, 'sessao_revogada');
+    exigirStatus(http('GET', $api . '/me', null, bearer($novo['access_token'])), 401, 'nao_autenticado');
+});
+
 it('refresh de outro aparelho ou inexistente → 401', function () use ($api) {
     $d = login('aluno.caderno@teste.local', 'dispositivo-e2e-dev1');
     exigirStatus(http('POST', $api . '/auth/refresh', array('refresh_token' => $d['refresh_token'], 'device_id' => 'dispositivo-e2e-dev2')), 401, 'sessao_revogada');

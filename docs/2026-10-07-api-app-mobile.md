@@ -173,8 +173,8 @@ HTML responde e grava igual ao commit anterior; unitários `tests/Unit/app_*.php
 - **Cancelamento e comprovante pelo app**: o contrato não define corpo; aceitam `motivo` e
   `motivo_reenvio` opcionais (padrões "Cancelado pelo aluno no aplicativo." / "Reenvio pelo
   aplicativo.").
-- **Refresh concorrente**: duas renovações simultâneas com o mesmo refresh são tratadas como reuso
-  e derrubam o aparelho — o app deve serializar o refresh.
+- **Refresh repetido**: reapresentar o refresh recém-trocado em até 60 s, no mesmo aparelho e sem ter usado o par novo, reemite um par (resposta perdida na rede). Fora disso é reuso
+  e derruba o aparelho. O app deve, mesmo assim, serializar o refresh.
 - **Limite de taxa** conta pelo IP do socket; atrás de CDN configure `APP_MOBILE_CABECALHO_IP`.
 - **PDF de certificado sem logo**: o PNG transparente embutido em
   `CertificadoService::logoTransparenteDataUri()` tem CRC inválido; com libpng estrito (visto no

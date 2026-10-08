@@ -15,7 +15,9 @@ use PDO;
  * - Access: 1 hora. Refresh: 60 dias, rotativo — cada renovação consome o
  *   refresh usado e emite um novo par na mesma "família" (sessão do login).
  * - Reuso de refresh já consumido = token copiado: revoga TODOS os tokens do
- *   dispositivo e devolve `sessao_revogada`.
+ *   dispositivo e devolve `sessao_revogada`. Exceção (resposta perdida na rede
+ *   móvel): mesmo device_id, até 60 s após o consumo e par gerado ainda não usado
+ *   → o par não usado é revogado e um novo é emitido (reemitirNaJanela).
  * - Um novo login no mesmo device_id revoga o que existia nele (inclusive de
  *   outra conta), para nunca haver duas sessões ativas no mesmo aparelho.
  *
@@ -26,6 +28,8 @@ class AppTokenService
 {
     const ACCESS_TTL = 3600;
     const REFRESH_TTL = 5184000; // 60 dias
+    /** Tolerância para reapresentar um refresh recém-consumido (resposta perdida). */
+    const JANELA_REUSO_SEGUNDOS = 60;
 
     private $tokens;
     private $pdo;
@@ -94,6 +98,12 @@ class AppTokenService
         }
 
         if (!empty($registro['consumido_em'])) {
+            // Janela de tolerância: resposta da renovação perdida na rede móvel.
+            $reemissao = $this->reemitirNaJanela($registro, $agora, $ip, $userAgent);
+            if ($reemissao !== null) {
+                return $reemissao;
+            }
+
             $revogados = $this->tokens->revogarDispositivo($deviceId, $agoraSql, 'reuso_refresh');
             $this->registrar('app.token.reuso_refresh', $registro, $ip, $userAgent, array('tokens_revogados' => $revogados));
             return array('ok' => false, 'motivo' => 'reuso', 'usuario_id' => (int) $registro['usuario_id']);
@@ -200,6 +210,92 @@ class AppTokenService
     public function revogarOutrosDispositivos($usuarioId, $deviceIdAtual, $motivo = 'troca_senha')
     {
         return $this->tokens->revogarUsuarioExcetoDispositivo((int) $usuarioId, (string) $deviceIdAtual, Tempo::sql(), $motivo);
+    }
+
+    /**
+     * Rede móvel: a renovação chega ao servidor, a resposta se perde e o app tenta
+     * de novo com o refresh que acabou de ser consumido. Isso NÃO é roubo quando:
+     *   - o refresh foi consumido há no máximo JANELA_REUSO_SEGUNDOS;
+     *   - o pedido vem do mesmo device_id (conferido antes, em renovar());
+     *   - o refresh não foi revogado; e
+     *   - o par que ele gerou nunca foi usado (nem o access, nem o refresh).
+     * Nesse caso o par não usado é revogado e um par novo é emitido na mesma
+     * família. Fora disso, devolve null e o chamador trata como reuso.
+     *
+     * @return array|null resultado de renovar() ou null
+     */
+    private function reemitirNaJanela(array $registro, $agora, $ip, $userAgent)
+    {
+        if (!empty($registro['revogado_em'])) {
+            return null;
+        }
+        $consumido = Tempo::timestamp($registro['consumido_em']);
+        if ($consumido === null || ($agora - $consumido) > self::JANELA_REUSO_SEGUNDOS || $agora < $consumido) {
+            return null;
+        }
+
+        $sucessores = $this->tokens->filhosDe((int) $registro['id']);
+        if (empty($sucessores)) {
+            return null;
+        }
+        foreach ($sucessores as $sucessor) {
+            // Revogado também conta como "não reaproveitável" (ex.: logout no meio).
+            if (!empty($sucessor['ultimo_uso_em']) || !empty($sucessor['consumido_em']) || !empty($sucessor['revogado_em'])) {
+                return null;
+            }
+        }
+
+        $agoraSql = Tempo::sql($agora);
+        $pdo = $this->db();
+        $propria = !$pdo->inTransaction();
+        if ($propria) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $revogados = 0;
+            foreach ($sucessores as $sucessor) {
+                $revogados += $this->tokens->revogarSeNaoUsado((int) $sucessor['id'], $agoraSql, 'reemissao_janela');
+            }
+            if ($revogados !== count($sucessores)) {
+                // Outro pedido usou o par entre a leitura e a revogação: é reuso.
+                if ($propria) {
+                    $pdo->rollBack();
+                }
+                return null;
+            }
+
+            $par = $this->emitirPar(
+                (int) $registro['usuario_id'],
+                (string) $registro['device_id'],
+                $registro['device_name'],
+                (string) $registro['familia'],
+                (int) $registro['id'],
+                $ip,
+                $userAgent
+            );
+            $this->tokens->definirSucessor((int) $registro['id'], (int) $par['refresh_id']);
+
+            if ($propria) {
+                $pdo->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($propria && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+
+        Logger::info('app.token.reemissao_janela', array(
+            'usuario_id' => (int) $registro['usuario_id'],
+            'device_id' => (string) $registro['device_id'],
+            'familia' => (string) $registro['familia'],
+            'segundos_desde_consumo' => $agora - $consumido,
+        ));
+
+        $par['ok'] = true;
+        $par['usuario_id'] = (int) $registro['usuario_id'];
+        $par['reemitido'] = true;
+        return $par;
     }
 
     private function emitirPar($usuarioId, $deviceId, $deviceName, $familia, $parentId, $ip, $userAgent)

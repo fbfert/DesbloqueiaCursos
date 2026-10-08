@@ -152,6 +152,80 @@ it('refresh de outro aparelho → dispositivo_divergente e família revogada', f
     expect($s->validarAccess($p['access_token'])['motivo'])->toBe('revogado');
 });
 
+describe('Janela de tolerância (resposta da renovação perdida)');
+
+function novo_aparelho(PDO $pdo, $usuarioId, $agora)
+{
+    Tempo::fixar($agora);
+    $s = new AppTokenService($pdo);
+    $d = 'teste-unit-janela-' . bin2hex(random_bytes(3));
+    $p = $s->emitirParaLogin($usuarioId, $d, null, null, null);
+    $r = $s->renovar($p['refresh_token'], $d, null, null); // resposta "perdida"
+    return array($s, $d, $p, $r);
+}
+
+it('dentro de 60 s, mesmo aparelho, par novo sem uso → 200 com outro par; o par perdido é revogado', function () use ($pdo, $usuarioId, $agora) {
+    list($s, $d, $p, $perdido) = novo_aparelho($pdo, $usuarioId, $agora);
+    Tempo::fixar($agora + 30);
+    $r = $s->renovar($p['refresh_token'], $d, null, null);
+    expect($r['ok'])->toBeTrue();
+    expect($r['refresh_token'] !== $perdido['refresh_token'])->toBeTrue();
+    expect($s->validarAccess($r['access_token'])['ok'])->toBeTrue();
+    expect($s->validarAccess($perdido['access_token'])['motivo'])->toBe('revogado');
+    expect($s->renovar($perdido['refresh_token'], $d, null, null)['ok'])->toBeFalse();
+    expect(linha($pdo, $r['refresh_token'])['familia'])->toBe(linha($pdo, $p['refresh_token'])['familia']);
+    Tempo::fixar($agora);
+});
+
+it('várias tentativas dentro da janela continuam funcionando enquanto o par não for usado', function () use ($pdo, $usuarioId, $agora) {
+    list($s, $d, $p) = novo_aparelho($pdo, $usuarioId, $agora);
+    Tempo::fixar($agora + 10);
+    expect($s->renovar($p['refresh_token'], $d, null, null)['ok'])->toBeTrue();
+    Tempo::fixar($agora + 20);
+    $r = $s->renovar($p['refresh_token'], $d, null, null);
+    expect($r['ok'])->toBeTrue();
+    Tempo::fixar($agora + 21);
+    expect($s->validarAccess($r['access_token'])['ok'])->toBeTrue();
+    Tempo::fixar($agora);
+});
+
+it('depois de 60 s → reuso e revoga o aparelho', function () use ($pdo, $usuarioId, $agora) {
+    list($s, $d, $p, $perdido) = novo_aparelho($pdo, $usuarioId, $agora);
+    Tempo::fixar($agora + 61);
+    expect($s->renovar($p['refresh_token'], $d, null, null)['motivo'])->toBe('reuso');
+    expect($s->validarAccess($perdido['access_token'])['motivo'])->toBe('revogado');
+    Tempo::fixar($agora);
+});
+
+it('access novo já usado → reuso e revoga o aparelho', function () use ($pdo, $usuarioId, $agora) {
+    list($s, $d, $p, $novo) = novo_aparelho($pdo, $usuarioId, $agora);
+    expect($s->validarAccess($novo['access_token'])['ok'])->toBeTrue();
+    Tempo::fixar($agora + 5);
+    expect($s->renovar($p['refresh_token'], $d, null, null)['motivo'])->toBe('reuso');
+    expect($s->validarAccess($novo['access_token'])['motivo'])->toBe('revogado');
+    Tempo::fixar($agora);
+});
+
+it('refresh novo já usado → reuso e revoga o aparelho', function () use ($pdo, $usuarioId, $agora) {
+    list($s, $d, $p, $novo) = novo_aparelho($pdo, $usuarioId, $agora);
+    Tempo::fixar($agora + 5);
+    $seguinte = $s->renovar($novo['refresh_token'], $d, null, null);
+    expect($seguinte['ok'])->toBeTrue();
+    expect($s->renovar($p['refresh_token'], $d, null, null)['motivo'])->toBe('reuso');
+    expect($s->validarAccess($seguinte['access_token'])['motivo'])->toBe('revogado');
+    Tempo::fixar($agora);
+});
+
+it('outro device_id dentro da janela → recusado e família revogada', function () use ($pdo, $usuarioId, $agora) {
+    list($s, $d, $p, $novo) = novo_aparelho($pdo, $usuarioId, $agora);
+    Tempo::fixar($agora + 5);
+    $r = $s->renovar($p['refresh_token'], 'teste-unit-aparelho-estranho', null, null);
+    expect($r['ok'])->toBeFalse();
+    expect($r['motivo'])->toBe('dispositivo_divergente');
+    expect($s->validarAccess($novo['access_token'])['motivo'])->toBe('revogado');
+    Tempo::fixar($agora);
+});
+
 describe('Login e troca de senha');
 
 it('novo login no mesmo aparelho derruba a sessão anterior', function () use ($pdo, $usuarioId) {

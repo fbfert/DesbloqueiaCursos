@@ -83,6 +83,34 @@ class AppToken
         return $stmt->rowCount() === 1;
     }
 
+    /**
+     * Tokens emitidos a partir de um refresh (o par gerado na rotação), sem os
+     * pares já descartados por uma reemissão dentro da janela de tolerância.
+     */
+    public function filhosDe($parentId)
+    {
+        $stmt = $this->db()->prepare(
+            'SELECT * FROM app_tokens WHERE parent_id = :p
+               AND (revogado_motivo IS NULL OR revogado_motivo <> "reemissao_janela")
+             ORDER BY id'
+        );
+        $stmt->execute(array('p' => (int) $parentId));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Revoga só se o token ainda não foi usado nem consumido; true quando revogou. */
+    public function revogarSeNaoUsado($id, $agora, $motivo)
+    {
+        $stmt = $this->db()->prepare(
+            'UPDATE app_tokens SET revogado_em = :agora, revogado_motivo = :motivo
+              WHERE id = :id AND revogado_em IS NULL AND consumido_em IS NULL AND ultimo_uso_em IS NULL'
+        );
+        $stmt->execute(array('agora' => $agora, 'motivo' => (string) $motivo, 'id' => (int) $id));
+
+        return $stmt->rowCount() === 1 ? 1 : 0;
+    }
+
     public function definirSucessor($id, $sucessorId)
     {
         $stmt = $this->db()->prepare('UPDATE app_tokens SET substituido_por_id = :s WHERE id = :id');
