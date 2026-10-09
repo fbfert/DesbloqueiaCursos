@@ -349,6 +349,20 @@
 .v2-check input { accent-color: var(--v2-laranja); margin-top: 3px; }
 .v2-auth-foot { text-align: center; margin-top: 18px; font-size: 0.88rem; color: var(--v2-text-2); }
 
+/* Entrar com Google (login-google): botão claro com o logo oficial */
+.botao-google-bloco { margin-top: 18px; }
+.botao-google-sep { display: flex; align-items: center; gap: 12px; color: var(--v2-text-2); font-size: 0.82rem; margin: 0 0 14px; }
+.botao-google-sep::before, .botao-google-sep::after { content: ""; flex: 1; border-top: 1px solid var(--v2-border); }
+.botao-google, .v2-app a.botao-google { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 48px; padding: 10px 16px; background: #fff; color: #1F1F1F; border: 1px solid #747775; border-radius: var(--v2-radius); font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: background-color .15s ease, box-shadow .15s ease; }
+.botao-google:hover, .v2-app a.botao-google:hover { color: #1F1F1F; text-decoration: none; background: #F8F7FB; box-shadow: 0 1px 3px rgba(17, 24, 39, .15); }
+.botao-google:active { background: #EFEDF5; }
+.botao-google-logo { flex: none; }
+.botao-google-aviso { margin-top: 10px; font-size: 0.78rem; line-height: 1.45; color: var(--v2-text-2); text-align: center; }
+.botao-google-aviso a { color: var(--v2-roxo); text-decoration: underline; }
+/* Lembrete de CPF pendente na área do aluno (login-google) */
+.aviso-cpf { padding-top: 16px; }
+.aviso-cpf .v2-callout { margin: 0; }
+
 /* ============================================================
    CALLOUTS
    ============================================================ */

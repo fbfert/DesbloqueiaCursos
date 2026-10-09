@@ -23,6 +23,10 @@ $conta = isset($conta) && is_array($conta) ? $conta : array();
 $old = isset($old) && is_array($old) ? $old : array();
 $errors = isset($errors) && is_array($errors) ? $errors : array();
 $success = isset($success) ? $success : null;
+// login-google: CPF só pode ser informado enquanto vazio; depois, só o atendimento altera.
+$cpfPreenchido = !empty($cpfPreenchido);
+$vinculoGoogle = isset($vinculoGoogle) && is_array($vinculoGoogle) ? $vinculoGoogle : null;
+$temSenha = !empty($temSenha);
 
 $campo = function ($chave) use ($old, $conta) {
     if (isset($old[$chave]) && is_scalar($old[$chave]) && (string) $old[$chave] !== '') {
@@ -109,7 +113,13 @@ $temErros = !empty($ctErros) || !empty($ctGerais);
         <div class="ck-par2">
           <div class="campo<?= $ct['cpf']['classe'] ?>">
             <label for="conta-cpf">CPF</label>
-            <input type="text" id="conta-cpf" name="cpf" value="<?= Helpers::e($campo('cpf')) ?>" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" data-mask-cpf required<?= $ct['cpf']['attrs'] ?>>
+            <?php if ($cpfPreenchido): ?>
+            <input type="text" id="conta-cpf" value="<?= Helpers::e($campo('cpf')) ?>" readonly aria-describedby="conta-cpf-ajuda">
+            <p class="ajuda" id="conta-cpf-ajuda">Para alterar o CPF, fale com o atendimento.</p>
+            <?php else: ?>
+            <input type="text" id="conta-cpf" name="cpf" value="<?= Helpers::e($campo('cpf')) ?>" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" data-mask-cpf<?= $ct['cpf']['attrs'] ?>>
+            <p class="ajuda" id="cpf">Informe seu CPF para podermos emitir seus certificados. Depois de salvo, só o atendimento altera.</p>
+            <?php endif; ?>
             <?= $ct['cpf']['msg'] ?>
           </div>
           <div class="campo<?= $ct['telefone']['classe'] ?>">
@@ -173,6 +183,19 @@ $temErros = !empty($ctErros) || !empty($ctGerais);
     </form>
 
     <aside class="ck-lado ct-lado">
+      <?php if ($vinculoGoogle): ?>
+      <div class="postit ct-google">
+        <b>Conta Google vinculada</b>
+        <p>Você também entra com o Google<?= !empty($vinculoGoogle['email']) ? ' (' . Helpers::e($vinculoGoogle['email']) . ')' : '' ?>.</p>
+        <?php if ($temSenha): ?>
+        <form method="post" action="/v2/minha-conta/google/desvincular">
+          <button type="submit" class="link">Desvincular conta Google</button>
+        </form>
+        <?php else: ?>
+        <p>Para poder desvincular, defina antes uma senha no formulário ao lado.</p>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
       <div class="postit">
         <b>Dica</b>
         <p>Escolha o estado primeiro: a lista de cidades aparece logo em seguida. Para mudar só os dados pessoais, deixe a senha em branco.</p>

@@ -79,7 +79,11 @@ class GestaoAcessoService
         if (!Validator::email($email)) {
             $errors[] = 'Informe um e-mail válido.';
         }
-        if ($cpf === '') {
+        // CPF obrigatório ao criar pelo admin e ao editar quem já tem CPF. Conta criada
+        // pelo Google pode seguir sem CPF até o aluno (ou o admin) informá-lo.
+        $usuarioAntes = $id > 0 ? $this->usuarios->findById($id) : null;
+        $cpfOpcional = $usuarioAntes && Usuario::semCpf($usuarioAntes);
+        if ($cpf === '' && !$cpfOpcional) {
             $errors[] = 'Informe o CPF.';
         }
         if (strlen($cpf) > 14) {
@@ -140,6 +144,12 @@ class GestaoAcessoService
 
             $this->auditService->record($acao, 'usuario', $id, array('anterior' => $anterior, 'novo' => $payload, 'perfil_ids' => $perfilIds), $actorUserId, $ipAddress, $userAgent);
             $pdo->commit();
+
+            // Conta sem CPF que ganhou CPF pelo admin: participantes e certificados retidos.
+            if ($cpfOpcional && $cpf !== '') {
+                (new ContaCpfService())->aposCpfDefinido($id, $cpf);
+            }
+
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
             $pdo->rollBack();

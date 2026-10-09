@@ -94,6 +94,8 @@ $rotas = array(
         array('path' => '/minha-conta',    'nome' => 'Minha conta (legado)',   'destino' => '/login'),
         array('path' => '/pedidos',        'nome' => 'Pedidos (legado)',       'destino' => '/login'),
         array('path' => '/admin/revisoes', 'nome' => 'Fila de revisões (admin)', 'destino' => '/login'),
+        array('path' => '/admin/certificados/retidos', 'nome' => 'Certificados aguardando CPF (admin)', 'destino' => '/login'),
+        array('path' => '/conta/completar', 'nome' => 'Completar cadastro (login com Google)', 'destino' => '/v2/login'),
     ),
 
     // ---------------------------------------------------------------------
@@ -134,6 +136,18 @@ if ($smokeCursoId > 0) {
         'path' => '/v2/curso/?curso_id=' . $smokeCursoId,
         'nome' => 'Curso V2 com curso_id=' . $smokeCursoId . ' (SMOKE_CURSO_ID)',
     );
+}
+
+// Login com Google (mudança login-google). O recurso só liga com GOOGLE_CLIENT_ID e
+// GOOGLE_CLIENT_SECRET no .env do alvo, e o smoke não tem como ler esse .env:
+//   SMOKE_GOOGLE=ativo  -> /login/google precisa terminar na tela do Google
+//                          (accounts.google.com), como uma rota protegida;
+//   ausente/desligado   -> /login/google precisa responder 404 com o layout do
+//                          portal (recurso desligado, botão oculto).
+if (strtolower((string) getenv('SMOKE_GOOGLE')) === 'ativo') {
+    $rotas['protegidas'][] = array('path' => '/login/google?origem=v2', 'nome' => 'Login com Google (ativo)', 'destino' => 'accounts.google.com', 'guarda' => false);
+} else {
+    $rotas['anonimo'][] = array('path' => '/login/google', 'nome' => 'Login com Google (desligado)', 'status' => 404);
 }
 
 // Aula, quiz e atividade autenticados: o caminho (com query) vem de variáveis de

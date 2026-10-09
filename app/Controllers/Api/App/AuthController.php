@@ -10,6 +10,9 @@ use App\Services\AppLimiteTaxaService;
 use App\Services\AppTokenService;
 use App\Services\AuditService;
 use App\Services\AuthService;
+use App\Services\Google\GoogleConfig;
+use App\Services\Google\GoogleIdTokenVerifier;
+use App\Services\Google\GoogleLoginService;
 use App\Support\AppApi\UsuarioPresenter;
 use App\Support\AppAuth;
 
@@ -66,6 +69,69 @@ class AuthController extends AppController
 
         $dados = UsuarioPresenter::tokens($par);
         $dados['usuario'] = UsuarioPresenter::usuario($usuario);
+
+        return $this->ok($dados);
+    }
+
+    /**
+     * Login com Google (login-google): o app envia o id_token do SDK nativo do
+     * Google; a conta é resolvida pelas mesmas regras do site e a resposta tem o
+     * formato do /auth/login, mais `usuario_novo`. 404 enquanto GOOGLE_APP_CLIENT_IDS
+     * não estiver configurado.
+     */
+    public function google(Request $request)
+    {
+        if (!GoogleConfig::appAtivo()) {
+            return $this->erro('nao_encontrado', 'Recurso não encontrado.', 404);
+        }
+
+        $idToken = $request->input('id_token', '');
+        $idToken = is_scalar($idToken) ? trim((string) $idToken) : '';
+        $nonce = $this->texto($request, 'nonce', 200);
+        $deviceId = $this->texto($request, 'device_id', 100);
+        $deviceName = $this->texto($request, 'device_name', 150);
+
+        $campos = array();
+        if ($idToken === '' || strlen($idToken) > 8192) {
+            $campos['id_token'] = 'Informe o token do Google.';
+        }
+        if (!self::deviceIdValido($deviceId)) {
+            $campos['device_id'] = 'Identificador do dispositivo inválido.';
+        }
+        if ($campos) {
+            return $this->erro('validacao', 'Verifique os dados informados.', 422, $campos);
+        }
+
+        $limite = $this->limitar($request, array('login_ip' => $this->ipReal($request)));
+        if ($limite !== null) {
+            return $limite;
+        }
+
+        $verificacao = (new GoogleIdTokenVerifier())->verificar($idToken, (array) GoogleConfig::get('app_client_ids', array()), $nonce !== '' ? $nonce : null);
+        if (empty($verificacao['ok'])) {
+            Logger::warning('Login Google: id_token recusado no app.', array('motivo' => $verificacao['motivo'] ?? null));
+            return $this->erro('google_token_invalido', 'Não foi possível confirmar sua conta Google. Tente novamente.', 401);
+        }
+
+        $resultado = (new GoogleLoginService())->resolverUsuario($verificacao['claims'], 'app', $request->ip(), $request->userAgent());
+        if (empty($resultado['ok'])) {
+            if ($resultado['erro'] === 'conta_inativa') {
+                return $this->erro('conta_inativa', $resultado['message'], 403);
+            }
+            if ($resultado['erro'] === 'email_nao_verificado') {
+                return $this->erro('email_nao_verificado', $resultado['message'], 409);
+            }
+            return $this->erro('login_google_recusado', $resultado['message'], 409);
+        }
+
+        $usuario = $resultado['usuario'];
+        $par = (new AppTokenService())->emitirParaLogin((int) $usuario['id'], $deviceId, $deviceName !== '' ? $deviceName : null, $request->ip(), $request->userAgent());
+
+        $this->auditar('app.login_google', (int) $usuario['id'], $request, array('device_id' => $deviceId, 'device_name' => $deviceName, 'usuario_novo' => !empty($resultado['novo'])));
+
+        $dados = UsuarioPresenter::tokens($par);
+        $dados['usuario'] = UsuarioPresenter::usuario($usuario);
+        $dados['usuario_novo'] = !empty($resultado['novo']);
 
         return $this->ok($dados);
     }

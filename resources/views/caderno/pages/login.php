@@ -77,4 +77,7 @@ if ($accountCreated) {
   <button type="submit" class="btn btn-bloco">Entrar <?= caderno_icone('seta-dir') ?></button>
 </form>
 
+<?php require_once BASE_PATH . '/resources/views/partials/botao-google.php'; ?>
+<?= botao_google(array('origem' => $origemFlag, 'redirect' => $redirectSeguro)) ?>
+
 <p class="auth-pe">Ainda não tem conta? <a class="link" href="<?= Helpers::e($registerHref) ?>">Criar conta</a></p>

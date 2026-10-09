@@ -18,6 +18,8 @@ use App\Controllers\V2\CertificadoValidacaoController as V2CertificadoValidacaoC
 use App\Controllers\V2\InstitucionalController as V2InstitucionalController;
 use App\Controllers\PagesController;
 use App\Controllers\AuthController;
+use App\Controllers\GoogleAuthController;
+use App\Controllers\ContaCompletarController;
 use App\Controllers\Admin\RbacController;
 use App\Controllers\Admin\UsuariosController as AdminUsuariosController;
 use App\Controllers\Admin\PermissoesController as AdminPermissoesController;
@@ -102,6 +104,7 @@ $app->get('/v2/aluno', array(V2AlunoController::class, 'index'));
 $app->post('/v2/aluno/pedidos/cancelar', array(V2AlunoController::class, 'cancelarPedido'));
 $app->get('/v2/minha-conta', array(V2ContaController::class, 'editar'));
 $app->post('/v2/minha-conta', array(V2ContaController::class, 'atualizar'));
+$app->post('/v2/minha-conta/google/desvincular', array(V2ContaController::class, 'desvincularGoogle'));
 $app->get('/v2/aula', array(V2AulaController::class, 'index'));
 $app->post('/v2/aula/concluir', array(V2AulaController::class, 'concluir'));
 $app->get('/v2/quiz', array(V2QuizController::class, 'index'));
@@ -237,6 +240,11 @@ $app->get('/cadastro', array(AuthController::class, 'showRegister'));
 $app->post('/cadastro', array(AuthController::class, 'register'));
 $app->get('/login', array(AuthController::class, 'showLogin'));
 $app->post('/login', array(AuthController::class, 'login'));
+// Login com Google (mudança login-google). 404 enquanto GOOGLE_CLIENT_ID/SECRET não existirem.
+$app->get('/login/google', array(GoogleAuthController::class, 'iniciar'));
+$app->get('/login/google/callback', array(GoogleAuthController::class, 'callback'));
+$app->get('/conta/completar', array(ContaCompletarController::class, 'show'));
+$app->post('/conta/completar', array(ContaCompletarController::class, 'salvar'));
 $app->get('/logout', array(AuthController::class, 'logoutConfirm'), array('auth'));
 $app->post('/logout', array(AuthController::class, 'logout'), array('auth'));
 $app->get('/recuperar-senha', array(AuthController::class, 'showForgotPassword'));
@@ -526,6 +534,8 @@ $app->post('/admin/certificados/emissao-rapida-individual/emitir', array(AdminCe
 $app->post('/admin/certificados/reemitir', array(AdminCertificadosController::class, 'reemitir'), array('auth', 'permission:certificados.gerenciar'));
 $app->post('/admin/certificados/cancelar', array(AdminCertificadosController::class, 'cancelar'), array('auth', 'permission:certificados.gerenciar'));
 $app->post('/admin/certificados/revogar', array(AdminCertificadosController::class, 'revogar'), array('auth', 'permission:certificados.gerenciar'));
+$app->get('/admin/certificados/retidos', array(AdminCertificadosController::class, 'retidos'), array('auth', 'permission:certificados.gerenciar'));
+$app->post('/admin/certificados/retidos/cancelar', array(AdminCertificadosController::class, 'cancelarRetencao'), array('auth', 'permission:certificados.gerenciar'));
 $app->get('/admin/certificados/pdf', array(AdminCertificadosController::class, 'pdf'), array('auth', 'permission:certificados.ver'));
 $app->get('/admin/certificados/templates', array(AdminCertificadosTemplatesController::class, 'index'), array('auth', 'permission:certificados.ver'));
 $app->get('/admin/certificados/templates/criar', array(AdminCertificadosTemplatesController::class, 'create'), array('auth', 'permission:certificados.gerenciar'));

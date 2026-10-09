@@ -78,7 +78,7 @@ $certNavClass = strpos($currentPath, 'certificados/validar') !== false ? ' is-ac
   <?php require BASE_PATH . '/resources/views/v2/partials/navbar.php'; ?>
 
   <main class="v2-main">
-    <?php require $contentView; ?>
+    <?php /* Área do aluno: lembrete de CPF pendente (login-google). */ if (in_array(basename($contentView, '.php'), array('aluno', 'aula', 'quiz', 'atividade', 'conta'), true)) { require_once BASE_PATH . '/resources/views/partials/aviso-cpf.php'; echo aviso_cpf_pendente('v2'); } require $contentView; ?>
   </main>
 
   <?php require BASE_PATH . '/resources/views/v2/partials/footer.php'; ?>

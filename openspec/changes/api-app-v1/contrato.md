@@ -33,11 +33,31 @@ Mesma política do site (`politica_login`, bloqueio após N tentativas, `status=
 {"data": {
   "access_token": "...", "access_expira_em": "...",
   "refresh_token": "...", "refresh_expira_em": "...",
-  "usuario": {"id": 1, "nome": "...", "email": "...", "cpf": "123.***.***-00", "telefone": "...", "cidade": "...", "estado": "SP"}
+  "usuario": {"id": 1, "nome": "...", "email": "...", "cpf": "123.***.***-00", "telefone": "...", "cidade": "...", "estado": "SP", "pendencias": []}
 }}
 ```
+`usuario.pendencias` (mudança `login-google`): lista de dados que a pessoa ainda precisa informar.
+Hoje só `"cpf"` — conta criada pelo Google nasce sem CPF (`cpf: null`) e, enquanto ele faltar,
+certificados pedidos pela secretaria ficam retidos. O app deve mostrar um aviso e levar a `POST /me/cpf`.
 Erros: `401 credenciais_invalidas`, `423 conta_bloqueada` (mensagem com minutos), `403 conta_inativa`,
 `429 muitas_tentativas`.
+
+### `POST /auth/google` (mudança `login-google`)
+Login com a conta Google. O app obtém o `id_token` pelo SDK nativo e o envia; nunca envia senha ou
+segredo. Corpo: `{"id_token": "...", "device_id": "...", "device_name": "...", "nonce": "opcional"}`.
+
+- **Android (Credential Manager / Sign in with Google):** use o **client ID web** do projeto como
+  `serverClientId`; o `id_token` sai com `aud` = client ID web. Se o app gerar um `nonce` para a
+  requisição do Google, envie o mesmo valor aqui — ele é conferido.
+- **iOS (Google Sign-In):** o `aud` é o client ID iOS (configurado no backend em `GOOGLE_APP_CLIENT_IDS`).
+
+Regras de conta iguais às do site: conta Google já vinculada entra; senão, conta existente com o
+mesmo e-mail **verificado** é vinculada (a pessoa recebe e-mail de aviso); senão, cria conta de aluno
+sem senha e sem CPF. `200`: mesmo formato do `/auth/login`, mais `"usuario_novo": true|false`.
+Erros: `401 google_token_invalido` (assinatura, `aud`, `iss`, `exp` ou `nonce`), `409 email_nao_verificado`,
+`403 conta_inativa`, `409 login_google_recusado` (conta já vinculada a outra conta Google ou e-mail
+indisponível), `422 validacao`, `429 muitas_tentativas` (mesmo limite por IP do login),
+`404 nao_encontrado` quando o login com Google não está configurado no servidor.
 
 ### `POST /auth/refresh`
 Corpo: `{"refresh_token": "...", "device_id": "..."}` → mesmo formato do login (sem `usuario`).
@@ -72,6 +92,9 @@ Se `X-App-Version` (build) < mínima, toda rota autenticada responde `426 atuali
 
 - `GET /me` → `{"data": usuario}` (mesmo objeto do login).
 - `POST /me` corpo `{"telefone","cidade","estado"}` → usuário atualizado.
+- `POST /me/cpf` corpo `{"cpf": "000.000.000-00"}` (mudança `login-google`) → usuário atualizado, com
+  `pendencias: []`. Só enquanto a conta não tem CPF; os certificados retidos aguardando CPF são emitidos.
+  Erros: `422 validacao` (`campos.cpf`), `409 cpf_em_uso` (CPF de outra conta), `409 cpf_ja_informado`.
 - `POST /me/senha` corpo `{"senha_atual","senha_nova","senha_nova_confirmacao"}` → `{"ok": true}`
   e revoga os tokens dos **outros** dispositivos.
 

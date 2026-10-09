@@ -34,6 +34,13 @@ $padroes = array(
     'APP_MOBILE_VERSAO_MINIMA_ANDROID' => '1',
     'APP_MOBILE_VERSAO_ATUAL_ANDROID' => '1',
     'SESSION_SECURE' => 'false',
+    // Login com Google contra o "Google de teste" (tests/Api/google_stub.php na
+    // porta 8098 e chaves de tests/Unit/_google_teste.php). Só vale fora de produção.
+    'GOOGLE_CLIENT_ID' => 'cliente-web-teste.apps.googleusercontent.com',
+    'GOOGLE_CLIENT_SECRET' => 'segredo-somente-teste',
+    'GOOGLE_APP_CLIENT_IDS' => 'cliente-web-teste.apps.googleusercontent.com,cliente-ios-teste.apps.googleusercontent.com',
+    'GOOGLE_JWKS_ARQUIVO_TESTE' => dirname(dirname(__DIR__)) . '/storage/tmp/google_teste_jwks.json',
+    'GOOGLE_TOKEN_URL_TESTE' => 'http://127.0.0.1:8098/token',
 );
 
 foreach ($padroes as $chave => $valor) {

@@ -34,11 +34,13 @@ $app->postApp($v1 . '/auth/refresh', array(AuthController::class, 'refresh'));
 $app->postApp($v1 . '/auth/logout', array(AuthController::class, 'logout'), $autenticado);
 $app->postApp($v1 . '/auth/cadastro', array(AuthController::class, 'cadastro'));
 $app->postApp($v1 . '/auth/recuperar-senha', array(AuthController::class, 'recuperarSenha'));
+$app->postApp($v1 . '/auth/google', array(AuthController::class, 'google'));
 
 // Perfil
 $app->get($v1 . '/me', array(MeController::class, 'show'), $autenticado);
 $app->postApp($v1 . '/me', array(MeController::class, 'atualizar'), $autenticado);
 $app->postApp($v1 . '/me/senha', array(MeController::class, 'senha'), $autenticado);
+$app->postApp($v1 . '/me/cpf', array(MeController::class, 'cpf'), $autenticado);
 
 // Meus cursos e conteúdo
 $app->get($v1 . '/inscricoes', array(InscricoesController::class, 'index'), $autenticado);

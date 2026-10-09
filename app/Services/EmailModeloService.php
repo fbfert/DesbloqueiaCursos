@@ -852,6 +852,67 @@ HTML,
                 'ativo' => 1,
                 'editavel' => 1,
             ),
+            'email.google_vinculado' => array(
+                'evento' => 'email.google_vinculado',
+                'template' => 'google_vinculado',
+                'nome' => 'Conta Google vinculada',
+                'assunto' => 'Sua conta foi vinculada ao Google',
+                'corpo_html' => <<<'HTML'
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conta vinculada ao Google</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <div style="max-width:640px;margin:0 auto;padding:24px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;">
+            <h1 style="margin:0 0 16px;">Sua conta foi vinculada ao Google</h1>
+            <p>Olá, {usuario.nome}.</p>
+            <p>Em {vinculo.data_hora}, sua conta no {sistema.nome} foi vinculada à conta Google {vinculo.email_google}. A partir de agora você também pode entrar com o botão “Entrar com Google”.</p>
+            <p><strong>Não foi você?</strong> Responda a este e-mail ou fale com o nosso atendimento imediatamente.</p>
+            <p><a href="{sistema.login_url}">Entrar no portal</a></p>
+        </div>
+    </div>
+</body>
+</html>
+HTML,
+                'gatilho_descricao' => 'Enviado quando uma conta existente é vinculada automaticamente a uma conta Google (mesmo e-mail verificado), no primeiro login com Google pelo site ou pelo app.',
+                'variaveis_json' => json_encode(array('{usuario.nome}', '{sistema.nome}', '{vinculo.email_google}', '{vinculo.data_hora}', '{sistema.login_url}'), JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
+            'email.certificado_retido' => array(
+                'evento' => 'email.certificado_retido',
+                'template' => 'certificado_retido',
+                'nome' => 'Certificado aguardando CPF',
+                'assunto' => 'Informe seu CPF para receber seu certificado',
+                'corpo_html' => <<<'HTML'
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado aguardando CPF</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f8fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <div style="max-width:640px;margin:0 auto;padding:24px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:24px;">
+            <h1 style="margin:0 0 16px;">Seu certificado está pronto para emissão</h1>
+            <p>Olá, {usuario.nome}.</p>
+            <p>O certificado do curso <strong>{retencao.curso_nome}</strong> está pronto, mas precisamos do seu CPF para emiti-lo. Assim que você informar, ele é emitido automaticamente.</p>
+            <p><a href="{retencao.conta_url}" style="display:inline-block;background:#4B008E;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;">Informar meu CPF</a></p>
+        </div>
+    </div>
+</body>
+</html>
+HTML,
+                'gatilho_descricao' => 'Enviado ao aluno quando a emissão de um certificado fica retida porque a conta dele ainda não tem CPF (no máximo um aviso a cada 24 horas).',
+                'variaveis_json' => json_encode(array('{usuario.nome}', '{retencao.curso_nome}', '{retencao.conta_url}'), JSON_UNESCAPED_UNICODE),
+                'ativo' => 1,
+                'editavel' => 1,
+            ),
         );
     }
 

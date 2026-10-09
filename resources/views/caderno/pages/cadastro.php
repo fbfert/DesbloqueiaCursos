@@ -167,4 +167,7 @@ $msgErro = function ($campo, $erroId) use ($erroDe) {
   <button type="submit" class="btn btn-bloco">Criar conta <?= caderno_icone('seta-dir') ?></button>
 </form>
 
+<?php require_once BASE_PATH . '/resources/views/partials/botao-google.php'; ?>
+<?= botao_google(array('origem' => 'v2', 'redirect' => $redirectSeguro, 'termos' => $termosHref, 'privacidade' => $privacidadeHref)) ?>
+
 <p class="auth-pe">Já tem conta? <a class="link" href="<?= Helpers::e($loginHref) ?>">Entrar</a></p>

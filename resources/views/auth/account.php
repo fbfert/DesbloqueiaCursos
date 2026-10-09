@@ -16,7 +16,13 @@
 
         <label>
             CPF
-            <input type="text" name="cpf" value="<?php echo htmlspecialchars(isset($old['cpf']) ? $old['cpf'] : (isset($conta['cpf']) ? $conta['cpf'] : ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" pattern="^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$" required>
+            <?php if (!empty($conta['cpf'])): ?>
+            <input type="text" value="<?php echo htmlspecialchars((string) $conta['cpf'], ENT_QUOTES, 'UTF-8'); ?>" readonly>
+            <small>Para alterar o CPF, fale com o atendimento.</small>
+            <?php else: ?>
+            <input type="text" name="cpf" value="<?php echo htmlspecialchars(isset($old['cpf']) ? $old['cpf'] : '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" pattern="^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$">
+            <small>Informe seu CPF para podermos emitir seus certificados.</small>
+            <?php endif; ?>
         </label>
 
         <label>

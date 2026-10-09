@@ -246,6 +246,27 @@ podem rodar mais de uma vez; faça o backup do banco antes, como sempre):
 `sql/033` e `sql/058_pedido_recuperacao_automacao_cron.sql` mudaram só para que
 um banco **novo** monte sem erro; não precisam ser reaplicadas em produção.
 
+## 3.5 Migração do login com Google (`sql/083_login_google.sql`)
+
+Aplique na VPS **antes** de subir o código do login com Google (mudança OpenSpec
+`login-google`): o código novo grava em `usuario_identidades` e
+`certificados_retidos` e conta com `usuarios.cpf` aceitando `NULL`. É aditiva e
+idempotente:
+
+- `ALTER TABLE usuarios MODIFY cpf VARCHAR(14) NULL` — só afrouxa a coluna, não
+  altera dados; o `UNIQUE` do CPF continua valendo;
+- cria `usuario_identidades` (vínculo com o Google) e `certificados_retidos`
+  (certificados aguardando o aluno informar o CPF).
+
+Com o código no ar e sem as chaves `GOOGLE_*` no `.env`, o login com Google fica
+desligado; a retenção de certificados e as correções de CPF vazio já valem.
+Configuração do Google: `docs/2026-10-login-google.md`.
+
+**Rollback:** remover as chaves `GOOGLE_*` desliga o recurso na hora. As tabelas
+novas podem ficar. Voltar `cpf` a `NOT NULL` só é possível se
+`SELECT COUNT(*) FROM usuarios WHERE cpf IS NULL` der `0` — contas criadas pelo
+Google não têm CPF.
+
 ## 4. Pós-deploy
 
 - Confira `storage/logs/app-YYYY-MM-DD.log` nos minutos seguintes ao deploy

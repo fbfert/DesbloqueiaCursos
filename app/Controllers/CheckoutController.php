@@ -896,6 +896,10 @@ class CheckoutController extends Controller
 
         Session::put('checkout_pedido_id', $resultado['pedido_id']);
 
+        // Conta sem CPF (criada pelo Google): o CPF do pagador passa a constar na conta.
+        // Recusa (ex.: CPF de outra conta) não bloqueia o pedido — só não grava.
+        $this->gravarCpfDoPagadorNaConta((int) Session::get('usuario_id', 0), $pagadorCpf, $request);
+
         if ($this->isCompraPropriaPedido($tipoPedido)) {
             $resultadoCompraPropria = $this->concluirCheckoutCompraPropria((int) $resultado['pedido_id'], $request);
             if (empty($resultadoCompraPropria['ok'])) {
@@ -1303,6 +1307,18 @@ class CheckoutController extends Controller
             'cidade' => isset($usuario['cidade']) ? $usuario['cidade'] : null,
             'estado' => isset($usuario['estado']) ? $usuario['estado'] : null,
         ), $atualizacao));
+    }
+
+    private function gravarCpfDoPagadorNaConta($usuarioId, $cpf, Request $request)
+    {
+        if ($usuarioId <= 0 || trim((string) $cpf) === '') {
+            return;
+        }
+        $usuario = $this->usuarioModel->findById($usuarioId);
+        if (!$usuario || !\App\Models\Usuario::semCpf($usuario)) {
+            return;
+        }
+        (new \App\Services\ContaCpfService())->informar($usuarioId, $cpf, 'checkout', $request->ip(), $request->userAgent());
     }
 
     private function carregarParticipantePrefill($usuarioId)

@@ -394,6 +394,54 @@ class EmailService
         );
     }
 
+    /**
+     * Aviso de vínculo automático com o Google (login-google): a pessoa fica sabendo
+     * de todo vínculo novo — é a defesa contra vínculo indevido de conta de admin.
+     */
+    public function googleVinculado(array $usuario, $emailGoogle, $vinculadoEm, $ipAddress = null, $userAgent = null)
+    {
+        return $this->sendTemplate(
+            'email.google_vinculado',
+            'google_vinculado',
+            isset($usuario['email']) ? $usuario['email'] : null,
+            isset($usuario['nome']) ? $usuario['nome'] : null,
+            'Sua conta foi vinculada ao Google',
+            array(
+                'usuario' => $usuario,
+                'vinculo' => array(
+                    'email_google' => (string) $emailGoogle,
+                    'data_hora' => (string) $vinculadoEm,
+                ),
+            ),
+            'usuario',
+            isset($usuario['id']) ? $usuario['id'] : null,
+            null,
+            $ipAddress,
+            $userAgent
+        );
+    }
+
+    /** Certificado retido aguardando o aluno informar o CPF (login-google). */
+    public function certificadoRetido(array $usuario, $cursoNome, $contaUrl)
+    {
+        return $this->sendTemplate(
+            'email.certificado_retido',
+            'certificado_retido',
+            isset($usuario['email']) ? $usuario['email'] : null,
+            isset($usuario['nome']) ? $usuario['nome'] : null,
+            'Informe seu CPF para receber seu certificado',
+            array(
+                'usuario' => $usuario,
+                'retencao' => array(
+                    'curso_nome' => (string) $cursoNome,
+                    'conta_url' => (string) $contaUrl,
+                ),
+            ),
+            'usuario',
+            isset($usuario['id']) ? $usuario['id'] : null
+        );
+    }
+
     public function passwordReset(array $usuario, $token, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         return $this->sendTemplate(

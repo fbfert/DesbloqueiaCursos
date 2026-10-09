@@ -18,7 +18,7 @@ Expor ao app do aluno, sob `/api/app/v1`, a autenticação, o perfil e o conteú
 - **THEN** a conta de aluno é criada e a resposta é `200` com `usuario_novo: true` e `usuario.pendencias` contendo `cpf`
 
 ### Requirement: Erros do login pelo Google no app
-`POST /auth/google` MUST responder `401 google_token_invalido` para token recusado, `409 email_nao_verificado` para e-mail não verificado sem vínculo, `403 conta_inativa` para conta não ativa, `422 validacao` para campos ausentes e `404 nao_encontrado` quando o recurso estiver desligado, e MUST ter o mesmo limite de taxa por IP do login.
+`POST /auth/google` MUST responder `401 google_token_invalido` para token recusado, `409 email_nao_verificado` para e-mail não verificado sem vínculo, `403 conta_inativa` para conta não ativa, `409 login_google_recusado` quando a conta já tem outra conta Google ou o e-mail está indisponível, `422 validacao` para campos ausentes e `404 nao_encontrado` com o recurso desligado, com o mesmo limite de taxa por IP do login.
 
 #### Scenario: Token de outro cliente
 - **WHEN** o app envia um `id_token` emitido para um cliente não configurado

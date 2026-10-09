@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Services\CertificadoRetencaoService;
 use App\Services\CertificadoService;
 
 class CertificadosController extends Controller
@@ -29,10 +30,41 @@ class CertificadosController extends Controller
             'title' => 'Certificados',
             'certificados' => $this->certificadoService->listarCertificados(),
             'aptos' => $this->certificadoService->listarAptos(),
+            'retidosCount' => count((new CertificadoRetencaoService())->listarAguardando()),
             'configCertificados' => $this->configCertificados(),
             'errors' => Session::pullFlash('errors', array()),
             'success' => Session::pullFlash('success'),
         ));
+    }
+
+    /** Certificados retidos aguardando o aluno informar o CPF (login-google). */
+    public function retidos(Request $request)
+    {
+        return $this->view('admin/certificados/retidos', array(
+            'title' => 'Certificados aguardando CPF',
+            'retidos' => (new CertificadoRetencaoService())->listarAguardando(),
+            'errors' => Session::pullFlash('errors', array()),
+            'success' => Session::pullFlash('success'),
+        ));
+    }
+
+    public function cancelarRetencao(Request $request)
+    {
+        $resultado = (new CertificadoRetencaoService())->cancelar(
+            (int) $request->input('retencao_id', 0),
+            trim((string) $request->input('justificativa', '')),
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($resultado['ok'])) {
+            Session::flash('errors', array($resultado['message']));
+        } else {
+            Session::flash('success', 'Retenção cancelada. O certificado não será emitido automaticamente.');
+        }
+
+        return $this->redirect('/admin/certificados/retidos');
     }
 
     public function emissaoManual(Request $request)
@@ -105,8 +137,11 @@ class CertificadosController extends Controller
             }
 
             $resumo = isset($result['resumo']) && is_array($result['resumo']) ? $result['resumo'] : array();
+            $avisosCpf = $this->avisosCpf($resumo);
             if ((int) ($resumo['emitidos'] ?? 0) > 0 || (int) ($resumo['emitidos_excecao'] ?? 0) > 0) {
-                Session::flash('success', 'Processamento da emissão manual concluído.');
+                Session::flash('success', trim('Processamento da emissão manual concluído. ' . $avisosCpf));
+            } elseif ((int) ($resumo['retidos'] ?? 0) > 0 && (int) ($resumo['erros'] ?? 0) === 0 && (int) ($resumo['bloqueados'] ?? 0) === 0) {
+                Session::flash('success', $avisosCpf);
             } else {
                 $mensagens = array();
                 if (!empty($result['resultados']) && is_array($result['resultados'])) {
@@ -241,8 +276,9 @@ class CertificadosController extends Controller
             $falhas = (int) ($resumo['falhas'] ?? 0);
             $emailsFalhos = (int) ($resumo['emails_falhos'] ?? 0);
 
-            if ($emitidos > 0) {
-                Session::flash('success', 'Certificados emitidos com sucesso.');
+            $retidos = (int) ($resumo['retidos'] ?? 0);
+            if ($emitidos > 0 || $retidos > 0) {
+                Session::flash('success', trim(($emitidos > 0 ? 'Certificados emitidos com sucesso. ' : '') . $this->avisosCpf($resumo)));
             }
 
             if ($falhas > 0 || $emailsFalhos > 0) {
@@ -313,12 +349,17 @@ class CertificadosController extends Controller
             $request->userAgent()
         );
 
+        if (!empty($result['retido'])) {
+            Session::flash('success', $result['message']);
+            return $this->redirect('/admin/certificados/retidos');
+        }
+
         if (empty($result['ok'])) {
             Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível emitir o certificado.'));
             return $this->redirect('/admin/certificados/emitir?inscricao_id=' . (int) $request->input('inscricao_id', 0));
         }
 
-        Session::flash('success', 'Certificado emitido com sucesso.');
+        Session::flash('success', !empty($result['aviso_sem_cpf']) ? 'Certificado emitido com sucesso. Certificado emitido sem CPF do participante.' : 'Certificado emitido com sucesso.');
         return $this->redirect('/admin/certificados/show?certificado_id=' . (int) $result['certificado_id']);
     }
 
@@ -331,6 +372,11 @@ class CertificadosController extends Controller
             $request->ip(),
             $request->userAgent()
         );
+
+        if (!empty($result['retido'])) {
+            Session::flash('success', $result['message']);
+            return $this->redirect('/admin/certificados/retidos');
+        }
 
         if (empty($result['ok'])) {
             Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível reemitir o certificado.'));
@@ -408,6 +454,24 @@ class CertificadosController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="certificado-' . $codigo . '.pdf"',
         ));
+    }
+
+    /** Frases do resumo sobre CPF (login-google): retidos aguardando CPF e emitidos sem CPF. */
+    private function avisosCpf(array $resumo)
+    {
+        $frases = array();
+        $retidos = (int) ($resumo['retidos'] ?? 0);
+        if ($retidos > 0) {
+            $frases[] = $retidos === 1
+                ? '1 certificado retido aguardando CPF: será emitido automaticamente quando o aluno informar o CPF.'
+                : $retidos . ' certificados retidos aguardando CPF: serão emitidos automaticamente quando os alunos informarem o CPF.';
+        }
+        $semCpf = (int) ($resumo['sem_cpf'] ?? 0);
+        if ($semCpf > 0) {
+            $frases[] = $semCpf === 1 ? 'Certificado emitido sem CPF do participante.' : $semCpf . ' certificados emitidos sem CPF do participante.';
+        }
+
+        return implode(' ', $frases);
     }
 
     private function extrairFiltrosEmissaoManual(Request $request)

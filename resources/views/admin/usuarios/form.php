@@ -31,7 +31,10 @@ $cidadeAtual = (string) $value('cidade');
 
             <label>Nome<input type="text" name="nome" value="<?php echo Helpers::e($value('nome')); ?>" required></label>
             <label>E-mail<input type="email" name="email" value="<?php echo Helpers::e($value('email')); ?>" required></label>
-            <label>CPF<input type="text" name="cpf" value="<?php echo Helpers::e($value('cpf')); ?>" required></label>
+            <?php $cpfOpcional = is_array($usuario) && \App\Models\Usuario::semCpf($usuario); ?>
+            <label>CPF<input type="text" name="cpf" value="<?php echo Helpers::e($value('cpf')); ?>"<?php echo $cpfOpcional ? '' : ' required'; ?>>
+                <?php if ($cpfOpcional): ?><small>Conta sem CPF (criada pelo Google). Os certificados deste aluno ficam retidos até o CPF ser informado.</small><?php endif; ?>
+            </label>
             <label>WhatsApp<input type="text" name="telefone" value="<?php echo Helpers::e($value('telefone')); ?>"></label>
             <label>Estado (UF)
                 <select name="estado" id="usuario-estado">

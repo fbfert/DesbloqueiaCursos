@@ -70,6 +70,7 @@ const E2E_TURMA_ID = 9871;
 const E2E_CUPOM_PREFIXO = 'E2E-CHK-';
 const E2E_VALOR_CURSO = 150.00;
 const E2E_CUPOM_PERCENTUAL = 10;
+const E2E_EMAIL_SEM_CPF = 'e2e-chk-semcpf@teste.local';
 
 $pdo = testes_conectar_banco();
 if ($pdo->query('SELECT DATABASE()')->fetchColumn() === 'desbloqueiacursos') {
@@ -303,6 +304,11 @@ function chk_limpar(PDO $pdo)
         chk_apagar_por_coluna($pdo, 'turma_id', array(E2E_TURMA_ID), array('turmas'));
         $pdo->exec('DELETE FROM turmas WHERE id = ' . E2E_TURMA_ID);
         $pdo->exec('DELETE FROM cursos_eventos WHERE id = ' . E2E_CURSO_ID);
+        $semCpf = $pdo->query('SELECT id FROM usuarios WHERE email = ' . $pdo->quote(E2E_EMAIL_SEM_CPF))->fetchAll(PDO::FETCH_COLUMN);
+        if (chk_ids_in($semCpf) !== '') {
+            chk_apagar_por_coluna($pdo, 'usuario_id', $semCpf);
+            $pdo->exec('DELETE FROM usuarios WHERE id IN (' . chk_ids_in($semCpf) . ')');
+        }
     } finally {
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
     }
@@ -320,6 +326,20 @@ function chk_limpar(PDO $pdo)
     }
 
     return count(array_unique(array_map('intval', $pedidoIds)));
+}
+
+/** Aluno sem CPF, como os criados pelo login com Google (migração 083). */
+function chk_criar_usuario_sem_cpf(PDO $pdo, $senha)
+{
+    $pdo->prepare("INSERT INTO usuarios (nome, email, cpf, senha_hash, status, cadastro_status, cadastro_origem, created_at, updated_at)
+        VALUES ('ALUNA SEM CPF E2E', :email, NULL, :hash, 'ativo', 'pendente', 'google', NOW(), NOW())")
+        ->execute(array('email' => E2E_EMAIL_SEM_CPF, 'hash' => password_hash($senha, PASSWORD_DEFAULT)));
+    $id = (int) $pdo->lastInsertId();
+    $perfil = (int) $pdo->query("SELECT id FROM perfis WHERE slug = 'aluno' LIMIT 1")->fetchColumn();
+    if ($perfil > 0) {
+        $pdo->exec("INSERT INTO usuario_perfis (usuario_id, perfil_id, created_at) VALUES ({$id}, {$perfil}, NOW())");
+    }
+    return $id;
 }
 
 function chk_criar_dados(PDO $pdo, $cupomCodigo)
@@ -695,6 +715,47 @@ try {
         expect((int) $pdo->query('SELECT COUNT(*) FROM cupons_usos WHERE pedido_id = ' . $ctx['pedidoId'])->fetchColumn())->toBe(1);
     });
 
+    // ===============================================================
+    describe('5. Conta sem CPF (criada pelo Google) compra informando o CPF');
+
+    it('aluno sem CPF faz login e cria o pedido informando o CPF do pagador', function () use ($base, $pdo, $senha, &$ctx) {
+        $ctx['semCpfId'] = chk_criar_usuario_sem_cpf($pdo, $senha);
+        $ctx['cookiesC'] = chk_login($base, E2E_EMAIL_SEM_CPF, $senha);
+        chk_garantir($ctx['cookiesC'] !== null, 'login do aluno sem CPF falhou');
+
+        $pagina = chk_http($base, 'GET', '/v2/checkout/inscricao?curso_id=' . E2E_CURSO_ID . '&turma_id=' . E2E_TURMA_ID, null, $ctx['cookiesC']);
+        expect($pagina['status'])->toBe(200);
+        $token = chk_token($pagina['corpo']);
+        expect($token)->notToBeNull();
+
+        $ctx['cpfSemCpf'] = testes_cpf_livre($pdo);
+        $r = chk_http($base, 'POST', '/v2/checkout/inscricao', array(
+            '_token' => $token,
+            'curso_evento_id' => E2E_CURSO_ID,
+            'turma_id' => E2E_TURMA_ID,
+            'tipo_pedido' => 'propria',
+            'quantidade' => 1,
+            'pagador_nome' => 'Aluna Sem CPF',
+            'pagador_cpf' => chk_formatar_cpf($ctx['cpfSemCpf']),
+            'pagador_email' => E2E_EMAIL_SEM_CPF,
+            'pagador_telefone' => '(11) 97777-6655',
+            'pagador_estado' => 'SP',
+            'pagador_cidade' => 'São Paulo',
+        ), $ctx['cookiesC']);
+        expect($r['status'])->toBe(302);
+        $destino = chk_caminho_location($r['location']);
+        chk_garantir(strpos($destino, '/v2/checkout/') === 0 && strpos($destino, 'pedido_id=') !== false, "destino inesperado: {$destino}");
+        $st = $pdo->prepare('SELECT pagador_cpf FROM pedidos WHERE comprador_usuario_id = :u ORDER BY id DESC LIMIT 1');
+        $st->execute(array('u' => $ctx['semCpfId']));
+        expect(chk_so_digitos($st->fetchColumn()))->toBe($ctx['cpfSemCpf']);
+    });
+
+    it('o CPF do pagador passa a constar na conta e o cadastro fica completo', function () use ($pdo, &$ctx) {
+        $u = $pdo->query('SELECT cpf, cadastro_status FROM usuarios WHERE id = ' . (int) $ctx['semCpfId'])->fetch();
+        expect($u['cpf'])->toBe($ctx['cpfSemCpf']);
+        expect($u['cadastro_status'])->toBe('completo');
+    });
+
     $codigoSaida = testes_resumo();
 } finally {
     try {
@@ -704,7 +765,7 @@ try {
             + (int) $pdo->query("SELECT COUNT(*) FROM cupons WHERE codigo LIKE '" . E2E_CUPOM_PREFIXO . "%'")->fetchColumn()
             + (int) $pdo->query('SELECT COUNT(*) FROM cursos_eventos WHERE id = ' . E2E_CURSO_ID)->fetchColumn();
         echo "Limpeza: {$removidos} pedido(s) e dados de teste apagados" . ($restantes > 0 ? " — ATENÇÃO: {$restantes} linha(s) restante(s)" : '') . ".\n";
-        foreach (array('cookiesA', 'cookiesB') as $c) {
+        foreach (array('cookiesA', 'cookiesB', 'cookiesC') as $c) {
             if (!empty($ctx[$c]) && is_file($ctx[$c])) {
                 @unlink($ctx[$c]);
             }

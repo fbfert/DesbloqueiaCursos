@@ -173,8 +173,9 @@ class CheckoutRapidoService
                 );
             }
 
-            if ($cpfExistente === '') {
-                $this->usuarioModel->preencherCpfSeVazio((int) $porEmail['id'], $cpfDigitos);
+            if ($cpfExistente === '' && $this->usuarioModel->preencherCpfSeVazio((int) $porEmail['id'], $cpfDigitos)) {
+                // Conta sem CPF (ex.: criada pelo Google): participantes e certificados retidos.
+                (new ContaCpfService())->aposCpfDefinido((int) $porEmail['id'], $cpfDigitos);
             }
 
             $this->usuarioModel->preencherWhatsappSeVazio((int) $porEmail['id'], $whatsappE164);

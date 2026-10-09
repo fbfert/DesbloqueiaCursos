@@ -52,6 +52,7 @@ class CertificadoService
     private $elegibilidadeService;
     private $aptidaoService;
     private $certificadosConfig;
+    private $retencaoService = null;
 
     public function __construct()
     {
@@ -395,6 +396,7 @@ class CertificadoService
         $resultados = array();
         $emitidos = 0;
         $falhas = 0;
+        $retidos = 0;
         $emailsEnviados = 0;
         $emailsFalhos = 0;
 
@@ -406,6 +408,24 @@ class CertificadoService
                 $ipAddress,
                 $userAgent
             );
+
+            if (!empty($resultadoEmissao['retido'])) {
+                $retidos++;
+                $resultados[] = array(
+                    'ok' => false,
+                    'retido' => true,
+                    'inscricao_id' => $inscricaoId,
+                    'message' => $resultadoEmissao['message'],
+                    'codigo' => null,
+                    'certificado_id' => null,
+                    'email_ok' => null,
+                    'email_message' => null,
+                    'certificado_url_download' => null,
+                    'versao_online_url' => null,
+                    'validacao_url' => null,
+                );
+                continue;
+            }
 
             if (empty($resultadoEmissao['ok'])) {
                 $falhas++;
@@ -467,6 +487,7 @@ class CertificadoService
                 'selecionadas' => count($selecionadas),
                 'emitidos' => $emitidos,
                 'falhas' => $falhas,
+                'retidos' => $retidos,
                 'emails_enviados' => $emailsEnviados,
                 'emails_falhos' => $emailsFalhos,
             ),
@@ -676,6 +697,8 @@ class CertificadoService
             'ja_emitidos' => 0,
             'bloqueados' => 0,
             'erros' => 0,
+            'retidos' => 0,
+            'sem_cpf' => 0,
         );
         $resultados = array();
         $permitirExcecao = !empty($opcoes['permitir_excecao']);
@@ -745,6 +768,21 @@ class CertificadoService
                         'certificado_id' => isset($resultado['certificado_id']) ? (int) $resultado['certificado_id'] : null,
                         'codigo' => isset($resultado['codigo']) ? $resultado['codigo'] : null,
                         'emissao_excepcional' => $estaApto ? 0 : 1,
+                        'aviso_sem_cpf' => !empty($resultado['aviso_sem_cpf']),
+                    );
+                    if (!empty($resultado['aviso_sem_cpf'])) {
+                        $resumo['sem_cpf']++;
+                    }
+                    continue;
+                }
+
+                if (!empty($resultado['retido'])) {
+                    $resumo['retidos']++;
+                    $resultados[] = array(
+                        'inscricao_id' => $inscricaoId,
+                        'ok' => false,
+                        'status' => 'retido',
+                        'message' => $resultado['message'],
                     );
                     continue;
                 }
@@ -888,6 +926,29 @@ class CertificadoService
 
         $pedido = $this->pedidoModel->findById($inscricao['pedido_id']);
         $participante = $this->findParticipante((int) $inscricao['participante_pedido_id']);
+
+        // CPF do certificado (login-google): participante sem CPF ligado a uma conta
+        // usa o CPF da conta; se a conta também não tem (entrou pelo Google e não
+        // informou), o certificado fica retido aguardando o CPF. Participante sem
+        // conta segue como antes, com aviso ao admin.
+        $avisoSemCpf = false;
+        if (Usuario::normalizarCpf(isset($participante['cpf']) ? $participante['cpf'] : null) === null) {
+            $usuarioVinculadoId = !empty($participante['usuario_id']) ? (int) $participante['usuario_id'] : (!empty($inscricao['usuario_id']) ? (int) $inscricao['usuario_id'] : 0);
+            $usuarioVinculado = $usuarioVinculadoId > 0 ? $this->usuarioModel->findById($usuarioVinculadoId) : null;
+            if ($usuarioVinculado && !Usuario::semCpf($usuarioVinculado)) {
+                $participante['cpf'] = Usuario::normalizarCpf($usuarioVinculado['cpf']);
+                $this->gravarCpfParticipante((int) $inscricao['participante_pedido_id'], $participante['cpf']);
+            } elseif ($usuarioVinculado) {
+                $modo = !empty($contexto['modo_retencao']) ? (string) $contexto['modo_retencao']
+                    : ($emissaoExcepcional ? 'excecao' : ($emissaoManual ? 'lote' : 'individual'));
+                unset($contexto['modo_retencao']);
+
+                return $this->retencaoService()->reter((int) $inscricao['id'], $usuarioVinculadoId, $modo, $opcoes, $contexto, $actorUserId, $ipAddress, $userAgent);
+            } else {
+                $avisoSemCpf = true;
+            }
+        }
+
         $curso = $this->findCurso((int) $inscricao['curso_evento_id']);
         $turma = !empty($inscricao['turma_id']) ? $this->turmaModel->findPublicById((int) $inscricao['turma_id']) : null;
         $alunoDataInicio = $this->obterDataInicioAlunoCertificado(array(
@@ -1048,6 +1109,7 @@ class CertificadoService
                 'motivos_pendencias' => $motivos,
                 'emissao_excepcional' => $emissaoExcepcional ? 1 : 0,
                 'email_result' => isset($resultadoStatus['email_result']) ? $resultadoStatus['email_result'] : null,
+                'aviso_sem_cpf' => $avisoSemCpf,
             );
         } catch (Exception $exception) {
             $pdo->rollBack();
@@ -1058,6 +1120,36 @@ class CertificadoService
 
             throw $exception;
         }
+    }
+
+    /**
+     * Emissão de um certificado retido aguardando CPF (CertificadoRetencaoService),
+     * com os parâmetros e o autor da solicitação original.
+     */
+    public function emitirRetencao($inscricaoId, array $opcoes, array $contexto, $solicitadoPor)
+    {
+        if (!$this->certificadosHabilitados() || !$this->emissaoCertificadosHabilitada()) {
+            return array('ok' => false, 'message' => 'A emissão de certificados está desativada nas configurações globais.');
+        }
+
+        return $this->emitirInterno((int) $inscricaoId, $opcoes, $solicitadoPor, null, 'retencao-cpf', $contexto);
+    }
+
+    private function retencaoService()
+    {
+        if ($this->retencaoService === null) {
+            $this->retencaoService = new CertificadoRetencaoService();
+        }
+        return $this->retencaoService;
+    }
+
+    private function gravarCpfParticipante($participantePedidoId, $cpf)
+    {
+        $stmt = Database::connection()->prepare(
+            "UPDATE participantes_pedido SET cpf = :cpf, updated_at = NOW()
+              WHERE id = :id AND (cpf IS NULL OR cpf = '')"
+        );
+        $stmt->execute(array('cpf' => $cpf, 'id' => (int) $participantePedidoId));
     }
 
     private function podeEmitirComExcecao($usuarioId)

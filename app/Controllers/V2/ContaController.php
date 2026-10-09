@@ -8,7 +8,9 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Support\TemaPublico;
+use App\Models\Usuario;
 use App\Services\AuthService;
+use App\Services\Google\GoogleLoginService;
 
 /**
  * Editar cadastro V2 (/v2/minha-conta) — casca visual V2 sobre o MESMO
@@ -42,12 +44,17 @@ class ContaController extends Controller
         }
 
         $usuarioNome = trim((string) Session::get('usuario_nome', ''));
+        $usuario = (new Usuario())->findById($usuarioId);
 
         $data = array_merge($this->dadosLayout($usuarioNome), array(
             'title' => 'Editar cadastro — Desbloqueia Cursos',
             'pageTitle' => 'Editar cadastro — Desbloqueia Cursos',
             'pageDescription' => 'Atualize seus dados cadastrais.',
             'conta' => $conta,
+            // login-google: CPF só editável enquanto vazio; bloco "Conta Google".
+            'cpfPreenchido' => $usuario && !Usuario::semCpf($usuario),
+            'vinculoGoogle' => (new GoogleLoginService())->vinculoDoUsuario($usuarioId),
+            'temSenha' => $usuario && trim((string) ($usuario['senha_hash'] ?? '')) !== '',
             'old' => Session::pullFlash('old', array()),
             'success' => Session::pullFlash('success'),
             'errors' => Session::pullFlash('errors', array()),
@@ -72,6 +79,23 @@ class ContaController extends Controller
         }
 
         Session::flash('success', 'Dados atualizados com sucesso.');
+        return Response::redirect('/v2/minha-conta');
+    }
+
+    public function desvincularGoogle(Request $request)
+    {
+        $usuarioId = (int) Session::get('usuario_id', 0);
+        if ($usuarioId <= 0) {
+            return Response::redirect('/v2/login?origem=v2_aluno');
+        }
+
+        $resultado = (new GoogleLoginService())->desvincular($usuarioId, $request->ip(), $request->userAgent());
+        if (empty($resultado['ok'])) {
+            Session::flash('errors', array('google' => $resultado['message']));
+        } else {
+            Session::flash('success', 'Conta Google desvinculada. Você continua entrando com e-mail ou CPF e senha.');
+        }
+
         return Response::redirect('/v2/minha-conta');
     }
 

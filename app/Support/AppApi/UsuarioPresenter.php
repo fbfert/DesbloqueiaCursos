@@ -18,6 +18,9 @@ class UsuarioPresenter
             'telefone' => Formato::texto($usuario['telefone'] ?? null),
             'cidade' => Formato::texto($usuario['cidade'] ?? null),
             'estado' => Formato::texto($usuario['estado'] ?? null),
+            // Dados que o usuário ainda precisa informar (login-google): 'cpf' enquanto
+            // a conta não tiver CPF — sem ele os certificados ficam retidos.
+            'pendencias' => \App\Models\Usuario::semCpf($usuario) ? array('cpf') : array(),
         );
     }
 

@@ -110,7 +110,9 @@ function token_csrf($html)
 
 function normalizar($html)
 {
-    $html = preg_replace('/name="_token"\s+value="[^"]*"/i', 'name="_token" value="X"', (string) $html);
+    // Fim de linha dos templates depende do checkout (core.autocrlf), não do código.
+    $html = str_replace("\r", "", (string) $html);
+    $html = preg_replace('/name="_token"\s+value="[^"]*"/i', 'name="_token" value="X"', $html);
     $html = preg_replace('/<meta name="csrf-token" content="[^"]*"/i', '<meta name="csrf-token" content="X"', $html);
     $html = preg_replace('/"csrfToken"\s*:\s*"[^"]*"/', '"csrfToken":"X"', $html);
     $html = preg_replace('/data-csrf(-token)?="[^"]*"/', 'data-csrf="X"', $html);
@@ -240,7 +242,8 @@ try {
             $b = explode("\n", (string) $respDepois['corpo']);
             foreach ($a as $i => $linha) {
                 if (!isset($b[$i]) || $b[$i] !== $linha) {
-                    echo "      corpo difere na linha " . ($i + 1) . ":\n        - " . substr(trim($linha), 0, 200) . "\n        + " . substr(trim($b[$i] ?? ''), 0, 200) . "\n";
+                    // json_encode mostra diferenças invisíveis (espaços, \r, \t).
+                    echo "      corpo difere na linha " . ($i + 1) . ":\n        - " . substr(json_encode($linha, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 0, 200) . "\n        + " . substr(json_encode($b[$i] ?? '', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 0, 200) . "\n";
                     break;
                 }
             }

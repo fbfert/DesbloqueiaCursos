@@ -172,6 +172,17 @@ caderno) e `defeito`.
 ficar vermelho, mas o runner avisa em toda execução. Use sempre com um comentário explicando o
 defeito e como corrigi-lo.
 
+### Login com Google
+
+`/login/google` muda de comportamento conforme o `.env` do alvo, que o smoke não lê. Sem as
+chaves `GOOGLE_*` (padrão), a rota precisa responder **404**. Depois de configurar o Google, rode
+com `SMOKE_GOOGLE=ativo`: a rota passa a ser conferida como protegida e precisa terminar em
+`accounts.google.com` (a tela de escolha de conta do Google).
+
+```bash
+SMOKE_GOOGLE=ativo php tests/Smoke/smoke.php https://desbloqueiacursos.com.br
+```
+
 ## O que a suíte NÃO faz
 
 Restrições deliberadas, para poder rodar contra produção sem medo:

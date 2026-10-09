@@ -160,6 +160,9 @@ $erroDe = function ($campo) use ($errors) {
       <button type="submit" class="v2-btn v2-btn-primary v2-btn-block">Criar conta <i class="ti ti-arrow-right"></i></button>
     </form>
 
+    <?php require_once BASE_PATH . '/resources/views/partials/botao-google.php'; ?>
+    <?php echo botao_google(array('origem' => 'v2', 'redirect' => $redirectSeguro, 'termos' => $termosHref, 'privacidade' => $privacidadeHref)); ?>
+
     <div class="v2-auth-foot">Já tem conta? <a href="<?php echo Helpers::e($loginHref); ?>">Entrar</a></div>
   </div>
 </div>

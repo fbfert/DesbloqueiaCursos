@@ -201,18 +201,28 @@ class AuthService
         }
 
         $usuario = $autenticacao['usuario'];
-        Session::regenerate();
-        Session::put('usuario_id', $usuario['id']);
-        Session::put('usuario_nome', $usuario['nome']);
-        Session::put('usuario_email', $usuario['email']);
-        Session::put('usuario_cpf', isset($usuario['cpf']) ? (string) $usuario['cpf'] : '');
-        Session::put('usuario_telefone', isset($usuario['telefone']) ? (string) $usuario['telefone'] : '');
+        $this->abrirSessao($usuario);
 
         return array(
             'ok' => true,
             'usuario' => $usuario,
             'redirect_to' => $this->resolveLoginRedirect((int) $usuario['id']),
         );
+    }
+
+    /**
+     * Abre a sessão do site para um usuário já autenticado (senha ou Google): novo
+     * ID de sessão contra fixação e as mesmas chaves de sempre. CPF ausente vira ''
+     * na sessão, formato que o checkout já lê.
+     */
+    public function abrirSessao(array $usuario)
+    {
+        Session::regenerate();
+        Session::put('usuario_id', $usuario['id']);
+        Session::put('usuario_nome', $usuario['nome']);
+        Session::put('usuario_email', $usuario['email']);
+        Session::put('usuario_cpf', isset($usuario['cpf']) ? (string) $usuario['cpf'] : '');
+        Session::put('usuario_telefone', isset($usuario['telefone']) ? (string) $usuario['telefone'] : '');
     }
 
     public function logout($ipAddress, $userAgent)
@@ -249,7 +259,10 @@ class AuthService
         $errors = array();
         $nome = trim((string) (isset($input['nome']) ? $input['nome'] : ''));
         $email = strtolower(trim((string) (isset($input['email']) ? $input['email'] : '')));
-        $cpf = Validator::onlyDigits(isset($input['cpf']) ? $input['cpf'] : '');
+        // CPF já preenchido é somente leitura (só a administração altera); conta sem
+        // CPF (criada pelo Google) pode informá-lo aqui, ou deixar em branco.
+        $cpfAtual = Usuario::normalizarCpf(isset($usuarioAtual['cpf']) ? $usuarioAtual['cpf'] : null);
+        $cpf = $cpfAtual !== null ? $cpfAtual : Usuario::normalizarCpf(isset($input['cpf']) ? $input['cpf'] : null);
         $telefone = trim((string) (isset($input['telefone']) ? $input['telefone'] : ''));
         $cidade = trim((string) (isset($input['cidade']) ? $input['cidade'] : ''));
         $estado = strtoupper(trim((string) (isset($input['estado']) ? $input['estado'] : '')));
@@ -264,7 +277,7 @@ class AuthService
             $errors['email'] = 'Informe um e-mail válido.';
         }
 
-        if (!Validator::cpf($cpf)) {
+        if ($cpfAtual === null && $cpf !== null && !Validator::cpf($cpf)) {
             $errors['cpf'] = 'Informe um CPF válido.';
         }
 
@@ -295,9 +308,11 @@ class AuthService
             $errors['email'] = 'Este e-mail já está cadastrado.';
         }
 
-        $cpfExistente = $this->usuarios->findByCpf($cpf);
-        if ($cpfExistente && (int) $cpfExistente['id'] !== (int) $usuarioId) {
-            $errors['cpf'] = 'Este CPF já está cadastrado.';
+        if ($cpfAtual === null && $cpf !== null && !isset($errors['cpf'])) {
+            $cpfExistente = $this->usuarios->findByCpf($cpf);
+            if ($cpfExistente && (int) $cpfExistente['id'] !== (int) $usuarioId) {
+                $errors['cpf'] = 'Este CPF já está cadastrado em outra conta. Fale com o atendimento.';
+            }
         }
 
         if ($errors) {
@@ -307,7 +322,7 @@ class AuthService
         $this->usuarios->updateProfile((int) $usuarioId, array(
             'nome' => Validator::upperName($nome),
             'email' => $email,
-            'cpf' => $cpf,
+            'cpf' => $cpfAtual,
             'telefone' => $telefone,
             'cidade' => $cidade !== '' ? $cidade : null,
             'estado' => $estado !== '' ? $estado : null,
@@ -317,9 +332,18 @@ class AuthService
             $this->usuarios->updatePassword((int) $usuarioId, password_hash($novaSenha, PASSWORD_DEFAULT));
         }
 
+        // CPF informado agora por conta que não tinha: pelo ContaCpfService, que também
+        // atualiza os participantes e libera certificados retidos.
+        if ($cpfAtual === null && $cpf !== null) {
+            $informado = (new ContaCpfService())->informar((int) $usuarioId, $cpf, 'site', $ipAddress, $userAgent);
+            if (empty($informado['ok'])) {
+                return array('ok' => false, 'errors' => array('cpf' => $informado['message']));
+            }
+        }
+
         Session::put('usuario_nome', Validator::upperName($nome));
         Session::put('usuario_email', $email);
-        Session::put('usuario_cpf', $cpf);
+        Session::put('usuario_cpf', (string) $cpf);
         Session::put('usuario_telefone', $telefone);
         $this->accessLogs->record($usuarioId, 'account_update', 'success', $ipAddress, $userAgent);
 
@@ -469,7 +493,8 @@ class AuthService
         return Validator::email($login) || Validator::cpf($login);
     }
 
-    private function resolveLoginRedirect($usuarioId)
+    /** Destino padrão pós-login por permissões (admin, professor ou aluno). */
+    public function resolveLoginRedirect($usuarioId)
     {
         if ($this->canAccessAdminDashboard($usuarioId)) {
             return '/admin/dashboard';

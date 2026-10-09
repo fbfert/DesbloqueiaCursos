@@ -76,6 +76,10 @@ class EmailPlaceholders
             array('token' => '{certificado.turma_nome}', 'key' => 'certificado.turma_nome', 'nome' => 'Turma do certificado apto', 'origem' => 'turma vinculada à inscrição apta para certificado', 'eventos' => array('email.certificado_apto_emissao'), 'fallback' => 'Sem turma', 'formato' => 'texto', 'aliases' => array()),
             array('token' => '{certificado.aluno_nome}', 'key' => 'certificado.aluno_nome', 'nome' => 'Aluno apto para certificado', 'origem' => 'aluno/participante da inscrição', 'eventos' => array('email.certificado_apto_emissao'), 'fallback' => '', 'formato' => 'texto', 'aliases' => array()),
             array('token' => '{certificado.link_emissao}', 'key' => 'certificado.link_emissao', 'nome' => 'Link de emissão manual', 'origem' => 'rota de emissão manual de certificados no admin', 'eventos' => array('email.certificado_apto_emissao'), 'fallback' => '', 'formato' => 'URL absoluta', 'aliases' => array()),
+            array('token' => '{vinculo.email_google}', 'key' => 'vinculo.email_google', 'nome' => 'E-mail da conta Google', 'origem' => 'conta Google vinculada no login', 'eventos' => array('email.google_vinculado'), 'fallback' => '', 'formato' => 'e-mail', 'aliases' => array()),
+            array('token' => '{vinculo.data_hora}', 'key' => 'vinculo.data_hora', 'nome' => 'Data e hora do vínculo', 'origem' => 'momento do vínculo com o Google', 'eventos' => array('email.google_vinculado'), 'fallback' => '', 'formato' => 'data e hora (dd/mm/aaaa hh:mm)', 'aliases' => array()),
+            array('token' => '{retencao.curso_nome}', 'key' => 'retencao.curso_nome', 'nome' => 'Curso do certificado retido', 'origem' => 'curso da inscrição com certificado aguardando CPF', 'eventos' => array('email.certificado_retido'), 'fallback' => 'seu curso', 'formato' => 'texto', 'aliases' => array()),
+            array('token' => '{retencao.conta_url}', 'key' => 'retencao.conta_url', 'nome' => 'Link para informar o CPF', 'origem' => 'página Minha conta do aluno', 'eventos' => array('email.certificado_retido'), 'fallback' => '', 'formato' => 'URL absoluta', 'aliases' => array()),
         );
     }
 
@@ -106,6 +110,14 @@ class EmailPlaceholders
             return array('certificado.link_emissao');
         }
 
+        if ($evento === 'email.google_vinculado') {
+            return array('vinculo.email_google', 'vinculo.data_hora');
+        }
+
+        if ($evento === 'email.certificado_retido') {
+            return array('retencao.conta_url');
+        }
+
         return array();
     }
 
@@ -123,7 +135,7 @@ class EmailPlaceholders
     /** Namespaces cujas subchaves são consideradas conhecidas (não "desconhecidas"). */
     public static function knownNamespaces()
     {
-        return array('usuario', 'sistema', 'pedido', 'inscricao', 'cursos', 'certificado', 'avaliacao');
+        return array('usuario', 'sistema', 'pedido', 'inscricao', 'cursos', 'certificado', 'avaliacao', 'vinculo', 'retencao');
     }
 
     /**

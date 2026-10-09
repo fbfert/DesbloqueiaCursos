@@ -96,10 +96,33 @@ class Usuario
         return $usuario ?: null;
     }
 
+    /**
+     * CPF gravável: só dígitos, ou NULL quando vazio. Nunca '' — com o UNIQUE de
+     * usuarios.cpf, o segundo '' quebraria, e '' casaria com buscas por CPF vazio.
+     */
+    public static function normalizarCpf($cpf)
+    {
+        $digitos = preg_replace('/\D+/', '', (string) $cpf);
+
+        return $digitos === '' ? null : $digitos;
+    }
+
+    /** Conta sem CPF: NULL (contas novas) ou '' (cadastros legados). */
+    public static function semCpf(array $usuario)
+    {
+        return self::normalizarCpf(isset($usuario['cpf']) ? $usuario['cpf'] : null) === null;
+    }
+
     public function findByLogin($login)
     {
         $login = trim((string) $login);
         $cpf = preg_replace('/\D+/', '', $login);
+
+        // Só compara CPF quando o login tem os 11 dígitos de um CPF: com um login por
+        // e-mail o CPF extraído fica vazio e casaria com contas legadas de cpf = ''.
+        if (strlen($cpf) !== 11) {
+            return $this->findByEmail($login);
+        }
 
         $stmt = Database::connection()->prepare(
             'SELECT *
@@ -133,6 +156,10 @@ class Usuario
 
     public function findByCpf($cpf)
     {
+        if (self::normalizarCpf($cpf) === null) {
+            return null;
+        }
+
         $stmt = Database::connection()->prepare(
             'SELECT * FROM usuarios WHERE deleted_at IS NULL AND cpf = :cpf LIMIT 1'
         );
@@ -266,7 +293,7 @@ class Usuario
         $params = array(
             'nome' => $data['nome'],
             'email' => strtolower(trim($data['email'])),
-            'cpf' => preg_replace('/\D+/', '', $data['cpf']),
+            'cpf' => self::normalizarCpf(isset($data['cpf']) ? $data['cpf'] : null),
             'senha_hash' => $data['senha_hash'],
             'telefone' => isset($data['telefone']) ? preg_replace('/\D+/', '', $data['telefone']) : null,
             'status' => 'ativo',
@@ -306,10 +333,35 @@ class Usuario
 
         $stmt->execute(array(
             'email' => strtolower(trim((string) $data['email'])),
-            'cpf' => preg_replace('/\D+/', '', (string) $data['cpf']),
+            'cpf' => self::normalizarCpf(isset($data['cpf']) ? $data['cpf'] : null),
             'telefone' => $whatsapp !== null && $whatsapp !== '' ? preg_replace('/\D+/', '', $whatsapp) : null,
             'whatsapp' => $whatsapp !== '' ? $whatsapp : null,
             'cadastro_origem' => isset($data['cadastro_origem']) ? $data['cadastro_origem'] : 'checkout_rapido',
+        ));
+
+        return (int) Database::connection()->lastInsertId();
+    }
+
+    /**
+     * Cria um aluno vindo de provedor de identidade (login com Google): nome e
+     * e-mail do provedor, sem senha e sem CPF. cadastro_status = 'pendente' até o
+     * CPF ser informado (ContaCpfService).
+     */
+    public function createPorProvedor($nome, $email, $origem)
+    {
+        $stmt = Database::connection()->prepare(
+            'INSERT INTO usuarios
+             (nome, email, cpf, senha_hash, telefone, status, cadastro_status, cadastro_origem,
+              tentativas_login, bloqueado_ate, token_recuperacao, token_recuperacao_expira_em,
+              ultimo_login_em, created_at, updated_at, deleted_at)
+             VALUES
+             (:nome, :email, NULL, NULL, NULL, \'ativo\', \'pendente\', :origem,
+              0, NULL, NULL, NULL, NULL, NOW(), NOW(), NULL)'
+        );
+        $stmt->execute(array(
+            'nome' => $nome,
+            'email' => strtolower(trim((string) $email)),
+            'origem' => (string) $origem,
         ));
 
         return (int) Database::connection()->lastInsertId();
@@ -428,7 +480,7 @@ class Usuario
             'id' => (int) $usuarioId,
             'nome' => $data['nome'],
             'email' => strtolower(trim((string) $data['email'])),
-            'cpf' => preg_replace('/\D+/', '', (string) $data['cpf']),
+            'cpf' => self::normalizarCpf(isset($data['cpf']) ? $data['cpf'] : null),
             'telefone' => isset($data['telefone']) ? preg_replace('/\D+/', '', (string) $data['telefone']) : null,
         );
 
@@ -462,7 +514,7 @@ class Usuario
             'id' => (int) $usuarioId,
             'nome' => $data['nome'],
             'email' => strtolower(trim((string) $data['email'])),
-            'cpf' => preg_replace('/\D+/', '', (string) $data['cpf']),
+            'cpf' => self::normalizarCpf(isset($data['cpf']) ? $data['cpf'] : null),
             'telefone' => isset($data['telefone']) ? preg_replace('/\D+/', '', (string) $data['telefone']) : null,
             'status' => isset($data['status']) ? $data['status'] : 'ativo',
         );

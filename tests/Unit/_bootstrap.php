@@ -89,6 +89,30 @@ function testes_conectar_banco()
     return $pdo;
 }
 
+/**
+ * CPF válido (dígitos verificadores corretos) que nenhum usuário do banco usa.
+ */
+function testes_cpf_livre(PDO $pdo)
+{
+    $st = $pdo->prepare('SELECT COUNT(*) FROM usuarios WHERE cpf = :cpf');
+    do {
+        $base = '';
+        for ($i = 0; $i < 9; $i++) {
+            $base .= (string) random_int(0, 9);
+        }
+        for ($t = 9; $t < 11; $t++) {
+            $soma = 0;
+            for ($i = 0; $i < $t; $i++) {
+                $soma += (int) $base[$i] * (($t + 1) - $i);
+            }
+            $base .= (string) ((10 * $soma) % 11 % 10);
+        }
+        $st->execute(array('cpf' => $base));
+    } while (preg_match('/^(\d)\1{10}$/', $base) || (int) $st->fetchColumn() > 0);
+
+    return $base;
+}
+
 spl_autoload_register(function ($class) {
     $file = BASE_PATH . '/' . str_replace('\\', '/', str_replace('App\\', 'app/', $class)) . '.php';
     if (file_exists($file)) {

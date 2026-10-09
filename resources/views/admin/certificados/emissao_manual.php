@@ -59,6 +59,12 @@ $filtroCertificado = (string) ($filtros['certificado'] ?? 'todos');
                 <span class="pill">Já emitidos: <?php echo (int) ($resumo['ja_emitidos'] ?? 0); ?></span>
                 <span class="pill">Bloqueados: <?php echo (int) ($resumo['bloqueados'] ?? 0); ?></span>
                 <span class="pill">Erros: <?php echo (int) ($resumo['erros'] ?? 0); ?></span>
+                <?php if ((int) ($resumo['retidos'] ?? 0) > 0): ?>
+                <a class="pill" href="/admin/certificados/retidos">Retidos aguardando CPF: <?php echo (int) $resumo['retidos']; ?></a>
+                <?php endif; ?>
+                <?php if ((int) ($resumo['sem_cpf'] ?? 0) > 0): ?>
+                <span class="pill">Emitidos sem CPF do participante: <?php echo (int) $resumo['sem_cpf']; ?></span>
+                <?php endif; ?>
             </div>
         </section>
     <?php endif; ?>

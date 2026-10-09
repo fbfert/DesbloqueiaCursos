@@ -41,6 +41,11 @@
         <span>Filtre cursos, turmas e alunos para emissão individual ou em lote.</span>
         <a href="/admin/certificados/emissao-manual">Acessar emissão manual</a>
     </article>
+    <article class="status-card">
+        <strong>Aguardando CPF</strong>
+        <span><?php echo (int) ($retidosCount ?? 0); ?> certificado(s) retido(s) até o aluno informar o CPF</span>
+        <a href="/admin/certificados/retidos">Ver retidos</a>
+    </article>
 </section>
 
 <section class="panel">

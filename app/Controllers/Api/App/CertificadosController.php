@@ -4,6 +4,7 @@ namespace App\Controllers\Api\App;
 
 use App\Core\Logger;
 use App\Core\Request;
+use App\Services\CertificadoRetencaoService;
 use App\Services\CertificadoService;
 use App\Support\AppApi\ArquivoResposta;
 use App\Support\AppApi\CatalogoPresenter;
@@ -16,6 +17,9 @@ class CertificadosController extends AppController
 {
     public function index(Request $request)
     {
+        // Retidos aguardando CPF de quem já informou o CPF saem antes da listagem (login-google).
+        (new CertificadoRetencaoService())->liberarSePendente($this->usuarioId());
+
         $saida = array();
         foreach ((new CertificadoService())->certificadosEmitidosDoAluno($this->usuarioId()) as $certificado) {
             $saida[] = CatalogoPresenter::certificado($certificado);

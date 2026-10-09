@@ -443,6 +443,19 @@ html.folha-aberta{overflow:hidden}
 .opcional{font-weight:400;color:var(--texto2)}
 .auth-esqueci{margin-top:14px;text-align:right;font-size:14.5px}
 .auth-pe{margin-top:26px;padding-top:16px;border-top:1px dashed var(--linha);max-width:420px;font-size:15px;color:var(--texto2)}
+/* Entrar com Google (login-google): botão claro com o logo oficial, como pede o Google */
+.botao-google-bloco{max-width:420px;margin-top:22px}
+.botao-google-sep{display:flex;align-items:center;gap:12px;color:var(--texto2);font-size:13.5px;margin:0 0 14px}
+.botao-google-sep::before,.botao-google-sep::after{content:"";flex:1;border-top:1px dashed var(--linha)}
+.botao-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;padding:10px 16px;background:#fff;color:#1F1F1F;border:1px solid #747775;border-radius:10px;font-weight:600;font-size:15px;text-decoration:none;transition:background-color .15s var(--ease-out),box-shadow .15s var(--ease-out)}
+.botao-google:hover{background:#F8F7FB;box-shadow:0 1px 3px rgba(34,16,74,.18)}
+.botao-google:active{background:#EFEDF5}
+.botao-google-logo{flex:none}
+.botao-google-aviso{margin-top:10px;font-size:12.5px;line-height:1.45;color:var(--texto2)}
+.botao-google-aviso a{color:var(--tinta);text-decoration:underline;text-underline-offset:3px}
+/* Lembrete de CPF pendente na área do aluno (login-google) */
+.aviso-cpf{padding-top:18px}
+.aviso-cpf .postit{max-width:760px}
 .auth-voltar{display:inline-flex;align-items:center;gap:6px;min-height:44px}
 .auth-voltar .ico{width:18px;height:18px}
 .auth-aceites{margin-top:8px}

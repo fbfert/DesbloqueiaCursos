@@ -97,10 +97,17 @@ describe('Usuário');
 
 it('objeto usuario do contrato, sem dados sensíveis', function () {
     $u = UsuarioPresenter::usuario(array('id' => '7', 'nome' => 'Ana', 'email' => 'a@b.com', 'cpf' => '98765432100', 'telefone' => '', 'cidade' => 'Santos', 'estado' => 'SP', 'senha_hash' => 'x', 'token_recuperacao' => 'y'));
-    expect(array_keys($u))->toEqual(array('id', 'nome', 'email', 'cpf', 'telefone', 'cidade', 'estado'));
+    expect(array_keys($u))->toEqual(array('id', 'nome', 'email', 'cpf', 'telefone', 'cidade', 'estado', 'pendencias'));
     expect($u['id'])->toBe(7);
     expect($u['cpf'])->toBe('987.***.***-00');
     expect($u['telefone'])->toBeNull();
+    expect($u['pendencias'])->toEqual(array());
+});
+
+it('conta sem CPF (login com Google): cpf nulo e pendencias ["cpf"]', function () {
+    $u = UsuarioPresenter::usuario(array('id' => 8, 'nome' => 'Bia', 'email' => 'b@c.com', 'cpf' => null));
+    expect($u['cpf'])->toBeNull();
+    expect($u['pendencias'])->toEqual(array('cpf'));
 });
 
 describe('Cursos e conteúdo');

@@ -32,7 +32,7 @@ $cadernoAluno = !empty($cadernoAluno) || $cadernoEstudo;
     <div class="furos" aria-hidden="true"></div>
     <?php require __DIR__ . '/partials/topo.php'; ?>
     <main id="conteudo" class="miolo" tabindex="-1">
-      <?php require $contentView; ?>
+      <?php if ($cadernoAluno) { require_once BASE_PATH . '/resources/views/partials/aviso-cpf.php'; echo aviso_cpf_pendente('caderno'); } require $contentView; ?>
     </main>
     <?php require __DIR__ . '/partials/rodape.php'; ?>
   </div>

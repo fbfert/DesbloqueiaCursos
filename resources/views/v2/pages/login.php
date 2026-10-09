@@ -101,6 +101,9 @@ $loginDescribedBy = $temErros ? 'v2-login-erros' : 'v2-login-ajuda';
       <button type="submit" class="v2-btn v2-btn-primary v2-btn-block">Entrar <i class="ti ti-arrow-right"></i></button>
     </form>
 
+    <?php require_once BASE_PATH . '/resources/views/partials/botao-google.php'; ?>
+    <?php echo botao_google(array('origem' => $origemFlag, 'redirect' => $redirectSeguro)); ?>
+
     <div class="v2-auth-foot">Ainda não tem conta? <a href="<?php echo Helpers::e($registerHref); ?>">Criar conta</a></div>
   </div>
 </div>

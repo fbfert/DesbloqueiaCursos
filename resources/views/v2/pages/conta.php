@@ -60,7 +60,13 @@ $ufs = array('AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','P
         </div>
         <div class="v2-field">
           <label for="conta-cpf">CPF</label>
-          <input class="v2-input" type="text" id="conta-cpf" name="cpf" value="<?php echo Helpers::e($campo('cpf')); ?>" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" data-mask-cpf required>
+          <?php if (!empty($cpfPreenchido)): ?>
+          <input class="v2-input" type="text" id="conta-cpf" value="<?php echo Helpers::e($campo('cpf')); ?>" readonly aria-describedby="conta-cpf-ajuda">
+          <div class="v2-sm v2-muted" id="conta-cpf-ajuda">Para alterar o CPF, fale com o atendimento.</div>
+          <?php else: ?>
+          <input class="v2-input" type="text" id="conta-cpf" name="cpf" value="<?php echo Helpers::e($campo('cpf')); ?>" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" data-mask-cpf aria-describedby="cpf">
+          <div class="v2-sm v2-muted" id="cpf">Informe seu CPF para podermos emitir seus certificados. Depois de salvo, só o atendimento altera.</div>
+          <?php endif; ?>
         </div>
         <div class="v2-field">
           <label for="conta-tel">WhatsApp</label>
@@ -100,6 +106,20 @@ $ufs = array('AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','P
         <a class="v2-btn v2-btn-ghost" href="/v2/aluno/?aba=perfil">Cancelar</a>
       </div>
     </form>
+
+    <?php if (!empty($vinculoGoogle) && is_array($vinculoGoogle)): ?>
+      <section class="v2-block" style="margin-top:18px;">
+        <h2 class="v2-h3" style="margin:0 0 10px;">Conta Google vinculada</h2>
+        <p class="v2-sm">Você também entra com o Google<?php echo !empty($vinculoGoogle['email']) ? ' (' . Helpers::e($vinculoGoogle['email']) . ')' : ''; ?>.</p>
+        <?php if (!empty($temSenha)): ?>
+          <form method="post" action="/v2/minha-conta/google/desvincular">
+            <button type="submit" class="v2-btn v2-btn-ghost">Desvincular conta Google</button>
+          </form>
+        <?php else: ?>
+          <p class="v2-sm v2-muted">Para poder desvincular, defina antes uma senha no formulário acima.</p>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
   </div>
 </section>
 

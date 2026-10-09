@@ -71,6 +71,10 @@ class AlunoController extends Controller
             $aba = 'cursos';
         }
 
+        // Certificados retidos aguardando CPF de quem já informou o CPF: os que não
+        // couberam na liberação anterior saem agora (login-google). Barato sem retenção.
+        (new \App\Services\CertificadoRetencaoService())->liberarSePendente($usuarioId);
+
         // --- Dados reais, sempre por usuario_id da SESSÃO ---
         $inscricoes = $this->carregarInscricoes($usuarioId);
         $cursos = $this->normalizarCursos($inscricoes);
