@@ -1,5 +1,6 @@
 <?php
 use App\Core\Helpers;
+use App\Services\Google\GoogleConfig;
 
 $errors = isset($errors) && is_array($errors) ? $errors : array();
 $success = isset($success) ? $success : null;
@@ -28,7 +29,10 @@ $primeiroInvalido = '';
 foreach ($ordemCampos as $campo) {
     if (isset($errors[$campo])) { $primeiroInvalido = $campo; break; }
 }
-$autofocusCampo = $primeiroInvalido !== '' ? $primeiroInvalido : 'nome';
+require_once BASE_PATH . '/resources/views/partials/botao-google.php';
+$googleAtivo = GoogleConfig::siteAtivo();
+// Com o Google no topo, o foco automático no nome rolaria a tela (e abriria o teclado) para baixo dele.
+$autofocusCampo = $primeiroInvalido !== '' ? $primeiroInvalido : ($googleAtivo ? '' : 'nome');
 
 $erroDe = function ($campo) use ($errors) {
     return isset($errors[$campo]) ? (string) $errors[$campo] : '';
@@ -48,7 +52,9 @@ $erroDe = function ($campo) use ($errors) {
   <div class="v2-auth-card">
     <a href="<?php echo Helpers::e($homeHref); ?>" class="v2-auth-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
     <h1 class="v2-h2 v2-center">Criar conta</h1>
+    <?php if (!$googleAtivo): ?>
     <p class="v2-muted v2-center v2-sm" style="margin-bottom:20px;">Preencha seus dados para criar sua conta.</p>
+    <?php endif; ?>
 
     <?php if ($jaLogado): ?>
       <div class="v2-callout v2-callout-info" role="status">
@@ -71,10 +77,12 @@ $erroDe = function ($campo) use ($errors) {
       </div>
     <?php endif; ?>
 
+    <?php // Retorno V2 seguro (validado no backend como caminho interno /v2/...). ?>
+    <?php $redirectSeguro = isset($redirectSeguro) ? (string) $redirectSeguro : ''; ?>
+    <?php echo botao_google(array('origem' => 'v2', 'redirect' => $redirectSeguro, 'termos' => $termosHref, 'privacidade' => $privacidadeHref, 'depois' => 'Preencha seus dados para criar sua conta')); ?>
+
     <form method="post" action="<?php echo Helpers::e($cadastroAction); ?>" id="v2-cadastro-real" data-native-submit novalidate>
       <input type="hidden" name="origem" value="v2">
-      <?php // Retorno V2 seguro (validado no backend como caminho interno /v2/...). ?>
-      <?php $redirectSeguro = isset($redirectSeguro) ? (string) $redirectSeguro : ''; ?>
       <?php if ($redirectSeguro !== ''): ?>
         <input type="hidden" name="redirect" value="<?php echo Helpers::e($redirectSeguro); ?>">
       <?php endif; ?>
@@ -159,9 +167,6 @@ $erroDe = function ($campo) use ($errors) {
 
       <button type="submit" class="v2-btn v2-btn-primary v2-btn-block">Criar conta <i class="ti ti-arrow-right"></i></button>
     </form>
-
-    <?php require_once BASE_PATH . '/resources/views/partials/botao-google.php'; ?>
-    <?php echo botao_google(array('origem' => 'v2', 'redirect' => $redirectSeguro, 'termos' => $termosHref, 'privacidade' => $privacidadeHref)); ?>
 
     <div class="v2-auth-foot">Já tem conta? <a href="<?php echo Helpers::e($loginHref); ?>">Entrar</a></div>
   </div>

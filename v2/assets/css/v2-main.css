@@ -359,6 +359,9 @@
 .botao-google-logo { flex: none; }
 .botao-google-aviso { margin-top: 10px; font-size: 0.78rem; line-height: 1.45; color: var(--v2-text-2); text-align: center; }
 .botao-google-aviso a { color: var(--v2-roxo); text-decoration: underline; }
+.botao-google-primeiro { margin: 0 0 18px; }
+.botao-google-primeiro .botao-google-sep { margin: 20px 0 4px; }
+.botao-google-depois { margin: 0; text-align: center; font-weight: 600; font-size: 0.9rem; color: var(--v2-text); }
 /* Lembrete de CPF pendente na área do aluno (login-google) */
 .aviso-cpf { padding-top: 16px; }
 .aviso-cpf .v2-callout { margin: 0; }

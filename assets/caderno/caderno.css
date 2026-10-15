@@ -453,6 +453,8 @@ html.folha-aberta{overflow:hidden}
 .botao-google-logo{flex:none}
 .botao-google-aviso{margin-top:10px;font-size:12.5px;line-height:1.45;color:var(--texto2)}
 .botao-google-aviso a{color:var(--tinta);text-decoration:underline;text-underline-offset:3px}
+.botao-google-primeiro{margin:0 0 18px}.botao-google-primeiro .botao-google-sep{margin:22px 0 4px}
+.botao-google-depois{margin:0;text-align:center;font-weight:600;color:var(--violeta)}
 /* Lembrete de CPF pendente na área do aluno (login-google) */
 .aviso-cpf{padding-top:18px}
 .aviso-cpf .postit{max-width:760px}

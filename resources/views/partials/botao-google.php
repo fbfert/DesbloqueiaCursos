@@ -6,6 +6,9 @@
  *   echo botao_google(array('origem' => 'v2', 'redirect' => $redirectSeguro,
  *                           'termos' => '/termos-de-uso', 'privacidade' => '/politica-de-privacidade'));
  *
+ * Com 'depois' => 'texto', o botão vem primeiro e o separador "ou" fica embaixo,
+ * seguido do texto: no cadastro o Google é a primeira opção e o formulário vem depois.
+ *
  * Não renderiza nada enquanto o login com Google estiver desligado (sem
  * GOOGLE_CLIENT_ID/SECRET). Logo em SVG local: nenhum script do Google na página.
  * Estilo: .botao-google* em assets/caderno/caderno.css e v2/assets/css/v2-main.css.
@@ -38,12 +41,20 @@ if (!function_exists('botao_google')) {
             . '<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>'
             . '</svg>';
 
-        return '<div class="botao-google-bloco">'
-            . '<p class="botao-google-sep"><span>ou</span></p>'
-            . '<a class="botao-google" href="' . Helpers::e($href) . '" rel="nofollow">' . $logo . '<span>Entrar com Google</span></a>'
+        $separador = '<p class="botao-google-sep"><span>ou</span></p>';
+        $botao = '<a class="botao-google" href="' . Helpers::e($href) . '" rel="nofollow">' . $logo . '<span>Entrar com Google</span></a>'
             . '<p class="botao-google-aviso">Ao continuar com o Google, você concorda com os '
             . '<a href="' . Helpers::e($termos) . '" target="_blank" rel="noopener">Termos de Uso</a> e a '
-            . '<a href="' . Helpers::e($privacidade) . '" target="_blank" rel="noopener">Política de Privacidade</a>.</p>'
-            . '</div>';
+            . '<a href="' . Helpers::e($privacidade) . '" target="_blank" rel="noopener">Política de Privacidade</a>.</p>';
+
+        if (isset($opcoes['depois']) && (string) $opcoes['depois'] !== '') {
+            return '<div class="botao-google-bloco botao-google-primeiro">'
+                . $botao
+                . $separador
+                . '<p class="botao-google-depois">' . Helpers::e((string) $opcoes['depois']) . '</p>'
+                . '</div>';
+        }
+
+        return '<div class="botao-google-bloco">' . $separador . $botao . '</div>';
     }
 }

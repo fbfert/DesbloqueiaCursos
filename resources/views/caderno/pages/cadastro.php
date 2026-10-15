@@ -7,6 +7,7 @@
  */
 
 use App\Core\Helpers;
+use App\Services\Google\GoogleConfig;
 
 require BASE_PATH . '/resources/views/caderno/partials/ver-senha.php';
 
@@ -36,7 +37,10 @@ $primeiroInvalido = '';
 foreach ($ordemCampos as $campo) {
     if (isset($errors[$campo])) { $primeiroInvalido = $campo; break; }
 }
-$autofocusCampo = $primeiroInvalido !== '' ? $primeiroInvalido : 'nome';
+require_once BASE_PATH . '/resources/views/partials/botao-google.php';
+$googleAtivo = GoogleConfig::siteAtivo();
+// Com o Google no topo, o foco automático no nome rolaria a tela (e abriria o teclado) para baixo dele.
+$autofocusCampo = $primeiroInvalido !== '' ? $primeiroInvalido : ($googleAtivo ? '' : 'nome');
 // Erros que não pertencem a um campo do formulário (ex.: sessão expirada) vão no aviso do topo.
 $errosGerais = array();
 foreach ($errors as $chave => $msg) {
@@ -63,7 +67,9 @@ $msgErro = function ($campo, $erroId) use ($erroDe) {
 ?>
 <div class="auth-cab">
   <h1 class="t2">Criar conta</h1>
+  <?php if (!$googleAtivo): ?>
   <p class="lead">Preencha seus dados para criar sua conta.</p>
+  <?php endif; ?>
 </div>
 
 <?php if ($jaLogado): ?>
@@ -84,6 +90,8 @@ $msgErro = function ($campo, $erroId) use ($erroDe) {
 <?php if (!empty($success)): ?>
 <div class="postit ok auth-aviso" role="status" aria-live="polite"><?= Helpers::e(is_array($success) && !empty($success['message']) ? (string) $success['message'] : (string) $success) ?></div>
 <?php endif; ?>
+
+<?= botao_google(array('origem' => 'v2', 'redirect' => $redirectSeguro, 'termos' => $termosHref, 'privacidade' => $privacidadeHref, 'depois' => 'Preencha seus dados para criar sua conta')) ?>
 
 <form class="auth-form" method="post" action="<?= Helpers::e($cadastroAction) ?>" novalidate>
   <input type="hidden" name="origem" value="v2">
@@ -166,8 +174,5 @@ $msgErro = function ($campo, $erroId) use ($erroDe) {
 
   <button type="submit" class="btn btn-bloco">Criar conta <?= caderno_icone('seta-dir') ?></button>
 </form>
-
-<?php require_once BASE_PATH . '/resources/views/partials/botao-google.php'; ?>
-<?= botao_google(array('origem' => 'v2', 'redirect' => $redirectSeguro, 'termos' => $termosHref, 'privacidade' => $privacidadeHref)) ?>
 
 <p class="auth-pe">Já tem conta? <a class="link" href="<?= Helpers::e($loginHref) ?>">Entrar</a></p>

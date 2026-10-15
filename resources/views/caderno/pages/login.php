@@ -6,6 +6,7 @@
  */
 
 use App\Core\Helpers;
+use App\Services\Google\GoogleConfig;
 
 require BASE_PATH . '/resources/views/caderno/partials/ver-senha.php';
 
@@ -22,6 +23,10 @@ $jaLogado = !empty($jaLogado);
 $areaHref = isset($areaHref) ? (string) $areaHref : '/meus-cursos';
 $loginValue = isset($old['login']) ? (string) $old['login'] : '';
 $temErros = !empty($errors);
+require_once BASE_PATH . '/resources/views/partials/botao-google.php';
+$googleAtivo = GoogleConfig::siteAtivo();
+// Com o Google no topo, o foco automático no login rolaria a tela (e abriria o teclado) para baixo dele.
+$autofocus = $temErros || !$googleAtivo ? ' autofocus' : '';
 $mensagemOk = '';
 if ($accountCreated) {
     $mensagemOk = 'Conta criada com sucesso. Agora acesse com seus dados para começar.';
@@ -31,7 +36,9 @@ if ($accountCreated) {
 ?>
 <div class="auth-cab">
   <h1 class="t2">Acesse sua conta</h1>
+  <?php if (!$googleAtivo): ?>
   <p class="lead">Entre com seu e-mail ou CPF e sua senha para continuar.</p>
+  <?php endif; ?>
 </div>
 
 <?php if ($jaLogado): ?>
@@ -45,6 +52,8 @@ if ($accountCreated) {
 <div class="postit ok auth-aviso" role="status" aria-live="polite"><?= Helpers::e($mensagemOk) ?></div>
 <?php endif; ?>
 
+<?= botao_google(array('origem' => $origemFlag, 'redirect' => $redirectSeguro, 'depois' => 'Entre com seu e-mail ou CPF e sua senha')) ?>
+
 <form class="auth-form" method="post" action="<?= Helpers::e($loginAction) ?>" novalidate>
   <input type="hidden" name="origem" value="<?= Helpers::e($origemFlag) ?>">
   <?php if ($redirectSeguro !== ''): ?>
@@ -55,7 +64,7 @@ if ($accountCreated) {
     <label for="cad-login-login">E-mail ou CPF</label>
     <input type="text" id="cad-login-login" name="login" value="<?= Helpers::e($loginValue) ?>"
            placeholder="seuemail@exemplo.com ou 000.000.000-00"
-           autocomplete="username" inputmode="text" required autofocus
+           autocomplete="username" inputmode="text" required<?= $autofocus ?>
            <?= $temErros ? 'aria-invalid="true" aria-describedby="cad-login-erros"' : '' ?>>
     <?php if ($temErros): ?>
     <p class="erro-msg" id="cad-login-erros" role="alert">
@@ -76,8 +85,5 @@ if ($accountCreated) {
 
   <button type="submit" class="btn btn-bloco">Entrar <?= caderno_icone('seta-dir') ?></button>
 </form>
-
-<?php require_once BASE_PATH . '/resources/views/partials/botao-google.php'; ?>
-<?= botao_google(array('origem' => $origemFlag, 'redirect' => $redirectSeguro)) ?>
 
 <p class="auth-pe">Ainda não tem conta? <a class="link" href="<?= Helpers::e($registerHref) ?>">Criar conta</a></p>

@@ -1,5 +1,6 @@
 <?php
 use App\Core\Helpers;
+use App\Services\Google\GoogleConfig;
 
 $errors = isset($errors) && is_array($errors) ? array_values($errors) : array();
 $success = isset($success) ? $success : null;
@@ -15,6 +16,10 @@ $areaHref = isset($areaHref) ? (string) $areaHref : '/meus-cursos';
 $loginValue = isset($old['login']) ? (string) $old['login'] : '';
 $temErros = !empty($errors);
 $loginDescribedBy = $temErros ? 'v2-login-erros' : 'v2-login-ajuda';
+require_once BASE_PATH . '/resources/views/partials/botao-google.php';
+$googleAtivo = GoogleConfig::siteAtivo();
+// Com o Google no topo, o foco automático no login rolaria a tela (e abriria o teclado) para baixo dele.
+$autofocus = $temErros || !$googleAtivo ? ' autofocus' : '';
 ?>
 <div class="v2-auth-split">
   <!-- Painel visual (desktop) -->
@@ -32,7 +37,9 @@ $loginDescribedBy = $temErros ? 'v2-login-erros' : 'v2-login-ajuda';
   <div class="v2-auth-card">
     <a href="<?php echo Helpers::e($homeHref); ?>" class="v2-auth-logo"><img src="/v2/assets/img/logo-v2.svg" alt="Desbloqueia Cursos"></a>
     <h1 class="v2-h2 v2-center">Acesse sua conta</h1>
+    <?php if (!$googleAtivo): ?>
     <p class="v2-muted v2-center v2-sm" style="margin-bottom:20px;">Entre com seu e-mail ou CPF e sua senha para continuar.</p>
+    <?php endif; ?>
 
     <?php if ($jaLogado): ?>
       <div class="v2-callout v2-callout-info" role="status">
@@ -64,11 +71,13 @@ $loginDescribedBy = $temErros ? 'v2-login-erros' : 'v2-login-ajuda';
       </div>
     <?php endif; ?>
 
+    <?php // Retorno V2 seguro (validado no backend como caminho interno /v2/...). ?>
+    <?php $redirectSeguro = isset($redirectSeguro) ? (string) $redirectSeguro : ''; ?>
+    <?php echo botao_google(array('origem' => $origemFlag, 'redirect' => $redirectSeguro, 'depois' => 'Entre com seu e-mail ou CPF e sua senha')); ?>
+
     <form method="post" action="<?php echo Helpers::e($loginAction); ?>" id="v2-login-real" data-native-submit novalidate>
       <?php // Flag interna em lista branca: permite ao servidor retornar à tela V2 em caso de erro. ?>
       <input type="hidden" name="origem" value="<?php echo Helpers::e($origemFlag); ?>">
-      <?php // Retorno V2 seguro (validado no backend como caminho interno /v2/...). ?>
-      <?php $redirectSeguro = isset($redirectSeguro) ? (string) $redirectSeguro : ''; ?>
       <?php if ($redirectSeguro !== ''): ?>
         <input type="hidden" name="redirect" value="<?php echo Helpers::e($redirectSeguro); ?>">
       <?php endif; ?>
@@ -80,7 +89,7 @@ $loginDescribedBy = $temErros ? 'v2-login-erros' : 'v2-login-ajuda';
                placeholder="seuemail@exemplo.com ou 000.000.000-00"
                autocomplete="username" inputmode="text"
                aria-describedby="<?php echo Helpers::e($loginDescribedBy); ?>"
-               required autofocus>
+               required<?php echo $autofocus; ?>>
         <div class="v2-field-error" id="v2-login-ajuda"></div>
       </div>
 
@@ -100,9 +109,6 @@ $loginDescribedBy = $temErros ? 'v2-login-erros' : 'v2-login-ajuda';
 
       <button type="submit" class="v2-btn v2-btn-primary v2-btn-block">Entrar <i class="ti ti-arrow-right"></i></button>
     </form>
-
-    <?php require_once BASE_PATH . '/resources/views/partials/botao-google.php'; ?>
-    <?php echo botao_google(array('origem' => $origemFlag, 'redirect' => $redirectSeguro)); ?>
 
     <div class="v2-auth-foot">Ainda não tem conta? <a href="<?php echo Helpers::e($registerHref); ?>">Criar conta</a></div>
   </div>
