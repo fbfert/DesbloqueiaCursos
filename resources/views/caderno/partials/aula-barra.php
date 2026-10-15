@@ -32,8 +32,6 @@ $abProxForte = $abFeito || empty($item['pode_concluir']);
   <a class="btn be-meio" href="<?= Helpers::e((string) $item['quiz_url']) ?>">Responder quiz</a>
   <?php elseif ($abTipo === 'avaliacao_textual' && trim((string) ($item['atividade_url'] ?? '')) !== ''): ?>
   <a class="btn be-meio" href="<?= Helpers::e((string) $item['atividade_url']) ?>">Responder</a>
-  <?php elseif (!empty($item['eh_interativo'])): ?>
-  <a class="btn be-meio" href="<?= Helpers::e((string) $item['oficial_url']) ?>">Abrir atividade</a>
   <?php else: ?>
   <a class="be-lado be-sumario" href="<?= Helpers::e($overviewUrl) ?>">Sumário</a>
   <?php endif; ?>

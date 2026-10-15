@@ -107,6 +107,8 @@ $app->get('/v2/atividade', array(V2AtividadeController::class, 'index'));
 $app->post('/v2/atividade/enviar', array(V2AtividadeController::class, 'enviar'));
 $app->get('/v2/certificados/validar', array(V2CertificadoValidacaoController::class, 'index'));
 $app->post('/v2/certificados/validar', array(V2CertificadoValidacaoController::class, 'index'));
+// Certificado na versão online no tema (tema-caderno-unico); a URL legada redireciona para cá.
+$app->get('/v2/certificados/versao-online', array(\App\Controllers\CertificadosController::class, 'versaoOnline'));
 // Fase 2.13B — páginas institucionais EDITÁVEIS no V2. O conteúdo real vem do
 // mesmo cadastro do backend (tabela `paginas`, editada em /admin/paginas); a V2
 // só consulta e sanitiza. As rotas casam com o slug real de cada página, então
@@ -151,6 +153,8 @@ $app->post('/v2/checkout/comprovante/enviar', array(CheckoutController::class, '
 // Confirmação V2 pós-envio (somente leitura). Mantém o aluno no namespace /v2/;
 // revalida a propriedade do pedido em detalharCheckout.
 $app->get('/v2/checkout/comprovante/enviado', array(CheckoutController::class, 'comprovanteEnviadoV2'), array('auth.v2'));
+// Pagamento concluído no tema (tema-caderno-unico): retorno do AbacatePay e pedido sem cobrança.
+$app->get('/v2/checkout/sucesso', array(CheckoutController::class, 'sucessoV2'), array('auth.v2'));
 $app->get('/categorias', array(RotaLegadaController::class, 'redirecionar'));
 $app->get('/categorias/{slug}/cursos', array(RotaLegadaController::class, 'redirecionar'));
 $app->get('/cursos', array(RotaLegadaController::class, 'redirecionar'));

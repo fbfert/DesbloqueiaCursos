@@ -132,8 +132,8 @@ class ContaController extends Controller
             'catalogoHref' => '/v2/catalogo/',
             'categoriasHref' => '/v2/categorias/',
             'certificadosHref' => '/v2/certificados/validar/',
-            'sobreHref' => '/sobre',
-            'contatoHref' => '/contato',
+            'sobreHref' => '/v2/quem-somos',
+            'contatoHref' => '/v2/onde-estamos',
             'homeHref' => '/v2/',
         );
     }

@@ -108,6 +108,26 @@ class InstitucionalController extends Controller
             );
         }
 
+        return $this->renderPagina($pagina, $breadcrumbLabel);
+    }
+
+    /**
+     * Página publicada no cadastro de páginas, acessada pela própria rota (Router →
+     * PaginasController::showByRoute), no tema (tema-caderno-unico). Null quando a
+     * rota não corresponde a uma página publicada: o Router segue para o 404.
+     */
+    public function paginaDaRota(Request $request)
+    {
+        $pagina = $this->paginaService->buscarPublicaPorRota($request->path());
+        if (!$pagina) {
+            return null;
+        }
+
+        return $this->renderPagina($pagina, (string) ($pagina['titulo'] ?? ''));
+    }
+
+    private function renderPagina(array $pagina, $breadcrumbLabel)
+    {
         $conteudoBruto = '';
 
         foreach (array('conteudo_html', 'conteudo', 'html', 'corpo', 'texto') as $campoConteudo) {

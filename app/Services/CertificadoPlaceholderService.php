@@ -136,7 +136,7 @@ class CertificadoPlaceholderService
 
         $dataAtualBr = $this->formatarDataBr(date('Y-m-d'));
         $certificadoService = new CertificadoService();
-        $qrcodePreviewUrl = Helpers::url('certificados/validar?codigo=DC-2026-000001');
+        $qrcodePreviewUrl = Helpers::url('v2/certificados/validar?codigo=DC-2026-000001');
         $qrcodePreview = $certificadoService->gerarQrSvgDataUri($qrcodePreviewUrl);
 
         return array(
@@ -275,7 +275,7 @@ class CertificadoPlaceholderService
         $certificadoQrCode = isset($contexto['certificado_qrcode']) ? (string) $contexto['certificado_qrcode'] : '';
 
         $codigo = isset($certificado['codigo']) ? (string) $certificado['codigo'] : '';
-        $validacaoUrl = $codigo !== '' ? Helpers::url('certificados/validar?codigo=' . urlencode($codigo)) : Helpers::url('certificados/validar');
+        $validacaoUrl = $codigo !== '' ? Helpers::url('v2/certificados/validar?codigo=' . urlencode($codigo)) : Helpers::url('v2/certificados/validar');
 
         $cidade = !empty($institucional['cidade']) ? (string) $institucional['cidade'] : '';
         $uf = !empty($institucional['uf']) ? (string) $institucional['uf'] : '';

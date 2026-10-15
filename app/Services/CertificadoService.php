@@ -467,8 +467,8 @@ class CertificadoService
                 'email_ok' => $emailOk,
                 'email_message' => $emailMessage,
                 'certificado_url_download' => $codigo !== '' ? Helpers::url('certificados/pdf?codigo=' . urlencode($codigo)) : null,
-                'versao_online_url' => $codigo !== '' ? Helpers::url('certificados/versao-online?codigo=' . urlencode($codigo)) : null,
-                'validacao_url' => $codigo !== '' ? Helpers::url('certificados/validar?codigo=' . urlencode($codigo)) : null,
+                'versao_online_url' => $codigo !== '' ? Helpers::url('v2/certificados/versao-online?codigo=' . urlencode($codigo)) : null,
+                'validacao_url' => $codigo !== '' ? Helpers::url('v2/certificados/validar?codigo=' . urlencode($codigo)) : null,
                 'aluno_nome' => isset($aluno['nome']) ? (string) $aluno['nome'] : '',
                 'aluno_email' => $emailAluno,
             );
@@ -1430,7 +1430,7 @@ class CertificadoService
 
         $certificado['cpf_mascarado'] = $this->mascararCpf(isset($certificado['cpf_participante']) ? $certificado['cpf_participante'] : '');
         $certificado['pdf_url'] = Helpers::url('certificados/pdf?codigo=' . urlencode($certificado['codigo']));
-        $certificado['validacao_url'] = Helpers::url('certificados/validar?codigo=' . urlencode($certificado['codigo']));
+        $certificado['validacao_url'] = Helpers::url('v2/certificados/validar?codigo=' . urlencode($certificado['codigo']));
         return $certificado;
     }
 
@@ -1764,7 +1764,7 @@ class CertificadoService
             'Curso: ' . (isset($curso['nome']) ? $curso['nome'] : ''),
             'Turma: ' . (isset($turma['nome']) ? $turma['nome'] : 'N/A'),
             'Pedido: ' . (isset($pedido['codigo']) ? $pedido['codigo'] : ''),
-            'Validação pública: ' . Helpers::url('certificados/validar?codigo=' . urlencode($certificado['codigo'])),
+            'Validação pública: ' . Helpers::url('v2/certificados/validar?codigo=' . urlencode($certificado['codigo'])),
         );
         return $this->buildSimplePdf($lines, $qrMatrix);
     }
@@ -2641,7 +2641,7 @@ class CertificadoService
             || stripos($html, 'Data:') !== false;
 
         $codigo = (string) ($certificado['codigo'] ?? '');
-        $validacaoUrl = Helpers::url('certificados/validar?codigo=' . urlencode($codigo));
+        $validacaoUrl = Helpers::url('v2/certificados/validar?codigo=' . urlencode($codigo));
         $dataEmissao = (string) ($certificado['data_emissao'] ?? ($contexto['cidade_data_atual'] ?? date('d/m/Y')));
         $e = function ($value) {
             return Helpers::e((string) ($value === null ? '' : $value));
@@ -2692,7 +2692,7 @@ class CertificadoService
 
         if (stripos($html, 'certificado-qrcode') === false && stripos($html, '{certificado_qrcode}') === false) {
             $codigo = (string) ($certificado['codigo'] ?? '');
-            $validacaoUrl = Helpers::url('certificados/validar?codigo=' . urlencode($codigo));
+            $validacaoUrl = Helpers::url('v2/certificados/validar?codigo=' . urlencode($codigo));
             $dataEmissao = (string) ($certificado['data_emissao'] ?? ($contexto['cidade_data_atual'] ?? date('d/m/Y')));
               if ($codigo !== '' || $qrcode !== '') {
                   $e = function ($value) {
@@ -3614,10 +3614,10 @@ class CertificadoService
     {
         $codigo = strtoupper(trim((string) $codigo));
         if ($codigo === '') {
-            return Helpers::url('certificados/validar');
+            return Helpers::url('v2/certificados/validar');
         }
 
-        return Helpers::url('certificados/validar?codigo=' . urlencode($codigo));
+        return Helpers::url('v2/certificados/validar?codigo=' . urlencode($codigo));
     }
 
     /**

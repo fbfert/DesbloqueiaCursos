@@ -40,55 +40,55 @@
 
 ## 4. Telas novas no tema
 
-- [ ] 4.1 "Sair da conta":
+- [x] 4.1 "Sair da conta":
   - criar `caderno/sair.php` e `caderno/pages/sair.php`;
   - `AuthController::logoutConfirm` renderiza o tema, com POST em `/v2/logout`;
   - o POST legado `/logout` passa a redirecionar para `/v2/login`.
   - Verificação: com sessão de aluno e de admin, `/logout` mostra a tela do tema; confirmar leva ao login do tema com "Você saiu da sua conta."; cancelar volta à área do perfil.
-- [ ] 4.2 Pagamento concluído:
+- [x] 4.2 Pagamento concluído:
   - criar a rota `GET /v2/checkout/sucesso` (`auth.v2`) e `CheckoutController::sucessoV2`, com os dados e a checagem de dono de `sucesso()`;
   - criar as views `caderno/checkout/sucesso.php` e `pages/checkout-sucesso.php`, com os estados aprovado, em confirmação, gratuito e comprovante em análise.
   - Verificação: pedido do próprio aluno mostra o estado certo; pedido alheio dá o 404 do tema.
-- [ ] 4.3 Certificado online:
+- [x] 4.3 Certificado online:
   - criar a rota `GET /v2/certificados/versao-online`;
   - `CertificadosController::versaoOnline` renderiza o tema, com o certificado em `iframe srcdoc`, o PDF (quando a pessoa tem acesso) e a validação.
   - Verificação: código válido mostra as duas páginas do certificado; código inválido dá o 404 do tema; com a validação pública desligada, dá o 404 do tema.
-- [ ] 4.4 Checkout rápido:
-  - `/comprar` renderiza o tema, com os mesmos campos, validações, eventos de conversão (Google Ads e WhatsApp) e `/comprar/status`;
+- [x] 4.4 Checkout rápido:
+  - `/comprar` renderiza o tema, com os mesmos campos, validações, script e `/comprar/status` (a página antiga não tinha script de conversão);
   - checkout rápido desligado dá o 404 do tema.
   - Verificação: com `CHECKOUT_RAPIDO_ATIVO=true` local, enviar uma compra de teste; com `false`, conferir o 404.
-- [ ] 4.5 Descadastro: `/pedido-recuperacao/descadastrar` renderiza o tema, com o mesmo resultado.
+- [x] 4.5 Descadastro: `/pedido-recuperacao/descadastrar` renderiza o tema, com o mesmo resultado.
   - Verificação: abrir com token válido e com token inválido.
-- [ ] 4.6 Páginas dinâmicas: `PaginasController::showByRoute` renderiza a view `institucional` do tema.
+- [x] 4.6 Páginas dinâmicas: `PaginasController::showByRoute` renderiza a view `institucional` do tema.
   - Verificação: uma página publicada no banco local abre no tema; uma não publicada dá o 404 do tema.
 
 ## 5. Erros no tema
 
-- [ ] 5.1 Em `V2ErrorPage`, trocar `isV2Path` por `usaTemaPublico`, que vale para tudo exceto `/admin`, `/professor`, `/revisor` e `/api`.
+- [x] 5.1 Em `V2ErrorPage`, trocar `isV2Path` por `usaTemaPublico`, que vale para tudo exceto `/admin`, `/professor`, `/revisor` e `/api`.
   - Verificação: `/pagina-que-nao-existe` dá 404 no tema; um 404 em `/admin/...` continua no layout do admin.
-- [ ] 5.2 Em `ErrorHandler::render`, renderizar o 500 no tema fora do backoffice, com HTML mínimo embutido se o próprio tema falhar.
+- [x] 5.2 Em `ErrorHandler::render`, renderizar o 500 no tema fora do backoffice, com HTML mínimo embutido se o próprio tema falhar.
   - Verificação: uma exceção forçada numa rota pública local dá 500 no tema, sem caminho de arquivo nem trace, e com registro no log.
-- [ ] 5.3 Trocar os `View::render('errors/40x')` diretos de `AreaCursoController`, `CertificadosController` e `CheckoutRapidoController` por `V2ErrorPage`.
-  - Verificação: `grep -rn "errors/40" app/Controllers` só encontra controllers do backoffice.
+- [x] 5.3 Trocar os `View::render('errors/40x')` diretos de `AreaCursoController`, `CertificadosController` e `CheckoutRapidoController` por `V2ErrorPage`.
+  - Verificação: `grep -rn "errors/40" app/Controllers` só encontra controllers do backoffice e os V1 que ficaram sem rota (`CategoriasController`, `CursosController`).
 
 ## 6. Links internos
 
-- [ ] 6.1 AbacatePay: atualizar `returnUrl` e `completionUrl` em `AbacatePayService`, e os destinos `ja_pago` e `sem_cobranca` em `CheckoutController::pagarAbacatepay`, para `/v2/checkout/*`.
+- [x] 6.1 AbacatePay: atualizar `returnUrl` e `completionUrl` em `AbacatePayService`, e os destinos `ja_pago` e `sem_cobranca` em `CheckoutController::pagarAbacatepay`, para `/v2/checkout/*`.
   - Verificação: teste unitário do montador de URLs; cobrança de teste no sandbox, se houver chave local.
-- [ ] 6.2 Curso gratuito e inscrição existente: atualizar `CheckoutController` (linhas 186, 939 e 979) e `Helpers::urlAcessoCursoAluno` para destinos do tema.
+- [x] 6.2 Curso gratuito e inscrição existente: atualizar `CheckoutController` (linhas 186, 939 e 979) e `Helpers::urlAcessoCursoAluno` para destinos do tema.
   - Verificação: inscrição gratuita local termina em `/v2/aluno/`.
-- [ ] 6.3 `oficial_url` em `V2/AulaController` e `V2/AtividadeController`: passa a apontar para a aula do tema. O tipo legado mostra o aviso de conteúdo indisponível.
+- [x] 6.3 `oficial_url` em `V2/AulaController` e `V2/AtividadeController`: passa a apontar para a aula do tema. O tipo legado mostra o aviso de conteúdo indisponível.
   - Verificação: `grep -rn "'/aluno/curso/" app/Controllers/V2` sem resultados.
 - [ ] 6.4 Certificados:
   - `online_href` passa a ser `/v2/certificados/versao-online`;
   - a URL de validação gravada passa a ser `/v2/certificados/validar` em `CertificadoService`, `CertificadoPlaceholderService`, `InscricaoService` e `AppApi/CatalogoPresenter`.
   - Verificação: `php tests/Unit/certificado_retencao.php` e os testes de certificado existentes passam; um certificado emitido localmente traz a URL nova no QR.
-- [ ] 6.5 Categorias da home, termos e privacidade:
+- [x] 6.5 Categorias da home, termos e privacidade:
   - atualizar `V2/HomeController`, `caderno/partials/lombada.php`, `v2/pages/home.php`, `V2/CadastroController` e `partials/botao-google.php`.
   - Verificação: o HTML da home e do cadastro não traz `/categorias/`, `/termos-de-uso` nem `/politica-de-privacidade` sem `/v2`.
-- [ ] 6.6 Cupom promocional: o `Router` envia `voltar=<caminho sem cupom>` e `cupomPromocional` guarda o cupom e segue para o destino no tema (`/v2/catalogo` por padrão).
+- [x] 6.6 Cupom promocional: o `Router` envia `voltar=<caminho sem cupom>` e `cupomPromocional` guarda o cupom e segue para o destino no tema (`/v2/catalogo` por padrão).
   - Verificação: `/cursos/detalhe?curso_id=12&cupom=X` termina em `/v2/curso?curso_id=12`, com o cupom na sessão.
-- [ ] 6.7 Trocar por constantes de `V2Nav` os fallbacks V1 em views e controllers V2 e do caderno (`/meus-cursos`, `/login`, `/cadastro`, `/recuperar-senha`, `/cursos`, `/categorias`).
+- [x] 6.7 Trocar por constantes de `V2Nav` os fallbacks V1 em views e controllers V2 e do caderno (`/meus-cursos`, `/login`, `/cadastro`, `/recuperar-senha`, `/cursos`, `/categorias`).
   - Verificação: `grep` nas pastas `resources/views/caderno`, `resources/views/v2` e `app/Controllers/V2` não encontra esses caminhos sem `/v2`.
 
 ## 7. Smoke e verificação

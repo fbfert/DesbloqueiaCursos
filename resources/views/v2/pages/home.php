@@ -7,11 +7,11 @@ $categories = isset($categories) && is_array($categories) ? $categories : array(
 $heroStats = isset($heroStats) && is_array($heroStats) ? $heroStats : null;
 $loggedIn = !empty($loggedIn);
 $usuarioPrimeiroNome = isset($usuarioPrimeiroNome) ? (string) $usuarioPrimeiroNome : '';
-$areaHref = isset($areaHref) ? (string) $areaHref : '/meus-cursos';
-$loginHref = isset($loginHref) ? (string) $loginHref : '/login';
-$registerHref = isset($registerHref) ? (string) $registerHref : '/cadastro';
-$catalogoHref = isset($catalogoHref) ? (string) $catalogoHref : '/cursos';
-$categoriesHref = isset($categoriesHref) ? (string) $categoriesHref : '/categorias';
+$areaHref = isset($areaHref) ? (string) $areaHref : '/v2/aluno/';
+$loginHref = isset($loginHref) ? (string) $loginHref : '/v2/login';
+$registerHref = isset($registerHref) ? (string) $registerHref : '/v2/cadastro';
+$catalogoHref = isset($catalogoHref) ? (string) $catalogoHref : '/v2/catalogo/';
+$categoriesHref = isset($categoriesHref) ? (string) $categoriesHref : '/v2/categorias';
 $homeHref = isset($homeHref) ? (string) $homeHref : '/v2/';
 $coursePalette = isset($coursePalette) && is_array($coursePalette) ? $coursePalette : array();
 $featuredCount = count($featuredCourses);
@@ -127,7 +127,7 @@ if ($heroStats && (isset($heroStats['alunos']) || isset($heroStats['cursos']) ||
           <?php
           $theme = $coursePalette[$index % count($coursePalette)];
           $categoriaNome = isset($categoria['nome']) ? (string) $categoria['nome'] : '';
-          $categoriaUrl = isset($categoria['url']) ? (string) $categoria['url'] : '/categorias';
+          $categoriaUrl = isset($categoria['url']) ? (string) $categoria['url'] : '/v2/categorias';
           $categoriaThumb = !empty($categoria['thumbnail']) ? (string) $categoria['thumbnail'] : '';
           $totalCursos = isset($categoria['total_cursos']) ? (int) $categoria['total_cursos'] : 0;
           ?>

@@ -48,8 +48,8 @@ class CadastroController extends Controller
             'homeHref' => '/v2/',
             'loginHref' => '/v2/login' . $redirectQuery,
             'redirectSeguro' => $redirectSeguro !== null ? $redirectSeguro : '',
-            'termosHref' => '/termos-de-uso',
-            'privacidadeHref' => '/politica-de-privacidade',
+            'termosHref' => '/v2/termos-de-uso',
+            'privacidadeHref' => '/v2/politica-de-privacidade',
 
             'jaLogado' => $usuarioId > 0,
             'areaHref' => $this->resolveAreaHref(),

@@ -4,7 +4,7 @@
  *
  *   require BASE_PATH . '/resources/views/partials/botao-google.php';
  *   echo botao_google(array('origem' => 'v2', 'redirect' => $redirectSeguro,
- *                           'termos' => '/termos-de-uso', 'privacidade' => '/politica-de-privacidade'));
+ *                           'termos' => '/v2/termos-de-uso', 'privacidade' => '/v2/politica-de-privacidade'));
  *
  * Com 'depois' => 'texto', o botão vem primeiro e o separador "ou" fica embaixo,
  * seguido do texto: no cadastro o Google é a primeira opção e o formulário vem depois.
@@ -31,8 +31,8 @@ if (!function_exists('botao_google')) {
             $query['redirect'] = $redirect;
         }
         $href = '/login/google?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
-        $termos = isset($opcoes['termos']) && $opcoes['termos'] !== '' ? (string) $opcoes['termos'] : '/termos-de-uso';
-        $privacidade = isset($opcoes['privacidade']) && $opcoes['privacidade'] !== '' ? (string) $opcoes['privacidade'] : '/politica-de-privacidade';
+        $termos = isset($opcoes['termos']) && $opcoes['termos'] !== '' ? (string) $opcoes['termos'] : '/v2/termos-de-uso';
+        $privacidade = isset($opcoes['privacidade']) && $opcoes['privacidade'] !== '' ? (string) $opcoes['privacidade'] : '/v2/politica-de-privacidade';
 
         $logo = '<svg class="botao-google-logo" viewBox="0 0 48 48" width="20" height="20" aria-hidden="true" focusable="false">'
             . '<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>'

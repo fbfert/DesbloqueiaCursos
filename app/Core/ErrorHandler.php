@@ -6,6 +6,7 @@ class ErrorHandler
 {
     private static $debug = false;
     private static $json = false;
+    private static $renderizando = false;
 
     /**
      * API do app (/api/app/*): erro do PHP vira `500 {"erro": {"codigo": "erro_interno"}}`,
@@ -62,14 +63,45 @@ class ErrorHandler
 
         http_response_code($status);
 
-        echo View::render('errors/500', array(
-            'title' => 'Erro interno',
-            'debug' => self::$debug,
-            'message' => $message,
-            'file' => $file,
-            'line' => $line,
-        ));
+        // Um erro dentro da própria página de erro não pode reentrar aqui em laço.
+        if (self::$renderizando) {
+            echo self::paginaMinima();
+            exit;
+        }
+        self::$renderizando = true;
+
+        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+
+        try {
+            if (\App\Support\V2ErrorPage::usaTemaPublico($path)) {
+                $detalhe = self::$debug ? $message . ' em ' . $file . ':' . $line : null;
+                \App\Support\V2ErrorPage::serverError($path, $detalhe)->send();
+                exit;
+            }
+
+            echo View::render('errors/500', array(
+                'title' => 'Erro interno',
+                'debug' => self::$debug,
+                'message' => $message,
+                'file' => $file,
+                'line' => $line,
+            ));
+        } catch (\Throwable $e) {
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+            echo self::paginaMinima();
+        }
 
         exit;
+    }
+
+    private static function paginaMinima()
+    {
+        return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+            . '<meta name="viewport" content="width=device-width, initial-scale=1"><title>Erro interno</title></head>'
+            . '<body style="font-family:sans-serif;max-width:560px;margin:48px auto;padding:0 16px">'
+            . '<h1>Erro interno</h1><p>Não foi possível concluir a solicitação. Tente de novo em instantes.</p>'
+            . '<p><a href="/v2/">Voltar ao início</a></p></body></html>';
     }
 }

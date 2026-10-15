@@ -46,7 +46,7 @@ if (!function_exists('caderno_etiqueta')) {
 
 $lombCat = isset($categoria) && is_array($categoria) ? $categoria : array();
 $lombNome = isset($lombCat['nome']) ? trim((string) $lombCat['nome']) : '';
-$lombUrl = isset($lombCat['url']) && (string) $lombCat['url'] !== '' ? (string) $lombCat['url'] : '/categorias';
+$lombUrl = isset($lombCat['url']) && (string) $lombCat['url'] !== '' ? (string) $lombCat['url'] : '/v2/categorias';
 $lombTotal = isset($lombCat['total_cursos']) ? (int) $lombCat['total_cursos'] : 0;
 $lombPos = isset($indice) ? (int) $indice : (isset($lombCat['id']) ? (int) $lombCat['id'] : 0);
 $lombPos = abs($lombPos);

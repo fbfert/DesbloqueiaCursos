@@ -68,7 +68,7 @@ class CatalogoPresenter
             'emitido_em' => Tempo::isoPhp($certificado['emitido_em'] ?? null),
             'carga_horaria' => Formato::int($certificado['curso_carga_horaria'] ?? null),
             'pdf_url' => '/api/app/v1/certificados/' . rawurlencode($codigo) . '/pdf',
-            'validacao_url' => (string) ($certificado['validacao_url'] ?? (Formato::urlSite() . '/certificados/validar?codigo=' . urlencode($codigo))),
+            'validacao_url' => (string) ($certificado['validacao_url'] ?? (Formato::urlSite() . '/v2/certificados/validar?codigo=' . urlencode($codigo))),
         );
     }
 

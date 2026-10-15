@@ -220,7 +220,7 @@ class AlunoController extends Controller
                 // Online/PDF: rotas públicas/oficiais atuais (inalteradas).
                 // Validação: tela V2 real (Fase 2.11), que reutiliza o mesmo
                 // serviço público de validação — NUNCA o validador demonstrativo.
-                'online_href' => '/certificados/show?codigo=' . rawurlencode($codigo),
+                'online_href' => '/v2/certificados/versao-online?codigo=' . rawurlencode($codigo),
                 'validar_href' => '/v2/certificados/validar?codigo=' . rawurlencode($codigo),
                 'pdf_href' => '/certificados/pdf?codigo=' . rawurlencode($codigo),
             );
@@ -464,10 +464,10 @@ class AlunoController extends Controller
             'loginHref' => '/v2/login',
             'registerHref' => '/v2/cadastro',
             'catalogoHref' => '/v2/catalogo/',
-            'categoriasHref' => '/categorias',
+            'categoriasHref' => '/v2/categorias',
             'certificadosHref' => '/v2/certificados/validar/',
-            'sobreHref' => '/sobre',
-            'contatoHref' => '/contato',
+            'sobreHref' => '/v2/quem-somos',
+            'contatoHref' => '/v2/onde-estamos',
             'homeHref' => '/v2/',
         );
     }

@@ -546,10 +546,15 @@ class AulaController extends Controller
         return $url;
     }
 
+    /** O item na aula do tema; nunca a rota do LMS legado (tema-caderno-unico). */
     private function urlOficialItem(array $inscricao, $cursoId, $turmaId, $moduloId, $itemId)
     {
-        return '/aluno/curso/' . (int) $inscricao['id'] . '/' . (int) $cursoId . '/' . (int) $turmaId
-            . '/modulo/' . (int) $moduloId . '/conteudo/' . (int) $itemId;
+        return \App\Support\RotaLegada::urlEstudo('aula', array(
+            'inscricao_id' => (int) $inscricao['id'],
+            'curso_id' => (int) $cursoId,
+            'turma_id' => (int) $turmaId,
+            'modulo_id' => (int) $moduloId,
+        ), (int) $itemId);
     }
 
     private function valorDetalhe($detalhe, array $chaves)
@@ -606,10 +611,10 @@ class AulaController extends Controller
             'loginHref' => '/v2/login',
             'registerHref' => '/v2/cadastro',
             'catalogoHref' => '/v2/catalogo/',
-            'categoriasHref' => '/categorias',
+            'categoriasHref' => '/v2/categorias',
             'certificadosHref' => '/v2/certificados/validar/',
-            'sobreHref' => '/sobre',
-            'contatoHref' => '/contato',
+            'sobreHref' => '/v2/quem-somos',
+            'contatoHref' => '/v2/onde-estamos',
             'homeHref' => '/v2/',
         );
     }

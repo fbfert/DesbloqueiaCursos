@@ -128,8 +128,8 @@ $acTitulo = (string) $item['titulo'];
 
 <?php elseif (!empty($item['eh_interativo'])): ?>
   <div class="postit largo aula-tarefa">
-    <p>Esta é uma atividade <?= Helpers::e((string) $item['tipo_label']) ?>. Para responder, abra a atividade no ambiente de aprendizagem.</p>
-    <a class="btn" href="<?= Helpers::e((string) $item['oficial_url']) ?>">Abrir atividade <?= caderno_icone('seta-dir') ?></a>
+    <?php // Tipo de atividade sem tela no tema (tema-caderno-unico): aviso em texto, sem levar ao visual antigo. ?>
+    <p><b>Esta atividade não está disponível por aqui.</b> Fale com a secretaria do curso para saber como concluí-la.</p>
   </div>
 
 <?php elseif ($acTipo === 'texto' || $acTipo === 'html'): ?>

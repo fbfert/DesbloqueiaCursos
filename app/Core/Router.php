@@ -59,7 +59,12 @@ class Router
         if ($request->method() === 'GET' && !$rotaApp) {
             $cupom = trim((string) $request->query('cupom', ''));
             if ($cupom !== '') {
-                return Response::redirect('/cupom?codigo=' . urlencode($cupom));
+                // Guarda o cupom e volta para a mesma página, sem o parâmetro (no tema;
+                // ver CheckoutController::cupomPromocional).
+                $resto = $request->queryAll();
+                unset($resto['cupom']);
+                $voltar = $request->path() . (!empty($resto) ? '?' . http_build_query($resto) : '');
+                return Response::redirect('/cupom?codigo=' . urlencode($cupom) . '&voltar=' . rawurlencode($voltar));
             }
         }
 

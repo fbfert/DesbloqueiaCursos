@@ -158,19 +158,21 @@ class Helpers
     /**
      * URL de acesso direto ao conteúdo do curso na área do aluno, montada a
      * partir da situação devolvida por InscricaoService::situacaoAlunoNoCurso().
-     * Sem inscrição/curso identificados, cai na listagem de cursos do aluno.
+     * Sem inscrição/curso identificados, cai na área do aluno. Destinos no tema
+     * (tema-caderno-unico).
      */
     public static function urlAcessoCursoAluno(array $situacao)
     {
-        $inscricaoId = isset($situacao['inscricao_id']) ? (int) $situacao['inscricao_id'] : 0;
         $cursoId = isset($situacao['curso_id']) ? (int) $situacao['curso_id'] : 0;
-        $turmaId = isset($situacao['turma_id']) ? (int) $situacao['turma_id'] : 0;
-
-        if ($inscricaoId <= 0 || $cursoId <= 0) {
-            return '/aluno/meus-cursos';
+        if ($cursoId <= 0) {
+            return \App\Support\V2Nav::ALUNO;
         }
 
-        return '/aluno/curso/' . $inscricaoId . '/' . $cursoId . '/' . $turmaId;
+        return \App\Support\RotaLegada::urlEstudo('aula', array(
+            'inscricao_id' => isset($situacao['inscricao_id']) ? (int) $situacao['inscricao_id'] : 0,
+            'curso_id' => $cursoId,
+            'turma_id' => isset($situacao['turma_id']) ? (int) $situacao['turma_id'] : 0,
+        ), 0);
     }
 
     public static function modalidadeCurso($modalidade)

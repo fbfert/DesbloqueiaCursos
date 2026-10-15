@@ -3,8 +3,8 @@
 // desta tela (login com ?redirect=, termos e privacidade) vêm do controller.
 $authLinks = array(
     'login' => isset($loginHref) ? (string) $loginHref : '/v2/login',
-    'termos' => isset($termosHref) ? (string) $termosHref : '/termos-de-uso',
-    'privacidade' => isset($privacidadeHref) ? (string) $privacidadeHref : '/politica-de-privacidade',
+    'termos' => isset($termosHref) ? (string) $termosHref : '/v2/termos-de-uso',
+    'privacidade' => isset($privacidadeHref) ? (string) $privacidadeHref : '/v2/politica-de-privacidade',
 );
 $contentView = BASE_PATH . '/resources/views/caderno/pages/cadastro.php';
 $paginaTema = 'cadastro';

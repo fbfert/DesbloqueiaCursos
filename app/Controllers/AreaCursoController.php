@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Support\V2ErrorPage;
 use App\Services\AtividadeService;
 use App\Services\AreaCursoService;
 use App\Services\ConteudoAcessoAlunoService;
@@ -250,12 +251,12 @@ class AreaCursoController extends Controller
         $material = $this->areaCursoService->materialAutorizado(Session::get('usuario_id'), $materialId, 'aluno');
 
         if (!$material) {
-            return new Response(View::render('errors/404', array('title' => 'Material não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Material não encontrado');
         }
 
         $acesso = $this->areaCursoService->prepararAcessoMaterial($material);
         if (!$acesso) {
-            return new Response(View::render('errors/404', array('title' => 'Material indisponível')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Material indisponível');
         }
 
         if ($acesso['tipo'] === 'url') {
@@ -263,7 +264,7 @@ class AreaCursoController extends Controller
         }
 
         if (!is_file($acesso['absolute_path'])) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Arquivo não encontrado');
         }
 
         $content = file_get_contents($acesso['absolute_path']);
@@ -303,16 +304,16 @@ class AreaCursoController extends Controller
                 'entrega_id' => $entregaId,
                 'usuario_id' => Session::get('usuario_id'),
             ));
-            return new Response(View::render('errors/404', array('title' => 'Entrega não encontrada')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Entrega não encontrada');
         }
 
         $acesso = $this->atividadeService->prepararAcessoEntrega($entrega);
         if (!$acesso) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo indisponível')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Arquivo indisponível');
         }
 
         if (!is_file($acesso['absolute_path'])) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Arquivo não encontrado');
         }
 
         Logger::info('atividade.entrega.download', array(
@@ -339,13 +340,13 @@ class AreaCursoController extends Controller
         $imagemId = (int) $request->query('id', 0);
         $imagem = (new \App\Models\ConteudoAvaliacaoEntregaImagem())->findById($imagemId);
         if (!$imagem) {
-            return new Response(View::render('errors/404', array('title' => 'Imagem não encontrada')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Imagem não encontrada');
         }
 
         $entrega = $this->conteudoAvaliacaoTextualService->buscarEntregaParaCorrecao((int) $imagem['entrega_id']);
         if (!$entrega || (int) $entrega['aluno_id'] !== (int) Session::get('usuario_id')) {
             Logger::info('conteudo.avaliacao.imagem.bloqueio_acesso', array('contexto' => 'aluno', 'imagem_id' => $imagemId, 'usuario_id' => Session::get('usuario_id')));
-            return new Response(View::render('errors/404', array('title' => 'Imagem não encontrada')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Imagem não encontrada');
         }
 
         return $this->responderImagemEntrega($imagem);
@@ -356,7 +357,7 @@ class AreaCursoController extends Controller
         $storage = new FileStorageService();
         $absolutePath = $storage->privatePath((string) $imagem['caminho']);
         if (!is_file($absolutePath)) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
+            return V2ErrorPage::notFound((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), 'Arquivo não encontrado');
         }
 
         $content = file_get_contents($absolutePath);
@@ -640,7 +641,7 @@ class AreaCursoController extends Controller
             null
         );
         if (empty($contexto['inscricao'])) {
-            return new Response(View::render('errors/403', array('title' => 'Acesso negado')), 403);
+            return V2ErrorPage::forbidden($request->path(), 'Acesso negado');
         }
 
         $inscricao = $contexto['inscricao'];
@@ -654,7 +655,7 @@ class AreaCursoController extends Controller
             $request->userAgent()
         );
         if (empty($arquivo['ok'])) {
-            return new Response(View::render('errors/404', array('title' => 'Arquivo não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Arquivo não encontrado');
         }
 
         $content = file_get_contents($arquivo['caminho']);
@@ -682,7 +683,7 @@ class AreaCursoController extends Controller
             null
         );
         if (empty($contexto['inscricao'])) {
-            return new Response(View::render('errors/403', array('title' => 'Acesso negado')), 403);
+            return V2ErrorPage::forbidden($request->path(), 'Acesso negado');
         }
         $inscricao = $contexto['inscricao'];
 
@@ -694,12 +695,12 @@ class AreaCursoController extends Controller
             !empty($inscricao['turma_id']) ? (int) $inscricao['turma_id'] : null
         );
         if (empty($detalhe['ok']) || (string) $detalhe['item']['tipo'] !== 'link') {
-            return new Response(View::render('errors/404', array('title' => 'Link não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Link não encontrado');
         }
 
         $url = isset($detalhe['detalhe']['url']) ? trim((string) $detalhe['detalhe']['url']) : '';
         if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
-            return new Response(View::render('errors/404', array('title' => 'Link inválido')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Link inválido');
         }
 
         $this->conteudoService->registrarAcessoLinkAluno(array(

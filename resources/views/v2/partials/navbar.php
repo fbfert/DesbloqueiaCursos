@@ -24,8 +24,8 @@ $certNavClass = isset($certNavClass) ? (string) $certNavClass : (strpos($current
     </a>
     <div class="v2-nav-links">
       <a href="<?php echo Helpers::e(isset($homeHref) ? (string) $homeHref : '/v2/'); ?>" class="v2-nav-link<?php echo Helpers::e($homeNavClass); ?>">Início</a>
-      <a href="<?php echo Helpers::e(isset($catalogoHref) ? (string) $catalogoHref : '/cursos'); ?>" class="v2-nav-link<?php echo Helpers::e($catalogNavClass); ?>">Cursos</a>
-      <a href="<?php echo Helpers::e(isset($categoriesHref) ? (string) $categoriesHref : '/categorias'); ?>" class="v2-nav-link<?php echo Helpers::e($categoriesNavClass); ?>">Categorias</a>
+      <a href="<?php echo Helpers::e(isset($catalogoHref) ? (string) $catalogoHref : '/v2/catalogo/'); ?>" class="v2-nav-link<?php echo Helpers::e($catalogNavClass); ?>">Cursos</a>
+      <a href="<?php echo Helpers::e(isset($categoriesHref) ? (string) $categoriesHref : '/v2/categorias'); ?>" class="v2-nav-link<?php echo Helpers::e($categoriesNavClass); ?>">Categorias</a>
       <a href="<?php echo Helpers::e(isset($certificadosHref) ? (string) $certificadosHref : '/v2/certificados/validar'); ?>" class="v2-nav-link<?php echo Helpers::e($certNavClass); ?>">Certificados</a>
     </div>
     <div class="v2-nav-actions">

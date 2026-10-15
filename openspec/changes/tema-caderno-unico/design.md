@@ -125,7 +125,7 @@ renderização usa `View::render(TemaPublico::view(...), $data, false)` com os d
 | Sair da conta | `GET /logout` (mantida) | `AuthController::logoutConfirm` renderiza o tema. O formulário faz POST em `/v2/logout`. |
 | Pagamento concluído | `GET /v2/checkout/sucesso` (nova, `auth.v2`) | `CheckoutController::sucessoV2`, com os mesmos dados de `sucesso()` e a mesma checagem de dono. |
 | Certificado online | `GET /v2/certificados/versao-online` (nova) | `CertificadosController::versaoOnline` passa a renderizar o tema. As páginas do certificado continuam em `iframe srcdoc`, isoladas do CSS do tema. |
-| Checkout rápido | `GET /comprar` (mantida) | `CheckoutRapidoController::mostrar` renderiza o tema, com os mesmos campos, scripts de conversão e `status` em JSON. |
+| Checkout rápido | `GET /comprar` (mantida) | `CheckoutRapidoController::mostrar` renderiza o tema, com os mesmos campos, o mesmo script e `status` em JSON. |
 | Descadastro | `GET /pedido-recuperacao/descadastrar` (mantida) | `PedidoRecuperacaoController` renderiza o tema. |
 | Páginas dinâmicas | rota do banco | `PaginasController::showByRoute` reaproveita a view `institucional` do tema e `V2InstitucionalContent::build`. |
 
@@ -208,8 +208,8 @@ para reescrevê-la.
 - **Página de erro 500 depende do tema.** Se o próprio layout do tema falhar, entra o HTML mínimo
   embutido (decisão 4).
 - **Orçamento de JS e CSS do tema.** As telas novas são estáticas e quase não acrescentam peso. O
-  checkout rápido traz os scripts de conversão próprios, que já existem hoje e não contam como JS do
-  tema.
+  checkout rápido reaproveita o script que já existe hoje (`checkout-rapido.js`), que não conta como
+  JS do tema.
 
 ## Migration Plan
 

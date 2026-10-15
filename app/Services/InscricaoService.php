@@ -586,7 +586,7 @@ class InscricaoService
             'certificado_pdf_url' => isset($certificado['codigo']) ? Helpers::url('certificados/pdf?codigo=' . urlencode($certificado['codigo'])) : null,
             'certificado_url_download' => isset($certificado['codigo']) ? Helpers::url('certificados/pdf?codigo=' . urlencode($certificado['codigo'])) : null,
             'certificado_pdf_caminho' => isset($certificado['pdf_caminho']) ? $certificado['pdf_caminho'] : null,
-            'certificado_validacao_url' => isset($certificado['codigo']) ? Helpers::url('certificados/validar?codigo=' . urlencode($certificado['codigo'])) : null,
+            'certificado_validacao_url' => isset($certificado['codigo']) ? Helpers::url('v2/certificados/validar?codigo=' . urlencode($certificado['codigo'])) : null,
         );
     }
 

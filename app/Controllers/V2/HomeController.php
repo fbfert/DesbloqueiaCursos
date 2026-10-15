@@ -68,11 +68,11 @@ class HomeController extends Controller
             'areaHref' => $this->resolveAreaHref($hasAdminAccess, $hasProfessorAccess),
             'loginHref' => '/v2/login',
             'registerHref' => '/v2/cadastro',
-            'catalogoHref' => '/cursos',
-            'categoriasHref' => '/categorias',
+            'catalogoHref' => '/v2/catalogo/',
+            'categoriasHref' => '/v2/categorias',
             'certificadosHref' => '/v2/certificados/validar/',
-            'sobreHref' => '/sobre',
-            'contatoHref' => '/contato',
+            'sobreHref' => '/v2/quem-somos',
+            'contatoHref' => '/v2/onde-estamos',
             'homeHref' => '/v2/',
             'disableV2AutoRenderHome' => true,
             'coursePalette' => $this->coursePalette(),
@@ -123,7 +123,7 @@ class HomeController extends Controller
                 'imagem' => $thumbnail !== '' ? $thumbnail : null,
                 'thumbnail' => $thumbnail !== '' ? $thumbnail : null,
                 'professor' => $professorNome,
-                'url' => '/cursos/detalhe?curso_id=' . (int) ($curso['id'] ?? 0),
+                'url' => '/v2/curso?curso_id=' . (int) ($curso['id'] ?? 0),
                 'eh_top' => $ehTop,
             );
         }
@@ -150,8 +150,8 @@ class HomeController extends Controller
                 'total_cursos' => isset($categoria['total_cursos']) ? (int) $categoria['total_cursos'] : 0,
                 'thumbnail' => !empty($categoria['thumbnail']) ? (string) $categoria['thumbnail'] : null,
                 'url' => !empty($categoria['slug'])
-                    ? '/categorias/' . rawurlencode((string) $categoria['slug']) . '/cursos'
-                    : '/categorias',
+                    ? '/v2/catalogo/?categoria=' . rawurlencode((string) $categoria['slug'])
+                    : '/v2/categorias',
                 'icon' => $tema['icon'],
                 'g1' => $tema['g1'],
                 'g2' => $tema['g2'],

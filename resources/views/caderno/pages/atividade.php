@@ -83,8 +83,7 @@ $atvData = function ($valor) {
 
     <?php elseif (($atividade['estado'] ?? '') === 'externo'): ?>
     <div class="postit largo aula-tarefa">
-      <p>Esta atividade depende de um envio que ainda não é feito por aqui (por exemplo, anexo de arquivo). Abra a atividade no ambiente de aprendizagem para concluí-la.</p>
-      <a class="btn" href="<?= Helpers::e((string) ($atividade['oficial_url'] ?? '#')) ?>">Abrir atividade <?= caderno_icone('seta-dir') ?></a>
+      <p><b>Esta atividade não está disponível por aqui.</b> Ela depende de um envio que esta sala de aula não faz (por exemplo, anexo de arquivo). Fale com a secretaria do curso para saber como concluí-la.</p>
     </div>
     <p class="atv-voltar"><a class="link" href="<?= Helpers::e($voltarAulaUrl) ?>">Voltar à aula</a></p>
 
@@ -177,8 +176,6 @@ $atvData = function ($valor) {
     <a class="be-lado" href="<?= Helpers::e($voltarAulaUrl) ?>"><?= caderno_icone('seta-esq') ?><span>Voltar à aula</span></a>
     <?php if ($atividade && ($atividade['estado'] ?? '') === 'avaliacao' && !empty($atividade['pode_enviar'])): ?>
     <button class="btn be-meio" type="submit" form="v2-atividade-form" data-loading-label="Enviando…"><?= !empty($atividade['ultima']) ? 'Reenviar' : 'Enviar' ?></button>
-    <?php elseif ($atividade && ($atividade['estado'] ?? '') === 'externo'): ?>
-    <a class="btn be-meio" href="<?= Helpers::e((string) ($atividade['oficial_url'] ?? '#')) ?>">Abrir atividade</a>
     <?php endif; ?>
   </nav>
 </div>

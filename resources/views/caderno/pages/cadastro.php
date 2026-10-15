@@ -14,13 +14,13 @@ require BASE_PATH . '/resources/views/caderno/partials/ver-senha.php';
 $errors = isset($errors) && is_array($errors) ? $errors : array();
 $success = isset($success) ? $success : null;
 $old = isset($old) && is_array($old) ? $old : array();
-$cadastroAction = isset($cadastroAction) ? (string) $cadastroAction : '/cadastro';
+$cadastroAction = isset($cadastroAction) ? (string) $cadastroAction : '/v2/cadastro';
 $redirectSeguro = isset($redirectSeguro) ? (string) $redirectSeguro : '';
 $loginHref = $authLinks['login'];
 $termosHref = $authLinks['termos'];
 $privacidadeHref = $authLinks['privacidade'];
 $jaLogado = !empty($jaLogado);
-$areaHref = isset($areaHref) ? (string) $areaHref : '/meus-cursos';
+$areaHref = isset($areaHref) ? (string) $areaHref : '/v2/aluno/';
 
 // Valores antigos permitidos (NUNCA senha/confirmação).
 $oldNome = isset($old['nome']) ? (string) $old['nome'] : '';

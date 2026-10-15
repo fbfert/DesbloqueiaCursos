@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Support\V2ErrorPage;
 use App\Services\CertificadoService;
 
 class CertificadosController extends Controller
@@ -75,7 +76,7 @@ class CertificadosController extends Controller
         $certificado = $this->certificadoService->localizarCertificadoPublico($codigo);
 
         if (empty($certificado)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Certificado não encontrado');
         }
 
         Logger::info('certificado.visualizacao_online', array(
@@ -98,16 +99,16 @@ class CertificadosController extends Controller
         $config = $this->configCertificados();
 
         if (empty($config['certificados_habilitado']) || empty($config['certificados_validacao_publica_habilitada'])) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Certificado não encontrado');
         }
 
         if (!$this->codigoPublicoDoCertificadoEhValido($codigo)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Certificado não encontrado');
         }
 
         $versaoOnline = $this->certificadoService->renderizarVersaoOnlinePublicaPorCodigo($codigo);
         if (empty($versaoOnline)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Certificado não encontrado');
         }
 
         Logger::info('certificado.visualizacao_online_html', array(
@@ -116,13 +117,20 @@ class CertificadosController extends Controller
             'usuario_id' => Session::get('usuario_id'),
         ));
 
-        return $this->view('certificados/versao-online', array(
-            'title' => 'Certificado ' . $codigo . ' - versão online',
+        // Tema caderno (tema-caderno-unico); a URL legada redireciona para /v2/certificados/versao-online.
+        $nome = trim((string) Session::get('usuario_nome', ''));
+        $partes = $nome !== '' ? preg_split('/\s+/', $nome) : array();
+
+        return new Response(View::render(\App\Support\TemaPublico::view('certificado-online'), array(
+            'pageTitle' => 'Certificado ' . $codigo . ' — Desbloqueia Cursos',
+            'pageDescription' => 'Versão online do certificado ' . $codigo . '.',
+            'loggedIn' => Session::get('usuario_id') !== null,
+            'usuarioPrimeiroNome' => !empty($partes[0]) ? (string) $partes[0] : '',
             'certificado' => $versaoOnline['certificado'],
             'versaoOnline' => $versaoOnline,
-            'configCertificados' => $config,
-            'canSeePdf' => $this->certificadoService->usuarioPodeAcessarCertificado($versaoOnline['certificado'], Session::get('usuario_id')),
-        ));
+            'canSeePdf' => !empty($config['certificados_permitir_download'])
+                && $this->certificadoService->usuarioPodeAcessarCertificado($versaoOnline['certificado'], Session::get('usuario_id')),
+        ), false));
     }
 
     public function pdf(Request $request)
@@ -134,13 +142,13 @@ class CertificadosController extends Controller
         }
 
         if (!$this->codigoPublicoDoCertificadoEhValido($codigo)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Certificado não encontrado');
         }
 
         $certificado = $this->certificadoService->localizarCertificadoPublico($codigo);
 
         if (empty($certificado)) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Certificado não encontrado');
         }
 
         Logger::info('certificado.download_pdf_publico', array(
@@ -164,7 +172,7 @@ class CertificadosController extends Controller
         }
 
         if ($pdf === null) {
-            return new Response(View::render('errors/404', array('title' => 'Certificado não encontrado')), 404);
+            return V2ErrorPage::notFound($request->path(), 'Certificado não encontrado');
         }
 
         return new Response($pdf, 200, array(

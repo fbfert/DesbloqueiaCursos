@@ -74,5 +74,15 @@ class Session
         }
 
         session_destroy();
+
+        // Um Session::start() seguinte (ex.: para levar "Você saiu da sua conta."
+        // ao login) precisa de um id novo: reaproveitar o antigo não reenviaria o
+        // cookie, que acabou de ser apagado acima, e a mensagem se perderia.
+        if (function_exists('session_create_id')) {
+            $novoId = session_create_id();
+            if (is_string($novoId) && $novoId !== '') {
+                session_id($novoId);
+            }
+        }
     }
 }

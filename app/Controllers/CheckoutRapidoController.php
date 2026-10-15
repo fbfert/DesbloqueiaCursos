@@ -75,19 +75,48 @@ class CheckoutRapidoController extends Controller
             $prefill['cpf'] = (string) Session::get('usuario_cpf', '');
         }
 
-        return $this->view('checkout-rapido/comprar', array(
+        // Tela no tema caderno (tema-caderno-unico): mesmo formulario e mesmo JS da V1.
+        return new Response(View::render(\App\Support\TemaPublico::view('checkout-rapido'), array(
             'title' => 'Garantir minha vaga · ' . ($curso['nome'] ?? 'Curso'),
+            'pageTitle' => 'Garantir minha vaga · ' . ($curso['nome'] ?? 'Curso') . ' — Desbloqueia Cursos',
             'curso' => $curso,
             'turma' => $turma,
             'valor' => $validacao['valor'],
             'prefill' => $prefill,
             'loggedIn' => $usuarioId > 0,
+            'usuarioPrimeiroNome' => $usuarioId > 0 ? $this->primeiroNome((string) Session::get('usuario_nome', '')) : '',
+            'areaHref' => $this->areaHref(),
             'textoLgpd' => $this->config->textoLgpd(),
             'pollingSegundos' => $this->config->pollingIntervaloSegundos(),
             'origem' => $origem,
             'frontend_template' => $this->configGlobal->templateVisualPortal(),
-            'useLayout' => false,
-        ));
+        ), false));
+    }
+
+    private function primeiroNome($nome)
+    {
+        $nome = trim((string) $nome);
+        if ($nome === '') {
+            return '';
+        }
+        $partes = preg_split('/\s+/', $nome);
+
+        return ($partes && !empty($partes[0])) ? (string) $partes[0] : $nome;
+    }
+
+    /** Destino de "Minha área" no topo do tema, pelo perfil da sessão (como em V2ErrorPage). */
+    private function areaHref()
+    {
+        $perfis = Session::get('usuario_perfis', array());
+        $perfis = is_array($perfis) ? $perfis : array();
+        if ((bool) Session::get('usuario_admin') || (bool) Session::get('is_admin') || in_array('admin', $perfis, true)) {
+            return '/admin';
+        }
+        if ((bool) Session::get('usuario_professor') || (bool) Session::get('is_professor') || in_array('professor', $perfis, true)) {
+            return '/professor/dashboard';
+        }
+
+        return \App\Support\V2Nav::ALUNO;
     }
 
     /**
@@ -240,8 +269,6 @@ class CheckoutRapidoController extends Controller
 
     private function naoEncontrado()
     {
-        return new Response(View::render('errors/404', array(
-            'title' => 'Página não encontrada',
-        )), 404);
+        return \App\Support\V2ErrorPage::notFound((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/comprar'), PHP_URL_PATH));
     }
 }

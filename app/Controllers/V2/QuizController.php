@@ -529,10 +529,10 @@ class QuizController extends Controller
             'loginHref' => '/v2/login',
             'registerHref' => '/v2/cadastro',
             'catalogoHref' => '/v2/catalogo/',
-            'categoriasHref' => '/categorias',
+            'categoriasHref' => '/v2/categorias',
             'certificadosHref' => '/v2/certificados/validar/',
-            'sobreHref' => '/sobre',
-            'contatoHref' => '/contato',
+            'sobreHref' => '/v2/quem-somos',
+            'contatoHref' => '/v2/onde-estamos',
             'homeHref' => '/v2/',
         );
     }

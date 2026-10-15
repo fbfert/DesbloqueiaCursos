@@ -5,13 +5,13 @@ use App\Services\Google\GoogleConfig;
 $errors = isset($errors) && is_array($errors) ? $errors : array();
 $success = isset($success) ? $success : null;
 $old = isset($old) && is_array($old) ? $old : array();
-$cadastroAction = isset($cadastroAction) ? (string) $cadastroAction : '/cadastro';
+$cadastroAction = isset($cadastroAction) ? (string) $cadastroAction : '/v2/cadastro';
 $homeHref = isset($homeHref) ? (string) $homeHref : '/v2/';
 $loginHref = isset($loginHref) ? (string) $loginHref : '/v2/login';
-$termosHref = isset($termosHref) ? (string) $termosHref : '/termos-de-uso';
-$privacidadeHref = isset($privacidadeHref) ? (string) $privacidadeHref : '/politica-de-privacidade';
+$termosHref = isset($termosHref) ? (string) $termosHref : '/v2/termos-de-uso';
+$privacidadeHref = isset($privacidadeHref) ? (string) $privacidadeHref : '/v2/politica-de-privacidade';
 $jaLogado = !empty($jaLogado);
-$areaHref = isset($areaHref) ? (string) $areaHref : '/meus-cursos';
+$areaHref = isset($areaHref) ? (string) $areaHref : '/v2/aluno/';
 
 // Valores antigos permitidos (NUNCA senha/confirmação).
 $oldNome = isset($old['nome']) ? (string) $old['nome'] : '';

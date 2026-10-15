@@ -4,7 +4,9 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Request;
+use App\Core\Response;
 use App\Core\Session;
+use App\Core\View;
 use App\Services\AuthService;
 use App\Support\LoginDestino;
 use App\Support\SafeRedirect;
@@ -83,17 +85,23 @@ class AuthController extends Controller
     {
         $this->authService->logout($request->ip(), $request->userAgent());
         Session::start();
-        Session::flash('success', 'Você saiu da sessão.');
+        Session::flash('success', 'Você saiu da sua conta.');
 
-        return $this->redirect('/login');
+        return $this->redirect(\App\Support\V2Nav::LOGIN);
     }
 
+    /** Confirmação de saída no tema (tema-caderno-unico); o formulário envia para /v2/logout. */
     public function logoutConfirm(Request $request)
     {
-        return $this->view('auth/logout', $this->flashData(array(
-            'title' => 'Sair da conta',
+        $nome = trim((string) Session::get('usuario_nome', ''));
+        $partes = $nome !== '' ? preg_split('/\s+/', $nome) : array();
+
+        return new Response(View::render(\App\Support\TemaPublico::view('sair'), array(
+            'pageTitle' => 'Sair da conta — Desbloqueia Cursos',
+            'loggedIn' => true,
+            'usuarioPrimeiroNome' => !empty($partes[0]) ? (string) $partes[0] : '',
             'cancelUrl' => $this->resolveCancelUrl(),
-        )));
+        ), false));
     }
 
     public function showForgotPassword(Request $request)
@@ -105,18 +113,7 @@ class AuthController extends Controller
 
     public function minhaPagina(Request $request)
     {
-        $sessionPerfis = Session::get('usuario_perfis', array());
-        $hasAdminAccess = Session::get('usuario_admin') || Session::get('is_admin') || in_array('admin', $sessionPerfis, true);
-        $hasProfessorAccess = Session::get('usuario_professor') || Session::get('is_professor') || in_array('professor', $sessionPerfis, true);
-
-        if ($hasAdminAccess) {
-            return $this->redirect('/admin/dashboard');
-        }
-        if ($hasProfessorAccess) {
-            return $this->redirect('/professor/dashboard');
-        }
-
-        return $this->redirect(\App\Support\V2Nav::ALUNO);
+        return $this->redirect($this->resolveCancelUrl());
     }
 
     public function showAccount(Request $request)
@@ -248,21 +245,12 @@ class AuthController extends Controller
         ));
     }
 
+    /** Área do perfil pelas permissões, a mesma regra do destino depois do login. */
     private function resolveCancelUrl()
     {
-        $sessionPerfis = Session::get('usuario_perfis', array());
-        $hasAdminAccess = Session::get('usuario_admin') || Session::get('is_admin') || in_array('admin', $sessionPerfis, true);
-        $hasProfessorAccess = Session::get('usuario_professor') || Session::get('is_professor') || in_array('professor', $sessionPerfis, true);
+        $area = $this->authService->resolveLoginRedirect((int) Session::get('usuario_id'));
 
-        if ($hasAdminAccess) {
-            return '/admin';
-        }
-
-        if ($hasProfessorAccess) {
-            return '/professor/dashboard';
-        }
-
-        return '/aluno/meus-cursos';
+        return $area !== '/' ? $area : \App\Support\V2Nav::ALUNO;
     }
 }
 

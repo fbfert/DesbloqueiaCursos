@@ -9,17 +9,26 @@ use App\Core\View;
 /**
  * Páginas de erro V2 (Fase 2.13).
  *
- * Quando a requisição está no ambiente V2 (`/v2/...`), rende a casca de erro V2
- * (layout V2, sem expor IDs internos, caminhos de arquivo, SQL ou stack trace),
- * com saídas seguras (catálogo V2 / Minha Área V2). Fora do V2, mantém a página
- * de erro legada intacta.
+ * Fora do backoffice e da API (mudança tema-caderno-unico), rende a página de erro
+ * do tema, sem expor IDs internos, caminhos de arquivo, SQL ou stack trace, com
+ * saídas seguras (catálogo e área da pessoa). Em `/admin`, `/professor` e
+ * `/revisor` mantém a página de erro do backoffice.
  */
 class V2ErrorPage
 {
-    public static function isV2Path($path)
+    /** Prefixos que continuam com a página de erro do backoffice (ou JSON, na API). */
+    const PREFIXOS_FORA_DO_TEMA = array('/admin', '/professor', '/revisor', '/api', '/webhooks');
+
+    public static function usaTemaPublico($path)
     {
         $path = (string) $path;
-        return $path === '/v2' || strpos($path, '/v2/') === 0;
+        foreach (self::PREFIXOS_FORA_DO_TEMA as $prefixo) {
+            if ($path === $prefixo || strpos($path, $prefixo . '/') === 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static function notFound($path, $titulo = null, $mensagem = null)
@@ -28,6 +37,16 @@ class V2ErrorPage
             'erroTitulo' => $titulo !== null ? $titulo : 'Página não encontrada',
             'erroMensagem' => $mensagem !== null ? $mensagem : 'O conteúdo que você procura não está disponível ou foi movido.',
             'erroIcone' => 'ti-error-404',
+        ));
+    }
+
+    /** Erro interno no tema; o detalhe técnico só entra em $mensagem com APP_DEBUG. */
+    public static function serverError($path, $mensagem = null)
+    {
+        return self::render($path, 500, 'errors/500', array(
+            'erroTitulo' => 'Erro interno',
+            'erroMensagem' => $mensagem !== null ? $mensagem : 'Não foi possível concluir a solicitação. Tente de novo em instantes.',
+            'erroIcone' => 'ti-alert-triangle',
         ));
     }
 
@@ -42,7 +61,7 @@ class V2ErrorPage
 
     private static function render($path, $status, $legacyView, array $v2Data)
     {
-        if (!self::isV2Path($path)) {
+        if (!self::usaTemaPublico($path)) {
             return new Response(View::render($legacyView, array(
                 'title' => isset($v2Data['erroTitulo']) ? $v2Data['erroTitulo'] : 'Erro',
             )), $status);

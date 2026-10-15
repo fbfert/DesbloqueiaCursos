@@ -22,6 +22,7 @@ use App\Services\CursoService;
 use App\Services\Payments\AbacatePayService;
 use App\Support\TemaPublico;
 use App\Support\V2ErrorPage;
+use App\Support\V2Nav;
 
 class CheckoutController extends Controller
 {
@@ -182,8 +183,8 @@ class CheckoutController extends Controller
             }
 
             if (!empty($resultadoCompraPropria['auto_aprovado_zero_valor'])) {
-                Session::flash('success', 'Curso gratuito liberado. Você foi direcionado para Minha Página.');
-                return $this->redirect('/minha-pagina');
+                Session::flash('success', 'Curso gratuito liberado. Ele já está na sua área.');
+                return $this->redirect(V2Nav::ALUNO);
             }
 
             Session::flash('success', 'Compra própria concluída com participante automático.');
@@ -388,7 +389,7 @@ class CheckoutController extends Controller
 
         if ($motivo === 'ja_pago' || $motivo === 'sem_cobranca') {
             Session::flash('success', $mensagem);
-            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
+            return $this->redirect('/v2/checkout/sucesso?pedido_id=' . $pedidoId);
         }
 
         if ($motivo === 'falha_finalizacao' || $motivo === 'falha_recarregar') {
@@ -403,21 +404,44 @@ class CheckoutController extends Controller
 
     public function cupomPromocional(Request $request)
     {
+        $destino = $this->destinoCupomPromocional($request->query('voltar', ''));
         $codigo = trim((string) $request->query('codigo', ''));
         if ($codigo === '') {
-            return $this->redirect('/cursos');
+            return $this->redirect($destino);
         }
 
         $cupom = $this->cupomModel->findByCodigo($codigo);
         if (!$cupom || ($cupom['status'] ?? '') !== 'ativo') {
             Session::flash('errors', array('cupom' => 'Cupom promocional indisponível.'));
-            return $this->redirect('/cursos');
+            return $this->redirect($destino);
         }
 
         Session::put('cupom_promocional_codigo', $codigo);
         Session::flash('success', 'Cupom promocional salvo para uso no checkout.');
 
-        return $this->redirect('/cursos');
+        return $this->redirect($destino);
+    }
+
+    /**
+     * Página de onde veio o link de cupom, no tema (tema-caderno-unico): rota legada
+     * vira o equivalente do tema; destino inválido ou externo vira o catálogo.
+     */
+    private function destinoCupomPromocional($voltar)
+    {
+        $voltar = \App\Support\SafeRedirect::caminhoInterno($voltar);
+        if ($voltar === null) {
+            return V2Nav::CATALOGO;
+        }
+
+        $partes = parse_url($voltar);
+        $query = array();
+        parse_str(isset($partes['query']) ? (string) $partes['query'] : '', $query);
+        $legada = \App\Support\RotaLegada::destino((string) ($partes['path'] ?? ''), $query);
+        if ($legada !== null) {
+            return isset($legada['url']) ? $legada['url'] : V2Nav::CATALOGO;
+        }
+
+        return strpos($voltar, '/v2') === 0 ? $voltar : V2Nav::CATALOGO;
     }
 
     public function cupom(Request $request)
@@ -565,7 +589,7 @@ class CheckoutController extends Controller
         }
 
         if (in_array((string) $pedido['pedido']['status'], array('aprovado', 'pago'), true)) {
-            return $this->redirect('/checkout/sucesso?pedido_id=' . $pedidoId);
+            return $this->redirect('/v2/checkout/sucesso?pedido_id=' . $pedidoId);
         }
 
         return $this->view('checkout/comprovante', array(
@@ -716,15 +740,7 @@ class CheckoutController extends Controller
      */
     private function dadosComprovanteEnviadoV2(array $p, $pedidoId)
     {
-        $cursos = array();
-        if (isset($p['itens']) && is_array($p['itens'])) {
-            foreach ($p['itens'] as $item) {
-                $nome = trim((string) ($item['curso_nome'] ?? ''));
-                if ($nome !== '' && !in_array($nome, $cursos, true)) {
-                    $cursos[] = $nome;
-                }
-            }
-        }
+        $cursos = $this->nomesCursosPedido($p);
 
         $enviadoEmRaw = isset($p['comprovante_atual']['enviado_em']) ? (string) $p['comprovante_atual']['enviado_em'] : '';
         $enviadoEm = '';
@@ -776,6 +792,68 @@ class CheckoutController extends Controller
             'usuarioEmail' => Session::get('usuario_email'),
             'success' => Session::pullFlash('success'),
         ));
+    }
+
+    /**
+     * Pagamento concluído no tema (tema-caderno-unico): destino do AbacatePay e dos
+     * pedidos sem cobrança. Mesma checagem de dono de sucesso(); estados:
+     * aprovado, gratuito, comprovante em análise e pagamento em confirmação
+     * (gateway devolveu o aluno antes do webhook).
+     */
+    public function sucessoV2(Request $request)
+    {
+        $pedidoId = (int) $this->pedidoIdFromRequest($request);
+        $detalhe = $pedidoId > 0
+            ? $this->pedidoService->detalharCheckout($pedidoId, Session::get('usuario_id'), true)
+            : array('pedido' => null);
+        if (empty($detalhe['pedido'])) {
+            return V2ErrorPage::notFound(
+                $request->path(),
+                'Pedido não encontrado',
+                'Este pedido não está disponível ou não pertence à sua conta.'
+            );
+        }
+
+        $p = $detalhe['pedido'];
+        $status = strtolower(trim((string) ($p['status'] ?? '')));
+        if (in_array($status, array('cancelado', 'expirado', 'estornado'), true)) {
+            $estado = 'cancelado';
+        } elseif ((float) ($p['total'] ?? 0) <= 0.0) {
+            $estado = 'gratuito';
+        } elseif (in_array($status, array('aprovado', 'pago'), true)) {
+            $estado = 'aprovado';
+        } elseif ($status === 'comprovante_enviado' || !empty($p['comprovante_aguardando_aprovacao'])) {
+            $estado = 'analise';
+        } else {
+            $estado = 'confirmando';
+        }
+
+        return $this->renderCheckout($request, 'sucesso', array(
+            'title' => 'Pedido recebido',
+            'pageTitle' => ($estado === 'aprovado' || $estado === 'gratuito' ? 'Inscrição confirmada' : 'Pedido recebido') . ' — Desbloqueia Cursos',
+            'estado' => $estado,
+            'pedidoCodigo' => (string) ($p['codigo'] ?? ''),
+            'cursos' => $this->nomesCursosPedido($p),
+            'totalFormatado' => 'R$ ' . number_format((float) ($p['total'] ?? 0), 2, ',', '.'),
+            'proximasAcoes' => $this->carregarProximasAcoesCheckout($p),
+            'cursosHref' => V2Nav::ALUNO,
+            'pedidosHref' => V2Nav::PEDIDOS,
+        ));
+    }
+
+    private function nomesCursosPedido(array $p)
+    {
+        $cursos = array();
+        if (isset($p['itens']) && is_array($p['itens'])) {
+            foreach ($p['itens'] as $item) {
+                $nome = trim((string) ($item['curso_nome'] ?? ''));
+                if ($nome !== '' && !in_array($nome, $cursos, true)) {
+                    $cursos[] = $nome;
+                }
+            }
+        }
+
+        return $cursos;
     }
 
     private function processarInscricao(Request $request)
@@ -935,8 +1013,8 @@ class CheckoutController extends Controller
             }
 
             if (!empty($resultadoCompraPropria['auto_aprovado_zero_valor'])) {
-                Session::flash('success', 'Curso gratuito liberado. Você foi direcionado para Minha Página.');
-                return $this->redirect('/minha-pagina');
+                Session::flash('success', 'Curso gratuito liberado. Ele já está na sua área.');
+                return $this->redirect(V2Nav::ALUNO);
             }
 
             Session::flash('success', 'Compra própria concluída com participante automático.');
@@ -975,8 +1053,8 @@ class CheckoutController extends Controller
         }
 
         if (!empty($finalizacao['auto_aprovado_zero_valor'])) {
-            Session::flash('success', 'Curso gratuito liberado. Você foi direcionado para Minha Página.');
-            return $this->redirect('/minha-pagina');
+            Session::flash('success', 'Curso gratuito liberado. Ele já está na sua área.');
+            return $this->redirect(V2Nav::ALUNO);
         }
 
         if ($this->abacatePayService->isEnabled()) {
@@ -999,12 +1077,12 @@ class CheckoutController extends Controller
         // fora do V2, o sucesso legado inalterado.
         $enviadoUrl = $v2
             ? '/v2/checkout/comprovante/enviado?pedido_id=' . (int) $pedidoId
-            : '/checkout/sucesso?pedido_id=' . (int) $pedidoId;
+            : '/v2/checkout/sucesso?pedido_id=' . (int) $pedidoId;
         // Pedido já pago/aprovado (sem comprovante a enviar): no V2, Minha Área;
         // fora do V2, o sucesso legado.
         $pagoUrl = $v2
             ? '/v2/aluno/?aba=pedidos'
-            : '/checkout/sucesso?pedido_id=' . (int) $pedidoId;
+            : '/v2/checkout/sucesso?pedido_id=' . (int) $pedidoId;
 
         if (!Session::get('usuario_id')) {
             Session::flash('errors', array('auth' => 'Faça login para enviar o comprovante.'));

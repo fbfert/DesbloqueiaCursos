@@ -141,7 +141,7 @@ A versão online de um certificado SHALL ser exibida no tema, com as páginas do
 - **THEN** recebe a página 404 do tema
 
 ### Requirement: Checkout rápido no tema
-A página de compra rápida (`/comprar`) SHALL ser renderizada no tema, mantendo a URL, os campos, as validações, os eventos de conversão e a disponibilidade controlada pela configuração do checkout rápido.
+A página de compra rápida (`/comprar`) SHALL ser renderizada no tema, mantendo a URL, os campos, as validações, o acompanhamento do pagamento e a disponibilidade controlada pela configuração do checkout rápido.
 
 #### Scenario: Compra rápida habilitada
 - **WHEN** o checkout rápido está ativo para um curso e o visitante abre `/comprar` desse curso

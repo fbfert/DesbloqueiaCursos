@@ -40,6 +40,20 @@ class AbacatePayService
         return !empty($config['enabled']);
     }
 
+    /**
+     * Para onde o gateway devolve o aluno: o resumo do pedido (desistiu) e a página
+     * de pagamento concluído (pagou), as duas no tema (tema-caderno-unico).
+     *
+     * @return array{0:string,1:string} [returnUrl, completionUrl]
+     */
+    public static function urlsRetorno($pedidoId)
+    {
+        return array(
+            Helpers::url('v2/checkout/resumo?pedido_id=' . (int) $pedidoId),
+            Helpers::url('v2/checkout/sucesso?pedido_id=' . (int) $pedidoId),
+        );
+    }
+
     public function hasApiKey()
     {
         $config = $this->runtimeConfig();
@@ -65,8 +79,7 @@ class AbacatePayService
             return array('ok' => false, 'message' => 'Pedido sem valor para cobrança.');
         }
 
-        $returnUrl = Helpers::url('checkout/resumo?pedido_id=' . $pedidoId);
-        $completionUrl = Helpers::url('checkout/sucesso?pedido_id=' . $pedidoId);
+        list($returnUrl, $completionUrl) = self::urlsRetorno($pedidoId);
         if ($this->isProductionLike() && (!$this->isHttpsUrl($returnUrl) || !$this->isHttpsUrl($completionUrl))) {
             return array('ok' => false, 'message' => 'As URLs de retorno precisam usar HTTPS em produção.');
         }
