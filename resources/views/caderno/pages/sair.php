@@ -13,7 +13,7 @@ $primeiro = isset($usuarioPrimeiroNome) ? (string) $usuarioPrimeiroNome : '';
 ?>
 <div class="auth-cab">
   <h1 class="t2">Sair da conta</h1>
-  <p class="lead"><?= $primeiro !== '' ? Helpers::e($primeiro) . ', você' : 'Você' ?> está prestes a sair. Para voltar, é só entrar de novo com seu e-mail, CPF ou conta Google.</p>
+  <p class="lead"><?= $primeiro !== '' ? Helpers::e($primeiro) . ', você' : 'Você' ?> está prestes a sair. Para voltar, é só entrar de novo com seu e-mail ou CPF<?= \App\Services\Google\GoogleConfig::siteAtivo() ? ', ou com a sua conta Google' : '' ?>.</p>
 </div>
 
 <form class="auth-form" method="post" action="/v2/logout">

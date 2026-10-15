@@ -103,6 +103,11 @@ bash ~/deploy/deploy_vps.sh --pacote ~/deploy/deploy-<commit>.tar.gz \
 
 ## 3.1 Tema público (`TEMA_PUBLICO`) e prévia
 
+> **Obsoleto desde a mudança `tema-caderno-unico` (15/10/2026).** O tema caderno é o único
+> visual do site e da área do aluno. `TEMA_PUBLICO`, `HOME_VERSION` e a prévia `?tema=` não têm
+> mais efeito, e as rotas antigas redirecionam ao tema (ver §3.6). O texto abaixo fica como
+> histórico.
+
 Relatório completo: `docs/2026-10-06-tema-caderno.md`.
 
 - **Valores:** `TEMA_PUBLICO=caderno` ativa o tema, sem diferenciar maiúsculas
@@ -266,6 +271,35 @@ Configuração do Google: `docs/2026-10-login-google.md`.
 novas podem ficar. Voltar `cpf` a `NOT NULL` só é possível se
 `SELECT COUNT(*) FROM usuarios WHERE cpf IS NULL` der `0` — contas criadas pelo
 Google não têm CPF.
+
+## 3.6 Tema caderno único (`tema-caderno-unico`)
+
+Só código, sem migração. Mudança OpenSpec: `openspec/changes/tema-caderno-unico/`.
+
+- **O que muda para quem usa o site:**
+  - toda página do site e da área do aluno sai no tema caderno;
+  - as rotas antigas redirecionam: 301 nas públicas, 302 nas que exigem sessão e no checkout.
+    Valem `/login`, `/cadastro`, `/cursos`, `/meus-cursos`, `/area-curso`,
+    `/aluno/curso/...`, `/checkout/...`, `/certificados/...` e outras (mapa em
+    `app/Support/RotaLegada.php`);
+  - QR codes e e-mails antigos continuam funcionando pelos redirecionamentos.
+- **Login:** todo login passa pelo `/v2/login`. Admin, professor e revisor chegam à própria área,
+  e quem foi barrado numa página volta para ela depois de entrar.
+- **AbacatePay:** cobranças novas devolvem o aluno para `/v2/checkout/resumo` e
+  `/v2/checkout/sucesso`. As cobranças antigas, que voltam para `/checkout/sucesso`, são
+  redirecionadas.
+- **Depois do deploy:**
+  1. rodar o smoke completo (`--modo=todos`). A guarda nova falha se alguma página do escopo vier
+     no layout V1;
+  2. entrar como admin, professor e aluno pelo `/login`;
+  3. fazer um pagamento online de ponta a ponta;
+  4. ler o QR code de um certificado antigo;
+  5. abrir um link de cupom promocional.
+
+  Apagar `TEMA_PUBLICO` e `HOME_VERSION` do `.env` é opcional.
+- **Rollback:** `deploy_vps.sh --reverter <backup>`. Não há dado a desfazer. Os 301 que já foram
+  entregues ficam em cache nos navegadores, mas só levam a páginas `/v2/*`, que continuam
+  existindo.
 
 ## 4. Pós-deploy
 

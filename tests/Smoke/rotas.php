@@ -18,6 +18,11 @@
  *   proibe     trechos que NÃO podem aparecer no corpo (string ou lista)
  *   tema_exige trechos obrigatórios, só se a página veio no tema caderno
  *              (detectado por assets/caderno/caderno.css); vale nos dois temas
+ *   redireciona array(status, trecho): o PRIMEIRO salto precisa ter esse status
+ *              e o Location conter o trecho (rotas legadas → tema)
+ *   proibe_legado false desliga a guarda do visual antigo (ligada por padrão
+ *              fora de /admin, /professor e /revisor: falha se o corpo tiver
+ *              o marcador_legado do layout V1)
  *   defeito    descreve um defeito conhecido do portal. A rota conta como PASS
  *              (para o baseline não ficar vermelho), mas o runner avisa sempre.
  *              Use só com um comentário explicando o defeito e como corrigi-lo.
@@ -29,6 +34,9 @@ $rotas = array(
 
     // Presente em toda página HTML do portal, nos dois layouts (legado e V2).
     'marcador_padrao' => '<html lang="pt-BR"',
+
+    // Classe do <body> que só o layout V1 do site (resources/views/layout.php) emite.
+    'marcador_legado' => 'frontend-theme',
 
     // ---------------------------------------------------------------------
     // MODO ANÔNIMO — devem responder 200 para visitante sem sessão.
@@ -58,14 +66,24 @@ $rotas = array(
         // Se a página for republicada, volte este status para 200.
         array('path' => '/v2/como-funciona-a-sala-virtual', 'nome' => 'Sala virtual V2',
               'status' => 404, 'marcador' => '', 'guarda' => false),
-        array('path' => '/categorias',                  'nome' => 'Categorias (legado)'),
-        array('path' => '/cursos',                      'nome' => 'Cursos (legado)'),
-        array('path' => '/como-funciona',               'nome' => 'Como funciona (legado)'),
-        array('path' => '/sobre',                       'nome' => 'Sobre (legado)'),
-        array('path' => '/contato',                     'nome' => 'Contato (legado)'),
-        array('path' => '/login',                       'nome' => 'Login (legado)'),
-        array('path' => '/cadastro',                    'nome' => 'Cadastro (legado)'),
-        array('path' => '/certificados/validar',        'nome' => 'Validar certificado (legado)'),
+        // Telas que só existiam no visual antigo e agora estão no tema (tema-caderno-unico).
+        array('path' => '/pagina-que-nao-existe',       'nome' => 'Erro 404 fora de /v2', 'status' => 404),
+        array('path' => '/termos-de-uso',               'nome' => 'Página dinâmica (termos)'),
+        array('path' => '/v2/certificados/versao-online?codigo=SMOKE-INEXISTENTE', 'nome' => 'Certificado online inexistente', 'status' => 404),
+        array('path' => '/pedido-recuperacao/descadastrar?token=smoke', 'nome' => 'Descadastro (token inválido)'),
+
+        // Rotas legadas: redirecionam ao tema (301 públicas, 302 com sessão/checkout).
+        array('path' => '/categorias',                  'nome' => 'Categorias (legado)',   'redireciona' => array(301, '/v2/categorias')),
+        array('path' => '/categorias/x/cursos',         'nome' => 'Categoria (legado)',    'redireciona' => array(301, '/v2/catalogo/?categoria=x')),
+        array('path' => '/cursos',                      'nome' => 'Cursos (legado)',       'redireciona' => array(301, '/v2/catalogo')),
+        array('path' => '/como-funciona',               'nome' => 'Como funciona (legado)', 'redireciona' => array(301, '/v2/como-funciona-a-sala-virtual'), 'status' => 404, 'marcador' => '', 'guarda' => false),
+        array('path' => '/sobre',                       'nome' => 'Sobre (legado)',        'redireciona' => array(301, '/v2/quem-somos')),
+        array('path' => '/contato',                     'nome' => 'Contato (legado)',      'redireciona' => array(301, '/v2/onde-estamos')),
+        array('path' => '/login',                       'nome' => 'Login (legado)',        'redireciona' => array(301, '/v2/login')),
+        array('path' => '/cadastro',                    'nome' => 'Cadastro (legado)',     'redireciona' => array(301, '/v2/cadastro')),
+        array('path' => '/recuperar-senha',             'nome' => 'Recuperar senha (legado)', 'redireciona' => array(301, '/v2/recuperar-senha')),
+        array('path' => '/certificados/validar?codigo=SMOKE', 'nome' => 'Validar certificado (legado)', 'redireciona' => array(301, '/v2/certificados/validar?codigo=SMOKE')),
+        array('path' => '/certificados/show?codigo=SMOKE', 'nome' => 'Certificado (legado)', 'redireciona' => array(301, '/v2/certificados/validar?codigo=SMOKE')),
 
         // Respostas não-HTML: sem marcador de layout e sem guarda.
         array('path' => '/sitemap.xml', 'nome' => 'Sitemap', 'marcador' => '<urlset', 'guarda' => false),
@@ -89,12 +107,15 @@ $rotas = array(
         array('path' => '/v2/checkout/resumo',        'nome' => 'Checkout resumo V2',        'destino' => '/v2/login'),
         array('path' => '/v2/checkout/pagamento',     'nome' => 'Checkout pagamento V2',     'destino' => '/v2/login'),
         array('path' => '/v2/checkout/comprovante',   'nome' => 'Checkout comprovante V2',   'destino' => '/v2/login'),
-        array('path' => '/area-curso',     'nome' => 'Área do curso (legado)', 'destino' => '/login'),
-        array('path' => '/meus-cursos',    'nome' => 'Meus cursos (legado)',   'destino' => '/login'),
-        array('path' => '/minha-conta',    'nome' => 'Minha conta (legado)',   'destino' => '/login'),
-        array('path' => '/pedidos',        'nome' => 'Pedidos (legado)',       'destino' => '/login'),
-        array('path' => '/admin/revisoes', 'nome' => 'Fila de revisões (admin)', 'destino' => '/login'),
-        array('path' => '/admin/certificados/retidos', 'nome' => 'Certificados aguardando CPF (admin)', 'destino' => '/login'),
+        array('path' => '/v2/checkout/sucesso?pedido_id=1', 'nome' => 'Pagamento concluído', 'destino' => '/v2/login'),
+        // Todo login exigido termina no login do tema, com o destino preservado.
+        array('path' => '/area-curso',     'nome' => 'Área do curso (legado)', 'destino' => '/v2/login?redirect=%2Farea-curso'),
+        array('path' => '/meus-cursos',    'nome' => 'Meus cursos (legado)',   'destino' => '/v2/login?redirect=%2Fmeus-cursos'),
+        array('path' => '/minha-conta',    'nome' => 'Minha conta (legado)',   'destino' => '/v2/login?redirect=%2Fminha-conta'),
+        array('path' => '/pedidos',        'nome' => 'Pedidos (legado)',       'destino' => '/v2/login?redirect=%2Fpedidos'),
+        array('path' => '/logout',         'nome' => 'Sair da conta',          'destino' => '/v2/login'),
+        array('path' => '/admin/revisoes', 'nome' => 'Fila de revisões (admin)', 'destino' => '/v2/login?redirect=%2Fadmin%2Frevisoes'),
+        array('path' => '/admin/certificados/retidos', 'nome' => 'Certificados aguardando CPF (admin)', 'destino' => '/v2/login?redirect=%2Fadmin%2Fcertificados%2Fretidos'),
         array('path' => '/conta/completar', 'nome' => 'Completar cadastro (login com Google)', 'destino' => '/v2/login'),
     ),
 
@@ -108,8 +129,12 @@ $rotas = array(
               'tema_exige' => array('assets/caderno/caderno-aluno.css', 'assets/caderno/caderno-aluno.js')),
         array('path' => '/v2/minha-conta', 'nome' => 'Minha conta V2',
               'tema_exige' => array('assets/caderno/caderno-aluno.css', 'assets/caderno/caderno-aluno.js')),
-        array('path' => '/meus-cursos',    'nome' => 'Meus cursos (legado)'),
-        array('path' => '/area-curso',     'nome' => 'Área do curso (legado)'),
+        // Legadas com sessão: 302 para o tema.
+        array('path' => '/meus-cursos',    'nome' => 'Meus cursos (legado)', 'redireciona' => array(302, '/v2/aluno/')),
+        array('path' => '/pedidos',        'nome' => 'Pedidos (legado)',     'redireciona' => array(302, '/v2/aluno/?aba=pedidos')),
+        array('path' => '/minha-conta',    'nome' => 'Minha conta (legado)', 'redireciona' => array(302, '/v2/minha-conta')),
+        // Confirmação de saída no tema (só leitura: o POST de saída não é enviado).
+        array('path' => '/logout',         'nome' => 'Sair da conta', 'marcador' => 'action="/v2/logout"'),
     ),
 
     // ---------------------------------------------------------------------

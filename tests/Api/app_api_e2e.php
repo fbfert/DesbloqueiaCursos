@@ -786,8 +786,8 @@ it('logout revoga os tokens e remove o push do aparelho', function () use ($api,
     expect((int) $pdo->query("SELECT COUNT(*) FROM app_dispositivos WHERE device_id = 'dispositivo-e2e-a'")->fetchColumn())->toBe(0);
 });
 
-it('o site HTML continua com sessão: /login responde HTML e abre cookie', function () use ($base) {
-    $r = http('GET', $base . '/login');
+it('o site HTML continua com sessão: /v2/login responde HTML e abre cookie', function () use ($base) {
+    $r = http('GET', $base . '/v2/login');
     expect($r['status'])->toBe(200);
     exigir(stripos((string) cab($r, 'content-type'), 'text/html') !== false, 'login não é HTML');
     exigir(cab($r, 'set-cookie') !== null, 'site HTML deixou de abrir sessão');

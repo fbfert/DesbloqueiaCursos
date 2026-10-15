@@ -81,6 +81,19 @@ Migrations: arquivos SQL simples e numerados em `sql/` (ex.: `054_pedido_recuper
 - Toda exclusão (lógica ou física) passa por `TrashService::record()`, que **exige justificativa** (`requireReason`) e grava snapshot em JSON na tabela `lixeira`.
 - Mudanças relevantes devem gerar log/histórico (`AuditService`, `Logger::info/error/warning` grava em `storage/logs/app-YYYY-MM-DD.log`).
 
+### Visual do site e da área do aluno (tema caderno)
+
+- O site público e a área do aluno têm um único visual: o tema caderno. As views ficam em
+  `resources/views/caderno/` e as rotas em `/v2/*`. Os controllers V2 renderizam com
+  `TemaPublico::view()`, sempre `caderno`. `TEMA_PUBLICO` e `?tema=` não têm efeito.
+- Rotas GET antigas (V1) do site e do aluno redirecionam ao tema por `App\Support\RotaLegada` +
+  `RotaLegadaController`. Não crie página nova no layout V1 (`resources/views/layout.php`); ele
+  ficou só para admin, professor e revisor.
+- Erros 403/404/500 fora do backoffice saem no tema (`V2ErrorPage`, `ErrorHandler`). Login exigido
+  leva a `/v2/login?redirect=` (`SafeRedirect::caminhoInterno`), e o destino depois do login segue
+  o perfil (`LoginDestino`).
+- O smoke falha se uma página fora do backoffice vier no layout V1 (guarda `proibe_legado`).
+
 ### Conteúdo/LMS e editor rico
 
 - O "Conteúdo Unificado" (`Conteudo*` models/services) representa módulos/itens de curso (texto, arquivo, vídeo, link, avaliação textual, etiqueta).

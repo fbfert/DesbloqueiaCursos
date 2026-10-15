@@ -79,7 +79,7 @@
   - Verificação: inscrição gratuita local termina em `/v2/aluno/`.
 - [x] 6.3 `oficial_url` em `V2/AulaController` e `V2/AtividadeController`: passa a apontar para a aula do tema. O tipo legado mostra o aviso de conteúdo indisponível.
   - Verificação: `grep -rn "'/aluno/curso/" app/Controllers/V2` sem resultados.
-- [ ] 6.4 Certificados:
+- [x] 6.4 Certificados:
   - `online_href` passa a ser `/v2/certificados/versao-online`;
   - a URL de validação gravada passa a ser `/v2/certificados/validar` em `CertificadoService`, `CertificadoPlaceholderService`, `InscricaoService` e `AppApi/CatalogoPresenter`.
   - Verificação: `php tests/Unit/certificado_retencao.php` e os testes de certificado existentes passam; um certificado emitido localmente traz a URL nova no QR.
@@ -93,21 +93,21 @@
 
 ## 7. Smoke e verificação
 
-- [ ] 7.1 Em `tests/Smoke/rotas.php`, fazer:
+- [x] 7.1 Em `tests/Smoke/rotas.php`, fazer:
   - incluir as rotas legadas, com status e `Location` esperados;
   - incluir as telas novas: `/logout` com sessão, `/v2/checkout/sucesso` sem sessão terminando no login, `/v2/certificados/versao-online` com código inválido dando 404 e uma rota inexistente dando 404 do tema;
   - criar a guarda `proibe_legado` (classe `frontend-theme` no corpo), ligada por padrão nas rotas do escopo;
   - documentar tudo em `tests/Smoke/README.md`.
   - Verificação: `php tests/Smoke/smoke.php http://127.0.0.1:8010` e `--modo=todos` com o usuário de teste local terminam com `0`.
-- [ ] 7.2 Rodar `php -l` em todos os PHP alterados (no 8.3 do Docker e no 8.4) e `node --check` nos JS alterados.
+- [x] 7.2 Rodar `php -l` em todos os PHP alterados (no 8.3 do Docker e no 8.4) e `node --check` nos JS alterados.
   - Verificação: zero erros e zero `Deprecated`.
-- [ ] 7.3 Rodar os testes unitários e de API afetados: `tests/Unit/*` novos e existentes de login, Google, certificado e quiz, e `tests/Api/google_e2e.php`.
+- [x] 7.3 Rodar os testes unitários e de API afetados: `tests/Unit/*` novos e existentes de login, Google, certificado e quiz, e `tests/Api/google_e2e.php`.
   - Verificação: todos terminam sem falha.
-- [ ] 7.4 Revisar os textos de interface novos (sair, pagamento concluído, certificado online, descadastro, erros, aviso de conteúdo indisponível) contra `docs/padrao-editorial-ptbr.md`.
+- [x] 7.4 Revisar os textos de interface novos (sair, pagamento concluído, certificado online, descadastro, erros, aviso de conteúdo indisponível) contra `docs/padrao-editorial-ptbr.md`.
   - Verificação: acentuação correta e nenhum termo em inglês visível.
-- [ ] 7.5 Medir o orçamento de desempenho nas telas novas de checkout e autenticação: até 15 KB de JS e 25 KB de CSS do tema, comprimidos.
+- [x] 7.5 Medir o orçamento de desempenho nas telas novas de checkout e autenticação: até 15 KB de JS e 25 KB de CSS do tema, comprimidos.
   - Verificação: medição anotada no fim deste arquivo.
-- [ ] 7.6 Fazer o percurso manual no Docker local:
+- [x] 7.6 Fazer o percurso manual no Docker local:
   - login como aluno, professor e admin pelo `/login`;
   - "Sair";
   - abrir uma aula pela URL antiga;
@@ -118,7 +118,7 @@
 
 ## 8. Documentação
 
-- [ ] 8.1 Atualizar `CLAUDE.md` (seção de tema) e `docs/2026-10-06-tema-caderno.md` para dizer que o caderno é fixo. Registrar o roteiro de deploy e de rollback em `docs/deploy.md`.
+- [x] 8.1 Atualizar `CLAUDE.md` (seção de tema) e `docs/2026-10-06-tema-caderno.md` para dizer que o caderno é fixo. Registrar o roteiro de deploy e de rollback em `docs/deploy.md`.
   - Verificação: revisão do texto.
 
 ## Workflow follow-up
@@ -126,3 +126,34 @@
 - Deploy com `scripts/deploy_vps.sh`, sem migração, seguido do smoke completo em produção e dos testes manuais da seção "Migration Plan" do design.
 - Arquivar a mudança com `/opsx:archive`. Antes, arquivar `api-app-v1` e `login-google`, que estão pendentes.
 - Em seguida, abrir a mudança `backoffice-caderno`, começando por uma rodada de definição visual.
+
+## Registro da verificação (15/10/2026)
+
+- **0.1 — pendente:** a consulta de tipos de item em produção ainda não foi rodada. No banco local
+  não há itens do tipo `atividade`. Se houver em produção, a aula e a atividade já mostram em texto
+  "Esta atividade não está disponível por aqui" (6.3), sem levar ao visual antigo.
+- **Testes unitários:** todos os arquivos de `tests/Unit` passam contra o banco de teste
+  (`tests/Api/montar_banco.php`). Duas exceções, ambas do ambiente, não do código:
+  - `norminha_arquitetura` e `norminha_todos` falham só no PHP nativo do Windows, porque usam
+    `exec('grep ... 2>/dev/null')`. No container passam com 24/24 e 368/368.
+  - `checkout_logado_e2e` e `norminha_api` dão SKIP por configuração.
+- **API:** `google_e2e` passa com 31/31. `app_api_e2e` passa com 52/52, depois de trocar `/login`
+  por `/v2/login` no teste do cookie de sessão.
+- **Paridade HTML (`tests/Api/paridade_html.php --base=42aa1d0`):** 3 casos idênticos e 41
+  divergentes. Todas as divergências são esperadas:
+  - as páginas V1 da área do curso agora redirecionam ao tema;
+  - as ações V1 (concluir, cancelar e pagar pela tela antiga) não rodam, porque o teste tira o
+    token CSRF dessas páginas, que não existem mais;
+  - os erros 404 de arquivo saem no tema.
+
+  O cancelamento pelo tema continua idêntico. O pagamento online pelo tema
+  (`/aluno/pedidos/pagar/abacatepay` com `origem_v2`) devolve à etapa de pagamento do tema. O teste
+  foi feito para a extração da API do app e compara telas V1; ajustá-lo ao tema único fica para a
+  limpeza das views legadas.
+- **Smoke local:** 60/60 no modo `todos` e 9/9 no autenticado com aula, quiz e atividade.
+- **Orçamento (7.5), medido com gzip -9:**
+  - `caderno.css` foi de 16,0 KB para 16,7 KB, dentro do limite de 25 KB. Ganhou as regras do
+    checkout rápido e do certificado online.
+  - `caderno.js` ficou em 10,0 KB, dentro do limite de 15 KB e sem mudança.
+  - As telas novas não trazem JS do tema. O certificado online tem só um script inline de 4 linhas
+    (Imprimir), e o checkout rápido mantém o próprio `checkout-rapido.js`.

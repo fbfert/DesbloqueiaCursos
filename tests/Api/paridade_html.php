@@ -143,7 +143,7 @@ function percorrer($base, PDO $pdo, $raizArvore)
 
     $cookies = tempnam(sys_get_temp_dir(), 'par_');
     $r = array();
-    $login = http_site($base, 'GET', '/login', null, $cookies);
+    $login = http_site($base, 'GET', '/v2/login', null, $cookies);
     $r['login_post'] = http_site($base, 'POST', '/login', array('_token' => token_csrf($login['corpo']), 'login' => 'aluno.caderno@teste.local', 'senha' => 'Local@12345'), $cookies);
 
     $ctx = '/aluno/curso/9001/9001/9001';

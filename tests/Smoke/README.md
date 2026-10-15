@@ -215,16 +215,22 @@ componente duplicado · CSS/JS duplicado · erro de PHP no corpo · rota protegi
 |---|---|
 | `/v2/como-funciona-a-sala-virtual` | Rota registrada em `routes/web.php:118` e anunciada no `sitemap.xml`, mas a página está excluída em `paginas` (`deleted_at` preenchido). Retorna 404 — encontrado pelo smoke na primeira execução. Corrigir: republicar a página no admin **ou** remover a rota, a entrada do sitemap (`SitemapController.php:37`) e a constante `V2Nav::COMO_FUNCIONA_SALA`. |
 
-## Tema público (`TEMA_PUBLICO=caderno|v2`)
+## Tema único (mudança `tema-caderno-unico`)
 
-O tema "caderno" é escolhido pela chave `TEMA_PUBLICO` do `.env` (lida a cada requisição). A suíte
-precisa passar **com as mesmas rotas PASS nos dois valores**:
+O tema caderno é o único visual do site e da área do aluno: `TEMA_PUBLICO` não tem mais efeito.
+Duas verificações garantem que nenhuma página volte ao visual antigo:
+
+- **Guarda do visual antigo.** Fica ligada por padrão em toda rota cujo destino final está fora de
+  `/admin`, `/professor` e `/revisor`, e falha se o corpo trouxer o `marcador_legado` de
+  `rotas.php`. Esse marcador é a classe `frontend-theme` do `<body>`, que só o layout V1
+  (`resources/views/layout.php`) emite. Para desligar numa rota, use `'proibe_legado' => false`.
+- **Rotas legadas.** Usam `'redireciona' => array(status, trecho)`. O primeiro salto precisa ter
+  esse status (301 nas páginas públicas, 302 com sessão ou no checkout), e o `Location` precisa
+  conter o trecho. As legadas que exigem sessão estão em **protegidas**, com `destino` no login do
+  tema e o `?redirect=` preservado. As legadas logadas estão em **autenticado**.
 
 ```bash
 # local, dentro do container (o app responde em 127.0.0.1:8010)
-sed -i 's/^TEMA_PUBLICO=.*/TEMA_PUBLICO=v2/' .env
-docker compose -f docker/local/compose.yml exec -T app php tests/Smoke/smoke.php http://127.0.0.1:8010
-sed -i 's/^TEMA_PUBLICO=.*/TEMA_PUBLICO=caderno/' .env
 docker compose -f docker/local/compose.yml exec -T app php tests/Smoke/smoke.php http://127.0.0.1:8010
 ```
 
@@ -237,9 +243,6 @@ Notas:
   `docker compose -f docker/local/compose.yml exec -T -e SMOKE_CURSO_ID=15 app php tests/Smoke/smoke.php http://127.0.0.1:8010`.
   Em produção, use o id de um curso publicado.
 - Os passos do checkout (`/v2/checkout/*`) entram em **protegidas**: sem sessão, terminam em `/v2/login`.
-  O conteúdo deles logado não é coberto pelo smoke (que não faz POST de pedido); a paridade de links e
-  campos entre os dois temas foi conferida à parte, com cookie de login e `pedido_id` de um pedido
-  `aguardando_pagamento` local.
-- A guarda "folha de estilo base" aceita `app.css` (legado), `v2-main.css` (V2) ou `caderno.css`
-  (tema). Com a chave em `caderno`, as páginas do escopo do tema trazem só `caderno.css`.
-- Deixe a chave em `caderno` ao terminar, para o ambiente local voltar ao estado de desenvolvimento.
+  O conteúdo deles logado não é coberto pelo smoke (que não faz POST de pedido).
+- O checkout rápido (`/comprar`) não está na suíte: ele responde 200 ou 404 conforme a configuração
+  do checkout rápido de cada ambiente.

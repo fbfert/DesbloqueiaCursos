@@ -168,11 +168,9 @@ APP_ENV=$(env_get APP_ENV)
 [ "$(printf '%s' "$APP_ENV" | tr '[:upper:]' '[:lower:]')" = "production" ] \
     || falha "APP_ENV no .env é '$APP_ENV'. Em produção precisa ser 'production' (é o que desliga os CPFs de teste)."
 ok "APP_ENV=production"
-TEMA=$(env_get TEMA_PUBLICO)
-ok "TEMA_PUBLICO=${TEMA:-<ausente, vale v2>}"
-if [ "$(printf '%s' "$TEMA" | tr '[:upper:]' '[:lower:]' | tr -d ' ')" = "caderno" ]; then
-    aviso "o tema caderno já está ligado. O recomendado é subir com v2 e conferir antes com ?tema=caderno."
-    confirmar "Seguir mesmo assim?"
+# Desde a mudança tema-caderno-unico o caderno é fixo: TEMA_PUBLICO não tem efeito.
+if [ -n "$(env_get TEMA_PUBLICO)" ]; then
+    ok "TEMA_PUBLICO no .env não tem mais efeito (o tema caderno é fixo); pode ser apagada."
 fi
 ok "PHP: $("$PHP_BIN" -r 'echo PHP_VERSION;')"
 "$PHP_BIN" -r 'exit(version_compare(PHP_VERSION, "8.2", ">=") ? 0 : 1);' \
@@ -334,7 +332,7 @@ cat <<FIM
 Próximos passos manuais:
   - Rodar o smoke completo da sua máquina:  php tests/Smoke/smoke.php ${URL:-<url>}
   - Fazer uma compra real de ponta a ponta com PIX.
-  - Conferir o tema com ?tema=caderno logado como admin; para ligar, TEMA_PUBLICO=caderno no .env.
+  - Entrar como admin, professor e aluno pelo /login e conferir que cada um chega à sua área.
 
 Para desfazer o código:  bash $0 --reverter $DESTINO_BKP
 FIM

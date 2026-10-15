@@ -422,6 +422,29 @@ $verificar = function ($grupo, array $rota, array $contexto) use (
         }
     }
 
+    // Rota legada (tema-caderno-unico): o PRIMEIRO salto precisa ter o status e o
+    // destino declarados em 'redireciona' => array(status, trecho do Location).
+    if (isset($rota['redireciona'])) {
+        list($statusSalto, $trechoDestino) = $rota['redireciona'];
+        $primeiro = isset($resposta['cadeia'][0]['status']) ? (int) $resposta['cadeia'][0]['status'] : 0;
+        $segundaUrl = isset($resposta['cadeia'][1]['url']) ? $resposta['cadeia'][1]['url'] : '';
+        if ($primeiro !== (int) $statusSalto) {
+            $falhas[] = "primeiro salto {$primeiro} (esperado {$statusSalto})";
+        }
+        if (strpos($segundaUrl, $trechoDestino) === false) {
+            $falhas[] = "redirecionou para '{$segundaUrl}' (esperado {$trechoDestino})";
+        }
+    }
+
+    // Guarda do visual antigo (tema-caderno-unico): fora do backoffice, nenhuma
+    // página pode sair no layout V1. Ligada por padrão; 'proibe_legado' => false desliga.
+    $caminhoFinal = (string) parse_url($resposta['url_final'], PHP_URL_PATH);
+    $foraDoBackoffice = !preg_match('#^/(admin|professor|revisor)(/|$)#', $caminhoFinal);
+    if ($foraDoBackoffice && (!isset($rota['proibe_legado']) || $rota['proibe_legado'] !== false)
+        && strpos($resposta['corpo'], $rotas['marcador_legado']) !== false) {
+        $falhas[] = 'página no visual antigo (layout V1: ' . $rotas['marcador_legado'] . ')';
+    }
+
     // Folhas do tema. 'proibe': trechos que NÃO podem aparecer (ex.: caderno-aluno.*
     // na vitrine). 'tema_exige': trechos obrigatórios, mas só quando a página foi
     // servida no tema caderno (detectado por caderno.css), para a mesma rota valer

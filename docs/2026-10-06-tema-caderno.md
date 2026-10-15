@@ -1,5 +1,10 @@
 # Tema caderno: o site público ganha identidade própria, atrás de uma chave
 
+> **Atualização (15/10/2026), mudança `tema-caderno-unico`:** a chave saiu. O caderno é o único
+> visual do site e da área do aluno. `TEMA_PUBLICO` e a prévia `?tema=` não têm mais efeito, e as
+> rotas V1 redirecionam ao tema. O roteiro de deploy e prévia descrito abaixo fica como histórico.
+> Ver `docs/deploy.md` §3.6.
+
 Data: 2026-10-06
 Mudança OpenSpec: `openspec/changes/tema-caderno/` (proposta, spec, design e tarefas)
 Branch: `feat/tema-caderno` (commits `646900d` a este relatório); fase 2 (área do
