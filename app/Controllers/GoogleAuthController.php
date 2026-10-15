@@ -106,13 +106,7 @@ class GoogleAuthController extends Controller
         $auth->abrirSessao($resultado['usuario']);
         Session::flash('success', 'Login realizado com sucesso.');
 
-        $destino = LoginDestino::sucesso($origem, $redirect);
-        if ($destino === null) {
-            $destino = $auth->resolveLoginRedirect((int) $resultado['usuario']['id']);
-            if ($destino === '/') {
-                Session::flash('post_login_choice_modal', array('enabled' => true));
-            }
-        }
+        $destino = LoginDestino::sucesso($origem, $redirect, $auth->resolveLoginRedirect((int) $resultado['usuario']['id']));
 
         // Conta recém-criada: oferece completar o cadastro (CPF) antes de seguir.
         if (!empty($resultado['novo'])) {

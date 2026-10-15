@@ -40,7 +40,7 @@ class LoginController extends Controller
 
         // Retorno seguro (Fase 2.13): destino V2 original preservado em ?redirect=.
         // Validado como caminho interno /v2/... (SafeRedirect); nunca URL do usuário.
-        $redirectSeguro = SafeRedirect::v2Path($request->query('redirect', ''));
+        $redirectSeguro = SafeRedirect::caminhoInterno($request->query('redirect', ''));
 
         $data = array(
             'title' => 'Acesse sua conta — Desbloqueia Cursos',

@@ -46,19 +46,6 @@ if ($rotaApp) {
     });
 }
 
-// Previa do tema publico: ?tema=caderno|v2 so vale para quem tem conteudo.gerenciar.
-// So consulta o banco quando o parametro existe. Fica depois do ErrorHandler para
-// que uma falha de banco/RBAC aqui passe pelo tratamento de erro padrao.
-if (!$rotaApp && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['tema'])) {
-    \App\Support\TemaPublico::aplicarPrevia(
-        is_string($_GET['tema']) ? $_GET['tema'] : null,
-        \App\Core\Session::get('usuario_id'),
-        function ($id) {
-            return $id && (new \App\Services\RbacService())->userHasPermission($id, 'conteudo.gerenciar');
-        }
-    );
-}
-
 $app = new \App\Core\App(BASE_PATH);
 
 require BASE_PATH . '/routes/web.php';

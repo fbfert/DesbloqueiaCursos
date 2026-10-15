@@ -68,7 +68,7 @@ Mapa:
 
 | Rota legada | Destino | Status |
 |---|---|---|
-| `/` com `HOME_VERSION≠v2` | `/v2/` | 301 |
+| `/` | renderiza a home do tema direto, sem redirecionar | — |
 | `/login` | `/v2/login` | 301 |
 | `/cadastro` | `/v2/cadastro` | 301 |
 | `/recuperar-senha`, `/esqueci-minha-senha` | `/v2/recuperar-senha` | 301 |

@@ -72,16 +72,11 @@ class AuthController extends Controller
 
         Session::flash('success', 'Login realizado com sucesso.');
 
-        $retornoV2 = $this->resolveLoginSuccessRedirect($request);
-        if ($retornoV2 !== null) {
-            return $this->redirect($retornoV2);
-        }
-
-        if (isset($result['redirect_to']) && $result['redirect_to'] === '/') {
-            Session::flash('post_login_choice_modal', array('enabled' => true));
-        }
-
-        return $this->redirect(isset($result['redirect_to']) ? $result['redirect_to'] : '/');
+        return $this->redirect(LoginDestino::sucesso(
+            $request->input('origem', ''),
+            $request->input('redirect', ''),
+            isset($result['redirect_to']) ? (string) $result['redirect_to'] : null
+        ));
     }
 
     public function logout(Request $request)
@@ -121,7 +116,7 @@ class AuthController extends Controller
             return $this->redirect('/professor/dashboard');
         }
 
-        return $this->redirect('/meus-cursos');
+        return $this->redirect(\App\Support\V2Nav::ALUNO);
     }
 
     public function showAccount(Request $request)
@@ -213,15 +208,6 @@ class AuthController extends Controller
     private function resolveLoginErrorRedirect(Request $request)
     {
         return LoginDestino::erro($request->input('origem', ''), $request->input('redirect', ''));
-    }
-
-    /**
-     * Destino seguro APÓS login bem-sucedido, ou null para o destino padrão
-     * (ver App\Support\LoginDestino).
-     */
-    private function resolveLoginSuccessRedirect(Request $request)
-    {
-        return LoginDestino::sucesso($request->input('origem', ''), $request->input('redirect', ''));
     }
 
     /**

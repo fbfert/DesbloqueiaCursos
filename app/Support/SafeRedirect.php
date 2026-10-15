@@ -3,20 +3,63 @@
 namespace App\Support;
 
 /**
- * Validação de retorno interno seguro para o ambiente V2 (Fase 2.13).
+ * Validação de retorno interno seguro (Fase 2.13; ampliada em tema-caderno-unico).
  *
- * Aceita SOMENTE caminhos internos que comecem por `/v2/` (ou o próprio `/v2`),
- * preservando a query string. Bloqueia URLs externas, protocolo explícito,
- * esquema `javascript:`/`data:`, barras duplas (`//`, protocol-relative),
- * barras invertidas e caracteres de controle. Nunca aceita host/esquema.
+ * - v2Path(): aceita SOMENTE caminhos que comecem por `/v2/` (ou o próprio `/v2`).
+ * - caminhoInterno(): aceita também as áreas do backoffice (`/admin`, `/professor`,
+ *   `/revisor`) e as rotas legadas do aluno, que redirecionam para o tema. É o
+ *   retorno usado pelo login do tema, para onde todo login exigido passa a levar.
  *
- * O objetivo é impedir open redirect: o único destino possível é uma rota V2
- * interna. Qualquer entrada inválida retorna null, cabendo ao chamador aplicar
- * um fallback fixo (ex.: `/v2/aluno/`).
+ * As duas preservam a query string e bloqueiam URLs externas, protocolo explícito,
+ * esquema `javascript:`/`data:`, barras duplas (`//`, protocol-relative), barras
+ * invertidas, caracteres de controle e segmentos `.`/`..`. Nunca aceitam host/esquema.
+ * Entrada inválida retorna null, cabendo ao chamador aplicar um fallback fixo.
  */
 class SafeRedirect
 {
+    /** Prefixos aceitos por caminhoInterno(), além de /v2. */
+    const PREFIXOS_INTERNOS = array(
+        '/admin', '/professor', '/revisor',
+        '/meus-cursos', '/aluno', '/area-curso', '/pedidos', '/minha-conta', '/minha-pagina',
+        '/checkout', '/inscricao', '/certificados', '/cursos', '/categorias',
+    );
+
     public static function v2Path($raw)
+    {
+        $partes = self::validar($raw);
+        if ($partes === null || !self::temPrefixo($partes['path'], array('/v2'))) {
+            return null;
+        }
+
+        return $partes['url'];
+    }
+
+    public static function caminhoInterno($raw)
+    {
+        $partes = self::validar($raw);
+        if ($partes === null || !self::temPrefixo($partes['path'], array_merge(array('/v2'), self::PREFIXOS_INTERNOS))) {
+            return null;
+        }
+
+        return $partes['url'];
+    }
+
+    /**
+     * Constrói `/v2/login` com o retorno seguro embutido (rawurlencode). Quando o
+     * retorno é inválido/ausente, devolve `/v2/login` puro.
+     */
+    public static function v2LoginWithReturn($rawReturn)
+    {
+        $safe = self::caminhoInterno($rawReturn);
+        if ($safe === null) {
+            return '/v2/login';
+        }
+
+        return '/v2/login?redirect=' . rawurlencode($safe);
+    }
+
+    /** @return array{path:string,url:string}|null */
+    private static function validar($raw)
     {
         $raw = trim((string) $raw);
         if ($raw === '') {
@@ -50,7 +93,9 @@ class SafeRedirect
         }
 
         $path = isset($parsed['path']) ? (string) $parsed['path'] : '';
-        if ($path !== '/v2' && strpos($path, '/v2/') !== 0) {
+
+        // `/v2/../admin` seria resolvido pelo navegador fora do prefixo validado.
+        if (preg_match('#(^|/)\.{1,2}(/|$)#', $path) || stripos($path, '%2e') !== false) {
             return null;
         }
 
@@ -59,20 +104,17 @@ class SafeRedirect
             $out .= '?' . $parsed['query'];
         }
 
-        return $out;
+        return array('path' => $path, 'url' => $out);
     }
 
-    /**
-     * Constrói `/v2/login` com o retorno seguro embutido (rawurlencode). Quando o
-     * retorno é inválido/ausente, devolve `/v2/login` puro.
-     */
-    public static function v2LoginWithReturn($rawReturn)
+    private static function temPrefixo($path, array $prefixos)
     {
-        $safe = self::v2Path($rawReturn);
-        if ($safe === null) {
-            return '/v2/login';
+        foreach ($prefixos as $prefixo) {
+            if ($path === $prefixo || strpos($path, $prefixo . '/') === 0) {
+                return true;
+            }
         }
 
-        return '/v2/login?redirect=' . rawurlencode($safe);
+        return false;
     }
 }

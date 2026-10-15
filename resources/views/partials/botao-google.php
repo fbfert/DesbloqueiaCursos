@@ -26,7 +26,7 @@ if (!function_exists('botao_google')) {
 
         $origem = isset($opcoes['origem']) && in_array($opcoes['origem'], array('v2', 'v2_aluno'), true) ? $opcoes['origem'] : 'v2';
         $query = array('origem' => $origem);
-        $redirect = isset($opcoes['redirect']) ? \App\Support\SafeRedirect::v2Path($opcoes['redirect']) : null;
+        $redirect = isset($opcoes['redirect']) ? \App\Support\SafeRedirect::caminhoInterno($opcoes['redirect']) : null;
         if ($redirect !== null) {
             $query['redirect'] = $redirect;
         }

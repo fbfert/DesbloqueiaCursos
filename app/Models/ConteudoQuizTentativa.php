@@ -16,6 +16,24 @@ class ConteudoQuizTentativa
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    /**
+     * Contexto de estudo (inscrição, curso, turma, módulo e item) de uma tentativa
+     * do próprio aluno — usado para levar o resultado legado ao quiz do tema.
+     */
+    public function contextoDoAluno($tentativaId, $alunoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT t.inscricao_id, t.curso_evento_id, t.turma_id, i.modulo_id, i.id AS item_id
+             FROM conteudo_quiz_tentativas t
+             INNER JOIN conteudo_quizzes q ON q.id = t.quiz_id
+             INNER JOIN conteudo_itens i ON i.id = q.item_id
+             WHERE t.id = :id AND t.aluno_id = :aluno_id AND t.deleted_at IS NULL
+             LIMIT 1'
+        );
+        $stmt->execute(array('id' => (int) $tentativaId, 'aluno_id' => (int) $alunoId));
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     public function findEmAndamento($quizId, $inscricaoId)
     {
         $stmt = Database::connection()->prepare(

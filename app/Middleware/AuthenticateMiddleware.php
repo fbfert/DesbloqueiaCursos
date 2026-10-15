@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Services\AuditService;
+use App\Support\SafeRedirect;
 
 class AuthenticateMiddleware implements MiddlewareInterface
 {
@@ -39,7 +40,20 @@ class AuthenticateMiddleware implements MiddlewareInterface
 
             Logger::error('seguranca.autenticacao.ausente', $context);
             Session::flash('errors', array('auth' => 'Faça login para continuar.'));
-            return Response::redirect('/login');
+
+            // Todo login passa pelo tema (tema-caderno-unico). Em GET, o destino é o
+            // próprio caminho interno da requisição, validado por caminhoInterno.
+            $loginUrl = '/v2/login';
+            if ($request->method() === 'GET') {
+                $path = (string) $request->path();
+                $query = $request->queryAll();
+                if (is_array($query) && !empty($query)) {
+                    $path .= '?' . http_build_query($query);
+                }
+                $loginUrl = SafeRedirect::v2LoginWithReturn($path);
+            }
+
+            return Response::redirect($loginUrl);
         }
 
         return $next();

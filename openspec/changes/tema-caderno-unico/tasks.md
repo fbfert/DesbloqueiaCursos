@@ -8,34 +8,34 @@
 
 ## 1. Tema fixo
 
-- [ ] 1.1 Em `App\Support\TemaPublico`, fazer:
+- [x] 1.1 Em `App\Support\TemaPublico`, fazer:
   - `ativo()` devolver sempre `caderno`;
   - `aplicarPrevia()` virar no-op e `emPrevia()` devolver `false`;
   - atualizar o comentário da classe.
-  - Verificação: novo `tests/Unit/tema_publico_unico.php` passa com `TEMA_PUBLICO=v2` e com prévia na sessão.
-- [ ] 1.2 Em `config/app.php`, deixar o padrão de `tema_publico` em `caderno`. Em `.env.example`, marcar `TEMA_PUBLICO` como obsoleta.
+  - Verificação: `tests/Unit/tema_publico.php` (reescrito) passa com `TEMA_PUBLICO=v2` e com prévia na sessão.
+- [x] 1.2 Em `config/app.php`, deixar o padrão de `tema_publico` em `caderno`. Em `.env.example`, marcar `TEMA_PUBLICO` como obsoleta.
   - Verificação: `php -l`.
 
 ## 2. Destino do login e login exigido
 
-- [ ] 2.1 Criar `SafeRedirect::caminhoInterno`. Aceita `/v2`, `/admin`, `/professor`, `/revisor` e as rotas legadas do aluno, com as mesmas rejeições de `v2Path`.
+- [x] 2.1 Criar `SafeRedirect::caminhoInterno`. Aceita `/v2`, `/admin`, `/professor`, `/revisor` e as rotas legadas do aluno, com as mesmas rejeições de `v2Path`.
   - Verificação: casos de aceite e de rejeição em `tests/Unit/safe_redirect_interno.php`. Rejeições: `//x`, `https:`, `\`, CR/LF e `/v2/../admin`.
-- [ ] 2.2 Em `LoginDestino`, fazer:
+- [x] 2.2 Em `LoginDestino`, fazer:
   - `sucesso` usar `caminhoInterno` e, sem destino, mandar admin para `/admin/dashboard`, professor para `/professor/dashboard`, revisor para `/revisor` e aluno para `/v2/pos-login`;
   - `erro` devolver sempre o login do tema.
   - Verificação: `tests/Unit/login_destino.php` cobre os quatro perfis e o destino externo descartado. `php tests/Unit/google_login_service.php` continua passando.
-- [ ] 2.3 Fazer o `AuthenticateMiddleware` redirecionar para `/v2/login`, com `?redirect=` validado por `caminhoInterno` em GET.
+- [x] 2.3 Fazer o `AuthenticateMiddleware` redirecionar para `/v2/login`, com `?redirect=` validado por `caminhoInterno` em GET.
   - Verificação: com `curl`, `/admin/dashboard` sem sessão leva a `/v2/login?redirect=%2Fadmin%2Fdashboard`. Depois do login de admin, chega ao painel.
 
 ## 3. Redirecionamento das rotas legadas
 
-- [ ] 3.1 Criar `App\Support\RotaLegada` com o mapa da decisão 2 do design (destino, status e parâmetros preservados).
+- [x] 3.1 Criar `App\Support\RotaLegada` com o mapa da decisão 2 do design (destino, status e parâmetros preservados).
   - Verificação: `tests/Unit/rota_legada.php` cobre cada linha do mapa, com preservação e descarte de parâmetros.
-- [ ] 3.2 Criar `RotaLegadaController::redirecionar`, com dois casos que precisam de dado:
+- [x] 3.2 Criar `RotaLegadaController::redirecionar`, com dois casos que precisam de dado:
   - item de conteúdo resolvido pelo tipo;
   - resultado do quiz resolvido pela tentativa do próprio usuário (404 do tema para tentativa alheia).
-  - Verificação: teste unitário com banco de teste (`tests/Api/README.md`).
-- [ ] 3.3 Em `routes/web.php`, apontar as rotas GET V1 do escopo para `RotaLegadaController`, inclusive `/` com `HOME_VERSION≠v2`. Ajustar `AuthController::minhaPagina` para mandar o aluno a `/v2/aluno/`.
+  - Verificação: por HTTP contra o banco local (fixture `tests/Fixtures/tema_caderno_aluno.sql`): quiz, texto e atividade vão à tela certa; tentativa inexistente ou alheia dá 404 do tema.
+- [x] 3.3 Em `routes/web.php`, apontar as rotas GET V1 do escopo para `RotaLegadaController`, e fazer `/` renderizar a home do tema direto (sem redirecionar; `HOME_VERSION` perde efeito). Ajustar `AuthController::minhaPagina` para mandar o aluno a `/v2/aluno/`.
   - Verificação: `curl -I` em cada rota legada no Docker local (porta 8010) devolve o status e o `Location` do mapa.
 
 ## 4. Telas novas no tema

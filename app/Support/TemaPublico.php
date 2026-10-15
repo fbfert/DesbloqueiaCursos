@@ -2,27 +2,16 @@
 
 namespace App\Support;
 
-use App\Core\Session;
-
 /**
- * Seleciona o tema visual das páginas públicas ("caderno" ou "v2").
+ * Tema visual das páginas públicas e da área do aluno.
  *
- * A chave TEMA_PUBLICO define o tema padrão; um administrador com permissão
- * pode forçar uma prévia na própria sessão via ?tema=caderno|v2.
- * Página sem view no tema cai na V2 (entrega por etapas).
+ * O caderno é o único tema (mudança OpenSpec tema-caderno-unico): TEMA_PUBLICO e a
+ * prévia ?tema= não têm mais efeito. Toda view V2 tem par no caderno; a queda para
+ * `v2/<nome>` em caminhoView() fica só como rede de segurança.
  */
 class TemaPublico
 {
-    const SESSAO_PREVIA = 'tema_previa';
-
-    public static function decidir(string $config, ?string $previa): string
-    {
-        if ($previa === 'caderno' || $previa === 'v2') {
-            return $previa;
-        }
-
-        return $config === 'caderno' ? 'caderno' : 'v2';
-    }
+    const TEMA = 'caderno';
 
     public static function caminhoView(string $tema, string $nome, string $baseViews): string
     {
@@ -35,15 +24,7 @@ class TemaPublico
 
     public static function ativo(): string
     {
-        static $config = null;
-        if ($config === null) {
-            $app = require BASE_PATH . '/config/app.php';
-            $config = isset($app['tema_publico']) ? (string) $app['tema_publico'] : 'v2';
-        }
-
-        $previa = Session::get(self::SESSAO_PREVIA);
-
-        return self::decidir($config, is_string($previa) ? $previa : null);
+        return self::TEMA;
     }
 
     public static function view(string $nome): string
@@ -51,26 +32,9 @@ class TemaPublico
         return self::caminhoView(self::ativo(), $nome, BASE_PATH . '/resources/views');
     }
 
+    /** Sem alternância de tema não há prévia; mantido para o aviso do layout. */
     public static function emPrevia(): bool
     {
-        return Session::get(self::SESSAO_PREVIA) === 'caderno';
-    }
-
-    /**
-     * @param mixed    $usuarioId
-     * @param callable $temPermissao recebe o id do usuário e devolve bool
-     */
-    public static function aplicarPrevia(?string $param, $usuarioId, callable $temPermissao): void
-    {
-        if (!$temPermissao($usuarioId)) {
-            Session::forget(self::SESSAO_PREVIA);
-            return;
-        }
-
-        if ($param === 'caderno') {
-            Session::put(self::SESSAO_PREVIA, 'caderno');
-        } elseif ($param === 'v2') {
-            Session::forget(self::SESSAO_PREVIA);
-        }
+        return false;
     }
 }

@@ -1,6 +1,5 @@
 <?php
 
-use App\Controllers\HomeController;
 use App\Controllers\SitemapController;
 use App\Controllers\V2\HomeController as V2HomeController;
 use App\Controllers\V2\CatalogoController as V2CatalogoController;
@@ -19,6 +18,7 @@ use App\Controllers\V2\InstitucionalController as V2InstitucionalController;
 use App\Controllers\PagesController;
 use App\Controllers\AuthController;
 use App\Controllers\GoogleAuthController;
+use App\Controllers\RotaLegadaController;
 use App\Controllers\ContaCompletarController;
 use App\Controllers\Admin\RbacController;
 use App\Controllers\Admin\UsuariosController as AdminUsuariosController;
@@ -73,17 +73,10 @@ use App\Controllers\Professor\AcademicoController as ProfessorAcademicoControlle
 use App\Controllers\Professor\FinanceiroController as ProfessorFinanceiroController;
 use App\Controllers\AvisosController;
 
-// Fase 2.13 — Home da raiz "/" selecionável por configuração (reversível, sem
-// alterar código). Padrão: Home V1. Para virar ao V2 após homologação, defina
-// HOME_VERSION=v2 no .env (config/app.php → 'home_version'). Nenhuma rota é
-// removida; V1 e V2 seguem acessíveis nos seus próprios caminhos.
-$app->get('/', function ($request) {
-    $homeVersion = (require BASE_PATH . '/config/app.php')['home_version'];
-    if ($homeVersion === 'v2') {
-        return (new V2HomeController())->index($request);
-    }
-    return (new HomeController())->index($request);
-});
+// Home da raiz "/": sempre a home do tema (mudança tema-caderno-unico). Renderiza
+// direto, sem redirecionar, para não trocar o endereço principal do site;
+// HOME_VERSION não tem mais efeito.
+$app->get('/', array(V2HomeController::class, 'index'));
 $app->get('/sitemap.xml', array(SitemapController::class, 'index'));
 $app->get('/v2', array(V2HomeController::class, 'index'));
 $app->get('/v2/catalogo', array(V2CatalogoController::class, 'index'));
@@ -158,10 +151,10 @@ $app->post('/v2/checkout/comprovante/enviar', array(CheckoutController::class, '
 // Confirmação V2 pós-envio (somente leitura). Mantém o aluno no namespace /v2/;
 // revalida a propriedade do pedido em detalharCheckout.
 $app->get('/v2/checkout/comprovante/enviado', array(CheckoutController::class, 'comprovanteEnviadoV2'), array('auth.v2'));
-$app->get('/categorias', array(PublicCategoriasController::class, 'index'));
-$app->get('/categorias/{slug}/cursos', array(PublicCategoriasController::class, 'cursos'));
-$app->get('/cursos', array(PublicCursosController::class, 'index'));
-$app->get('/cursos/detalhe', array(PublicCursosController::class, 'show'));
+$app->get('/categorias', array(RotaLegadaController::class, 'redirecionar'));
+$app->get('/categorias/{slug}/cursos', array(RotaLegadaController::class, 'redirecionar'));
+$app->get('/cursos', array(RotaLegadaController::class, 'redirecionar'));
+$app->get('/cursos/detalhe', array(RotaLegadaController::class, 'redirecionar'));
 
 // ---------------------------------------------------------------------
 // Checkout rapido (tela unica, sem senha). ISOLADO do checkout antigo.
@@ -178,46 +171,46 @@ $app->get('/comprar', array(CheckoutRapidoController::class, 'mostrar'));
 $app->post('/comprar/pix', array(CheckoutRapidoController::class, 'gerarPix'));
 $app->get('/comprar/status', array(CheckoutRapidoController::class, 'status'));
 $app->get('/cupom', array(CheckoutController::class, 'cupomPromocional'));
-$app->get('/como-funciona', array(PagesController::class, 'comoFunciona'));
-$app->get('/sobre', array(PagesController::class, 'sobre'));
-$app->get('/contato', array(PagesController::class, 'contato'));
-$app->get('/inscricao', array(CheckoutController::class, 'inscricao'));
+$app->get('/como-funciona', array(RotaLegadaController::class, 'redirecionar'));
+$app->get('/sobre', array(RotaLegadaController::class, 'redirecionar'));
+$app->get('/contato', array(RotaLegadaController::class, 'redirecionar'));
+$app->get('/inscricao', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/inscricao', array(CheckoutController::class, 'inscricao'));
-$app->get('/checkout/inscricao', array(CheckoutController::class, 'inscricao'));
+$app->get('/checkout/inscricao', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/checkout/inscricao', array(CheckoutController::class, 'inscricao'));
-$app->get('/checkout/participantes', array(CheckoutController::class, 'participantes'));
+$app->get('/checkout/participantes', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/checkout/participantes', array(CheckoutController::class, 'participantes'));
-$app->get('/checkout/resumo', array(CheckoutController::class, 'resumo'));
-$app->get('/checkout/cupom', array(CheckoutController::class, 'cupom'));
+$app->get('/checkout/resumo', array(RotaLegadaController::class, 'redirecionar'));
+$app->get('/checkout/cupom', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/checkout/cupom', array(CheckoutController::class, 'cupom'));
-$app->get('/checkout/comprovante', array(CheckoutController::class, 'comprovante'));
+$app->get('/checkout/comprovante', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/checkout/comprovante', array(CheckoutController::class, 'comprovante'));
-$app->get('/checkout/sucesso', array(CheckoutController::class, 'sucesso'), array('auth'));
+$app->get('/checkout/sucesso', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
 $app->post('/aluno/pedidos/pagar/abacatepay', array(CheckoutController::class, 'pagarAbacatepay'), array('auth'));
 $app->postWithoutCsrf('/webhooks/abacatepay', array(AbacatePayController::class, 'handle'));
-$app->get('/meus-cursos', array(MeusCursosController::class, 'index'), array('auth'));
-$app->get('/aluno/meus-cursos', array(MeusCursosController::class, 'index'), array('auth'));
-$app->get('/pedidos', array(MeusCursosController::class, 'index'), array('auth'));
+$app->get('/meus-cursos', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
+$app->get('/aluno/meus-cursos', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
+$app->get('/pedidos', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
 $app->post('/meus-cursos/pedidos/cancelar', array(MeusCursosController::class, 'cancelarPedido'), array('auth'));
 $app->post('/aluno/meus-cursos/pedidos/cancelar', array(MeusCursosController::class, 'cancelarPedido'), array('auth'));
 $app->get('/minha-pagina', array(AuthController::class, 'minhaPagina'), array('auth'));
-$app->get('/minha-conta', array(AuthController::class, 'showAccount'), array('auth'));
+$app->get('/minha-conta', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
 $app->post('/minha-conta', array(AuthController::class, 'updateAccount'), array('auth'));
-$app->get('/area-curso', array(AreaCursoController::class, 'index'), array('auth'));
-$app->get('/aluno/cursos', array(AreaCursoController::class, 'index'), array('auth'));
-$app->get('/aluno/curso/{inscricao_id}/{curso_id}/{turma_id}', array(AreaCursoController::class, 'index'), array('auth'));
-$app->get('/area-curso/modulo', array(AreaCursoController::class, 'modulo'), array('auth'));
-$app->get('/aluno/cursos/modulo', array(AreaCursoController::class, 'modulo'), array('auth'));
-$app->get('/aluno/curso/{inscricao_id}/{curso_id}/{turma_id}/modulo/{modulo_id}', array(AreaCursoController::class, 'modulo'), array('auth'));
+$app->get('/area-curso', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
+$app->get('/aluno/cursos', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
+$app->get('/aluno/curso/{inscricao_id}/{curso_id}/{turma_id}', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
+$app->get('/area-curso/modulo', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
+$app->get('/aluno/cursos/modulo', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
+$app->get('/aluno/curso/{inscricao_id}/{curso_id}/{turma_id}/modulo/{modulo_id}', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
 $app->post('/area-curso/modulo/concluir-aula', array(AreaCursoController::class, 'concluirAula'), array('auth'));
 $app->post('/aluno/cursos/modulo/concluir-aula', array(AreaCursoController::class, 'concluirAula'), array('auth'));
 $app->post('/area-curso/modulo/concluir-modulo', array(AreaCursoController::class, 'concluirModulo'), array('auth'));
 $app->post('/aluno/cursos/modulo/concluir-modulo', array(AreaCursoController::class, 'concluirModulo'), array('auth'));
 $app->get('/area-curso/material', array(AreaCursoController::class, 'material'), array('auth'));
 $app->get('/aluno/cursos/material', array(AreaCursoController::class, 'material'), array('auth'));
-$app->get('/area-curso/conteudo/item', array(AreaCursoController::class, 'conteudoItem'), array('auth'));
-$app->get('/aluno/cursos/conteudo/item', array(AreaCursoController::class, 'conteudoItem'), array('auth'));
-$app->get('/aluno/curso/{inscricao_id}/{curso_id}/{turma_id}/modulo/{modulo_id}/conteudo/{conteudo_id}', array(AreaCursoController::class, 'conteudoItem'), array('auth'));
+$app->get('/area-curso/conteudo/item', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
+$app->get('/aluno/cursos/conteudo/item', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
+$app->get('/aluno/curso/{inscricao_id}/{curso_id}/{turma_id}/modulo/{modulo_id}/conteudo/{conteudo_id}', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
 $app->post('/area-curso/conteudo/item/concluir', array(AreaCursoController::class, 'concluirConteudoItem'), array('auth'));
 $app->post('/aluno/cursos/conteudo/item/concluir', array(AreaCursoController::class, 'concluirConteudoItem'), array('auth'));
 $app->post('/area-curso/conteudo/avaliacao/enviar', array(AreaCursoController::class, 'enviarConteudoAvaliacao'), array('auth'));
@@ -234,11 +227,11 @@ $app->post('/aluno/cursos/quiz/rascunho', array(QuizController::class, 'salvarRa
 $app->post('/aluno/cursos/quiz/enviar', array(QuizController::class, 'enviar'), array('auth'));
 $app->post('/aluno/cursos/quiz/revisao', array(QuizController::class, 'marcarRevisao'), array('auth'));
 $app->post('/aluno/cursos/quiz/tempo', array(QuizController::class, 'tempo'), array('auth'));
-$app->get('/aluno/cursos/quiz/resultado', array(QuizController::class, 'resultado'), array('auth'));
+$app->get('/aluno/cursos/quiz/resultado', array(RotaLegadaController::class, 'redirecionar'), array('auth'));
 $app->post('/avisos/ocultar', array(AvisosController::class, 'ocultar'), array('auth'));
-$app->get('/cadastro', array(AuthController::class, 'showRegister'));
+$app->get('/cadastro', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/cadastro', array(AuthController::class, 'register'));
-$app->get('/login', array(AuthController::class, 'showLogin'));
+$app->get('/login', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/login', array(AuthController::class, 'login'));
 // Login com Google (mudança login-google). 404 enquanto GOOGLE_CLIENT_ID/SECRET não existirem.
 $app->get('/login/google', array(GoogleAuthController::class, 'iniciar'));
@@ -247,13 +240,13 @@ $app->get('/conta/completar', array(ContaCompletarController::class, 'show'));
 $app->post('/conta/completar', array(ContaCompletarController::class, 'salvar'));
 $app->get('/logout', array(AuthController::class, 'logoutConfirm'), array('auth'));
 $app->post('/logout', array(AuthController::class, 'logout'), array('auth'));
-$app->get('/recuperar-senha', array(AuthController::class, 'showForgotPassword'));
+$app->get('/recuperar-senha', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/recuperar-senha', array(AuthController::class, 'requestPasswordReset'));
-$app->get('/recuperar-senha/redefinir', array(AuthController::class, 'showResetPassword'));
+$app->get('/recuperar-senha/redefinir', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/recuperar-senha/redefinir', array(AuthController::class, 'resetPassword'));
-$app->get('/esqueci-minha-senha', array(AuthController::class, 'showForgotPassword'));
+$app->get('/esqueci-minha-senha', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/esqueci-minha-senha', array(AuthController::class, 'requestPasswordReset'));
-$app->get('/esqueci-minha-senha/redefinir', array(AuthController::class, 'showResetPassword'));
+$app->get('/esqueci-minha-senha/redefinir', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/esqueci-minha-senha/redefinir', array(AuthController::class, 'resetPassword'));
 $app->get('/admin/rbac', array(RbacController::class, 'index'), array('auth', 'permission:rbac.dashboard.ver'));
 $app->get('/admin', array(AdminDashboardController::class, 'index'), array('auth'));
@@ -546,11 +539,11 @@ $app->post('/admin/certificados/templates/excluir', array(AdminCertificadosTempl
 $app->post('/admin/certificados/templates/duplicar', array(AdminCertificadosTemplatesController::class, 'duplicar'), array('auth', 'permission:certificados.gerenciar'));
 $app->post('/admin/certificados/templates/definir-padrao', array(AdminCertificadosTemplatesController::class, 'definirPadrao'), array('auth', 'permission:certificados.gerenciar'));
 $app->get('/admin/certificados/templates/preview', array(AdminCertificadosTemplatesController::class, 'preview'), array('auth', 'permission:certificados.ver'));
-$app->get('/certificados/validar', array(CertificadosController::class, 'validar'));
-$app->get('/certificados', array(CertificadosController::class, 'validar'));
+$app->get('/certificados/validar', array(RotaLegadaController::class, 'redirecionar'));
+$app->get('/certificados', array(RotaLegadaController::class, 'redirecionar'));
 $app->post('/certificados/validar', array(CertificadosController::class, 'validar'));
-$app->get('/certificados/show', array(CertificadosController::class, 'show'));
-$app->get('/certificados/versao-online', array(CertificadosController::class, 'versaoOnline'));
+$app->get('/certificados/show', array(RotaLegadaController::class, 'redirecionar'));
+$app->get('/certificados/versao-online', array(RotaLegadaController::class, 'redirecionar'));
 $app->get('/certificados/pdf', array(CertificadosController::class, 'pdf'));
 // ---------------------------------------------------------------------
 // Area de revisao (spec 0002-perfil-revisor)

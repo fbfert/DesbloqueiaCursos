@@ -504,6 +504,10 @@ class AuthService
             return '/professor/dashboard';
         }
 
+        if ($usuarioId && $this->rbacService->userHasAnyPermission($usuarioId, array('area_curso.revisor.ver'))) {
+            return '/revisor';
+        }
+
         return '/';
     }
 
