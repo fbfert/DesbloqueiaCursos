@@ -136,3 +136,10 @@ Até esta mudança, registrar o pagamento de um repasse gravava a data do pagame
 3. Aplicar `sql/084_financeiro_correcoes.sql`. É aditiva e pode rodar de novo.
 4. Enviar o código.
 5. **Rollback:** reverter o código. As colunas `pago_em` e `motivo_rejeicao` podem ficar.
+
+## Situação do deploy (16/11/2026)
+
+- Deploy `deploy-15115e5` feito em 16/11/2026 às 15:31, com a migration 084. Smoke de produção:
+  57 de 57 (`SMOKE_GOOGLE=ativo`). Backup do deploy em `~/backups/deploy-20261116-153103`.
+- **Pendentes:** as consultas dos passos 1 e 2 acima não foram rodadas antes do deploy. Rodar as
+  duas e, para cada perfil que precise continuar aprovando PIX, dar `pedidos.gerenciar`.
