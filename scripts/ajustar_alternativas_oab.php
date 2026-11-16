@@ -21,7 +21,12 @@
  * {
  *   "motivo": "por que este lote de ajustes existe",
  *   "alternativas": [ {"id": 9739, "texto": "...", "motivo_correta": "..."} ],
- *   "perguntas":    [ {"id": 1860, "enunciado": "...", "explicacao": "..."} ]
+ *   "perguntas":    [ {"id": 1860, "enunciado": "...", "explicacao": "...",
+ *                      "referencia": "...", "tema": "..."} ]
+ *
+ * Campos aceitos em "perguntas": enunciado, explicacao, referencia e tema.
+ * Qualquer outra chave e recusada: campo ignorado em silencio ja deixou
+ * questao reescrita apontando para a referencia antiga.
  * }
  *
  * Uso:
@@ -43,6 +48,11 @@ require BASE_PATH . '/app/Core/Autoloader.php';
 \App\Core\Env::load(BASE_PATH . '/.env');
 
 const CURSO_OAB = 125;
+
+/** Campos de conteudo_quiz_perguntas que este script aceita atualizar. */
+const CAMPOS_PERGUNTA = ['enunciado', 'explicacao', 'referencia', 'tema'];
+const MAX_REFERENCIA = 120;  // conteudo_quiz_perguntas.referencia varchar(120)
+const MAX_TEMA = 190;        // conteudo_quiz_perguntas.tema varchar(190)
 
 $opts = getopt('', ['arquivo:', 'dry-run', 'permitir-correta']);
 $caminho = $opts['arquivo'] ?? '';
@@ -128,10 +138,30 @@ foreach ($perguntas as $i => $p) {
         $erros[] = "pergunta {$id}: nao existe no curso " . CURSO_OAB;
         continue;
     }
-    foreach (['enunciado', 'explicacao'] as $campo) {
-        if (isset($p[$campo]) && preg_match('~<[a-z/!][^>]*>~i', (string) $p[$campo])) {
+    foreach (array_keys($p) as $chave) {
+        if ($chave !== 'id' && !in_array($chave, CAMPOS_PERGUNTA, true)) {
+            $erros[] = "pergunta {$id}: campo '{$chave}' nao e atualizavel por este script; aceitos: " . implode(', ', CAMPOS_PERGUNTA);
+        }
+    }
+    foreach (CAMPOS_PERGUNTA as $campo) {
+        if (!isset($p[$campo])) {
+            continue;
+        }
+        $valor = (string) $p[$campo];
+        if (preg_match('~<[a-z/!][^>]*>~i', $valor)) {
             $erros[] = "pergunta {$id}: {$campo} contem HTML";
         }
+        if (trim($valor) === '') {
+            $erros[] = "pergunta {$id}: {$campo} vazio";
+        }
+    }
+    if (isset($p['referencia']) && mb_strlen(trim((string) $p['referencia'])) > MAX_REFERENCIA) {
+        $erros[] = "pergunta {$id}: referencia com " . mb_strlen(trim((string) $p['referencia']))
+            . ' caracteres; a coluna aceita ' . MAX_REFERENCIA . ' - encurte, senao a gravacao falha por truncamento';
+    }
+    if (isset($p['tema']) && mb_strlen(trim((string) $p['tema'])) > MAX_TEMA) {
+        $erros[] = "pergunta {$id}: tema com " . mb_strlen(trim((string) $p['tema']))
+            . ' caracteres; a coluna aceita ' . MAX_TEMA . ' - encurte, senao a gravacao falha por truncamento';
     }
     $afetadas[$id] = true;
 }
@@ -195,7 +225,7 @@ try {
     foreach ($perguntas as $p) {
         $campos = [];
         $vals = [];
-        foreach (['enunciado', 'explicacao'] as $campo) {
+        foreach (CAMPOS_PERGUNTA as $campo) {
             if (isset($p[$campo])) {
                 $campos[] = "{$campo} = ?";
                 $vals[] = trim((string) $p[$campo]);
