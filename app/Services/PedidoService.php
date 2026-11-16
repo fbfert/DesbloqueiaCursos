@@ -879,6 +879,101 @@ class PedidoService
         }
     }
 
+    /**
+     * Reembolso informado pelo gateway (webhook autenticado). Muda o pedido confirmado para
+     * "reembolsado" e registra histórico e auditoria. Não mexe nas inscrições: o acesso do aluno
+     * é decidido pelo admin a partir das pendências do financeiro.
+     */
+    public function registrarReembolsoGateway($pedidoId, $gateway, $eventId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
+        }
+
+        $statusAnterior = (string) $pedido['status'];
+        if ($statusAnterior === 'reembolsado') {
+            return array('ok' => true, 'ja_reembolsado' => true);
+        }
+
+        if (!in_array($statusAnterior, array('aprovado', 'pago'), true)) {
+            return array('ok' => false, 'message' => 'Só um pedido confirmado pode ser reembolsado.');
+        }
+
+        $observacao = 'Pagamento reembolsado via ' . $gateway . '.';
+
+        $pdo = Database::connection();
+        $propria = !$pdo->inTransaction();
+        if ($propria) {
+            $pdo->beginTransaction();
+        }
+
+        try {
+            $this->pedidoModel->updateStatus($pedidoId, 'reembolsado');
+            $this->pedidoModel->addStatusHistory($pedidoId, $statusAnterior, 'reembolsado', $observacao, null);
+
+            $this->auditService->record(
+                'pedido.reembolso.gateway',
+                'pedido',
+                $pedidoId,
+                array(
+                    'status_anterior' => $statusAnterior,
+                    'gateway' => $gateway,
+                    'event_id' => $eventId,
+                ),
+                null,
+                $ipAddress,
+                $userAgent
+            );
+
+            if ($propria) {
+                $pdo->commit();
+            }
+        } catch (Exception $exception) {
+            if ($propria && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
+
+        Logger::info('pedido.reembolso.gateway', array(
+            'pedido_id' => $pedidoId,
+            'status_anterior' => $statusAnterior,
+            'event_id' => $eventId,
+        ));
+
+        return array('ok' => true, 'status_anterior' => $statusAnterior);
+    }
+
+    /** Contestação informada pelo gateway: o status não muda, só fica registrada no histórico. */
+    public function registrarContestacaoGateway($pedidoId, $gateway, $eventId = null, $ipAddress = null, $userAgent = null)
+    {
+        $pedido = $this->pedidoModel->findById($pedidoId);
+        if (!$pedido) {
+            return array('ok' => false, 'message' => 'Pedido não encontrado.');
+        }
+
+        $status = (string) $pedido['status'];
+        $this->pedidoModel->addStatusHistory($pedidoId, $status, $status, 'Pagamento contestado via ' . $gateway . '. O pedido continua no status atual até a decisão da contestação.', null);
+
+        $this->auditService->record(
+            'pedido.contestacao.gateway',
+            'pedido',
+            $pedidoId,
+            array('status' => $status, 'gateway' => $gateway, 'event_id' => $eventId),
+            null,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::warning('pedido.contestacao.gateway', array(
+            'pedido_id' => $pedidoId,
+            'event_id' => $eventId,
+        ));
+
+        return array('ok' => true);
+    }
+
     public function registrarStatus($pedidoId, $novoStatus, $observacao = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
         $pedido = $this->pedidoModel->findById($pedidoId);

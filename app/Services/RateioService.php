@@ -15,6 +15,8 @@ use Exception;
 
 class RateioService
 {
+    const MSG_REPASSES_GERADOS = 'Os repasses desta apuração já foram gerados. O rateio não pode mais ser alterado.';
+
     private $apuracaoModel;
     private $cursoRateioModel;
     private $cursoRateioParticipanteModel;
@@ -324,6 +326,10 @@ class RateioService
             return array('ok' => false, 'errors' => array('Apuração não encontrada.'));
         }
 
+        if ($this->apuracaoTemRepasses($apuracaoId)) {
+            return array('ok' => false, 'errors' => array(self::MSG_REPASSES_GERADOS));
+        }
+
         if ($cursoEventoId <= 0) {
             return array('ok' => false, 'errors' => array('Informe o curso/evento.'));
         }
@@ -424,7 +430,10 @@ class RateioService
         }
 
         $pdo = Database::connection();
-        $pdo->beginTransaction();
+        $propria = !$pdo->inTransaction();
+        if ($propria) {
+            $pdo->beginTransaction();
+        }
 
         try {
             $payload = array(
@@ -523,11 +532,17 @@ class RateioService
                 'percentual_total' => $percentualTotal,
             ));
 
-            $pdo->commit();
+            $this->recalcularResumoApuracao($apuracaoId);
+
+            if ($propria) {
+                $pdo->commit();
+            }
 
             return array('ok' => true, 'id' => $id);
         } catch (Exception $exception) {
-            $pdo->rollBack();
+            if ($propria && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             Logger::error('financeiro.rateio.falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
@@ -545,10 +560,17 @@ class RateioService
             return array('ok' => false, 'message' => 'Informe a justificativa para excluir o rateio.');
         }
 
+        if ($this->apuracaoTemRepasses((int) $rateio['apuracao_id'])) {
+            return array('ok' => false, 'message' => self::MSG_REPASSES_GERADOS);
+        }
+
         $participantes = $this->cursoRateioParticipanteModel->findByRateio($rateioId);
 
         $pdo = Database::connection();
-        $pdo->beginTransaction();
+        $propria = !$pdo->inTransaction();
+        if ($propria) {
+            $pdo->beginTransaction();
+        }
 
         try {
             foreach ($participantes as $participante) {
@@ -579,14 +601,83 @@ class RateioService
 
             Logger::info('financeiro.rateio.excluido', array('curso_rateio_id' => $rateioId));
 
-            $pdo->commit();
+            $this->recalcularResumoApuracao((int) $rateio['apuracao_id']);
+
+            if ($propria) {
+                $pdo->commit();
+            }
 
             return array('ok' => true);
         } catch (Exception $exception) {
-            $pdo->rollBack();
+            if ($propria && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             Logger::error('financeiro.rateio.excluir_falhou', array('message' => $exception->getMessage()));
             throw $exception;
         }
+    }
+
+    private function apuracaoTemRepasses($apuracaoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*) FROM repasses_professores WHERE apuracao_id = :apuracao_id AND deleted_at IS NULL'
+        );
+        $stmt->execute(array('apuracao_id' => $apuracaoId));
+
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Recalcula os totais da apuração a partir dos rateios ativos, mantendo status e data de
+     * fechamento. O percentual total é o efetivo (rateio / base líquida), limitado ao teto.
+     */
+    private function recalcularResumoApuracao($apuracaoId)
+    {
+        $apuracao = $this->apuracaoModel->findById($apuracaoId);
+        if (!$apuracao) {
+            return;
+        }
+
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare(
+            "SELECT COALESCE(SUM(base_bruta), 0) AS base_bruta,
+                    COALESCE(SUM(desconto_cupons), 0) AS desconto_cupons,
+                    COALESCE(SUM(base_liquida), 0) AS base_liquida,
+                    COALESCE(SUM(valor_rateio_total), 0) AS valor_rateio_total
+             FROM cursos_rateio
+             WHERE apuracao_id = :apuracao_id
+               AND deleted_at IS NULL
+               AND status <> 'cancelado'"
+        );
+        $stmt->execute(array('apuracao_id' => $apuracaoId));
+        $totais = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        $stmt = $pdo->prepare(
+            "SELECT COALESCE(SUM(crp.valor_retenido), 0)
+             FROM cursos_rateio_participantes crp
+             INNER JOIN cursos_rateio cr ON cr.id = crp.curso_rateio_id
+             WHERE cr.apuracao_id = :apuracao_id
+               AND cr.deleted_at IS NULL
+               AND cr.status <> 'cancelado'
+               AND crp.deleted_at IS NULL"
+        );
+        $stmt->execute(array('apuracao_id' => $apuracaoId));
+        $retido = (float) $stmt->fetchColumn();
+
+        $baseLiquida = round((float) $totais['base_liquida'], 2);
+        $valorRateio = round((float) $totais['valor_rateio_total'], 2);
+        $percentual = $baseLiquida > 0 ? round($valorRateio / $baseLiquida * 100, 2) : 0.00;
+
+        $this->apuracaoModel->updateSummary($apuracaoId, array(
+            'base_bruta' => round((float) $totais['base_bruta'], 2),
+            'desconto_cupons' => round((float) $totais['desconto_cupons'], 2),
+            'base_liquida' => $baseLiquida,
+            'percentual_rateio_total' => min($this->percentualMaximo(), $percentual),
+            'valor_rateio_total' => $valorRateio,
+            'valor_retenido_total' => round($retido, 2),
+            'status' => $apuracao['status'],
+            'fechada_em' => $apuracao['fechada_em'],
+        ));
     }
 
     private function carregarPedidosFechados($dataInicio, $dataFim)

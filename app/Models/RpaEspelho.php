@@ -35,6 +35,22 @@ class RpaEspelho
         return (int) Database::connection()->lastInsertId();
     }
 
+    public function findById($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM rpa_espelhos
+             WHERE id = :id
+               AND deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array('id' => $id));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function forProfessor($usuarioId)
     {
         $stmt = Database::connection()->prepare(

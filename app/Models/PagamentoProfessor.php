@@ -31,4 +31,35 @@ class PagamentoProfessor
 
         return (int) Database::connection()->lastInsertId();
     }
+
+    public function findById($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM pagamentos_professores
+             WHERE id = :id
+               AND deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array('id' => $id));
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function forRepasse($repasseId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM pagamentos_professores
+             WHERE repasse_professor_id = :repasse_professor_id
+               AND deleted_at IS NULL
+             ORDER BY id DESC'
+        );
+
+        $stmt->execute(array('repasse_professor_id' => $repasseId));
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }

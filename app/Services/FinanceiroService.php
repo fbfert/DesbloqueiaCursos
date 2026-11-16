@@ -168,7 +168,65 @@ class FinanceiroService
             $payload['entradas_pedidos'] = array();
         }
 
+        try {
+            $payload['pendencias_estorno'] = $this->listarPendenciasEstorno();
+        } catch (\Exception $exception) {
+            Logger::error('financeiro.painel.pendencias_estorno_falha', array('message' => $exception->getMessage()));
+            $payload['pendencias_estorno'] = array();
+        }
+
         return $payload;
+    }
+
+    /**
+     * Pedidos reembolsados ou contestados que ainda pedem ação do admin:
+     *   - reembolsado com inscrição ativa (decidir o acesso do aluno);
+     *   - contestado no gateway e ainda não reembolsado;
+     *   - reembolsado numa competência cuja apuração já gerou repasses ("ajuste de repasse pendente").
+     * Consulta derivada, sem tabela própria.
+     */
+    public function listarPendenciasEstorno()
+    {
+        $sql = 'SELECT p.id, p.codigo, p.status, p.total, p.payment_provider_status,
+                       DATE_FORMAT(' . $this->sqlDataConfirmacao() . ', "%Y-%m") AS competencia,
+                       (SELECT COUNT(*) FROM inscricoes i
+                         WHERE i.pedido_id = p.id AND i.status = "ativa" AND i.deleted_at IS NULL) AS inscricoes_ativas,
+                       (SELECT COUNT(*) FROM apuracoes_mensais ap
+                         INNER JOIN repasses_professores rp ON rp.apuracao_id = ap.id AND rp.deleted_at IS NULL
+                         WHERE ap.deleted_at IS NULL
+                           AND ap.competencia = DATE_FORMAT(' . $this->sqlDataConfirmacao() . ', "%Y-%m")) AS repasses_na_competencia,
+                       (SELECT MAX(h.created_at) FROM status_pedidos_historico h
+                         WHERE h.pedido_id = p.id AND h.status_novo = "reembolsado") AS reembolsado_em
+                FROM pedidos p
+                ' . $this->sqlJoinsConfirmacao() . '
+                WHERE p.deleted_at IS NULL
+                  AND (p.status = "reembolsado" OR p.payment_provider_status = "DISPUTED")
+                ORDER BY p.updated_at DESC
+                LIMIT 200';
+
+        $linhas = Database::connection()->query($sql)->fetchAll(\PDO::FETCH_ASSOC);
+        $pendencias = array();
+
+        foreach ($linhas as $linha) {
+            $avisos = array();
+            if ($linha['status'] === 'reembolsado') {
+                if ((int) $linha['inscricoes_ativas'] > 0) {
+                    $avisos[] = 'Reembolsado com inscrição ativa: decida se o acesso do aluno continua.';
+                }
+                if ((int) $linha['repasses_na_competencia'] > 0) {
+                    $avisos[] = 'Ajuste de repasse pendente: a apuração de ' . $linha['competencia'] . ' já gerou repasses.';
+                }
+            } elseif (strtoupper((string) $linha['payment_provider_status']) === 'DISPUTED') {
+                $avisos[] = 'Pagamento contestado no gateway: acompanhe a contestação.';
+            }
+
+            if (!empty($avisos)) {
+                $linha['avisos'] = $avisos;
+                $pendencias[] = $linha;
+            }
+        }
+
+        return $pendencias;
     }
 
     public function painelProfessor($usuarioId)
@@ -187,7 +245,7 @@ class FinanceiroService
         $resumo = $this->resumoEntradasConfirmadas($filtros);
         $mensais = $this->listarEntradasMensais($filtros);
         $porCurso = $this->listarEntradasPorCurso($filtros);
-        $pedidos = $this->listarUltimosPedidosConfirmados($filtros, 20);
+        $pedidos = $this->listarUltimosPedidosConfirmados($filtros, null);
 
         return array(
             'ok' => true,
@@ -467,11 +525,14 @@ class FinanceiroService
         return $resultado;
     }
 
+    /** $limit null = todos os pedidos do filtro (exportação). */
     private function listarUltimosPedidosConfirmados(array $filtros, $limit = 20)
     {
-        $limit = (int) $limit;
-        if ($limit <= 0) {
-            $limit = 20;
+        if ($limit !== null) {
+            $limit = (int) $limit;
+            if ($limit <= 0) {
+                $limit = 20;
+            }
         }
 
         $params = array();
@@ -534,8 +595,8 @@ class FinanceiroService
 
         $sql .= ' GROUP BY p.id, p.codigo, p.pagador_nome, p.pagador_email, p.status, p.total, p.subtotal, p.desconto_total, p.acrescimo_total,
                            p.aprovado_em, p.updated_at, p.created_at, cp.pix_aprovado_em, sh.confirmado_em
-                  ORDER BY data_confirmacao DESC, p.id DESC
-                  LIMIT ' . $limit;
+                  ORDER BY data_confirmacao DESC, p.id DESC'
+                  . ($limit !== null ? ' LIMIT ' . $limit : '');
 
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute($params);
@@ -931,7 +992,7 @@ class FinanceiroService
         }
 
         $linhas[] = '';
-        $linhas[] = 'Últimos pedidos confirmados';
+        $linhas[] = 'Pedidos confirmados no período';
         $linhas[] = $this->csvRow(array('Código', 'Pagador', 'E-mail', 'Status', 'Data confirmação', 'Origem confirmação', 'Total', 'Cursos'));
         foreach ((array) $dados['pedidos'] as $linha) {
             $linhas[] = $this->csvRow(array(
@@ -1101,12 +1162,118 @@ class FinanceiroService
 
     public function registrarPagamento($repasseId, array $dados, ?array $arquivo = null, $actorUserId = null, $ipAddress = null, $userAgent = null)
     {
-        if (!$this->podeManipularRepasse($repasseId, $actorUserId)) {
+        if (!$this->podeGerirFinanceiro($actorUserId)) {
             $this->registrarAcessoNegado('financeiro.pagamento.negado', $repasseId, $actorUserId, $ipAddress, $userAgent);
             return array('ok' => false, 'message' => 'Acesso negado.');
         }
 
         return $this->repasseService->registrarPagamento($repasseId, $dados, $arquivo, $actorUserId, $ipAddress, $userAgent);
+    }
+
+    public function validarDocumento($documentoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        if (!$this->podeGerirFinanceiro($actorUserId)) {
+            $this->registrarAcessoNegado('financeiro.documento.validacao_negada', $documentoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
+        return $this->repasseService->validarDocumento($documentoId, $actorUserId, $ipAddress, $userAgent);
+    }
+
+    public function rejeitarDocumento($documentoId, $motivo, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        if (!$this->podeGerirFinanceiro($actorUserId)) {
+            $this->registrarAcessoNegado('financeiro.documento.rejeicao_negada', $documentoId, $actorUserId, $ipAddress, $userAgent);
+            return array('ok' => false, 'message' => 'Acesso negado.');
+        }
+
+        return $this->repasseService->rejeitarDocumento($documentoId, $motivo, $actorUserId, $ipAddress, $userAgent);
+    }
+
+    /**
+     * Arquivo privado de documento ou comprovante para o admin. Devolve
+     * array('caminho' => absoluto, 'nome' => original, 'tipo' => mime) ou null.
+     */
+    public function arquivoAdmin($tipo, $id, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        if (!$this->podeVerFinanceiro($actorUserId)) {
+            $this->registrarAcessoNegado('financeiro.arquivo.negado', $id, $actorUserId, $ipAddress, $userAgent);
+            return null;
+        }
+
+        if ($tipo === 'documento') {
+            $registro = $this->repasseService->buscarDocumento($id);
+            return $registro ? $this->montarArquivo($registro['arquivo_caminho'], $registro['arquivo_nome_original'], $registro['arquivo_tipo']) : null;
+        }
+
+        if ($tipo === 'comprovante') {
+            $registro = $this->repasseService->buscarPagamento($id);
+            return $registro && !empty($registro['comprovante_caminho'])
+                ? $this->montarArquivo($registro['comprovante_caminho'], $registro['comprovante_nome_original'], null)
+                : null;
+        }
+
+        return null;
+    }
+
+    /** Espelho de RPA do próprio professor. Pedido de outro professor é negado e auditado. */
+    public function espelhoRpaDoProfessor($rpaId, $usuarioId, $ipAddress = null, $userAgent = null)
+    {
+        $rpa = $this->repasseService->buscarEspelhoRpa($rpaId);
+        if (!$rpa) {
+            return array('ok' => false, 'status' => 404);
+        }
+
+        if ((int) $rpa['usuario_id'] !== (int) $usuarioId) {
+            $this->registrarAcessoNegado('financeiro.rpa.acesso_negado', $rpaId, $usuarioId, $ipAddress, $userAgent);
+            return array('ok' => false, 'status' => 403);
+        }
+
+        $arquivo = $this->montarArquivo($rpa['arquivo_caminho'], $rpa['arquivo_nome_original'], 'text/html');
+        if (!$arquivo) {
+            return array('ok' => false, 'status' => 404);
+        }
+
+        return array('ok' => true, 'arquivo' => $arquivo);
+    }
+
+    public function documentosDoRepasse($repasseId)
+    {
+        return $this->repasseService->documentosDoRepasse($repasseId);
+    }
+
+    public function pagamentosDoRepasse($repasseId)
+    {
+        return $this->repasseService->pagamentosDoRepasse($repasseId);
+    }
+
+    public function motivoBloqueioPagamento(array $repasse)
+    {
+        return $this->repasseService->motivoBloqueioPagamento($repasse);
+    }
+
+    private function montarArquivo($relativo, $nomeOriginal, $tipo)
+    {
+        $relativo = ltrim(str_replace('\\', '/', (string) $relativo), '/');
+        if ($relativo === '' || strpos($relativo, '..') !== false) {
+            return null;
+        }
+
+        $base = realpath(BASE_PATH . '/storage/private_uploads');
+        $absoluto = $base ? realpath($base . '/' . $relativo) : false;
+        if (!$absoluto || strpos($absoluto, $base) !== 0 || !is_file($absoluto)) {
+            return null;
+        }
+
+        if (!$tipo) {
+            $tipo = function_exists('mime_content_type') ? (mime_content_type($absoluto) ?: 'application/octet-stream') : 'application/octet-stream';
+        }
+
+        return array(
+            'caminho' => $absoluto,
+            'nome' => $nomeOriginal ?: basename($absoluto),
+            'tipo' => $tipo,
+        );
     }
 
     public function listarRepassesApuracao($apuracaoId = null)
@@ -1118,14 +1285,24 @@ class FinanceiroService
         return $this->repasseModel->allAdmin();
     }
 
+    /** Alterar dados financeiros exige permissão de gestão; leitura não basta. */
     private function podeGerirFinanceiro($usuarioId)
     {
         if (!$usuarioId) {
             return false;
         }
 
+        return $this->rbacService->userHasPermission($usuarioId, 'financeiro.gerenciar');
+    }
+
+    private function podeVerFinanceiro($usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
         return $this->rbacService->userHasPermission($usuarioId, 'financeiro.ver')
-            || $this->rbacService->userHasPermission($usuarioId, 'pedidos.ver');
+            || $this->rbacService->userHasPermission($usuarioId, 'financeiro.gerenciar');
     }
 
     private function podeManipularRepasse($repasseId, $usuarioId)

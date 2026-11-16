@@ -369,7 +369,7 @@ class ComprovantePixService
             return false;
         }
 
-        if ($this->podeGerirFinanceiro($usuarioId)) {
+        if ($this->podeAtenderPedidos($usuarioId)) {
             return true;
         }
 
@@ -377,7 +377,19 @@ class ComprovantePixService
             || ((int) $pedido['pagador_usuario_id'] === (int) $usuarioId);
     }
 
+    /** Aprovar ou reprovar comprovante altera o pedido: exige permissão de gestão. */
     private function podeGerirFinanceiro($usuarioId)
+    {
+        if (!$usuarioId) {
+            return false;
+        }
+
+        return $this->rbacService->userHasPermission($usuarioId, 'pedidos.gerenciar')
+            || $this->rbacService->userHasPermission($usuarioId, 'financeiro.gerenciar');
+    }
+
+    /** Equipe que atende pedidos pode enviar comprovante em nome do aluno (comportamento anterior). */
+    private function podeAtenderPedidos($usuarioId)
     {
         if (!$usuarioId) {
             return false;

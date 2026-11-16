@@ -118,21 +118,41 @@ class RepasseProfessor
         return $row ?: null;
     }
 
-    public function updateStatus($repasseId, $status, $documentoValidadoEm = null)
+    /**
+     * Muda o status do repasse. Datas só são gravadas quando informadas em $campos
+     * ('documento_validado_em', 'pago_em'); as demais ficam como estão.
+     */
+    public function updateStatus($repasseId, $status, array $campos = array())
     {
+        $sets = array('status = :status', 'updated_at = NOW()');
+        $params = array('status' => $status, 'id' => $repasseId);
+
+        foreach (array('documento_validado_em', 'pago_em') as $campo) {
+            if (array_key_exists($campo, $campos)) {
+                $sets[] = $campo . ' = :' . $campo;
+                $params[$campo] = $campos[$campo];
+            }
+        }
+
         $stmt = Database::connection()->prepare(
-            'UPDATE repasses_professores
-             SET status = :status,
-                 documento_validado_em = :documento_validado_em,
-                 updated_at = NOW()
-             WHERE id = :id'
+            'UPDATE repasses_professores SET ' . implode(', ', $sets) . ' WHERE id = :id'
         );
 
-        $stmt->execute(array(
-            'status' => $status,
-            'documento_validado_em' => $documentoValidadoEm,
-            'id' => $repasseId,
-        ));
+        $stmt->execute($params);
+    }
+
+    public function countAtivosPorApuracao($apuracaoId)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT COUNT(*)
+             FROM repasses_professores
+             WHERE apuracao_id = :apuracao_id
+               AND deleted_at IS NULL'
+        );
+
+        $stmt->execute(array('apuracao_id' => $apuracaoId));
+
+        return (int) $stmt->fetchColumn();
     }
 
     public function forProfessor($usuarioId)

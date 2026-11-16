@@ -127,6 +127,44 @@ $categoriasOptions = isset($financeiroOptions['categorias']) && is_array($financ
     <?php require BASE_PATH . '/resources/views/auth/_errors.php'; ?>
     <?php require BASE_PATH . '/resources/views/auth/_success.php'; ?>
 
+    <?php $pendenciasEstorno = isset($pendencias_estorno) && is_array($pendencias_estorno) ? $pendencias_estorno : array(); ?>
+    <?php if (!empty($pendenciasEstorno)): ?>
+    <section class="admin-section">
+        <div class="admin-section__header">
+            <h2 class="admin-section__title">Pendências de estorno e contestação</h2>
+        </div>
+        <p class="muted">Pedidos reembolsados ou contestados no meio de pagamento que ainda pedem uma decisão. O reembolso já retirou o pedido das entradas; o acesso do aluno e o ajuste do repasse são decididos aqui.</p>
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Pedido</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>Competência</th>
+                        <th>O que fazer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($pendenciasEstorno as $pendencia): ?>
+                        <tr>
+                            <td><a href="/admin/pedidos/show?id=<?php echo (int) $pendencia['id']; ?>"><?php echo $e($pendencia['codigo']); ?></a></td>
+                            <td><?php echo $pendencia['status'] === 'reembolsado' ? 'Reembolsado' : 'Contestado'; ?></td>
+                            <td>R$ <?php echo number_format((float) $pendencia['total'], 2, ',', '.'); ?></td>
+                            <td><?php echo $e($pendencia['competencia']); ?></td>
+                            <td>
+                                <?php foreach ($pendencia['avisos'] as $aviso): ?>
+                                    <div><?php echo $e($aviso); ?></div>
+                                <?php endforeach; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <?php endif; ?>
+
     <section class="admin-section">
         <div class="admin-section__header">
             <h2 class="admin-section__title">Filtros de entradas</h2>

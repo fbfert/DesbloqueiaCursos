@@ -94,7 +94,9 @@ class FinanceiroController extends Controller
                 'apuracao_id' => $apuracaoId,
             ),
             array(
-                'repasses' => $this->financeiroService->listarRepassesApuracao($apuracaoId > 0 ? $apuracaoId : null),
+                'repasses' => $this->comDocumentosEPagamentos(
+                    $this->financeiroService->listarRepassesApuracao($apuracaoId > 0 ? $apuracaoId : null)
+                ),
                 'apuracoes' => $this->financeiroService->painelAdmin()['apuracoes'],
             )
         ));
@@ -180,6 +182,92 @@ class FinanceiroController extends Controller
         }
 
         return $this->redirect('/admin/financeiro/repasses');
+    }
+
+    public function validarDocumento(Request $request)
+    {
+        $result = $this->financeiroService->validarDocumento(
+            (int) $request->input('documento_id', 0),
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível validar o documento.'));
+        } else {
+            Session::flash('success', 'Documento validado. O repasse está aprovado para pagamento.');
+        }
+
+        return $this->redirect($this->voltarParaRepasses($request));
+    }
+
+    public function rejeitarDocumento(Request $request)
+    {
+        $result = $this->financeiroService->rejeitarDocumento(
+            (int) $request->input('documento_id', 0),
+            (string) $request->input('motivo', ''),
+            Session::get('usuario_id'),
+            $request->ip(),
+            $request->userAgent()
+        );
+
+        if (empty($result['ok'])) {
+            Session::flash('errors', array(isset($result['message']) ? $result['message'] : 'Não foi possível rejeitar o documento.'));
+        } else {
+            Session::flash('success', 'Documento rejeitado. O repasse voltou a aguardar documento.');
+        }
+
+        return $this->redirect($this->voltarParaRepasses($request));
+    }
+
+    public function arquivoDocumento(Request $request)
+    {
+        return $this->entregarArquivo(
+            $this->financeiroService->arquivoAdmin('documento', (int) $request->query('id', 0), Session::get('usuario_id'), $request->ip(), $request->userAgent()),
+            'Documento não encontrado'
+        );
+    }
+
+    public function comprovantePagamento(Request $request)
+    {
+        return $this->entregarArquivo(
+            $this->financeiroService->arquivoAdmin('comprovante', (int) $request->query('id', 0), Session::get('usuario_id'), $request->ip(), $request->userAgent()),
+            'Comprovante não encontrado'
+        );
+    }
+
+    private function entregarArquivo($arquivo, $tituloNaoEncontrado)
+    {
+        if (!$arquivo) {
+            return new Response(\App\Core\View::render('errors/404', array('title' => $tituloNaoEncontrado)), 404);
+        }
+
+        return new Response(file_get_contents($arquivo['caminho']), 200, array(
+            'Content-Type' => $arquivo['tipo'],
+            'Content-Disposition' => 'inline; filename="' . str_replace('"', '', basename($arquivo['nome'])) . '"',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'",
+        ));
+    }
+
+    private function comDocumentosEPagamentos(array $repasses)
+    {
+        foreach ($repasses as &$repasse) {
+            $repasse['documentos'] = $this->financeiroService->documentosDoRepasse((int) $repasse['id']);
+            $repasse['pagamentos'] = $this->financeiroService->pagamentosDoRepasse((int) $repasse['id']);
+            $repasse['bloqueio_pagamento'] = $this->financeiroService->motivoBloqueioPagamento($repasse);
+        }
+        unset($repasse);
+
+        return $repasses;
+    }
+
+    private function voltarParaRepasses(Request $request)
+    {
+        $apuracaoId = (int) $request->input('apuracao_id', 0);
+
+        return '/admin/financeiro/repasses' . ($apuracaoId > 0 ? '?apuracao_id=' . $apuracaoId : '');
     }
 
     public function registrarPagamento(Request $request)

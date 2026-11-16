@@ -85,14 +85,31 @@ class RepasseProfessorService
         }
 
         $pdo = Database::connection();
-        $pdo->beginTransaction();
+        $propria = !$pdo->inTransaction();
+        if ($propria) {
+            $pdo->beginTransaction();
+        }
 
         try {
+            // Trava a linha da apuração: duas gerações simultâneas ficam em fila e a segunda
+            // encontra os repasses criados pela primeira.
+            $trava = $pdo->prepare('SELECT id FROM apuracoes_mensais WHERE id = :id FOR UPDATE');
+            $trava->execute(array('id' => $apuracaoId));
+
+            if ($this->repasseModel->countAtivosPorApuracao($apuracaoId) > 0) {
+                if ($propria) {
+                    $pdo->rollBack();
+                }
+
+                return array('ok' => false, 'message' => 'Os repasses desta apuração já foram gerados.');
+            }
+
             $repasses = array();
             foreach ($participantes as $participante) {
                 $perfilFiscal = $this->professorFiscalModel->findByUsuarioId($participante['usuario_id']);
                 $tipoFiscal = $perfilFiscal ? $perfilFiscal['tipo_pessoa'] : $participante['tipo_fiscal'];
-                $documentoObrigatorio = $tipoFiscal === 'pj' ? 1 : 0;
+                $exigeNota = $perfilFiscal && !empty($perfilFiscal['exige_nota_fiscal']);
+                $documentoObrigatorio = ($tipoFiscal === 'pj' || $exigeNota) ? 1 : 0;
                 $status = $documentoObrigatorio ? 'aguardando_documento' : 'pendente';
 
                 $repasseId = $this->repasseModel->create(array(
@@ -142,11 +159,15 @@ class RepasseProfessorService
                 'total' => count($repasses),
             ));
 
-            $pdo->commit();
+            if ($propria) {
+                $pdo->commit();
+            }
 
             return array('ok' => true, 'repasses_ids' => $repasses);
         } catch (Exception $exception) {
-            $pdo->rollBack();
+            if ($propria && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             Logger::error('financeiro.repasses.falhou', array(
                 'apuracao_id' => $apuracaoId,
                 'message' => $exception->getMessage(),
@@ -188,8 +209,13 @@ class RepasseProfessorService
             'enviado_por_usuario_id' => $actorUserId,
         ));
 
-        $statusNovo = $repasse['tipo_fiscal'] === 'pj' ? 'documento_recebido' : 'aprovado';
-        $this->repasseModel->updateStatus($repasseId, $statusNovo, $statusNovo === 'documento_recebido' ? date('Y-m-d H:i:s') : null);
+        // Só o repasse que exige documento muda de status, e só até "documento recebido": a
+        // aprovação depende da validação do documento (validarDocumento).
+        $statusNovo = $repasse['status'];
+        if (!empty($repasse['documento_obrigatorio']) && in_array($repasse['status'], array('aguardando_documento', 'documento_recebido'), true)) {
+            $statusNovo = 'documento_recebido';
+            $this->repasseModel->updateStatus($repasseId, $statusNovo);
+        }
 
         $this->auditService->record(
             'financeiro.documento.anexado',
@@ -220,6 +246,27 @@ class RepasseProfessorService
             return array('ok' => false, 'message' => 'Repasse não encontrado.');
         }
 
+        $bloqueio = $this->motivoBloqueioPagamento($repasse);
+        if ($bloqueio !== null) {
+            return array('ok' => false, 'message' => $bloqueio);
+        }
+
+        $valorLiquido = round((float) $repasse['valor_liquido'], 2);
+        $valorInformado = isset($dados['valor']) && trim((string) $dados['valor']) !== ''
+            ? $this->parseValor($dados['valor'])
+            : $valorLiquido;
+        if ($valorInformado === null || abs($valorInformado - $valorLiquido) >= 0.005) {
+            return array(
+                'ok' => false,
+                'message' => 'O valor pago precisa ser igual ao valor líquido do repasse: R$ ' . number_format($valorLiquido, 2, ',', '.') . '.',
+            );
+        }
+
+        $metodo = isset($dados['metodo']) ? (string) $dados['metodo'] : 'pix';
+        if (!in_array($metodo, array('pix', 'ted', 'transferencia', 'boleto', 'outro'), true)) {
+            $metodo = 'outro';
+        }
+
         $stored = null;
         if (!empty($arquivo) && !empty($arquivo['tmp_name'])) {
             $stored = $this->fileStorageService->storeUploadedFile($arquivo, 'financeiro/pagamentos', 'comprovante', array(
@@ -232,21 +279,21 @@ class RepasseProfessorService
         $pagamentoId = $this->pagamentoModel->create(array(
             'repasse_professor_id' => $repasseId,
             'data_pagamento' => !empty($dados['data_pagamento']) ? $dados['data_pagamento'] : date('Y-m-d'),
-            'valor' => isset($dados['valor']) ? (float) $dados['valor'] : (float) $repasse['valor_liquido'],
-            'metodo' => isset($dados['metodo']) ? $dados['metodo'] : 'pix',
+            'valor' => $valorLiquido,
+            'metodo' => $metodo,
             'comprovante_caminho' => $stored ? $stored['relative_path'] : null,
             'comprovante_nome_original' => $stored ? $stored['original_name'] : null,
             'referencia_bancaria' => isset($dados['referencia_bancaria']) ? $dados['referencia_bancaria'] : null,
             'status' => 'pago',
         ));
 
-        $this->repasseModel->updateStatus($repasseId, 'pago', date('Y-m-d H:i:s'));
+        $this->repasseModel->updateStatus($repasseId, 'pago', array('pago_em' => date('Y-m-d H:i:s')));
 
         $this->auditService->record(
             'financeiro.pagamento.registrado',
             'pagamento_professor',
             $pagamentoId,
-            array('repasse_professor_id' => $repasseId),
+            array('repasse_professor_id' => $repasseId, 'valor' => $valorLiquido, 'metodo' => $metodo),
             $actorUserId,
             $ipAddress,
             $userAgent
@@ -258,6 +305,165 @@ class RepasseProfessorService
         ));
 
         return array('ok' => true, 'pagamento_id' => $pagamentoId);
+    }
+
+    /**
+     * Devolve por que o repasse ainda não pode ser pago, ou null quando está liberado:
+     * "aprovado", ou "pendente" quando não exige documento.
+     */
+    public function motivoBloqueioPagamento(array $repasse)
+    {
+        $status = (string) $repasse['status'];
+
+        if ($status === 'pago') {
+            return 'Este repasse já foi pago.';
+        }
+
+        if ($status === 'cancelado') {
+            return 'Este repasse foi cancelado e não pode ser pago.';
+        }
+
+        if ($status === 'aprovado') {
+            return null;
+        }
+
+        if ($status === 'pendente' && empty($repasse['documento_obrigatorio'])) {
+            return null;
+        }
+
+        return 'Este repasse exige documento fiscal validado antes do pagamento.';
+    }
+
+    public function validarDocumento($documentoId, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $documento = $this->documentoModel->findById($documentoId);
+        if (!$documento) {
+            return array('ok' => false, 'message' => 'Documento não encontrado.');
+        }
+
+        $repasse = $this->repasseModel->findById((int) $documento['repasse_professor_id']);
+        if (!$repasse) {
+            return array('ok' => false, 'message' => 'Repasse não encontrado.');
+        }
+
+        if (in_array($repasse['status'], array('pago', 'cancelado'), true)) {
+            return array('ok' => false, 'message' => 'Repasse pago ou cancelado não tem documento a validar.');
+        }
+
+        if ($documento['status'] === 'validado') {
+            return array('ok' => false, 'message' => 'Este documento já foi validado.');
+        }
+
+        $agora = date('Y-m-d H:i:s');
+        $this->documentoModel->validar($documentoId, $actorUserId, $agora);
+        $this->repasseModel->updateStatus((int) $repasse['id'], 'aprovado', array('documento_validado_em' => $agora));
+
+        $this->auditService->record(
+            'financeiro.documento.validado',
+            'repasse_documento',
+            $documentoId,
+            array('repasse_professor_id' => (int) $repasse['id'], 'status_anterior' => $repasse['status']),
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::info('financeiro.documento.validado', array(
+            'repasse_id' => (int) $repasse['id'],
+            'documento_id' => $documentoId,
+        ));
+
+        return array('ok' => true);
+    }
+
+    public function rejeitarDocumento($documentoId, $motivo, $actorUserId = null, $ipAddress = null, $userAgent = null)
+    {
+        $motivo = trim((string) $motivo);
+        if ($motivo === '') {
+            return array('ok' => false, 'message' => 'Informe o motivo da rejeição do documento.');
+        }
+
+        $documento = $this->documentoModel->findById($documentoId);
+        if (!$documento) {
+            return array('ok' => false, 'message' => 'Documento não encontrado.');
+        }
+
+        $repasse = $this->repasseModel->findById((int) $documento['repasse_professor_id']);
+        if (!$repasse) {
+            return array('ok' => false, 'message' => 'Repasse não encontrado.');
+        }
+
+        if (in_array($repasse['status'], array('pago', 'cancelado'), true)) {
+            return array('ok' => false, 'message' => 'Repasse pago ou cancelado não tem documento a rejeitar.');
+        }
+
+        $this->documentoModel->rejeitar($documentoId, $actorUserId, $motivo, date('Y-m-d H:i:s'));
+
+        $statusNovo = !empty($repasse['documento_obrigatorio']) ? 'aguardando_documento' : $repasse['status'];
+        $this->repasseModel->updateStatus((int) $repasse['id'], $statusNovo, array('documento_validado_em' => null));
+
+        $this->auditService->record(
+            'financeiro.documento.rejeitado',
+            'repasse_documento',
+            $documentoId,
+            array('repasse_professor_id' => (int) $repasse['id'], 'motivo' => $motivo, 'status_anterior' => $repasse['status']),
+            $actorUserId,
+            $ipAddress,
+            $userAgent
+        );
+
+        Logger::info('financeiro.documento.rejeitado', array(
+            'repasse_id' => (int) $repasse['id'],
+            'documento_id' => $documentoId,
+        ));
+
+        return array('ok' => true);
+    }
+
+    public function buscarDocumento($documentoId)
+    {
+        return $this->documentoModel->findById((int) $documentoId);
+    }
+
+    public function buscarPagamento($pagamentoId)
+    {
+        return $this->pagamentoModel->findById((int) $pagamentoId);
+    }
+
+    public function buscarEspelhoRpa($rpaId)
+    {
+        return $this->rpaModel->findById((int) $rpaId);
+    }
+
+    public function buscarRepasse($repasseId)
+    {
+        return $this->repasseModel->findById((int) $repasseId);
+    }
+
+    public function documentosDoRepasse($repasseId)
+    {
+        return $this->documentoModel->forRepasse((int) $repasseId);
+    }
+
+    public function pagamentosDoRepasse($repasseId)
+    {
+        return $this->pagamentoModel->forRepasse((int) $repasseId);
+    }
+
+    /** Aceita "750", "750.5", "750,50" e "1.234,56". */
+    private function parseValor($valor)
+    {
+        $texto = preg_replace('/[^0-9,.\-]/', '', (string) $valor);
+        if ($texto === '' || $texto === '-') {
+            return null;
+        }
+
+        if (strpos($texto, ',') !== false) {
+            $texto = str_replace('.', '', $texto);
+            $texto = str_replace(',', '.', $texto);
+        }
+
+        return is_numeric($texto) ? round((float) $texto, 2) : null;
     }
 
     public function listarPorProfessor($usuarioId)
@@ -362,7 +568,7 @@ class RepasseProfessorService
 
     private function renderRpaEspelho(array $repasse, $nome, $cpf, $competencia)
     {
-        return '<html><body><h1>Espelho de RPA</h1><p>Competencia: ' . htmlspecialchars($competencia, ENT_QUOTES, 'UTF-8') . '</p><p>Professor: ' . htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') . '</p><p>CPF: ' . htmlspecialchars((string) $cpf, ENT_QUOTES, 'UTF-8') . '</p><p>Valor bruto: R$ ' . number_format((float) $repasse['valor_bruto'], 2, ',', '.') . '</p><p>Retenção: R$ ' . number_format((float) $repasse['valor_retenido'], 2, ',', '.') . '</p><p>Liquido: R$ ' . number_format((float) $repasse['valor_liquido'], 2, ',', '.') . '</p></body></html>';
+        return '<html lang="pt-BR"><head><meta charset="UTF-8"><title>Espelho de RPA</title></head><body><h1>Espelho de RPA</h1><p>Competência: ' . htmlspecialchars($competencia, ENT_QUOTES, 'UTF-8') . '</p><p>Professor: ' . htmlspecialchars($nome, ENT_QUOTES, 'UTF-8') . '</p><p>CPF: ' . htmlspecialchars((string) $cpf, ENT_QUOTES, 'UTF-8') . '</p><p>Valor bruto: R$ ' . number_format((float) $repasse['valor_bruto'], 2, ',', '.') . '</p><p>Retenção: R$ ' . number_format((float) $repasse['valor_retenido'], 2, ',', '.') . '</p><p>Líquido: R$ ' . number_format((float) $repasse['valor_liquido'], 2, ',', '.') . '</p></body></html>';
     }
 }
 

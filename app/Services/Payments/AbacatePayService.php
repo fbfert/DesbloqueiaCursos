@@ -465,7 +465,23 @@ class AbacatePayService
                 'raw_payload' => $rawBody,
             ));
 
-            $this->gatewayLogModel->markProcessed($logId, true, null);
+            // O evento já passou pela checagem de duplicidade (existsByEventId) acima.
+            if ($eventType === 'checkout.refunded') {
+                $efeito = $this->pedidoService->registrarReembolsoGateway((int) $pedido['id'], 'AbacatePay', $eventId, $ipAddress, $userAgent);
+            } else {
+                $efeito = $this->pedidoService->registrarContestacaoGateway((int) $pedido['id'], 'AbacatePay', $eventId, $ipAddress, $userAgent);
+            }
+
+            if (empty($efeito['ok'])) {
+                Logger::warning('abacatepay.webhook.efeito_nao_aplicado', array(
+                    'pedido_id' => (int) $pedido['id'],
+                    'event_id' => $eventId,
+                    'event_type' => $eventType,
+                    'message' => isset($efeito['message']) ? $efeito['message'] : null,
+                ));
+            }
+
+            $this->gatewayLogModel->markProcessed($logId, true, empty($efeito['ok']) && isset($efeito['message']) ? $efeito['message'] : null);
 
             Logger::info('abacatepay.webhook.evento_registrado', array(
                 'pedido_id' => (int) $pedido['id'],

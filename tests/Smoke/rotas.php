@@ -117,6 +117,10 @@ $rotas = array(
         array('path' => '/admin/revisoes', 'nome' => 'Fila de revisões (admin)', 'destino' => '/v2/login?redirect=%2Fadmin%2Frevisoes'),
         array('path' => '/admin/certificados/retidos', 'nome' => 'Certificados aguardando CPF (admin)', 'destino' => '/v2/login?redirect=%2Fadmin%2Fcertificados%2Fretidos'),
         array('path' => '/conta/completar', 'nome' => 'Completar cadastro (login com Google)', 'destino' => '/v2/login'),
+        // Arquivos privados do financeiro: sem sessão, nunca entregam o arquivo.
+        array('path' => '/admin/financeiro/documento/arquivo?id=1', 'nome' => 'Documento de repasse (admin)', 'destino' => '/v2/login?redirect=%2Fadmin%2Ffinanceiro%2Fdocumento%2Farquivo'),
+        array('path' => '/admin/financeiro/pagamento/comprovante?id=1', 'nome' => 'Comprovante de pagamento de repasse (admin)', 'destino' => '/v2/login?redirect=%2Fadmin%2Ffinanceiro%2Fpagamento%2Fcomprovante'),
+        array('path' => '/professor/financeiro/rpa?id=1', 'nome' => 'Espelho de RPA (professor)', 'destino' => '/v2/login?redirect=%2Fprofessor%2Ffinanceiro%2Frpa'),
     ),
 
     // ---------------------------------------------------------------------

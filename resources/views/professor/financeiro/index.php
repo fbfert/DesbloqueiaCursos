@@ -86,7 +86,9 @@
                         <td>R$ <?php echo number_format((float) $espelho['valor_bruto'], 2, ',', '.'); ?></td>
                         <td>R$ <?php echo number_format((float) $espelho['valor_retenido'], 2, ',', '.'); ?></td>
                         <td>R$ <?php echo number_format((float) $espelho['valor_liquido'], 2, ',', '.'); ?></td>
-                        <td><?php echo htmlspecialchars($espelho['arquivo_nome_original'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td>
+                            <a href="/professor/financeiro/rpa?id=<?php echo (int) $espelho['id']; ?>" target="_blank" rel="noopener">Abrir espelho</a>
+                        </td>
                         <td><?php echo htmlspecialchars($espelho['status'], ENT_QUOTES, 'UTF-8'); ?></td>
                     </tr>
                 <?php endforeach; ?>

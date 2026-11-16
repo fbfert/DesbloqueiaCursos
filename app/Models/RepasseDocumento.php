@@ -35,6 +35,63 @@ class RepasseDocumento
         return (int) Database::connection()->lastInsertId();
     }
 
+    public function findById($id)
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT *
+             FROM repasses_documentos
+             WHERE id = :id
+               AND deleted_at IS NULL
+             LIMIT 1'
+        );
+
+        $stmt->execute(array('id' => $id));
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function validar($id, $usuarioId, $validadoEm)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE repasses_documentos
+             SET status = :status,
+                 validado_por_usuario_id = :usuario_id,
+                 validado_em = :validado_em,
+                 motivo_rejeicao = NULL,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array(
+            'status' => 'validado',
+            'usuario_id' => $usuarioId,
+            'validado_em' => $validadoEm,
+            'id' => $id,
+        ));
+    }
+
+    public function rejeitar($id, $usuarioId, $motivo, $rejeitadoEm)
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE repasses_documentos
+             SET status = :status,
+                 validado_por_usuario_id = :usuario_id,
+                 validado_em = :validado_em,
+                 motivo_rejeicao = :motivo,
+                 updated_at = NOW()
+             WHERE id = :id'
+        );
+
+        $stmt->execute(array(
+            'status' => 'rejeitado',
+            'usuario_id' => $usuarioId,
+            'validado_em' => $rejeitadoEm,
+            'motivo' => $motivo,
+            'id' => $id,
+        ));
+    }
+
     public function forRepasse($repasseId)
     {
         $stmt = Database::connection()->prepare(

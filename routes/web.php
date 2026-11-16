@@ -414,6 +414,10 @@ $app->post('/admin/financeiro/repasses/gerar', array(AdminFinanceiroController::
 $app->post('/admin/financeiro/professor-fiscal', array(AdminFinanceiroController::class, 'salvarProfessorFiscal'), array('auth', 'permission:financeiro.gerenciar'));
 $app->post('/admin/financeiro/documento', array(AdminFinanceiroController::class, 'registrarDocumento'), array('auth', 'permission:financeiro.gerenciar'));
 $app->post('/admin/financeiro/pagamento', array(AdminFinanceiroController::class, 'registrarPagamento'), array('auth', 'permission:financeiro.gerenciar'));
+$app->post('/admin/financeiro/documento/validar', array(AdminFinanceiroController::class, 'validarDocumento'), array('auth', 'permission:financeiro.gerenciar'));
+$app->post('/admin/financeiro/documento/rejeitar', array(AdminFinanceiroController::class, 'rejeitarDocumento'), array('auth', 'permission:financeiro.gerenciar'));
+$app->get('/admin/financeiro/documento/arquivo', array(AdminFinanceiroController::class, 'arquivoDocumento'), array('auth', 'permission:financeiro.ver'));
+$app->get('/admin/financeiro/pagamento/comprovante', array(AdminFinanceiroController::class, 'comprovantePagamento'), array('auth', 'permission:financeiro.ver'));
 $app->get('/admin/configuracoes-globais', array(ConfiguracoesGlobaisController::class, 'index'), array('auth', 'permission:configuracoes_globais.ver'));
 $app->post('/admin/configuracoes-globais', array(ConfiguracoesGlobaisController::class, 'salvarInstitucional'), array('auth', 'permission:configuracoes_globais.gerenciar'));
 
@@ -610,3 +614,4 @@ $app->post('/professor/academico/pergunta', array(ProfessorAcademicoController::
 $app->post('/professor/academico/nota', array(ProfessorAcademicoController::class, 'registrarNota'), array('auth', 'permission:academico.gerenciar'));
 $app->post('/professor/academico/recalcular', array(ProfessorAcademicoController::class, 'recalcularAptidao'), array('auth', 'permission:academico.gerenciar'));
 $app->get('/professor/financeiro', array(ProfessorFinanceiroController::class, 'index'), array('auth', 'permission:financeiro.professor.ver'));
+$app->get('/professor/financeiro/rpa', array(ProfessorFinanceiroController::class, 'rpa'), array('auth', 'permission:financeiro.professor.ver'));
