@@ -404,7 +404,10 @@ $verificar = function ($grupo, array $rota, array $contexto) use (
     if ($grupo === 'protegida') {
         // Teste de segurança: um 200 aqui significa conteúdo exposto a anônimo.
         $destino = isset($rota['destino']) ? $rota['destino'] : '/login';
-        if (strpos($resposta['url_final'], $destino) === false) {
+        // Em produção a pasta v2/login/ existe (bootstrap do login), e o Apache acrescenta a barra:
+        // /v2/login?redirect=... vira /v2/login/?redirect=..., que é o mesmo login.
+        $urlFinal = str_replace('/v2/login/?', '/v2/login?', $resposta['url_final']);
+        if (strpos($urlFinal, $destino) === false) {
             $falhas[] = "não redirecionou para {$destino} (terminou em {$resposta['url_final']})";
         }
         if ($resposta['status'] !== 200) {
